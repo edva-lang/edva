@@ -3,51 +3,10 @@ source_filename = "dva_module"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-@fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
-@dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
 @"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
 @"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
 @str_oob_msg = internal unnamed_addr constant [40 x i8] c"E4006: string byte index out of bounds\0A\00"
 @clo.const = internal constant { ptr, ptr } { ptr @"json::#is_ws_at", ptr null }
 @"var.json::#is_ws_at" = global ptr null
@@ -293,21 +252,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.json::cursor_skip_value" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_json, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -341,30 +290,9 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
-
-; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_json() #0 {
+define internal void @__dva_global_init_json() #3 {
 entry:
   store ptr @clo.const, ptr @"var.json::#is_ws_at", align 8
   store ptr @clo.const.1, ptr @"var.json::#skip_ws", align 8
@@ -443,7 +371,7 @@ entry:
   ret void
 }
 
-define internal i1 @"json::#is_ws_at"(ptr %0, i64 %1) #0 {
+define internal i1 @"json::#is_ws_at"(ptr %0, i64 %1) #3 {
 entry:
   %var.p = alloca i64, align 8
   %var.sc = alloca ptr, align 8
@@ -510,9 +438,9 @@ declare i64 @write(i32, ptr, i64)
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #5
 
-declare i1 @"str::is_ws"(i64) #0
+declare i1 @"str::is_ws"(i64) #3
 
-define internal i64 @"json::#skip_ws"(ptr %0, i64 %1) #0 {
+define internal i64 @"json::#skip_ws"(ptr %0, i64 %1) #3 {
 entry:
   %var.p = alloca i64, align 8
   %var.sc = alloca ptr, align 8
@@ -539,7 +467,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i64 %choice.res
 }
 
-define internal i64 @"json::#hexval"(i64 %0) #0 {
+define internal i64 @"json::#hexval"(i64 %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var.h = alloca i64, align 8
@@ -562,9 +490,9 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i64 %choice.res
 }
 
-declare { i1, i64 } @"ascii::hex_value"(i64) #0
+declare { i1, i64 } @"ascii::hex_value"(i64) #3
 
-define internal i1 @"json::#is_hex_at"(ptr %0, i64 %1) #0 {
+define internal i1 @"json::#is_hex_at"(ptr %0, i64 %1) #3 {
 entry:
   %var.p = alloca i64, align 8
   %var.sc = alloca ptr, align 8
@@ -615,9 +543,9 @@ abort.dead:                                       ; No predecessors!
   br label %idx_ok
 }
 
-declare i1 @"ascii::is_hex"(i64) #0
+declare i1 @"ascii::is_hex"(i64) #3
 
-define internal { i64, ptr } @"json::#bool_str"(i1 %0) #0 {
+define internal { i64, ptr } @"json::#bool_str"(i1 %0) #3 {
 entry:
   %var.b = alloca i1, align 1
   store i1 %0, ptr %var.b, align 1
@@ -636,7 +564,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define internal { i1, i64 } @"json::#scan_utf8_char"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define internal { i1, i64 } @"json::#scan_utf8_char"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.dec = alloca ptr, align 8
   %ret.ub.salloc = alloca { i64, i64 }, align 8
@@ -809,7 +737,7 @@ abort.dead28:                                     ; No predecessors!
   br label %b.new.buf.len226
 }
 
-declare { i64, i64 } @"utf::decode_str_at"(ptr, i64) #0
+declare { i64, i64 } @"utf::decode_str_at"(ptr, i64) #3
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_str_overflow_msg() #4 {
@@ -825,7 +753,7 @@ abort.dead:                                       ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #6
 
-define internal { i1, i64 } @"json::#scan_string"(ptr %0, ptr %1, i64 %2) #0 {
+define internal { i1, i64 } @"json::#scan_string"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.c = alloca i64, align 8
   %var.k = alloca i64, align 8
@@ -1055,7 +983,7 @@ abort.dead57:                                     ; No predecessors!
   br label %b.new.buf.len56
 }
 
-define internal { i1, i64 } @"json::#parse_escape"(ptr %0, ptr %1, i64 %2) #0 {
+define internal { i1, i64 } @"json::#parse_escape"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.e = alloca i64, align 8
   %var.k = alloca i64, align 8
@@ -1283,7 +1211,7 @@ abort.dead51:                                     ; No predecessors!
   br label %b.new.buf.len50
 }
 
-define internal { i1, i64 } @"json::#parse_unicode"(ptr %0, ptr %1, i64 %2) #0 {
+define internal { i1, i64 } @"json::#parse_unicode"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.cp = alloca i64, align 8
   %var.d5 = alloca i64, align 8
@@ -1520,7 +1448,7 @@ abort.dead75:                                     ; No predecessors!
   br label %idx_ok73
 }
 
-define internal { i1, i64 } @"json::#parse_unicode_cp"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define internal { i1, i64 } @"json::#parse_unicode_cp"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.cp = alloca i64, align 8
   %var.k = alloca i64, align 8
@@ -1618,7 +1546,7 @@ and.102.exit:                                     ; preds = %and.102.else, %and.
   br i1 %and.102.phi, label %choice.case6, label %choice.next7
 }
 
-define internal { i1, i64 } @"json::#parse_surrogate_pair"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define internal { i1, i64 } @"json::#parse_surrogate_pair"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.full_cp = alloca i64, align 8
   %var.locp = alloca i64, align 8
@@ -2000,7 +1928,7 @@ and.101.exit:                                     ; preds = %and.101.else, %and.
   br i1 %and.101.phi, label %choice.case, label %choice.next
 }
 
-declare void @"utf::append_rune"(ptr, i32) #0
+declare void @"utf::append_rune"(ptr, i32) #3
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_b_byte_msg() #4 {
@@ -2013,7 +1941,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define internal i1 @"json::#is_digit_at"(ptr %0, i64 %1) #0 {
+define internal i1 @"json::#is_digit_at"(ptr %0, i64 %1) #3 {
 entry:
   %var.p = alloca i64, align 8
   %var.sc = alloca ptr, align 8
@@ -2064,7 +1992,7 @@ abort.dead:                                       ; No predecessors!
   br label %idx_ok
 }
 
-declare i1 @"str::is_digit"(i64) #0
+declare i1 @"str::is_digit"(i64) #3
 
 ; Function Attrs: inlinehint
 define internal i64 @"json::#scan_plain_ascii_end"(ptr %0, i64 %1) #7 {
@@ -2326,9 +2254,9 @@ choice.exit70:                                    ; preds = %choice.then69
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare i64 @llvm.cttz.i64(i64, i1 immarg) #1
+declare i64 @llvm.cttz.i64(i64, i1 immarg) #0
 
-define internal { i1, i64 } @"json::#parse_string_escaped"(ptr %0, i64 %1, i64 %2) #0 {
+define internal { i1, i64 } @"json::#parse_string_escaped"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.err = alloca ptr, align 8
   %var._48 = alloca ptr, align 8
@@ -2574,7 +2502,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #6
 
-define internal { i1, i64 } @"json::#parse_string"(ptr %0) #0 {
+define internal { i1, i64 } @"json::#parse_string"(ptr %0) #3 {
 entry:
   %var.plain_end = alloca i64, align 8
   %var.start = alloca i64, align 8
@@ -2697,7 +2625,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define internal { i1, i64 } @"json::#parse_array"(ptr %0) #0 {
+define internal { i1, i64 } @"json::#parse_array"(ptr %0) #3 {
 entry:
   %var.elems57 = alloca ptr, align 8
   %var.elems = alloca ptr, align 8
@@ -2901,7 +2829,7 @@ a.after63:                                        ; preds = %a.create62, %choice
   br label %choice.exit24
 }
 
-define internal { i1, i64 } @"json::#parse_array_loop"(ptr %0, ptr %1) #0 {
+define internal { i1, i64 } @"json::#parse_array_loop"(ptr %0, ptr %1) #3 {
 entry:
   %var.v = alloca { i1, i64 }, align 8
   %var.elems = alloca ptr, align 8
@@ -2938,7 +2866,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret { i1, i64 } %call.res6
 }
 
-define internal { i1, i64 } @"json::#parse_value"(ptr %0) #0 {
+define internal { i1, i64 } @"json::#parse_value"(ptr %0) #3 {
 entry:
   %var.c = alloca i64, align 8
   %var.p = alloca i64, align 8
@@ -3060,7 +2988,7 @@ choice.next45:                                    ; preds = %choice.next40
   br label %choice.exit19
 }
 
-define internal { i1, i64 } @"json::#parse_object"(ptr %0) #0 {
+define internal { i1, i64 } @"json::#parse_object"(ptr %0) #3 {
 entry:
   %var.entries57 = alloca ptr, align 8
   %var.entries = alloca ptr, align 8
@@ -3264,7 +3192,7 @@ a.after63:                                        ; preds = %a.create62, %choice
   br label %choice.exit24
 }
 
-define internal { i1, i64 } @"json::#parse_object_loop"(ptr %0, ptr %1) #0 {
+define internal { i1, i64 } @"json::#parse_object_loop"(ptr %0, ptr %1) #3 {
 entry:
   %var.k = alloca { i1, i64 }, align 8
   %var.c = alloca i64, align 8
@@ -3397,7 +3325,7 @@ a.after:                                          ; preds = %a.create, %choice.c
   br label %choice.exit19
 }
 
-define internal { i1, i64 } @"json::#parse_object_after_key"(ptr %0, ptr %1, { i1, i64 } %2) #0 {
+define internal { i1, i64 } @"json::#parse_object_after_key"(ptr %0, ptr %1, { i1, i64 } %2) #3 {
 entry:
   %var.e = alloca ptr, align 8
   %var._69 = alloca ptr, align 8
@@ -3616,7 +3544,7 @@ a.after:                                          ; preds = %a.create, %choice.t
   br label %choice.exit26
 }
 
-define internal { i1, i64 } @"json::#parse_object_after_val"(ptr %0, ptr %1, ptr %2, { i1, i64 } %3) #0 {
+define internal { i1, i64 } @"json::#parse_object_after_val"(ptr %0, ptr %1, ptr %2, { i1, i64 } %3) #3 {
 entry:
   %var.e2 = alloca ptr, align 8
   %var._171 = alloca ptr, align 8
@@ -4038,7 +3966,7 @@ a.after136:                                       ; preds = %a.create135, %choic
   br label %choice.exit119
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -4086,7 +4014,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #4 {
@@ -4099,7 +4027,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define internal { i1, i64 } @"json::#parse_lit"(ptr %0, i1 %1, i64 %2) #0 {
+define internal { i1, i64 } @"json::#parse_lit"(ptr %0, i1 %1, i64 %2) #3 {
 entry:
   %var.ok = alloca i1, align 1
   %var.word = alloca ptr, align 8
@@ -4265,9 +4193,9 @@ choice.exit31:                                    ; preds = %choice.else30, %cho
   ret { i1, i64 } %choice.res45
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define internal { i1, i64 } @"json::#parse_null"(ptr %0) #0 {
+define internal { i1, i64 } @"json::#parse_null"(ptr %0) #3 {
 entry:
   %var.ok = alloca i1, align 1
   %var.p = alloca i64, align 8
@@ -4405,7 +4333,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define internal { i1, i64 } @"json::#parse_number"(ptr %0) #0 {
+define internal { i1, i64 } @"json::#parse_number"(ptr %0) #3 {
 entry:
   %var.f = alloca double, align 8
   %var.valid = alloca i1, align 1
@@ -5570,7 +5498,7 @@ choice.exit440:                                   ; preds = %choice.else439, %ch
   br label %choice.exit436
 }
 
-define internal { i1, i64 } @"json::#parse_array_after_value"(ptr %0, ptr %1, { i1, i64 } %2) #0 {
+define internal { i1, i64 } @"json::#parse_array_after_value"(ptr %0, ptr %1, { i1, i64 } %2) #3 {
 entry:
   %var.e = alloca ptr, align 8
   %var._166 = alloca ptr, align 8
@@ -5983,7 +5911,7 @@ a.after131:                                       ; preds = %a.create130, %choic
   br label %choice.exit116
 }
 
-define { i1, i64 } @"json::parse"(ptr %0) #0 {
+define { i1, i64 } @"json::parse"(ptr %0) #3 {
 entry:
   %var.r = alloca { i1, i64 }, align 8
   %var.sc = alloca ptr, align 8
@@ -6006,7 +5934,7 @@ entry:
   ret { i1, i64 } %call.res5
 }
 
-define internal { i1, i64 } @"json::#parse_finish"(ptr %0, { i1, i64 } %1) #0 {
+define internal { i1, i64 } @"json::#parse_finish"(ptr %0, { i1, i64 } %1) #3 {
 entry:
   %var.err = alloca ptr, align 8
   %var._21 = alloca ptr, align 8
@@ -6100,7 +6028,7 @@ choice.exit11:                                    ; preds = %choice.else10, %cho
   br label %choice.exit
 }
 
-define internal ptr @"json::#json_type_err"(ptr %0) #0 {
+define internal ptr @"json::#json_type_err"(ptr %0) #3 {
 entry:
   %var.msg = alloca ptr, align 8
   store ptr %0, ptr %var.msg, align 8
@@ -6182,7 +6110,7 @@ abort.dead12:                                     ; No predecessors!
   br label %concat.tot.len10
 }
 
-define internal i32 @"json::#hex_digit"(i64 %0) #0 {
+define internal i32 @"json::#hex_digit"(i64 %0) #3 {
 entry:
   %var.d = alloca i64, align 8
   %var.n = alloca i64, align 8
@@ -6212,7 +6140,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i32 %choice.res
 }
 
-define void @"json::escape_string_into"(ptr %0, ptr %1) #0 {
+define void @"json::escape_string_into"(ptr %0, ptr %1) #3 {
 entry:
   %var.c = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -7446,7 +7374,7 @@ br.done.135:                                      ; preds = %br.b4.135, %br.b3.1
   ret void
 }
 
-define { i64, ptr } @"json::escape_string"(ptr %0) #0 {
+define { i64, ptr } @"json::escape_string"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.b = alloca ptr, align 8
@@ -7542,7 +7470,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"json::format_number"(double %0) #0 {
+define { i64, ptr } @"json::format_number"(double %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %ret.ub.salloc26 = alloca { i64, ptr }, align 8
@@ -7731,11 +7659,11 @@ str.eq.merge58:                                   ; preds = %str.eq.else57, %str
   br i1 %case.or65, label %choice.case29, label %choice.next30
 }
 
-declare { i64, ptr } @"str::from_int"(i64) #0
+declare { i64, ptr } @"str::from_int"(i64) #3
 
-declare { i64, ptr } @"str::from_float"(double) #0
+declare { i64, ptr } @"str::from_float"(double) #3
 
-define internal void @"json::#stringify_into"(ptr %0, ptr %1) #0 {
+define internal void @"json::#stringify_into"(ptr %0, ptr %1) #3 {
 entry:
   %var._339 = alloca ptr, align 8
   %var._i338 = alloca i64, align 8
@@ -8952,7 +8880,7 @@ br.done.147:                                      ; preds = %br.b4.147, %br.b3.1
   br label %choice.exit
 }
 
-define internal void @"json::#append_indent"(ptr %0, i64 %1) #0 {
+define internal void @"json::#append_indent"(ptr %0, i64 %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -9094,7 +9022,7 @@ br.done.149:                                      ; preds = %br.b4.149, %br.b3.1
   br label %loop.latch.148
 }
 
-define internal void @"json::#stringify_pretty_into"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define internal void @"json::#stringify_pretty_into"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var._485 = alloca ptr, align 8
   %var._i484 = alloca i64, align 8
@@ -10552,7 +10480,7 @@ br.done.155:                                      ; preds = %br.b4.155, %br.b3.1
   br label %choice.exit385
 }
 
-define { i64, ptr } @"json::stringify"(ptr %0) #0 {
+define { i64, ptr } @"json::stringify"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.b = alloca ptr, align 8
@@ -10641,7 +10569,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"json::stringify_pretty"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"json::stringify_pretty"(ptr %0, i64 %1) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.b = alloca ptr, align 8
@@ -10733,7 +10661,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack
 }
 
-define { i1, i64 } @"json::get"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"json::get"(ptr %0, ptr %1) #3 {
 entry:
   %var._2 = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -10859,7 +10787,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit11
 }
 
-define i1 @"json::has"(ptr %0, ptr %1) #0 {
+define i1 @"json::has"(ptr %0, ptr %1) #3 {
 entry:
   %var.key = alloca ptr, align 8
   %var.val = alloca ptr, align 8
@@ -10872,7 +10800,7 @@ entry:
   ret i1 %ram.tag
 }
 
-define { i64, ptr } @"json::get_str"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"json::get_str"(ptr %0, ptr %1) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %var._4 = alloca ptr, align 8
@@ -10931,7 +10859,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-define { i1, i64 } @"json::get_int"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"json::get_int"(ptr %0, ptr %1) #3 {
 entry:
   %var.iv = alloca i64, align 8
   %var.n = alloca double, align 8
@@ -11012,7 +10940,7 @@ choice.exit10:                                    ; preds = %choice.else9, %choi
   br label %choice.exit3
 }
 
-define { i1, i64 } @"json::get_float"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"json::get_float"(ptr %0, ptr %1) #3 {
 entry:
   %var.n = alloca double, align 8
   %var._4 = alloca double, align 8
@@ -11076,7 +11004,7 @@ pay.float.merge:                                  ; preds = %pay.float.nullbb, %
   br label %choice.exit3
 }
 
-define { i1, i64 } @"json::get_bool"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"json::get_bool"(ptr %0, ptr %1) #3 {
 entry:
   %var.flag = alloca i1, align 1
   %var._4 = alloca i1, align 1
@@ -11140,7 +11068,7 @@ pay.int.merge:                                    ; preds = %pay.int.nullbb, %pa
   br label %choice.exit3
 }
 
-define i1 @"json::is_array"(ptr %0) #0 {
+define i1 @"json::is_array"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var.val = alloca ptr, align 8
@@ -11165,7 +11093,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i64 @"json::array_len"(ptr %0) #0 {
+define i64 @"json::array_len"(ptr %0) #3 {
 entry:
   %var.items = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -11196,7 +11124,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"json::array_at"(ptr %0, i64 %1) #0 {
+define ptr @"json::array_at"(ptr %0, i64 %1) #3 {
 entry:
   %var.items = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -11243,7 +11171,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"json::is_object"(ptr %0) #0 {
+define i1 @"json::is_object"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var.val = alloca ptr, align 8
@@ -11268,7 +11196,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i64 @"json::object_len"(ptr %0) #0 {
+define i64 @"json::object_len"(ptr %0) #3 {
 entry:
   %var.pairs = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -11299,7 +11227,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i64, ptr } @"json::object_key_at"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"json::object_key_at"(ptr %0, i64 %1) #3 {
 entry:
   %var.p = alloca ptr, align 8
   %var.pairs = alloca ptr, align 8
@@ -11355,7 +11283,7 @@ sl.rec.elem.dbb:                                  ; preds = %sl.rec.elem.nbb, %s
   br label %choice.exit
 }
 
-define ptr @"json::object_val_at"(ptr %0, i64 %1) #0 {
+define ptr @"json::object_val_at"(ptr %0, i64 %1) #3 {
 entry:
   %var.p = alloca ptr, align 8
   %var.pairs = alloca ptr, align 8
@@ -11416,7 +11344,7 @@ sl.rec.elem.dbb:                                  ; preds = %sl.rec.elem.nbb, %s
   br label %choice.exit
 }
 
-define i1 @"json::is_valid_int_value"(ptr %0) #0 {
+define i1 @"json::is_valid_int_value"(ptr %0) #3 {
 entry:
   %var.iv = alloca i64, align 8
   %var.n = alloca double, align 8
@@ -11463,7 +11391,7 @@ pay.float.merge:                                  ; preds = %pay.float.nullbb, %
   br label %choice.exit
 }
 
-define i64 @"json::unwrap_int_or_zero"(ptr %0) #0 {
+define i64 @"json::unwrap_int_or_zero"(ptr %0) #3 {
 entry:
   %var.n = alloca double, align 8
   %var._ = alloca double, align 8
@@ -11504,7 +11432,7 @@ pay.float.merge:                                  ; preds = %pay.float.nullbb, %
   br label %choice.exit
 }
 
-define i1 @"json::is_valid_float_value"(ptr %0) #0 {
+define i1 @"json::is_valid_float_value"(ptr %0) #3 {
 entry:
   %var._ = alloca double, align 8
   %var.val = alloca ptr, align 8
@@ -11541,7 +11469,7 @@ pay.float.merge:                                  ; preds = %pay.float.nullbb, %
   br label %choice.exit
 }
 
-define double @"json::unwrap_float_or_zero"(ptr %0) #0 {
+define double @"json::unwrap_float_or_zero"(ptr %0) #3 {
 entry:
   %var.n = alloca double, align 8
   %var._ = alloca double, align 8
@@ -11581,7 +11509,7 @@ pay.float.merge:                                  ; preds = %pay.float.nullbb, %
   br label %choice.exit
 }
 
-define { i1, i64 } @"json::decode_int_value"(ptr %0) #0 {
+define { i1, i64 } @"json::decode_int_value"(ptr %0) #3 {
 entry:
   %var.iv = alloca i64, align 8
   %var.n = alloca double, align 8
@@ -11646,7 +11574,7 @@ choice.exit4:                                     ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define { i1, i64 } @"json::decode_float_value"(ptr %0) #0 {
+define { i1, i64 } @"json::decode_float_value"(ptr %0) #3 {
 entry:
   %var.n = alloca double, align 8
   %var._ = alloca double, align 8
@@ -11818,7 +11746,7 @@ ret.dead25:                                       ; No predecessors!
   br label %choice.exit24
 }
 
-define internal { i64, ptr } @"json::#cursor_read_str_escaped"(ptr %0, i64 %1, i64 %2) #0 {
+define internal { i64, ptr } @"json::#cursor_read_str_escaped"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var._47 = alloca ptr, align 8
   %builder.freeze = alloca { i64, ptr }, align 8
@@ -12061,7 +11989,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-define internal i1 @"json::#cursor_skip_compound"(ptr %0, i64 %1) #0 {
+define internal i1 @"json::#cursor_skip_compound"(ptr %0, i64 %1) #3 {
 entry:
   %var.end = alloca i64, align 8
   %var._19 = alloca i64, align 8
@@ -12470,7 +12398,7 @@ choice.exit59:                                    ; preds = %choice.then58
   br label %loop.latch.168
 }
 
-define { ptr, i64 } @"json::cursor"(ptr %0) #0 {
+define { ptr, i64 } @"json::cursor"(ptr %0) #3 {
 entry:
   %rec.salloc = alloca { ptr, i64 }, align 8
   %var.s = alloca ptr, align 8
@@ -12484,7 +12412,7 @@ entry:
   ret { ptr, i64 } %ret.pack
 }
 
-define void @"json::cursor_reset"(ptr %0, ptr %1) #0 {
+define void @"json::cursor_reset"(ptr %0, ptr %1) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %var.cur = alloca ptr, align 8
@@ -13758,7 +13686,7 @@ choice.exit140:                                   ; preds = %choice.else139, %ch
   ret { i1, i64 } %ram.pay
 }
 
-declare i1 @"ascii::is_digit"(i64) #0
+declare i1 @"ascii::is_digit"(i64) #3
 
 ; Function Attrs: inlinehint
 define { i1, i64 } @"json::cursor_read_bool"(ptr %0) #7 {
@@ -14292,10 +14220,10 @@ and.191.exit:                                     ; preds = %and.191.else, %and.
   br i1 %case.or164, label %choice.case159, label %choice.next160
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noinline noreturn "nounwind" }
 attributes #5 = { cold noreturn "nounwind" }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

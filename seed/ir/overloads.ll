@@ -4,51 +4,8 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
-@dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@"var.ast::cell_var_names" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
 @clo.const = internal constant { ptr, ptr } { ptr @"overloads::unknown", ptr null }
 @"var.overloads::unknown" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"overloads::contains", ptr null }
@@ -108,21 +65,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.overloads::resolve" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_overloads, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -156,30 +103,9 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
-
-; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_overloads() #0 {
+define internal void @__dva_global_init_overloads() #3 {
 entry:
   store ptr @clo.const, ptr @"var.overloads::unknown", align 8
   store ptr @clo.const.1, ptr @"var.overloads::contains", align 8
@@ -203,7 +129,7 @@ entry:
   ret void
 }
 
-define ptr @"overloads::unknown"() #0 {
+define ptr @"overloads::unknown"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -220,7 +146,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define i1 @"overloads::contains"(ptr %0, ptr %1) #0 {
+define i1 @"overloads::contains"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -323,9 +249,9 @@ choice.exit:                                      ; preds = %choice.then, %str.e
   br label %loop.latch.59
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define { i64, ptr } @"overloads::name_of"(ptr %0) #0 {
+define { i64, ptr } @"overloads::name_of"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -477,7 +403,7 @@ declare void @exit(i32) #5
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #6
 
-define { i64, ptr } @"overloads::symbol"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"overloads::symbol"(ptr %0, i64 %1) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %cat.ibuf = alloca [24 x i8], align 1
@@ -553,7 +479,7 @@ abort.dead17:                                     ; No predecessors!
   br label %concat.tot.len15
 }
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -617,7 +543,7 @@ done:                                             ; preds = %copyloop
   ret i64 %fmt.tot
 }
 
-define i1 @"overloads::is_family"(ptr %0, ptr %1) #0 {
+define i1 @"overloads::is_family"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.ctx = alloca ptr, align 8
@@ -631,7 +557,7 @@ entry:
   ret i1 %call.res
 }
 
-define i1 @"overloads::name_is_qualified"(ptr %0, i64 %1) #0 {
+define i1 @"overloads::name_is_qualified"(ptr %0, i64 %1) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.name = alloca ptr, align 8
@@ -769,7 +695,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define i64 @"overloads::decl_module_find"(ptr %0, i64 %1, i64 %2) #0 {
+define i64 @"overloads::decl_module_find"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.last = alloca i64, align 8
   %var.i = alloca i64, align 8
@@ -905,7 +831,7 @@ choice.exit43:                                    ; preds = %choice.else42, %cho
   br label %choice.exit
 }
 
-define { i64, ptr } @"overloads::decl_module"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"overloads::decl_module"(ptr %0, i64 %1) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.last = alloca i64, align 8
@@ -960,7 +886,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"overloads::resolve_family_name"(ptr %0, ptr %1, ptr %2) #0 {
+define { i64, ptr } @"overloads::resolve_family_name"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.priv = alloca ptr, align 8
   %var.pub = alloca ptr, align 8
@@ -1202,7 +1128,7 @@ ret.dead96:                                       ; No predecessors!
   br label %choice.exit93
 }
 
-define i1 @"overloads::has_variants"(ptr %0, ptr %1) #0 {
+define i1 @"overloads::has_variants"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -1314,7 +1240,7 @@ choice.exit25:                                    ; preds = %choice.then24, %cho
   br label %choice.exit
 }
 
-define ptr @"overloads::signature"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"overloads::signature"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var._23 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -1453,7 +1379,7 @@ choice.next:                                      ; preds = %choice.then
   br label %choice.exit22
 }
 
-define ptr @"overloads::select_value"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"overloads::select_value"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.f = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -1588,7 +1514,7 @@ choice.next:                                      ; preds = %choice.then16
   br label %choice.exit20
 }
 
-define ptr @"overloads::application"(ptr %0) #0 {
+define ptr @"overloads::application"(ptr %0) #3 {
 entry:
   %var._92 = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -2093,7 +2019,7 @@ a.after234:                                       ; preds = %a.create233, %a.sto
   br label %choice.exit57
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -2141,7 +2067,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #4 {
@@ -2154,7 +2080,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define ptr @"overloads::keep_type"(ptr %0, ptr %1) #0 {
+define ptr @"overloads::keep_type"(ptr %0, ptr %1) #3 {
 entry:
   %var.ctx = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -2164,7 +2090,7 @@ entry:
   ret ptr %var.load
 }
 
-define ptr @"overloads::keep_fparams"(ptr %0, ptr %1) #0 {
+define ptr @"overloads::keep_fparams"(ptr %0, ptr %1) #3 {
 entry:
   %var.ctx = alloca ptr, align 8
   %var.params = alloca ptr, align 8
@@ -2194,7 +2120,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %a.load2
 }
 
-define ptr @"overloads::walk_many"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"overloads::walk_many"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -2369,7 +2295,7 @@ a.after47:                                        ; preds = %a.create46, %loop.e
   ret ptr %a.load255
 }
 
-define ptr @"overloads::walk"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"overloads::walk"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.bc = alloca ptr, align 8
   %var._2348 = alloca ptr, align 8
@@ -6288,7 +6214,7 @@ a.after2359:                                      ; preds = %a.create2358, %choi
   br label %choice.exit
 }
 
-define ptr @"overloads::walk_call"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"overloads::walk_call"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.target = alloca ptr, align 8
   %var.arg_ti = alloca ptr, align 8
@@ -6862,15 +6788,11 @@ a.after212:                                       ; preds = %a.create211, %choic
   ret ptr %rec.alloc
 }
 
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
-
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-define ptr @"overloads::resolve"(ptr %0) #0 {
+define ptr @"overloads::resolve"(ptr %0) #3 {
 entry:
   %var._152 = alloca ptr, align 8
   %var._i151 = alloca i64, align 8
@@ -7332,10 +7254,10 @@ choice.exit196:                                   ; preds = %choice.else, %choic
   ret ptr %choice.res208
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noinline noreturn "nounwind" }
 attributes #5 = { cold noreturn "nounwind" }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

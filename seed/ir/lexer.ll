@@ -4,68 +4,10 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
 @global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@sys_argc_global = external global i64
-@sys_argv_global = external global ptr
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
-@"var.sys::STDIN" = external global i64
-@"var.sys::STDOUT" = external global i64
-@"var.sys::STDERR" = external global i64
-@"var.sys::addr_null" = external global ptr
-@"var.time::CLOCK_REALTIME" = external global i64
-@"var.time::CLOCK_MONOTONIC" = external global i64
-@"var.time::NS_PER_US" = external global i64
-@"var.time::NS_PER_MS" = external global i64
-@"var.time::NS_PER_SEC" = external global i64
-@"var.time::SEC_PER_MIN" = external global i64
-@"var.time::SEC_PER_HOUR" = external global i64
-@"var.time::SEC_PER_DAY" = external global i64
-@"var.log::#owned_fd" = external global i64
-@"var.log::#O_LOG_APPEND" = external global i64
 @var.cur_lex_failed = global i1 false
 @str.0 = internal unnamed_addr constant [1 x i8] zeroinitializer
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 0, ptr @str.0 }
@@ -576,21 +518,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.lexer::kind_name" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_lexer, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -624,30 +556,14 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
+declare void @dva_arena_destroy(ptr) #3
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_lexer() #0 {
+define internal void @__dva_global_init_lexer() #3 {
 entry:
   store ptr @clo.const, ptr @"var.lexer::lex_init", align 8
   store ptr @clo.const.1, ptr @"var.lexer::clone_stack", align 8
@@ -761,162 +677,12 @@ entry:
   ret void
 }
 
-declare i32 @open(ptr, i32)
-
-declare i64 @creat(ptr, i64)
-
-declare i32 @close(i32)
-
-declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @posix_spawnp(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @waitpid(i64, ptr, i64)
-
-declare i64 @read(i32, ptr, i64)
-
-declare i64 @lseek(i32, i64, i64)
-
 declare i64 @write(i32, ptr, i64)
-
-declare i64 @writev(i32, ptr, i64)
-
-declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
 
-declare i64 @htons(i64)
-
-declare i64 @htonl(i64)
-
-declare i64 @ntohs(i64)
-
-declare i64 @ntohl(i64)
-
-declare i64 @inet_addr(ptr)
-
-declare i64 @socket(i64, i64, i64)
-
-declare i64 @connect(i64, ptr, i64)
-
-declare i64 @bind(i64, ptr, i64)
-
-declare i64 @listen(i64, i64)
-
-declare i64 @accept(i64, ptr, ptr)
-
-declare i64 @send(i64, ptr, i64, i32)
-
-declare i64 @recv(i64, ptr, i64, i32)
-
-declare i64 @sendto(i64, ptr, i64, i32, ptr, i64)
-
-declare i64 @recvfrom(i64, ptr, i64, i32, ptr, ptr)
-
-declare i64 @setsockopt(i64, i64, i64, ptr, i64)
-
-declare i64 @getsockopt(i64, i64, i64, ptr, ptr)
-
-declare i64 @getpeername(i64, ptr, ptr)
-
-declare i64 @getsockname(i64, ptr, ptr)
-
-declare i64 @shutdown(i64, i64)
-
-declare i64 @fcntl(i32, i64, i64)
-
-declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
-
-declare void @freeaddrinfo(ptr)
-
-declare i64 @getifaddrs(ptr)
-
-declare void @freeifaddrs(ptr)
-
-declare ptr @memset(ptr, i64, i64)
-
-declare i64 @atoi(ptr)
-
-declare ptr @opendir(ptr)
-
-declare ptr @readdir(ptr)
-
-declare i64 @closedir(ptr)
-
-declare i64 @strlen(ptr) #0
-
-declare i64 @strcmp(ptr, ptr)
-
-declare ptr @memcpy(ptr, ptr, i64)
-
-declare ptr @memmove(ptr, ptr, i64)
-
-declare i64 @stat(ptr, ptr)
-
-declare i64 @fstat(i32, ptr)
-
-declare i64 @rename(ptr, ptr)
-
-declare i64 @unlink(ptr)
-
-declare i64 @pipe(ptr)
-
-declare ptr @__errno_location()
-
-declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
-
-declare i64 @munmap(ptr, i64)
-
-declare i64 @syscall(i64, ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @dlopen(ptr, i32)
-
-declare ptr @dlsym(ptr, ptr)
-
-declare i64 @dlclose(ptr)
-
-declare ptr @dlerror()
-
-declare i64 @system(ptr)
-
-declare ptr @realpath(ptr, ptr)
-
-declare i64 @isatty(i32)
-
-declare i64 @tcgetattr(i32, ptr)
-
-declare i64 @tcsetattr(i32, i64, ptr)
-
-declare void @cfmakeraw(ptr)
-
-declare i64 @poll(ptr, i64, i64)
-
-declare i64 @epoll_create1(i32)
-
-declare i64 @epoll_ctl(i64, i64, i32, ptr)
-
-declare i64 @epoll_wait(i64, ptr, i64, i64)
-
-declare i64 @time(ptr)
-
-declare ptr @signal(i64, ptr)
-
-declare i64 @raise(i64)
-
-declare i64 @getrlimit(i64, ptr)
-
-declare i64 @setrlimit(i64, ptr)
-
-declare i64 @uname(ptr)
-
-declare i32 @nanosleep(ptr, ptr)
-
-declare ptr @localtime_r(ptr, ptr)
-
-declare ptr @strptime(ptr, ptr, ptr)
-
-define ptr @"lexer::lex_init"(ptr %0) #0 {
+define ptr @"lexer::lex_init"(ptr %0) #3 {
 entry:
   %var.st = alloca ptr, align 8
   %var.lx = alloca ptr, align 8
@@ -1029,7 +795,7 @@ a.store:                                          ; preds = %a.grow, %a.check
   ret ptr %var.load36
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -1077,7 +843,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #5 {
@@ -1093,7 +859,7 @@ abort.dead:                                       ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #6
 
-define void @"lexer::clone_stack"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define void @"lexer::clone_stack"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var._25 = alloca ptr, align 8
   %var._ = alloca i64, align 8
@@ -1310,7 +1076,7 @@ a.after59:                                        ; preds = %a.create58, %a.afte
   br label %choice.exit
 }
 
-define void @"lexer::clone_queue"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define void @"lexer::clone_queue"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.count = alloca i64, align 8
@@ -1558,15 +1324,11 @@ a.after64:                                        ; preds = %a.create63, %a.afte
   br label %choice.exit
 }
 
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
-
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-define ptr @"lexer::clone_lx"(ptr %0) #0 {
+define ptr @"lexer::clone_lx"(ptr %0) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var.lx = alloca ptr, align 8
@@ -1689,7 +1451,7 @@ entry:
   ret ptr %var.load79
 }
 
-define i32 @"lexer::pk"(ptr %0, i64 %1) #0 {
+define i32 @"lexer::pk"(ptr %0, i64 %1) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.off = alloca i64, align 8
@@ -1729,9 +1491,9 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i32 %choice.res
 }
 
-declare i32 @"unicode::decode_rune"(ptr, i64) #0
+declare i32 @"unicode::decode_rune"(ptr, i64) #3
 
-define i1 @"lexer::is_nl"(i32 %0) #0 {
+define i1 @"lexer::is_nl"(i32 %0) #3 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -1750,7 +1512,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i32 @"lexer::adv"(ptr %0, i32 %1) #0 {
+define i32 @"lexer::adv"(ptr %0, i32 %1) #3 {
 entry:
   %var.r = alloca i32, align 4
   %var.lx = alloca ptr, align 8
@@ -1803,7 +1565,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i32 %var.load19
 }
 
-define i1 @"lexer::is_ws"(i32 %0) #0 {
+define i1 @"lexer::is_ws"(i32 %0) #3 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -1828,7 +1590,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"lexer::has_more_on_line"(ptr %0) #0 {
+define i1 @"lexer::has_more_on_line"(ptr %0) #3 {
 entry:
   %var.c9 = alloca i32, align 4
   %var.c = alloca i32, align 4
@@ -1947,7 +1709,7 @@ and.135.exit:                                     ; preds = %and.135.else, %and.
   br label %or.134.exit
 }
 
-define i1 @"lexer::is_inline_block_opener"(ptr %0, ptr %1) #0 {
+define i1 @"lexer::is_inline_block_opener"(ptr %0, ptr %1) #3 {
 entry:
   %var.text = alloca ptr, align 8
   %var.kind = alloca ptr, align 8
@@ -2187,9 +1949,9 @@ str.eq.merge133:                                  ; preds = %str.eq.else132, %st
   br i1 %case.or140, label %choice.case8, label %choice.next9
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define ptr @"lexer::mktok"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, i64 %5, ptr %6) #0 {
+define ptr @"lexer::mktok"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, i64 %5, ptr %6) #3 {
 entry:
   %var.trail = alloca i1, align 1
   %var.ws = alloca i1, align 1
@@ -2312,7 +2074,7 @@ choice.exit32:                                    ; preds = %choice.then, %and.1
   ret ptr %rec.alloc
 }
 
-define void @"lexer::stack_mark_inline"(ptr %0) #0 {
+define void @"lexer::stack_mark_inline"(ptr %0) #3 {
 entry:
   %var._57 = alloca ptr, align 8
   %var._56 = alloca ptr, align 8
@@ -2544,7 +2306,7 @@ err.abort:                                        ; No predecessors!
   br label %choice.exit54
 }
 
-define void @"lexer::lex_set_file"(ptr %0) #0 {
+define void @"lexer::lex_set_file"(ptr %0) #3 {
 entry:
   %var.file = alloca ptr, align 8
   store ptr %0, ptr %var.file, align 8
@@ -2554,20 +2316,20 @@ entry:
   ret void
 }
 
-define { i64, ptr } @"lexer::lex_get_file"() #0 {
+define { i64, ptr } @"lexer::lex_get_file"() #3 {
 entry:
   %var.load = load ptr, ptr @"var.lexer::cur_lex_file", align 8
   %ret.pack = load { i64, ptr }, ptr %var.load, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define i1 @"lexer::lex_failed"() #0 {
+define i1 @"lexer::lex_failed"() #3 {
 entry:
   %var.load = load i1, ptr @"var.lexer::cur_lex_failed", align 1
   ret i1 %var.load
 }
 
-define i64 @"lexer::fail"(i64 %0, i64 %1, i64 %2, ptr %3) #0 {
+define i64 @"lexer::fail"(i64 %0, i64 %1, i64 %2, ptr %3) #3 {
 entry:
   %var.fn = alloca ptr, align 8
   %var.b = alloca ptr, align 8
@@ -3003,9 +2765,9 @@ exit.done:                                        ; No predecessors!
   br label %choice.exit
 }
 
-declare i1 @"diag::is_capturing"() #0
+declare i1 @"diag::is_capturing"() #3
 
-declare void @"diag::record_diag"(i64, ptr, i64, i64, ptr, i1) #0
+declare void @"diag::record_diag"(i64, ptr, i64, i64, ptr, i1) #3
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_str_overflow_msg() #5 {
@@ -3047,14 +2809,14 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare { i64, ptr } @"str::from_int"(i64) #0
+declare { i64, ptr } @"str::from_int"(i64) #3
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #6
 
-declare void @"log::error"(ptr) #0
+declare void @"log::error"(ptr) #3
 
-define i32 @"lexer::esc_val"(i32 %0) #0 {
+define i32 @"lexer::esc_val"(i32 %0) #3 {
 entry:
   %var.e = alloca i32, align 4
   store i32 %0, ptr %var.e, align 4
@@ -3137,7 +2899,7 @@ choice.next26:                                    ; preds = %choice.next23
   br label %choice.exit
 }
 
-define { i1, i64 } @"lexer::hex_digit_val"(i32 %0) #0 {
+define { i1, i64 } @"lexer::hex_digit_val"(i32 %0) #3 {
 entry:
   %var.ci = alloca i64, align 8
   %var.r = alloca i32, align 4
@@ -3258,7 +3020,7 @@ choice.exit27:                                    ; preds = %choice.else26, %cho
   br label %choice.exit14
 }
 
-define i32 @"lexer::scan_esc_rune"(ptr %0) #0 {
+define i32 @"lexer::scan_esc_rune"(ptr %0) #3 {
 entry:
   %var.d = alloca i64, align 8
   %var._50 = alloca i64, align 8
@@ -3457,7 +3219,7 @@ choice.exit68:                                    ; preds = %choice.else67, %cho
   br label %choice.exit36
 }
 
-define { i1, i64 } @"lexer::scan_esc_byte_opt"(ptr %0) #0 {
+define { i1, i64 } @"lexer::scan_esc_byte_opt"(ptr %0) #3 {
 entry:
   %var.d2 = alloca i64, align 8
   %var._15 = alloca i64, align 8
@@ -3533,7 +3295,7 @@ choice.exit13:                                    ; preds = %choice.else12, %cho
   br label %choice.exit6
 }
 
-define { i64, ptr } @"lexer::decode_escapes"(ptr %0) #0 {
+define { i64, ptr } @"lexer::decode_escapes"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.er = alloca i32, align 4
@@ -4165,7 +3927,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define i1 @"lexer::is_delim"(i32 %0) #0 {
+define i1 @"lexer::is_delim"(i32 %0) #3 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -4198,7 +3960,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"lexer::is_id_start"(i32 %0) #0 {
+define i1 @"lexer::is_id_start"(i32 %0) #3 {
 entry:
   %var.r = alloca i32, align 4
   store i32 %0, ptr %var.r, align 4
@@ -4207,9 +3969,9 @@ entry:
   ret i1 %call.res
 }
 
-declare i1 @"unicode::is_id_start"(i32) #0
+declare i1 @"unicode::is_id_start"(i32) #3
 
-define i1 @"lexer::is_id_char"(i32 %0) #0 {
+define i1 @"lexer::is_id_char"(i32 %0) #3 {
 entry:
   %var.r = alloca i32, align 4
   store i32 %0, ptr %var.r, align 4
@@ -4218,9 +3980,9 @@ entry:
   ret i1 %call.res
 }
 
-declare i1 @"unicode::is_id_continue"(i32) #0
+declare i1 @"unicode::is_id_continue"(i32) #3
 
-define i1 @"lexer::is_special"(i32 %0) #0 {
+define i1 @"lexer::is_special"(i32 %0) #3 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -4251,7 +4013,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i64 @"lexer::scan_while"(ptr %0, ptr %1) #0 {
+define i64 @"lexer::scan_while"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -4352,7 +4114,7 @@ choice.exit8:                                     ; preds = %choice.then7
   br label %loop.latch.147
 }
 
-define i64 @"lexer::skip_digits"(ptr %0, i64 %1) #0 {
+define i64 @"lexer::skip_digits"(ptr %0, i64 %1) #3 {
 entry:
   %var.q = alloca i64, align 8
   %var.lx = alloca ptr, align 8
@@ -4363,7 +4125,7 @@ entry:
   ret i64 %call.res
 }
 
-define internal i1 @"$anon_fn.115"(i32 %0) #0 {
+define internal i1 @"$anon_fn.115"(i32 %0) #3 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -4372,9 +4134,9 @@ entry:
   ret i1 %call.res
 }
 
-declare i1 @"unicode::is_digit"(i32) #0
+declare i1 @"unicode::is_digit"(i32) #3
 
-define { i64, ptr } @"lexer::scan_id"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"lexer::scan_id"(ptr %0, i64 %1) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.r2 = alloca i32, align 4
@@ -4574,7 +4336,7 @@ choice.exit42:                                    ; preds = %choice.then40
   br label %loop.latch.149
 }
 
-define i64 @"lexer::scan_int_suffix"(ptr %0, i64 %1) #0 {
+define i64 @"lexer::scan_int_suffix"(ptr %0, i64 %1) #3 {
 entry:
   %var.matches = alloca i1, align 1
   %var.fits = alloca i1, align 1
@@ -4761,7 +4523,7 @@ choice.exit41:                                    ; preds = %choice.then, %and.1
   br label %loop.latch.150
 }
 
-define i64 @"lexer::scan_float_suffix"(ptr %0, i64 %1) #0 {
+define i64 @"lexer::scan_float_suffix"(ptr %0, i64 %1) #3 {
 entry:
   %var.three = alloca i1, align 1
   %var.q = alloca i64, align 8
@@ -4939,7 +4701,7 @@ choice.next55:                                    ; preds = %choice.else
   br label %choice.exit53
 }
 
-define i1 @"lexer::radix_ok"(i32 %0, i32 %1) #0 {
+define i1 @"lexer::radix_ok"(i32 %0, i32 %1) #3 {
 entry:
   %var.hex = alloca i1, align 1
   %var.oct = alloca i1, align 1
@@ -5101,9 +4863,9 @@ and.158.exit:                                     ; preds = %and.158.else, %and.
   br label %or.157.exit
 }
 
-declare i1 @"ascii::is_hex"(i64) #0
+declare i1 @"ascii::is_hex"(i64) #3
 
-define i1 @"lexer::try_scan_repeat"(ptr %0) #0 {
+define i1 @"lexer::try_scan_repeat"(ptr %0) #3 {
 entry:
   %var._62 = alloca i64, align 8
   %var._i61 = alloca i64, align 8
@@ -5318,9 +5080,9 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare i1 @"ascii::is_digit"(i64) #0
+declare i1 @"ascii::is_digit"(i64) #3
 
-define ptr @"lexer::finish_int"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define ptr @"lexer::finish_int"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.num = alloca ptr, align 8
   %var.suf = alloca ptr, align 8
@@ -5517,7 +5279,7 @@ abort.dead59:                                     ; No predecessors!
   br label %concat.tot.len57
 }
 
-define ptr @"lexer::scan_radix_rest"(ptr %0, i32 %1, i64 %2, i64 %3, i64 %4) #0 {
+define ptr @"lexer::scan_radix_rest"(ptr %0, i32 %1, i64 %2, i64 %3, i64 %4) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -5672,7 +5434,7 @@ choice.exit44:                                    ; No predecessors!
   br label %choice.exit18
 }
 
-define ptr @"lexer::finish_float"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define ptr @"lexer::finish_float"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.num = alloca ptr, align 8
   %var.suf = alloca ptr, align 8
@@ -5869,7 +5631,7 @@ abort.dead59:                                     ; No predecessors!
   br label %concat.tot.len57
 }
 
-define i1 @"lexer::scan_frac_opt"(ptr %0, i64 %1, i64 %2, i64 %3, i64 %4) #0 {
+define i1 @"lexer::scan_frac_opt"(ptr %0, i64 %1, i64 %2, i64 %3, i64 %4) #3 {
 entry:
   %var.ok = alloca i1, align 1
   %var.dig = alloca i1, align 1
@@ -5973,7 +5735,7 @@ choice.exit26:                                    ; preds = %choice.then25, %cho
   br label %choice.exit14
 }
 
-define i32 @"lexer::pk_off"(ptr %0, i64 %1) #0 {
+define i32 @"lexer::pk_off"(ptr %0, i64 %1) #3 {
 entry:
   %var.n = alloca i64, align 8
   %var.lx = alloca ptr, align 8
@@ -5985,7 +5747,7 @@ entry:
   ret i32 %call.res
 }
 
-define i1 @"lexer::scan_exp_opt"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define i1 @"lexer::scan_exp_opt"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.has_sign = alloca i1, align 1
   %var.is_e = alloca i1, align 1
@@ -6103,7 +5865,7 @@ choice.exit34:                                    ; preds = %choice.then33, %and
   ret i1 %var.load38
 }
 
-define ptr @"lexer::scan_dec"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define ptr @"lexer::scan_dec"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.is_float = alloca i1, align 1
   %var.f2 = alloca i1, align 1
@@ -6428,7 +6190,7 @@ choice.exit85:                                    ; preds = %choice.else84, %cho
   ret ptr %choice.res
 }
 
-define ptr @"lexer::scan_num"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define ptr @"lexer::scan_num"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.is_r = alloca i1, align 1
   %var.k = alloca i32, align 4
@@ -6506,7 +6268,7 @@ choice.exit14:                                    ; preds = %choice.else, %choic
   ret ptr %choice.res27
 }
 
-define ptr @"lexer::scan_op"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define ptr @"lexer::scan_op"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.is_ret_pos_split = alloca i1, align 1
   %var.is_ret_neg_split = alloca i1, align 1
@@ -8782,7 +8544,7 @@ ret.dead1165:                                     ; No predecessors!
   br label %choice.exit1147
 }
 
-define void @"lexer::maybe_esc_adv"(ptr %0, i32 %1) #0 {
+define void @"lexer::maybe_esc_adv"(ptr %0, i32 %1) #3 {
 entry:
   %var.c = alloca i32, align 4
   %var.lx = alloca ptr, align 8
@@ -8814,7 +8576,7 @@ choice.exit:                                      ; preds = %choice.then, %entry
   ret void
 }
 
-define void @"lexer::on_str_esc"(ptr %0, i32 %1) #0 {
+define void @"lexer::on_str_esc"(ptr %0, i32 %1) #3 {
 entry:
   %var.c = alloca i32, align 4
   %var.lx = alloca ptr, align 8
@@ -8829,7 +8591,7 @@ entry:
   ret void
 }
 
-define i64 @"lexer::scan_string_body"(ptr %0, i64 %1, i64 %2) #0 {
+define i64 @"lexer::scan_string_body"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.c = alloca i32, align 4
   %var._ = alloca i64, align 8
@@ -8920,7 +8682,7 @@ choice.next14:                                    ; preds = %choice.next
   br label %choice.exit8
 }
 
-define i64 @"lexer::skip_multiline_ws"(ptr %0, i64 %1, i64 %2) #0 {
+define i64 @"lexer::skip_multiline_ws"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.c = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -9011,7 +8773,7 @@ choice.next:                                      ; preds = %idx_ok
   br label %loop.exit.233
 }
 
-define i64 @"lexer::skip_eol_comment"(ptr %0, i64 %1, i64 %2) #0 {
+define i64 @"lexer::skip_eol_comment"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.c = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -9103,7 +8865,7 @@ choice.next:                                      ; preds = %idx_ok
   br label %choice.exit9
 }
 
-define i64 @"lexer::check_multiline_str"(ptr %0) #0 {
+define i64 @"lexer::check_multiline_str"(ptr %0) #3 {
 entry:
   %var.is_quote = alloca i1, align 1
   %var.is_triple = alloca i1, align 1
@@ -9517,7 +9279,7 @@ choice.exit193:                                   ; preds = %choice.else192, %ch
   br label %choice.exit128
 }
 
-define i64 @"lexer::stack_top"(ptr %0) #0 {
+define i64 @"lexer::stack_top"(ptr %0) #3 {
 entry:
   %var._20 = alloca ptr, align 8
   %var._ = alloca i64, align 8
@@ -9615,7 +9377,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i64 %bandtmp
 }
 
-define void @"lexer::adv_to"(ptr %0, i64 %1) #0 {
+define void @"lexer::adv_to"(ptr %0, i64 %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -9670,7 +9432,7 @@ choice.exit:                                      ; preds = %choice.then
   br label %loop.latch.241
 }
 
-define { i64, ptr } @"lexer::scan_next_str_part"(ptr %0) #0 {
+define { i64, ptr } @"lexer::scan_next_str_part"(ptr %0) #3 {
 entry:
   %var.part_str = alloca ptr, align 8
   %var.str_s = alloca ptr, align 8
@@ -9790,9 +9552,9 @@ choice.next38:                                    ; preds = %choice.exit
   br label %choice.exit36
 }
 
-declare { i64, ptr } @"diag::E1008_string_unterminated"() #0
+declare { i64, ptr } @"diag::E1008_string_unterminated"() #3
 
-define { i64, ptr } @"lexer::concat_multiline_str"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"lexer::concat_multiline_str"(ptr %0, ptr %1) #3 {
 entry:
   %var.target = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -9935,7 +9697,7 @@ abort.dead28:                                     ; No predecessors!
   br label %concat.tot.len26
 }
 
-define i1 @"lexer::is_rune_forbidden_ws"(i32 %0) #0 {
+define i1 @"lexer::is_rune_forbidden_ws"(i32 %0) #3 {
 entry:
   %var.ci = alloca i64, align 8
   %var.r = alloca i32, align 4
@@ -9983,7 +9745,7 @@ and.243.exit:                                     ; preds = %and.243.else, %and.
   br i1 %case.or14, label %choice.case, label %choice.next
 }
 
-define ptr @"lexer::scan_rune"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define ptr @"lexer::scan_rune"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.val = alloca i32, align 4
   %var.v = alloca i32, align 4
@@ -10146,7 +9908,7 @@ choice.exit46:                                    ; preds = %choice.then45, %and
   ret ptr %call.res66
 }
 
-define i64 @"lexer::skip_line_comment"(ptr %0, i64 %1) #0 {
+define i64 @"lexer::skip_line_comment"(ptr %0, i64 %1) #3 {
 entry:
   %var.q = alloca i64, align 8
   %var.lx = alloca ptr, align 8
@@ -10157,7 +9919,7 @@ entry:
   ret i64 %call.res
 }
 
-define internal i1 @"$anon_fn.147"(i32 %0) #0 {
+define internal i1 @"$anon_fn.147"(i32 %0) #3 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -10167,7 +9929,7 @@ entry:
   ret i1 %nottmp
 }
 
-define void @"lexer::skip_block_comment"(ptr %0, i64 %1, i64 %2) #0 {
+define void @"lexer::skip_block_comment"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -10295,7 +10057,7 @@ choice.exit36:                                    ; preds = %choice.then35, %loo
   ret void
 }
 
-define { i64, ptr } @"lexer::scan_hash_word"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"lexer::scan_hash_word"(ptr %0, i64 %1) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.start = alloca i64, align 8
@@ -10351,7 +10113,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define internal i1 @"$anon_fn.150"(i32 %0) #0 {
+define internal i1 @"$anon_fn.150"(i32 %0) #3 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -10360,7 +10122,7 @@ entry:
   ret i1 %call.res
 }
 
-define i64 @"lexer::scan_qp_body"(ptr %0, i64 %1) #0 {
+define i64 @"lexer::scan_qp_body"(ptr %0, i64 %1) #3 {
 entry:
   %var.c = alloca i32, align 4
   %var._ = alloca i64, align 8
@@ -10454,7 +10216,7 @@ choice.next14:                                    ; preds = %choice.next
   br label %choice.exit8
 }
 
-define { i64, ptr } @"lexer::scan_quoted_path"(ptr %0, i64 %1, i64 %2) #0 {
+define { i64, ptr } @"lexer::scan_quoted_path"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.path = alloca ptr, align 8
   %var.endq = alloca i64, align 8
@@ -10540,7 +10302,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"lexer::is_path_rune"(i32 %0) #0 {
+define i1 @"lexer::is_path_rune"(i32 %0) #3 {
 entry:
   %var.r = alloca i32, align 4
   store i32 %0, ptr %var.r, align 4
@@ -10615,7 +10377,7 @@ and.253.exit:                                     ; preds = %and.253.else, %and.
   ret i1 %and.253.phi
 }
 
-define { i64, ptr } @"lexer::scan_bare_path"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"lexer::scan_bare_path"(ptr %0, i64 %1) #3 {
 entry:
   %var.c = alloca i32, align 4
   %var._ = alloca i64, align 8
@@ -11070,7 +10832,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack
 }
 
-define void @"lexer::scan_use_args"(ptr %0, ptr %1, i64 %2) #0 {
+define void @"lexer::scan_use_args"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.c = alloca i32, align 4
   %var._ = alloca i64, align 8
@@ -11294,7 +11056,7 @@ choice.exit27:                                    ; preds = %br.done.262
   br label %loop.latch.260
 }
 
-define ptr @"lexer::scan_use_directive"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define ptr @"lexer::scan_use_directive"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.kind = alloca ptr, align 8
   %var.path = alloca ptr, align 8
@@ -11983,7 +11745,7 @@ choice.exit300:                                   ; preds = %choice.else299, %ch
   br label %choice.exit292
 }
 
-define i64 @"lexer::skip_ws"(ptr %0, i64 %1) #0 {
+define i64 @"lexer::skip_ws"(ptr %0, i64 %1) #3 {
 entry:
   %var.q = alloca i64, align 8
   %var.lx = alloca ptr, align 8
@@ -11995,7 +11757,7 @@ entry:
   ret i64 %call.res
 }
 
-define internal i1 @"$anon_fn.158"(i32 %0) #0 {
+define internal i1 @"$anon_fn.158"(i32 %0) #3 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -12004,7 +11766,7 @@ entry:
   ret i1 %call.res
 }
 
-define void @"lexer::skip_hws"(ptr %0, i64 %1) #0 {
+define void @"lexer::skip_hws"(ptr %0, i64 %1) #3 {
 entry:
   %var.is_hws = alloca i1, align 1
   %var._ = alloca i64, align 8
@@ -12077,7 +11839,7 @@ choice.exit5:                                     ; preds = %choice.then
   br label %loop.latch.265
 }
 
-define { i64, ptr } @"lexer::pragma_int_fail"(ptr %0, i64 %1, i64 %2) #0 {
+define { i64, ptr } @"lexer::pragma_int_fail"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -12171,7 +11933,7 @@ abort.dead19:                                     ; No predecessors!
   br label %concat.tot.len17
 }
 
-define { i64, ptr } @"lexer::pragma_float_fail"(ptr %0, i64 %1, i64 %2) #0 {
+define { i64, ptr } @"lexer::pragma_float_fail"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -12265,7 +12027,7 @@ abort.dead19:                                     ; No predecessors!
   br label %concat.tot.len17
 }
 
-define ptr @"lexer::scan_pragma"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define ptr @"lexer::scan_pragma"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -12311,7 +12073,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"lexer::scan_pragma_parens"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define ptr @"lexer::scan_pragma_parens"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var._1044 = alloca i64, align 8
   %var._i1043 = alloca i64, align 8
@@ -14483,7 +14245,7 @@ a.store1204:                                      ; preds = %a.grow1203, %a.chec
   br label %loop.latch.272
 }
 
-define internal i1 @"$anon_fn.164"(i32 %0) #0 {
+define internal i1 @"$anon_fn.164"(i32 %0) #3 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -14492,7 +14254,7 @@ entry:
   ret i1 %call.res
 }
 
-define internal i1 @"$anon_fn.165"(i32 %0) #0 {
+define internal i1 @"$anon_fn.165"(i32 %0) #3 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -14501,7 +14263,7 @@ entry:
   ret i1 %call.res
 }
 
-define { i64, ptr } @"lexer::pragma_fp_fail"(ptr %0, i64 %1, i64 %2) #0 {
+define { i64, ptr } @"lexer::pragma_fp_fail"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -14595,7 +14357,7 @@ abort.dead19:                                     ; No predecessors!
   br label %concat.tot.len17
 }
 
-define { i64, ptr } @"lexer::pragma_swizzle_fail"(ptr %0, i64 %1, i64 %2) #0 {
+define { i64, ptr } @"lexer::pragma_swizzle_fail"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -14689,7 +14451,7 @@ abort.dead19:                                     ; No predecessors!
   br label %concat.tot.len17
 }
 
-define ptr @"lexer::take_queued"(ptr %0, i64 %1) #0 {
+define ptr @"lexer::take_queued"(ptr %0, i64 %1) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var._21 = alloca ptr, align 8
@@ -14862,7 +14624,7 @@ choice.exit53:                                    ; preds = %choice.then52, %cho
   ret ptr %var.load60
 }
 
-define ptr @"lexer::scan_directive"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4) #0 {
+define ptr @"lexer::scan_directive"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -15629,7 +15391,7 @@ abort.dead451:                                    ; No predecessors!
   br label %concat.tot.len449
 }
 
-define ptr @"lexer::scan_hash_name"(ptr %0, i64 %1, i64 %2) #0 {
+define ptr @"lexer::scan_hash_name"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.word = alloca ptr, align 8
   %var.col = alloca i64, align 8
@@ -15673,7 +15435,7 @@ tag.slow_check:                                   ; preds = %entry
   br label %str_ok
 }
 
-define ptr @"lexer::scan_hash"(ptr %0, i64 %1, i64 %2) #0 {
+define ptr @"lexer::scan_hash"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.hstart = alloca i64, align 8
   %var.col = alloca i64, align 8
@@ -15721,9 +15483,9 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-declare i1 @"unicode::is_alpha"(i32) #0
+declare i1 @"unicode::is_alpha"(i32) #3
 
-define i1 @"lexer::stack_top_has_inline"(ptr %0) #0 {
+define i1 @"lexer::stack_top_has_inline"(ptr %0) #3 {
 entry:
   %var._20 = alloca ptr, align 8
   %var._ = alloca i64, align 8
@@ -15822,7 +15584,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i1 %cmptmp
 }
 
-define void @"lexer::stack_clear_inline"(ptr %0) #0 {
+define void @"lexer::stack_clear_inline"(ptr %0) #3 {
 entry:
   %var._57 = alloca ptr, align 8
   %var._56 = alloca ptr, align 8
@@ -16054,7 +15816,7 @@ err.abort:                                        ; No predecessors!
   br label %choice.exit54
 }
 
-define void @"lexer::stack_pop"(ptr %0, i64 %1) #0 {
+define void @"lexer::stack_pop"(ptr %0, i64 %1) #3 {
 entry:
   %var.q = alloca i64, align 8
   %var.lx = alloca ptr, align 8
@@ -16070,7 +15832,7 @@ entry:
   ret void
 }
 
-define void @"lexer::stack_append"(ptr %0, i64 %1) #0 {
+define void @"lexer::stack_append"(ptr %0, i64 %1) #3 {
 entry:
   %var.st = alloca ptr, align 8
   %var.v = alloca i64, align 8
@@ -16129,7 +15891,7 @@ a.store:                                          ; preds = %a.grow, %a.check
   ret void
 }
 
-define void @"lexer::stack_overwrite"(ptr %0, i64 %1) #0 {
+define void @"lexer::stack_overwrite"(ptr %0, i64 %1) #3 {
 entry:
   %var._18 = alloca ptr, align 8
   %var._17 = alloca ptr, align 8
@@ -16261,7 +16023,7 @@ err.abort:                                        ; No predecessors!
   br label %choice.exit
 }
 
-define void @"lexer::stack_push"(ptr %0, i64 %1) #0 {
+define void @"lexer::stack_push"(ptr %0, i64 %1) #3 {
 entry:
   %var.v = alloca i64, align 8
   %var.lx = alloca ptr, align 8
@@ -16313,7 +16075,7 @@ choice.exit17:                                    ; preds = %choice.then16, %cho
   ret void
 }
 
-define void @"lexer::queue_dedent"(ptr %0, i64 %1, i64 %2) #0 {
+define void @"lexer::queue_dedent"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.qu = alloca ptr, align 8
   %var.col = alloca i64, align 8
@@ -16402,7 +16164,7 @@ a.store:                                          ; preds = %a.grow, %a.check
   ret void
 }
 
-define void @"lexer::queue_indent"(ptr %0, i64 %1, i64 %2) #0 {
+define void @"lexer::queue_indent"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.qu = alloca ptr, align 8
   %var.col = alloca i64, align 8
@@ -16489,7 +16251,7 @@ a.store:                                          ; preds = %a.grow, %a.check
   ret void
 }
 
-define void @"lexer::count_indent"(ptr %0, i64 %1) #0 {
+define void @"lexer::count_indent"(ptr %0, i64 %1) #3 {
 entry:
   %var.depth = alloca i64, align 8
   %var.done = alloca i1, align 1
@@ -16742,7 +16504,7 @@ choice.exit79:                                    ; preds = %choice.else78, %cho
   ret void
 }
 
-define ptr @"lexer::drain_to"(ptr %0, i64 %1, i64 %2) #0 {
+define ptr @"lexer::drain_to"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %cat.ibuf = alloca [24 x i8], align 1
   %var._ = alloca i64, align 8
@@ -16923,7 +16685,7 @@ abort.dead40:                                     ; No predecessors!
   br label %concat.tot.len38
 }
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -16987,7 +16749,7 @@ done:                                             ; preds = %copyloop
   ret i64 %fmt.tot
 }
 
-define ptr @"lexer::layout"(ptr %0, i64 %1) #0 {
+define ptr @"lexer::layout"(ptr %0, i64 %1) #3 {
 entry:
   %var.q = alloca i64, align 8
   %var.lx = alloca ptr, align 8
@@ -17044,7 +16806,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"lexer::line_token"(ptr %0, i64 %1) #0 {
+define ptr @"lexer::line_token"(ptr %0, i64 %1) #3 {
 entry:
   %var.cm = alloca i1, align 1
   %var.nl = alloca i1, align 1
@@ -17123,7 +16885,7 @@ choice.exit10:                                    ; preds = %choice.else, %choic
   ret ptr %choice.res20
 }
 
-define ptr @"lexer::skip_blank"(ptr %0, i64 %1) #0 {
+define ptr @"lexer::skip_blank"(ptr %0, i64 %1) #3 {
 entry:
   %var.nl = alloca i1, align 1
   %var.cm = alloca i1, align 1
@@ -17195,7 +16957,7 @@ choice.exit14:                                    ; preds = %choice.then13, %cho
   ret ptr %call.res22
 }
 
-define ptr @"lexer::layout_step"(ptr %0, i64 %1, i64 %2) #0 {
+define ptr @"lexer::layout_step"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.top = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -17256,7 +17018,7 @@ choice.exit13:                                    ; preds = %choice.else12, %cho
   br label %choice.exit
 }
 
-define ptr @"lexer::next_tok"(ptr %0, i64 %1) #0 {
+define ptr @"lexer::next_tok"(ptr %0, i64 %1) #3 {
 entry:
   %var.q = alloca i64, align 8
   %var.lx = alloca ptr, align 8
@@ -17354,7 +17116,7 @@ choice.exit32:                                    ; preds = %choice.else31, %cho
   br label %choice.exit
 }
 
-define ptr @"lexer::dispatch_bol"(ptr %0, i64 %1) #0 {
+define ptr @"lexer::dispatch_bol"(ptr %0, i64 %1) #3 {
 entry:
   %var.q = alloca i64, align 8
   %var.lx = alloca ptr, align 8
@@ -17382,7 +17144,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"lexer::dispatch_scan"(ptr %0) #0 {
+define ptr @"lexer::dispatch_scan"(ptr %0) #3 {
 entry:
   %var.c = alloca i32, align 4
   %var.lx = alloca ptr, align 8
@@ -17645,7 +17407,7 @@ choice.next142:                                   ; preds = %choice.next128
   br label %choice.exit
 }
 
-define ptr @"lexer::flush_indents"(ptr %0, i64 %1) #0 {
+define ptr @"lexer::flush_indents"(ptr %0, i64 %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -17754,7 +17516,7 @@ choice.exit16:                                    ; preds = %choice.else15, %cho
   ret ptr %choice.res
 }
 
-define ptr @"lexer::comment_block"(ptr %0, i64 %1, i64 %2) #0 {
+define ptr @"lexer::comment_block"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -17774,7 +17536,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"lexer::comment_line"(ptr %0, i64 %1) #0 {
+define ptr @"lexer::comment_line"(ptr %0, i64 %1) #3 {
 entry:
   %var.q = alloca i64, align 8
   %var.lx = alloca ptr, align 8
@@ -17790,7 +17552,7 @@ entry:
   ret ptr %call.res3
 }
 
-define ptr @"lexer::nl_tok"(ptr %0, i64 %1, i64 %2) #0 {
+define ptr @"lexer::nl_tok"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -17818,7 +17580,7 @@ entry:
   ret ptr %call.res7
 }
 
-define ptr @"lexer::scan_intrinsic"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define ptr @"lexer::scan_intrinsic"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.word = alloca ptr, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -17905,7 +17667,7 @@ abort.dead22:                                     ; No predecessors!
   br label %concat.tot.len20
 }
 
-define ptr @"lexer::scan_delim"(ptr %0, i32 %1, i64 %2, i64 %3) #0 {
+define ptr @"lexer::scan_delim"(ptr %0, i32 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.p = alloca i64, align 8
   %var.kind = alloca ptr, align 8
@@ -18084,7 +17846,7 @@ choice.next44:                                    ; preds = %choice.next37
   br label %choice.exit
 }
 
-define ptr @"lexer::scan_ident"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define ptr @"lexer::scan_ident"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.word = alloca ptr, align 8
   %var.col = alloca i64, align 8
@@ -18122,7 +17884,7 @@ entry:
   ret ptr %call.res10
 }
 
-define ptr @"lexer::scan_string"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define ptr @"lexer::scan_string"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.is_multiline = alloca i1, align 1
   %var.is_triple = alloca i1, align 1
@@ -18238,7 +18000,7 @@ choice.exit37:                                    ; preds = %choice.else36, %cho
   ret ptr %choice.res
 }
 
-define ptr @"lexer::scan_multiline_string"(ptr %0, i64 %1, i64 %2, i64 %3, i1 %4) #0 {
+define ptr @"lexer::scan_multiline_string"(ptr %0, i64 %1, i64 %2, i64 %3, i1 %4) #3 {
 entry:
   %var.final_s = alloca ptr, align 8
   %var.s2300 = alloca ptr, align 8
@@ -22810,9 +22572,9 @@ a.after2418:                                      ; preds = %a.create2417, %choi
   br label %choice.exit2155
 }
 
-declare { i64, ptr } @"diag::E1018_multiline_unterminated"() #0
+declare { i64, ptr } @"diag::E1018_multiline_unterminated"() #3
 
-define ptr @"lexer::scan_str_expr"(ptr %0, i1 %1) #0 {
+define ptr @"lexer::scan_str_expr"(ptr %0, i1 %1) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var._ = alloca i64, align 8
@@ -23175,9 +22937,9 @@ a.after165:                                       ; preds = %a.create164, %loop.
   ret ptr %a.load2173
 }
 
-declare { i64, ptr } @"diag::E1017_multiline_under_indented"() #0
+declare { i64, ptr } @"diag::E1017_multiline_under_indented"() #3
 
-define ptr @"lexer::emit_interp_tokens"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4) #0 {
+define ptr @"lexer::emit_interp_tokens"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4) #3 {
 entry:
   %var._919 = alloca i64, align 8
   %var._i918 = alloca i64, align 8
@@ -25327,7 +25089,7 @@ a.store1117:                                      ; preds = %a.grow1116, %a.chec
   ret ptr %call.res
 }
 
-define ptr @"lexer::scan_single_string"(ptr %0, i64 %1, i64 %2, i64 %3, i1 %4) #0 {
+define ptr @"lexer::scan_single_string"(ptr %0, i64 %1, i64 %2, i64 %3, i1 %4) #3 {
 entry:
   %var.p0_s = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -27347,7 +27109,7 @@ a.after917:                                       ; preds = %a.create916, %choic
   br label %choice.exit817
 }
 
-define ptr @"lexer::eof_tok"(ptr %0, i64 %1, i64 %2) #0 {
+define ptr @"lexer::eof_tok"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -27371,7 +27133,7 @@ entry:
   ret ptr %call.res
 }
 
-define i64 @"lexer::count_leading_indent"(ptr %0) #0 {
+define i64 @"lexer::count_leading_indent"(ptr %0) #3 {
 entry:
   %var.c = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -27460,7 +27222,7 @@ choice.next:                                      ; preds = %idx_ok
   br label %loop.exit.347
 }
 
-define i64 @"lexer::show"(ptr %0) #0 {
+define i64 @"lexer::show"(ptr %0) #3 {
 entry:
   %var.line = alloca ptr, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -27605,7 +27367,7 @@ abort.dead48:                                     ; No predecessors!
   br label %nulcopy.len46
 }
 
-define { i64, ptr } @"lexer::kind_name"(ptr %0) #0 {
+define { i64, ptr } @"lexer::kind_name"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -27915,10 +27677,10 @@ choice.next157:                                   ; preds = %choice.next152
   br label %choice.exit
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

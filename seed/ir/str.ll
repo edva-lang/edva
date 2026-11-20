@@ -4,50 +4,9 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
-@dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
 @"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
 @clo.const = internal constant { ptr, ptr } { ptr @"str::#find_byte_from", ptr null }
 @"var.str::#find_byte_from" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"str::is_digit", ptr null }
@@ -170,21 +129,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.str::parse_float" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_str, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -218,30 +167,9 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
-
-; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_str() #0 {
+define internal void @__dva_global_init_str() #3 {
 entry:
   store ptr @clo.const, ptr @"var.str::#find_byte_from", align 8
   store ptr @clo.const.1, ptr @"var.str::is_digit", align 8
@@ -290,9 +218,9 @@ entry:
   ret void
 }
 
-declare ptr @memchr(ptr, i64, i64) #0
+declare ptr @memchr(ptr, i64, i64) #3
 
-define internal i64 @"str::#find_byte_from"(ptr %0, i64 %1, i64 %2) #0 {
+define internal i64 @"str::#find_byte_from"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.hit = alloca ptr, align 8
   %var.raw_base = alloca i64, align 8
@@ -412,7 +340,7 @@ choice.exit28:                                    ; preds = %choice.else27, %cho
   ret i64 %choice.res33
 }
 
-define i1 @"str::is_digit"(i64 %0) #0 {
+define i1 @"str::is_digit"(i64 %0) #3 {
 entry:
   %var.c = alloca i64, align 8
   store i64 %0, ptr %var.c, align 8
@@ -421,9 +349,9 @@ entry:
   ret i1 %call.res
 }
 
-declare i1 @"ascii::is_digit"(i64) #0
+declare i1 @"ascii::is_digit"(i64) #3
 
-define i1 @"str::is_alpha"(i64 %0) #0 {
+define i1 @"str::is_alpha"(i64 %0) #3 {
 entry:
   %var.c = alloca i64, align 8
   store i64 %0, ptr %var.c, align 8
@@ -432,9 +360,9 @@ entry:
   ret i1 %call.res
 }
 
-declare i1 @"ascii::is_alpha"(i64) #0
+declare i1 @"ascii::is_alpha"(i64) #3
 
-define i1 @"str::is_alnum"(i64 %0) #0 {
+define i1 @"str::is_alnum"(i64 %0) #3 {
 entry:
   %var.c = alloca i64, align 8
   store i64 %0, ptr %var.c, align 8
@@ -443,7 +371,7 @@ entry:
   ret i1 %call.res
 }
 
-declare i1 @"ascii::is_alnum"(i64) #0
+declare i1 @"ascii::is_alnum"(i64) #3
 
 ; Function Attrs: inlinehint
 define i1 @"str::is_ws"(i64 %0) #4 {
@@ -471,7 +399,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"str::is_hex"(i64 %0) #0 {
+define i1 @"str::is_hex"(i64 %0) #3 {
 entry:
   %var.c = alloca i64, align 8
   store i64 %0, ptr %var.c, align 8
@@ -480,9 +408,9 @@ entry:
   ret i1 %call.res
 }
 
-declare i1 @"ascii::is_hex"(i64) #0
+declare i1 @"ascii::is_hex"(i64) #3
 
-define { i64, ptr } @"str::from_byte"(i64 %0) #0 {
+define { i64, ptr } @"str::from_byte"(i64 %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.out = alloca ptr, align 8
@@ -630,7 +558,7 @@ abort.dead:                                       ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #7
 
-define { i64, ptr } @"str::from_int"(i64 %0) #0 {
+define { i64, ptr } @"str::from_int"(i64 %0) #3 {
 entry:
   %var.v = alloca i64, align 8
   store i64 %0, ptr %var.v, align 8
@@ -648,7 +576,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -712,7 +640,7 @@ done:                                             ; preds = %copyloop
   ret i64 %fmt.tot
 }
 
-define { i64, ptr } @"str::from_u64"(i64 %0) #0 {
+define { i64, ptr } @"str::from_u64"(i64 %0) #3 {
 entry:
   %var.v = alloca i64, align 8
   store i64 %0, ptr %var.v, align 8
@@ -730,7 +658,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"str::from_float"(double %0) #0 {
+define { i64, ptr } @"str::from_float"(double %0) #3 {
 entry:
   %concat.str873 = alloca { i64, ptr }, align 8
   %var.es = alloca ptr, align 8
@@ -2796,7 +2724,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define i64 @"str::cmp"(ptr %0, ptr %1) #0 {
+define i64 @"str::cmp"(ptr %0, ptr %1) #3 {
 entry:
   %var.cb = alloca i64, align 8
   %var.ca = alloca i64, align 8
@@ -2963,7 +2891,7 @@ choice.exit54:                                    ; preds = %choice.else53, %cho
   br label %choice.exit48
 }
 
-define i1 @"str::lt"(ptr %0, ptr %1) #0 {
+define i1 @"str::lt"(ptr %0, ptr %1) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var.a = alloca ptr, align 8
@@ -2976,7 +2904,7 @@ entry:
   ret i1 %cmptmp
 }
 
-define ptr @"str::to_int"(ptr %0) #0 {
+define ptr @"str::to_int"(ptr %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -3097,7 +3025,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit8
 }
 
-define ptr @"str::to_hex"(ptr %0) #0 {
+define ptr @"str::to_hex"(ptr %0) #3 {
 entry:
   %var.d = alloca i64, align 8
   %var._5 = alloca i64, align 8
@@ -3225,9 +3153,9 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit9
 }
 
-declare { i1, i64 } @"ascii::hex_value"(i64) #0
+declare { i1, i64 } @"ascii::hex_value"(i64) #3
 
-define { i64, ptr } @"str::hex_to_str"(i64 %0) #0 {
+define { i64, ptr } @"str::hex_to_str"(i64 %0) #3 {
 entry:
   %builder.freeze229 = alloca { i64, ptr }, align 8
   %var._169 = alloca i64, align 8
@@ -3920,7 +3848,7 @@ abort.dead208:                                    ; No predecessors!
   br label %b.new.buf.len206
 }
 
-declare i64 @"ascii::hex_char_upper"(i64) #0
+declare i64 @"ascii::hex_char_upper"(i64) #3
 
 ; Function Attrs: inlinehint
 define i1 @"str::is_empty"(ptr %0) #4 {
@@ -4082,7 +4010,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %and.68.exit
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
 ; Function Attrs: inlinehint
 define i1 @"str::ends_with"(ptr %0, ptr %1) #4 {
@@ -4786,7 +4714,7 @@ entry:
   ret i1 %ram.tag
 }
 
-define i64 @"str::count"(ptr %0, ptr %1) #0 {
+define i64 @"str::count"(ptr %0, ptr %1) #3 {
 entry:
   %var.idx = alloca i64, align 8
   %var._20 = alloca i64, align 8
@@ -5154,7 +5082,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"str::trim_prefix"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"str::trim_prefix"(ptr %0, ptr %1) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.prefix = alloca ptr, align 8
@@ -5215,7 +5143,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"str::trim_suffix"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"str::trim_suffix"(ptr %0, ptr %1) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.suffix = alloca ptr, align 8
@@ -5381,7 +5309,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"str::split"(ptr %0, ptr %1) #0 {
+define ptr @"str::split"(ptr %0, ptr %1) #3 {
 entry:
   %var.idx = alloca i64, align 8
   %var._51 = alloca i64, align 8
@@ -5785,7 +5713,7 @@ a.after177:                                       ; preds = %a.create176, %loop.
   br label %choice.exit
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -5833,7 +5761,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #5 {
@@ -5846,7 +5774,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define ptr @"str::lines"(ptr %0) #0 {
+define ptr @"str::lines"(ptr %0) #3 {
 entry:
   %var.end90 = alloca i64, align 8
   %var.end = alloca i64, align 8
@@ -6238,7 +6166,7 @@ a.after154:                                       ; preds = %a.create153, %loop.
   ret ptr %a.load2162
 }
 
-define ptr @"str::words"(ptr %0) #0 {
+define ptr @"str::words"(ptr %0) #3 {
 entry:
   %var._32 = alloca i64, align 8
   %var._i31 = alloca i64, align 8
@@ -6571,7 +6499,7 @@ a.after84:                                        ; preds = %a.create83, %loop.e
   ret ptr %a.load292
 }
 
-define { i64, ptr } @"str::join"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"str::join"(ptr %0, ptr %1) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._104 = alloca ptr, align 8
@@ -7122,15 +7050,11 @@ abort.dead167:                                    ; No predecessors!
   br label %b.new.buf.len2165
 }
 
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
-
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-define { i64, ptr } @"str::lower"(ptr %0) #0 {
+define { i64, ptr } @"str::lower"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.width = alloca i64, align 8
@@ -7491,18 +7415,18 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack104
 }
 
-declare i64 @"ascii::to_lower"(i64) #0
+declare i64 @"ascii::to_lower"(i64) #3
 
-declare { i64, i64 } @"utf::decode_str_at"(ptr, i64) #0
+declare { i64, i64 } @"utf::decode_str_at"(ptr, i64) #3
 
-declare i32 @"unicode::to_lower"(i32) #0
+declare i32 @"unicode::to_lower"(i32) #3
 
-declare void @"utf::append_rune"(ptr, i32) #0
+declare void @"utf::append_rune"(ptr, i32) #3
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #7
 
-define { i64, ptr } @"str::upper"(ptr %0) #0 {
+define { i64, ptr } @"str::upper"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.width = alloca i64, align 8
@@ -7944,11 +7868,11 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack132
 }
 
-declare i64 @"ascii::to_upper"(i64) #0
+declare i64 @"ascii::to_upper"(i64) #3
 
-declare i32 @"unicode::to_upper"(i32) #0
+declare i32 @"unicode::to_upper"(i32) #3
 
-define { i64, ptr } @"str::repeat"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"str::repeat"(ptr %0, i64 %1) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca i64, align 8
@@ -8151,7 +8075,7 @@ abort.dead34:                                     ; No predecessors!
   br label %b.new.buf.len232
 }
 
-define { i64, ptr } @"str::pad_left"(ptr %0, i64 %1, i64 %2) #0 {
+define { i64, ptr } @"str::pad_left"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca i64, align 8
@@ -8404,7 +8328,7 @@ abort.dead47:                                     ; No predecessors!
   br label %b.new.buf.len245
 }
 
-define { i64, ptr } @"str::pad_right"(ptr %0, i64 %1, i64 %2) #0 {
+define { i64, ptr } @"str::pad_right"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca i64, align 8
@@ -8657,7 +8581,7 @@ abort.dead46:                                     ; No predecessors!
   br label %b.new.buf.len44
 }
 
-define { i64, ptr } @"str::reverse"(ptr %0) #0 {
+define { i64, ptr } @"str::reverse"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca i64, align 8
@@ -8852,7 +8776,7 @@ abort.dead24:                                     ; No predecessors!
   br label %b.new.buf.len22
 }
 
-define { i64, ptr } @"str::replace_first"(ptr %0, ptr %1, ptr %2) #0 {
+define { i64, ptr } @"str::replace_first"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.after = alloca i64, align 8
@@ -9243,7 +9167,7 @@ abort.dead155:                                    ; No predecessors!
   br label %b.new.buf.len2153
 }
 
-define { i64, ptr } @"str::replace"(ptr %0, ptr %1, ptr %2) #0 {
+define { i64, ptr } @"str::replace"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.idx = alloca i64, align 8
@@ -9853,7 +9777,7 @@ abort.dead278:                                    ; No predecessors!
   br label %b.new.buf.len2276
 }
 
-define { i1, i64 } @"str::parse_int"(ptr %0) #0 {
+define { i1, i64 } @"str::parse_int"(ptr %0) #3 {
 entry:
   %var.d217 = alloca ptr, align 8
   %var._216 = alloca ptr, align 8
@@ -10422,7 +10346,7 @@ choice.exit231:                                   ; preds = %choice.else230, %ch
   br label %choice.exit227
 }
 
-define { i1, i64 } @"str::parse_float"(ptr %0) #0 {
+define { i1, i64 } @"str::parse_float"(ptr %0) #3 {
 entry:
   %var.pow10 = alloca double, align 8
   %var._227 = alloca i64, align 8
@@ -11128,12 +11052,12 @@ choice.exit297:                                   ; preds = %choice.else296, %ch
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare double @llvm.pow.f64(double, double) #1
+declare double @llvm.pow.f64(double, double) #0
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { inlinehint "nounwind" }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { cold noreturn "nounwind" }

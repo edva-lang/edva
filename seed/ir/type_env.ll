@@ -4,53 +4,8 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
-@dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@"var.ast::cell_var_names" = external global ptr
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
 @clo.const = internal constant { ptr, ptr } { ptr @"type_env::empty_scope", ptr null }
 @"var.type_env::empty_scope" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"type_env::new_init", ptr null }
@@ -171,21 +126,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.type_env::lookup_user_type" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_type_env, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -219,30 +164,11 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
-
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
-
-; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
 declare i64 @dva_hash_string(ptr, i64)
 
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_type_env() #0 {
+define internal void @__dva_global_init_type_env() #3 {
 entry:
   store ptr @clo.const, ptr @"var.type_env::empty_scope", align 8
   store ptr @clo.const.1, ptr @"var.type_env::new_init", align 8
@@ -295,7 +221,7 @@ entry:
   ret void
 }
 
-define ptr @"type_env::empty_scope"() #0 {
+define ptr @"type_env::empty_scope"() #3 {
 entry:
   %var.b = alloca ptr, align 8
   store ptr null, ptr %var.b, align 8
@@ -355,7 +281,7 @@ a.after:                                          ; preds = %a.create, %entry
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
 declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #4
 
-define ptr @"type_env::new_init"() #0 {
+define ptr @"type_env::new_init"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %a.new = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
@@ -398,7 +324,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"type_env::new_env"() #0 {
+define ptr @"type_env::new_env"() #3 {
 entry:
   %rec.salloc = alloca { ptr, ptr, ptr }, align 8
   %var.user_types = alloca ptr, align 8
@@ -709,7 +635,7 @@ a.after93:                                        ; preds = %a.create92, %a.afte
   ret ptr %rec.alloc131
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -757,7 +683,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #5 {
@@ -778,7 +704,7 @@ declare void @exit(i32) #6
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #7
 
-define void @"type_env::cache_fn_body"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"type_env::cache_fn_body"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.bodies = alloca ptr, align 8
   %var.body = alloca ptr, align 8
@@ -1173,9 +1099,9 @@ mk.eq.merge134:                                   ; preds = %mk.eq.else133, %mk.
   br i1 %mk.eq141, label %m.overwrite108, label %m.next109
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define ptr @"type_env::lookup_fn_body"(ptr %0, ptr %1) #0 {
+define ptr @"type_env::lookup_fn_body"(ptr %0, ptr %1) #3 {
 entry:
   %var.body = alloca ptr, align 8
   %var._61 = alloca ptr, align 8
@@ -1439,15 +1365,11 @@ err.abort:                                        ; No predecessors!
   br label %choice.exit55
 }
 
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
-
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-define void @"type_env::mark_generic_binding"(ptr %0, ptr %1) #0 {
+define void @"type_env::mark_generic_binding"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.env = alloca ptr, align 8
@@ -1485,7 +1407,7 @@ a.store:                                          ; preds = %a.grow, %a.check
   ret void
 }
 
-define i1 @"type_env::is_generic_binding"(ptr %0, ptr %1) #0 {
+define i1 @"type_env::is_generic_binding"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -1848,7 +1770,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit152
 }
 
-define i1 @"type_env::name_is_qualified"(ptr %0, i64 %1) #0 {
+define i1 @"type_env::name_is_qualified"(ptr %0, i64 %1) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.name = alloca ptr, align 8
@@ -1997,7 +1919,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define void @"type_env::mark_global_var"(ptr %0, ptr %1) #0 {
+define void @"type_env::mark_global_var"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.env = alloca ptr, align 8
@@ -2035,7 +1957,7 @@ a.store:                                          ; preds = %a.grow, %a.check
   ret void
 }
 
-define i1 @"type_env::is_marked_global"(ptr %0, ptr %1) #0 {
+define i1 @"type_env::is_marked_global"(ptr %0, ptr %1) #3 {
 entry:
   %var.match = alloca i1, align 1
   %var._ = alloca ptr, align 8
@@ -2662,7 +2584,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit311
 }
 
-define void @"type_env::enter_scope"(ptr %0) #0 {
+define void @"type_env::enter_scope"(ptr %0) #3 {
 entry:
   %var.new_idx = alloca i64, align 8
   %var.scs = alloca ptr, align 8
@@ -2840,7 +2762,7 @@ a.after51:                                        ; preds = %a.create50, %a.stor
   ret void
 }
 
-define void @"type_env::leave_scope"(ptr %0) #0 {
+define void @"type_env::leave_scope"(ptr %0) #3 {
 entry:
   %var.cur_sc = alloca ptr, align 8
   %var._29 = alloca ptr, align 8
@@ -3003,7 +2925,7 @@ choice.exit41:                                    ; preds = %choice.else40, %cho
   br label %choice.exit
 }
 
-define void @"type_env::bind_local"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #0 {
+define void @"type_env::bind_local"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #3 {
 entry:
   %var._310 = alloca ptr, align 8
   %var._309 = alloca ptr, align 8
@@ -3809,7 +3731,7 @@ a.after327:                                       ; preds = %a.create326, %choic
   br label %choice.exit
 }
 
-define void @"type_env::unbind_local"(ptr %0, ptr %1) #0 {
+define void @"type_env::unbind_local"(ptr %0, ptr %1) #3 {
 entry:
   %var._247 = alloca ptr, align 8
   %var._246 = alloca ptr, align 8
@@ -4491,7 +4413,7 @@ a.after264:                                       ; preds = %a.create263, %choic
   br label %choice.exit
 }
 
-define void @"type_env::bind_global"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define void @"type_env::bind_global"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.gls = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -4595,7 +4517,7 @@ a.after21:                                        ; preds = %a.create20, %a.stor
   ret void
 }
 
-define i64 @"type_env::decl_module_find"(ptr %0, i64 %1, i64 %2) #0 {
+define i64 @"type_env::decl_module_find"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.last = alloca i64, align 8
   %var.i = alloca i64, align 8
@@ -4731,7 +4653,7 @@ choice.exit43:                                    ; preds = %choice.else42, %cho
   br label %choice.exit
 }
 
-define { i64, ptr } @"type_env::decl_module"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"type_env::decl_module"(ptr %0, i64 %1) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.last = alloca i64, align 8
@@ -4786,7 +4708,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define void @"type_env::set_current_module"(ptr %0, ptr %1) #0 {
+define void @"type_env::set_current_module"(ptr %0, ptr %1) #3 {
 entry:
   %var.mod_name = alloca ptr, align 8
   %var.env = alloca ptr, align 8
@@ -4799,7 +4721,7 @@ entry:
   ret void
 }
 
-define ptr @"type_env::lookup_local_exact"(ptr %0, ptr %1) #0 {
+define ptr @"type_env::lookup_local_exact"(ptr %0, ptr %1) #3 {
 entry:
   %var.cur_sc = alloca ptr, align 8
   %var._30 = alloca ptr, align 8
@@ -4942,7 +4864,7 @@ choice.exit26:                                    ; preds = %choice.else25, %cho
   br label %choice.exit
 }
 
-define ptr @"type_env::lookup_scope"(ptr %0, ptr %1) #0 {
+define ptr @"type_env::lookup_scope"(ptr %0, ptr %1) #3 {
 entry:
   %var._116 = alloca ptr, align 8
   %var.binding = alloca ptr, align 8
@@ -5306,7 +5228,7 @@ choice.exit109:                                   ; preds = %choice.else108, %ch
   br label %choice.exit75
 }
 
-define ptr @"type_env::lookup_local"(ptr %0, ptr %1) #0 {
+define ptr @"type_env::lookup_local"(ptr %0, ptr %1) #3 {
 entry:
   %var.p180 = alloca ptr, align 8
   %var._179 = alloca ptr, align 8
@@ -5779,7 +5701,7 @@ abort.dead215:                                    ; No predecessors!
   br label %concat.tot.len213
 }
 
-define ptr @"type_env::lookup_scope_chain"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"type_env::lookup_scope_chain"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.binding = alloca ptr, align 8
   %var._53 = alloca ptr, align 8
@@ -6010,7 +5932,7 @@ choice.exit59:                                    ; preds = %choice.then58, %cho
   br label %choice.exit
 }
 
-define ptr @"type_env::lookup_nonroot_exact"(ptr %0, ptr %1) #0 {
+define ptr @"type_env::lookup_nonroot_exact"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.env = alloca ptr, align 8
@@ -6022,7 +5944,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"type_env::lookup_binding_exact"(ptr %0, ptr %1) #0 {
+define ptr @"type_env::lookup_binding_exact"(ptr %0, ptr %1) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var.i = alloca i64, align 8
@@ -6313,7 +6235,7 @@ choice.exit77:                                    ; preds = %str.eq.merge
   br label %loop.latch.190
 }
 
-define ptr @"type_env::lookup_binding"(ptr %0, ptr %1) #0 {
+define ptr @"type_env::lookup_binding"(ptr %0, ptr %1) #3 {
 entry:
   %var.p = alloca ptr, align 8
   %var._48 = alloca ptr, align 8
@@ -6559,7 +6481,7 @@ ret.dead98:                                       ; No predecessors!
   br label %choice.exit
 }
 
-define { i1, i64 } @"type_env::find_last_dot"(ptr %0, i64 %1) #0 {
+define { i1, i64 } @"type_env::find_last_dot"(ptr %0, i64 %1) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.s = alloca ptr, align 8
@@ -6617,7 +6539,7 @@ choice.exit8:                                     ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i64, ptr } @"type_env::drop_last_dot"(ptr %0) #0 {
+define { i64, ptr } @"type_env::drop_last_dot"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._12 = alloca i64, align 8
@@ -6840,7 +6762,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define i1 @"type_env::init_has_name"(ptr %0, ptr %1) #0 {
+define i1 @"type_env::init_has_name"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -6942,7 +6864,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit
 }
 
-define void @"type_env::init_mark_tracked"(ptr %0, ptr %1) #0 {
+define void @"type_env::init_mark_tracked"(ptr %0, ptr %1) #3 {
 entry:
   %var.tr = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -7056,7 +6978,7 @@ a.after19:                                        ; preds = %a.create18, %a.stor
   br label %choice.exit
 }
 
-define i1 @"type_env::init_is_tracked"(ptr %0, ptr %1) #0 {
+define i1 @"type_env::init_is_tracked"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.env = alloca ptr, align 8
@@ -7071,7 +6993,7 @@ entry:
   ret i1 %call.res
 }
 
-define void @"type_env::init_mark_whole"(ptr %0, ptr %1) #0 {
+define void @"type_env::init_mark_whole"(ptr %0, ptr %1) #3 {
 entry:
   %var.wh = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -7185,7 +7107,7 @@ a.after23:                                        ; preds = %a.create22, %a.stor
   br label %choice.exit
 }
 
-define i1 @"type_env::init_is_whole"(ptr %0, ptr %1) #0 {
+define i1 @"type_env::init_is_whole"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.env = alloca ptr, align 8
@@ -7200,7 +7122,7 @@ entry:
   ret i1 %call.res
 }
 
-define void @"type_env::init_mark_written"(ptr %0, ptr %1) #0 {
+define void @"type_env::init_mark_written"(ptr %0, ptr %1) #3 {
 entry:
   %var.wr = alloca ptr, align 8
   %var.path = alloca ptr, align 8
@@ -7314,7 +7236,7 @@ a.after27:                                        ; preds = %a.create26, %a.stor
   br label %choice.exit
 }
 
-define i1 @"type_env::init_is_ok_walk"(ptr %0, ptr %1) #0 {
+define i1 @"type_env::init_is_ok_walk"(ptr %0, ptr %1) #3 {
 entry:
   %var.p = alloca ptr, align 8
   %var.env = alloca ptr, align 8
@@ -7378,7 +7300,7 @@ choice.exit10:                                    ; preds = %choice.else9, %choi
   br label %choice.exit
 }
 
-define i1 @"type_env::init_has_subpath"(ptr %0, ptr %1) #0 {
+define i1 @"type_env::init_has_subpath"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -7570,7 +7492,7 @@ choice.exit:                                      ; preds = %and.197.exit
   br label %loop.latch.196
 }
 
-define i1 @"type_env::init_is_ok"(ptr %0, ptr %1) #0 {
+define i1 @"type_env::init_is_ok"(ptr %0, ptr %1) #3 {
 entry:
   %var.path = alloca ptr, align 8
   %var.env = alloca ptr, align 8
@@ -7614,7 +7536,7 @@ or.199.exit:                                      ; preds = %or.199.else, %or.19
   ret i1 %or.199.phi
 }
 
-define ptr @"type_env::init_snapshot"(ptr %0) #0 {
+define ptr @"type_env::init_snapshot"(ptr %0) #3 {
 entry:
   %var._93 = alloca ptr, align 8
   %var._i92 = alloca i64, align 8
@@ -7992,7 +7914,7 @@ a.after155:                                       ; preds = %a.create154, %a.aft
   ret ptr %rec.alloc
 }
 
-define ptr @"type_env::init_snapshot_of"(ptr %0) #0 {
+define ptr @"type_env::init_snapshot_of"(ptr %0) #3 {
 entry:
   %var._90 = alloca ptr, align 8
   %var._i89 = alloca i64, align 8
@@ -8367,7 +8289,7 @@ a.after152:                                       ; preds = %a.create151, %a.aft
   ret ptr %rec.alloc
 }
 
-define void @"type_env::init_restore"(ptr %0, ptr %1) #0 {
+define void @"type_env::init_restore"(ptr %0, ptr %1) #3 {
 entry:
   %var.snap = alloca ptr, align 8
   %var.env = alloca ptr, align 8
@@ -8380,7 +8302,7 @@ entry:
   ret void
 }
 
-define ptr @"type_env::init_merge_two"(ptr %0, ptr %1) #0 {
+define ptr @"type_env::init_merge_two"(ptr %0, ptr %1) #3 {
 entry:
   %var._157 = alloca ptr, align 8
   %var._i156 = alloca i64, align 8
@@ -8896,7 +8818,7 @@ a.after226:                                       ; preds = %a.create225, %a.aft
   ret ptr %rec.alloc
 }
 
-define i1 @"type_env::init_is_fully_init"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"type_env::init_is_fully_init"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.path = alloca ptr, align 8
   %concat.str = alloca { i64, ptr }, align 8
@@ -9158,7 +9080,7 @@ or.212.exit:                                      ; preds = %or.212.else, %or.21
   br label %choice.exit7
 }
 
-define void @"type_env::bind_generic"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"type_env::bind_generic"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.gens = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -9251,7 +9173,7 @@ a.after16:                                        ; preds = %a.create15, %a.stor
   ret void
 }
 
-define { i1, i64 } @"type_env::lookup_generic_exact"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"type_env::lookup_generic_exact"(ptr %0, ptr %1) #3 {
 entry:
   %var.g = alloca ptr, align 8
   %var.i = alloca i64, align 8
@@ -9467,7 +9389,7 @@ choice.exit:                                      ; preds = %str.eq.merge
   br label %loop.latch.214
 }
 
-define { i1, i64 } @"type_env::lookup_generic"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"type_env::lookup_generic"(ptr %0, ptr %1) #3 {
 entry:
   %concat.str83 = alloca { i64, ptr }, align 8
   %var.p = alloca ptr, align 8
@@ -9694,7 +9616,7 @@ ret.dead87:                                       ; No predecessors!
   br label %choice.exit
 }
 
-define { i64, ptr } @"type_env::resolve_generic_name"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"type_env::resolve_generic_name"(ptr %0, ptr %1) #3 {
 entry:
   %var.priv_name = alloca ptr, align 8
   %concat.str81 = alloca { i64, ptr }, align 8
@@ -9930,7 +9852,7 @@ ret.dead92:                                       ; No predecessors!
   br label %choice.exit89
 }
 
-define void @"type_env::bind_user_type"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define void @"type_env::bind_user_type"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.uts = alloca ptr, align 8
   %var.ut = alloca ptr, align 8
@@ -10028,7 +9950,7 @@ a.after18:                                        ; preds = %a.create17, %a.stor
   ret void
 }
 
-define ptr @"type_env::lookup_user_type_exact"(ptr %0, ptr %1) #0 {
+define ptr @"type_env::lookup_user_type_exact"(ptr %0, ptr %1) #3 {
 entry:
   %var.u = alloca ptr, align 8
   %var.i = alloca i64, align 8
@@ -10240,7 +10162,7 @@ choice.exit:                                      ; preds = %str.eq.merge
   br label %loop.latch.219
 }
 
-define ptr @"type_env::lookup_user_type"(ptr %0, ptr %1) #0 {
+define ptr @"type_env::lookup_user_type"(ptr %0, ptr %1) #3 {
 entry:
   %var.pr = alloca ptr, align 8
   %var._90 = alloca ptr, align 8
@@ -10478,10 +10400,10 @@ ret.dead92:                                       ; No predecessors!
   br label %choice.exit89
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { nocallback nofree nounwind willreturn memory(argmem: write) }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { cold noreturn "nounwind" }

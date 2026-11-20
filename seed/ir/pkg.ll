@@ -4,88 +4,16 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@sys_argc_global = external global i64
-@sys_argv_global = external global ptr
 @"var.pkg::#tmp_seq" = global i64 0
 @"var.pkg::#cached_compiler_id" = global ptr null
 @"var.pkg::#cached_backend_id" = global ptr null
 @"var.pkg::hex_digits" = global ptr null
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
-@"var.io::STDIN" = external global i64
-@"var.io::STDOUT" = external global i64
-@"var.io::STDERR" = external global i64
-@"var.io::EOF" = external global i64
-@"var.io::EINTR" = external global i64
-@"var.io::EBADF" = external global i64
-@"var.io::EAGAIN" = external global i64
-@"var.io::EWOULDBLOCK" = external global i64
-@"var.sys::STDIN" = external global i64
-@"var.sys::STDOUT" = external global i64
-@"var.sys::STDERR" = external global i64
-@"var.sys::addr_null" = external global ptr
-@"var.path::SEP" = external global i32
-@"var.path::SEP_STR" = external global ptr
-@"var.path::LIST_SEP" = external global i32
-@"var.path::LIST_SEP_STR" = external global ptr
-@"var.path::IS_WIN" = external global i1
 @"var.version::VERSION" = external global ptr
 @"var.version::COMMIT_HASH" = external global ptr
-@"var.time::CLOCK_REALTIME" = external global i64
-@"var.time::CLOCK_MONOTONIC" = external global i64
-@"var.time::NS_PER_US" = external global i64
-@"var.time::NS_PER_MS" = external global i64
-@"var.time::NS_PER_SEC" = external global i64
-@"var.time::SEC_PER_MIN" = external global i64
-@"var.time::SEC_PER_HOUR" = external global i64
-@"var.time::SEC_PER_DAY" = external global i64
-@"var.log::#owned_fd" = external global i64
-@"var.log::#O_LOG_APPEND" = external global i64
-@str.0 = internal unnamed_addr constant [20 x i8] c"1.6.2+b332a91-dirty\00"
+@str.0 = internal unnamed_addr constant [20 x i8] c"1.6.2+4c117c9-dirty\00"
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 19, ptr @str.0 }
 @"var.pkg::lang_version" = global ptr null
 @b_byte_msg = internal unnamed_addr constant [58 x i8] c"E4007: Builder append byte out of range (must be 0..255)\0A\00"
@@ -143,7 +71,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.8.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.8 }
 @clo.const.17 = internal constant { ptr, ptr } { ptr @"pkg::#clean_pkg_name", ptr null }
 @"var.pkg::#clean_pkg_name" = global ptr null
-@clo.const.18 = internal constant { ptr, ptr } { ptr @"unicode::is_uax31$String", ptr null }
 @clo.const.19 = internal constant { ptr, ptr } { ptr @"pkg::#is_valid_identifier", ptr null }
 @"var.pkg::#is_valid_identifier" = global ptr null
 @clo.const.20 = internal constant { ptr, ptr } { ptr @"pkg::#is_sha_commit", ptr null }
@@ -1290,21 +1217,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.pkg::dispatch" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_pkg, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -1338,30 +1255,14 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
-
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
 declare i64 @dva_hash_string(ptr, i64)
 
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_pkg() #0 {
+define internal void @__dva_global_init_pkg() #3 {
 entry:
   store ptr @str.0.struct, ptr @"var.pkg::lang_version", align 8
   store ptr @clo.const, ptr @"var.pkg::#clean_semver", align 8
@@ -1510,166 +1411,22 @@ entry:
   ret void
 }
 
-declare i32 @open(ptr, i32)
-
-declare i64 @creat(ptr, i64)
-
-declare i32 @close(i32)
-
-declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @posix_spawnp(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @waitpid(i64, ptr, i64)
-
-declare i64 @read(i32, ptr, i64)
-
-declare i64 @lseek(i32, i64, i64)
-
 declare i64 @write(i32, ptr, i64)
-
-declare i64 @writev(i32, ptr, i64)
-
-declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
-
-declare i64 @htons(i64)
-
-declare i64 @htonl(i64)
-
-declare i64 @ntohs(i64)
-
-declare i64 @ntohl(i64)
-
-declare i64 @inet_addr(ptr)
-
-declare i64 @socket(i64, i64, i64)
-
-declare i64 @connect(i64, ptr, i64)
-
-declare i64 @bind(i64, ptr, i64)
-
-declare i64 @listen(i64, i64)
-
-declare i64 @accept(i64, ptr, ptr)
-
-declare i64 @send(i64, ptr, i64, i32)
-
-declare i64 @recv(i64, ptr, i64, i32)
-
-declare i64 @sendto(i64, ptr, i64, i32, ptr, i64)
-
-declare i64 @recvfrom(i64, ptr, i64, i32, ptr, ptr)
-
-declare i64 @setsockopt(i64, i64, i64, ptr, i64)
-
-declare i64 @getsockopt(i64, i64, i64, ptr, ptr)
-
-declare i64 @getpeername(i64, ptr, ptr)
-
-declare i64 @getsockname(i64, ptr, ptr)
-
-declare i64 @shutdown(i64, i64)
-
-declare i64 @fcntl(i32, i64, i64)
-
-declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
-
-declare void @freeaddrinfo(ptr)
-
-declare i64 @getifaddrs(ptr)
-
-declare void @freeifaddrs(ptr)
-
-declare ptr @memset(ptr, i64, i64)
-
-declare i64 @atoi(ptr)
-
-declare ptr @opendir(ptr)
-
-declare ptr @readdir(ptr)
-
-declare i64 @closedir(ptr)
-
-declare i64 @strlen(ptr) #0
-
-declare i64 @strcmp(ptr, ptr)
-
-declare ptr @memcpy(ptr, ptr, i64)
-
-declare ptr @memmove(ptr, ptr, i64)
-
-declare i64 @stat(ptr, ptr)
-
-declare i64 @fstat(i32, ptr)
 
 declare i64 @rename(ptr, ptr)
 
 declare i64 @unlink(ptr)
 
-declare i64 @pipe(ptr)
-
-declare ptr @__errno_location()
-
-declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
-
-declare i64 @munmap(ptr, i64)
-
-declare i64 @syscall(i64, ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @dlopen(ptr, i32)
-
-declare ptr @dlsym(ptr, ptr)
-
-declare i64 @dlclose(ptr)
-
-declare ptr @dlerror()
-
 declare i64 @system(ptr)
-
-declare ptr @realpath(ptr, ptr)
-
-declare i64 @isatty(i32)
-
-declare i64 @tcgetattr(i32, ptr)
-
-declare i64 @tcsetattr(i32, i64, ptr)
-
-declare void @cfmakeraw(ptr)
-
-declare i64 @poll(ptr, i64, i64)
-
-declare i64 @epoll_create1(i32)
-
-declare i64 @epoll_ctl(i64, i64, i32, ptr)
-
-declare i64 @epoll_wait(i64, ptr, i64, i64)
-
-declare i64 @time(ptr)
-
-declare ptr @signal(i64, ptr)
-
-declare i64 @raise(i64)
-
-declare i64 @getrlimit(i64, ptr)
-
-declare i64 @setrlimit(i64, ptr)
-
-declare i64 @uname(ptr)
-
-declare i32 @nanosleep(ptr, ptr)
-
-declare ptr @localtime_r(ptr, ptr)
-
-declare ptr @strptime(ptr, ptr, ptr)
 
 declare i64 @getpid()
 
 declare ptr @getenv(ptr)
 
-define internal { i64, ptr } @"pkg::#clean_semver"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#clean_semver"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca i64, align 8
@@ -1878,7 +1635,7 @@ abort.dead:                                       ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #6
 
-define internal void @"pkg::#out"(ptr %0) #0 {
+define internal void @"pkg::#out"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -1975,7 +1732,7 @@ abort.dead23:                                     ; No predecessors!
   br label %nulcopy.len21
 }
 
-define internal i1 @"pkg::#fail"(i64 %0, ptr %1) #0 {
+define internal i1 @"pkg::#fail"(i64 %0, ptr %1) #3 {
 entry:
   %cat.ibuf = alloca [24 x i8], align 1
   %var.msg = alloca ptr, align 8
@@ -2068,7 +1825,7 @@ abort.dead24:                                     ; No predecessors!
   br label %concat.tot.len22
 }
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -2132,9 +1889,9 @@ done:                                             ; preds = %copyloop
   ret i64 %fmt.tot
 }
 
-declare void @"log::error"(ptr) #0
+declare void @"log::error"(ptr) #3
 
-define internal { i64, ptr } @"pkg::#getenv_opt"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#getenv_opt"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -2252,11 +2009,11 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare { i1, i64 } @"sys::addr_opt"(ptr) #0
+declare { i1, i64 } @"sys::addr_opt"(ptr) #3
 
-declare { i64, ptr } @"sys::c_str"(ptr) #0
+declare { i64, ptr } @"sys::c_str"(ptr) #3
 
-define internal { i64, ptr } @"pkg::#env_or"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#env_or"(ptr %0, ptr %1) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -2344,9 +2101,9 @@ choice.exit9:                                     ; preds = %choice.else8, %choi
   ret { i64, ptr } %ret.pack
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define internal i1 @"pkg::#file_exists"(ptr %0) #0 {
+define internal i1 @"pkg::#file_exists"(ptr %0) #3 {
 entry:
   %var.path = alloca ptr, align 8
   store ptr %0, ptr %var.path, align 8
@@ -2368,11 +2125,11 @@ and.261.exit:                                     ; preds = %and.261.else, %and.
   ret i1 %and.261.phi
 }
 
-declare i1 @"fs::exists"(ptr) #0
+declare i1 @"fs::exists"(ptr) #3
 
-declare i1 @"fs::is_dir"(ptr) #0
+declare i1 @"fs::is_dir"(ptr) #3
 
-define internal i1 @"pkg::#dir_exists"(ptr %0) #0 {
+define internal i1 @"pkg::#dir_exists"(ptr %0) #3 {
 entry:
   %var.path = alloca ptr, align 8
   store ptr %0, ptr %var.path, align 8
@@ -2381,7 +2138,7 @@ entry:
   ret i1 %call.res
 }
 
-define internal { i64, ptr } @"pkg::#path_join"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#path_join"(ptr %0, ptr %1) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.b = alloca ptr, align 8
@@ -2396,9 +2153,9 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-declare { i64, ptr } @"path::join"(ptr, ptr) #0
+declare { i64, ptr } @"path::join"(ptr, ptr) #3
 
-define internal { i64, ptr } @"pkg::#dirname"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#dirname"(ptr %0) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.p = alloca ptr, align 8
@@ -2410,9 +2167,9 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-declare { i64, ptr } @"path::dirname"(ptr) #0
+declare { i64, ptr } @"path::dirname"(ptr) #3
 
-define internal { i64, ptr } @"pkg::#canonical_path"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#canonical_path"(ptr %0) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.p = alloca ptr, align 8
@@ -2424,9 +2181,9 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-declare { i64, ptr } @"fs::resolve"(ptr) #0
+declare { i64, ptr } @"fs::resolve"(ptr) #3
 
-define internal i1 @"pkg::#mkdir_p"(ptr %0) #0 {
+define internal i1 @"pkg::#mkdir_p"(ptr %0) #3 {
 entry:
   %var.path = alloca ptr, align 8
   store ptr %0, ptr %var.path, align 8
@@ -2435,9 +2192,9 @@ entry:
   ret i1 %call.res
 }
 
-declare i1 @"fs::create_dir_all"(ptr) #0
+declare i1 @"fs::create_dir_all"(ptr) #3
 
-define internal { i64, ptr } @"pkg::#read_text"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#read_text"(ptr %0) #3 {
 entry:
   %ret.niche.salloc = alloca { i64, ptr }, align 8
   %var.path = alloca ptr, align 8
@@ -2460,9 +2217,9 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %en
   ret { i64, ptr } %ret.niche.pack
 }
 
-declare { i64, ptr } @"fs::read_to_string"(ptr) #0
+declare { i64, ptr } @"fs::read_to_string"(ptr) #3
 
-define internal i1 @"pkg::#write_text"(ptr %0, ptr %1) #0 {
+define internal i1 @"pkg::#write_text"(ptr %0, ptr %1) #3 {
 entry:
   %var.ok = alloca i1, align 1
   %var.tmp = alloca ptr, align 8
@@ -2615,13 +2372,13 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit
 }
 
-declare i1 @"fs::write_file"(ptr, ptr) #0
+declare i1 @"fs::write_file"(ptr, ptr) #3
 
-declare i1 @"fs::remove"(ptr) #0
+declare i1 @"fs::remove"(ptr) #3
 
-declare i1 @"fs::rename_path"(ptr, ptr) #0
+declare i1 @"fs::rename_path"(ptr, ptr) #3
 
-define internal { i64, ptr } @"pkg::#trim"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#trim"(ptr %0) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.c44 = alloca i64, align 8
@@ -2900,7 +2657,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define internal i1 @"pkg::#starts_with"(ptr %0, ptr %1) #0 {
+define internal i1 @"pkg::#starts_with"(ptr %0, ptr %1) #3 {
 entry:
   %var.p = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -2974,7 +2731,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %and.270.exit
 }
 
-define internal i1 @"pkg::#ends_with"(ptr %0, ptr %1) #0 {
+define internal i1 @"pkg::#ends_with"(ptr %0, ptr %1) #3 {
 entry:
   %var.suf = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -3054,7 +2811,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %and.271.exit
 }
 
-define internal { i64, ptr } @"pkg::#basename"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#basename"(ptr %0) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.p = alloca ptr, align 8
@@ -3066,9 +2823,9 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-declare { i64, ptr } @"path::basename"(ptr) #0
+declare { i64, ptr } @"path::basename"(ptr) #3
 
-define internal { i64, ptr } @"pkg::#clean_pkg_name"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#clean_pkg_name"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %var.c0 = alloca i64, align 8
@@ -3610,15 +3367,15 @@ abort.dead177:                                    ; No predecessors!
   br label %concat.tot.len175
 }
 
-declare i1 @"ascii::is_upper"(i64) #0
+declare i1 @"ascii::is_upper"(i64) #3
 
-declare i64 @"ascii::to_lower"(i64) #0
+declare i64 @"ascii::to_lower"(i64) #3
 
-declare i1 @"ascii::is_lower"(i64) #0
+declare i1 @"ascii::is_lower"(i64) #3
 
-declare i1 @"ascii::is_digit"(i64) #0
+declare i1 @"ascii::is_digit"(i64) #3
 
-define internal i1 @"pkg::#is_valid_identifier"(ptr %0) #0 {
+define internal i1 @"pkg::#is_valid_identifier"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -3627,7 +3384,7 @@ entry:
   ret i1 %call.res
 }
 
-define internal i1 @"unicode::is_uax31$String"(ptr %0) #0 {
+define internal i1 @"unicode::is_uax31$String"(ptr %0) #3 {
 entry:
   %var.r = alloca i32, align 4
   %var._ = alloca i64, align 8
@@ -3814,15 +3571,15 @@ ret.dead57:                                       ; No predecessors!
   br label %choice.exit56
 }
 
-declare i64 @"utf::seq_len"(i64) #0
+declare i64 @"utf::seq_len"(i64) #3
 
-declare i32 @"utf::decode_rune_addr"(ptr, i64) #0
+declare i32 @"utf::decode_rune_addr"(ptr, i64) #3
 
-declare i1 @"unicode::is_id_start"(i32) #0
+declare i1 @"unicode::is_id_start"(i32) #3
 
-declare i1 @"unicode::is_id_continue"(i32) #0
+declare i1 @"unicode::is_id_continue"(i32) #3
 
-define internal i1 @"pkg::#is_sha_commit"(ptr %0) #0 {
+define internal i1 @"pkg::#is_sha_commit"(ptr %0) #3 {
 entry:
   %var.c = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -3910,9 +3667,9 @@ choice.exit10:                                    ; preds = %idx_ok
   br label %loop.latch.276
 }
 
-declare i1 @"ascii::is_hex"(i64) #0
+declare i1 @"ascii::is_hex"(i64) #3
 
-define internal { i64, ptr } @"pkg::#pkg_base_name"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#pkg_base_name"(ptr %0) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var._ = alloca i64, align 8
@@ -4019,7 +3776,7 @@ choice.exit9:                                     ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define internal ptr @"pkg::#split_char"(ptr %0, i64 %1) #0 {
+define internal ptr @"pkg::#split_char"(ptr %0, i64 %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -4394,7 +4151,7 @@ a.after107:                                       ; preds = %a.create106, %a.sto
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #6
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -4442,7 +4199,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #5 {
@@ -4455,7 +4212,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define internal { i64, ptr } @"pkg::#sq"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#sq"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca i64, align 8
@@ -4827,7 +4584,7 @@ abort.dead104:                                    ; No predecessors!
   br label %b.new.buf.len102
 }
 
-define internal i64 @"pkg::#sh"(ptr %0) #0 {
+define internal i64 @"pkg::#sh"(ptr %0) #3 {
 entry:
   %var.st = alloca i64, align 8
   %var.cmd = alloca ptr, align 8
@@ -4888,7 +4645,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit
 }
 
-define internal { i64, ptr } @"pkg::#relpath"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#relpath"(ptr %0, ptr %1) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.to = alloca ptr, align 8
@@ -4903,9 +4660,9 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-declare { i64, ptr } @"path::rel"(ptr, ptr) #0
+declare { i64, ptr } @"path::rel"(ptr, ptr) #3
 
-define internal { i64, ptr } @"pkg::#fnv_hex"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#fnv_hex"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.nib = alloca i64, align 8
@@ -5113,9 +4870,9 @@ abort.dead25:                                     ; No predecessors!
   br label %b.new.buf.len23
 }
 
-declare i64 @"ascii::hex_char_lower"(i64) #0
+declare i64 @"ascii::hex_char_lower"(i64) #3
 
-define internal i1 @"pkg::#names_has"(ptr %0, ptr %1) #0 {
+define internal i1 @"pkg::#names_has"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -5218,7 +4975,7 @@ choice.exit:                                      ; preds = %str.eq.merge
   br label %loop.latch.282
 }
 
-define internal ptr @"pkg::#add_unique"(ptr %0, ptr %1) #0 {
+define internal ptr @"pkg::#add_unique"(ptr %0, ptr %1) #3 {
 entry:
   %var.out = alloca ptr, align 8
   %var.x = alloca ptr, align 8
@@ -5367,7 +5124,7 @@ a.after43:                                        ; preds = %a.create42, %choice
   ret ptr %a.load251
 }
 
-define internal i1 @"pkg::#version_lt"(ptr %0, ptr %1) #0 {
+define internal i1 @"pkg::#version_lt"(ptr %0, ptr %1) #3 {
 entry:
   %var.vb = alloca i64, align 8
   %var.p306 = alloca ptr, align 8
@@ -6019,9 +5776,9 @@ choice.exit315:                                   ; preds = %choice.exit304
   br label %loop.latch.283
 }
 
-declare ptr @"str::to_int"(ptr) #0
+declare ptr @"str::to_int"(ptr) #3
 
-define i1 @"pkg::is_valid_alias"(ptr %0) #0 {
+define i1 @"pkg::is_valid_alias"(ptr %0) #3 {
 entry:
   %var.is_cont = alloca i1, align 1
   %var.c = alloca i64, align 8
@@ -6264,7 +6021,7 @@ choice.exit56:                                    ; preds = %or.291.exit
   br label %loop.latch.287
 }
 
-define i1 @"pkg::is_valid_package_name"(ptr %0) #0 {
+define i1 @"pkg::is_valid_package_name"(ptr %0) #3 {
 entry:
   %var.c = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -6449,7 +6206,7 @@ choice.exit42:                                    ; preds = %choice.exit31
   br label %loop.latch.293
 }
 
-define i1 @"pkg::is_valid_version"(ptr %0) #0 {
+define i1 @"pkg::is_valid_version"(ptr %0) #3 {
 entry:
   %var.c = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -6610,7 +6367,7 @@ and.299.exit:                                     ; preds = %and.299.else, %and.
   br label %choice.exit
 }
 
-define ptr @"pkg::sort_deps"(ptr %0) #0 {
+define ptr @"pkg::sort_deps"(ptr %0) #3 {
 entry:
   %var._316 = alloca ptr, align 8
   %var._315 = alloca ptr, align 8
@@ -7442,17 +7199,13 @@ a.after353:                                       ; preds = %a.create352, %loop.
   br label %choice.exit
 }
 
-declare i64 @"str::cmp"(ptr, ptr) #0
-
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
+declare i64 @"str::cmp"(ptr, ptr) #3
 
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-define { i1, i64 } @"pkg::validate_dep"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"pkg::validate_dep"(ptr %0, ptr %1) #3 {
 entry:
   %var._816 = alloca ptr, align 8
   %var.h = alloca ptr, align 8
@@ -9041,13 +8794,13 @@ abort.dead843:                                    ; No predecessors!
   br label %concat.tot.len841
 }
 
-declare ptr @"ccl::ccl_error"(ptr, ptr, i64, i64) #0
+declare ptr @"ccl::ccl_error"(ptr, ptr, i64, i64) #3
 
-declare i1 @"ccl::has"(ptr, ptr) #0
+declare i1 @"ccl::has"(ptr, ptr) #3
 
-declare { i64, ptr } @"ccl::get"(ptr, ptr) #0
+declare { i64, ptr } @"ccl::get"(ptr, ptr) #3
 
-define ptr @"pkg::split_words_ccl"(ptr %0) #0 {
+define ptr @"pkg::split_words_ccl"(ptr %0) #3 {
 entry:
   %var._11 = alloca i64, align 8
   %var._i10 = alloca i64, align 8
@@ -9282,11 +9035,11 @@ a.after45:                                        ; preds = %a.create44, %loop.e
   ret ptr %a.load253
 }
 
-declare i64 @"ccl::trim_left_idx"(ptr, i64) #0
+declare i64 @"ccl::trim_left_idx"(ptr, i64) #3
 
-declare i1 @"ccl::is_space"(i64) #0
+declare i1 @"ccl::is_space"(i64) #3
 
-define { i1, i64 } @"pkg::validate_target"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"pkg::validate_target"(ptr %0, ptr %1) #3 {
 entry:
   %var._410 = alloca ptr, align 8
   %var.cstr = alloca ptr, align 8
@@ -10210,9 +9963,9 @@ abort.dead437:                                    ; No predecessors!
   br label %concat.tot.len435
 }
 
-declare { i1, i64 } @"ccl::get_list"(ptr, ptr) #0
+declare { i1, i64 } @"ccl::get_list"(ptr, ptr) #3
 
-define { i1, i64 } @"pkg::validate_generate"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"pkg::validate_generate"(ptr %0, ptr %1) #3 {
 entry:
   %var._353 = alloca ptr, align 8
   %var.out_p = alloca ptr, align 8
@@ -11030,7 +10783,7 @@ abort.dead380:                                    ; No predecessors!
   br label %concat.tot.len378
 }
 
-define { i1, i64 } @"pkg::validate_manifest"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"pkg::validate_manifest"(ptr %0, ptr %1) #3 {
 entry:
   %var.e1187 = alloca ptr, align 8
   %var._1186 = alloca ptr, align 8
@@ -13535,13 +13288,13 @@ a.after1273:                                      ; preds = %a.create1272, %a.af
   br label %choice.exit1194
 }
 
-declare i64 @"ccl::count"(ptr, ptr) #0
+declare i64 @"ccl::count"(ptr, ptr) #3
 
-declare { i1, i64 } @"ccl::get_section"(ptr, ptr) #0
+declare { i1, i64 } @"ccl::get_section"(ptr, ptr) #3
 
-declare ptr @"ccl::sort_strings"(ptr) #0
+declare ptr @"ccl::sort_strings"(ptr) #3
 
-define { i64, ptr } @"pkg::manifest_to_ccl"(ptr %0) #0 {
+define { i64, ptr } @"pkg::manifest_to_ccl"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._3757 = alloca ptr, align 8
@@ -20071,7 +19824,7 @@ abort.dead3877:                                   ; No predecessors!
   br label %b.new.buf.len23875
 }
 
-define ptr @"pkg::sort_lock_packages"(ptr %0) #0 {
+define ptr @"pkg::sort_lock_packages"(ptr %0) #3 {
 entry:
   %var._347 = alloca ptr, align 8
   %var._346 = alloca ptr, align 8
@@ -20955,7 +20708,7 @@ a.after384:                                       ; preds = %a.create383, %loop.
   br label %choice.exit
 }
 
-define ptr @"pkg::sort_lock_deps"(ptr %0) #0 {
+define ptr @"pkg::sort_lock_deps"(ptr %0) #3 {
 entry:
   %var._299 = alloca ptr, align 8
   %var._298 = alloca ptr, align 8
@@ -21751,7 +21504,7 @@ a.after336:                                       ; preds = %a.create335, %loop.
   br label %choice.exit
 }
 
-define { i1, i64 } @"pkg::validate_lockfile"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"pkg::validate_lockfile"(ptr %0, ptr %1) #3 {
 entry:
   %var.sid575 = alloca ptr, align 8
   %var._574 = alloca ptr, align 8
@@ -23110,7 +22863,7 @@ a.after639:                                       ; preds = %a.create638, %a.aft
   br label %choice.exit617
 }
 
-define { i64, ptr } @"pkg::lockfile_to_ccl"(ptr %0) #0 {
+define { i64, ptr } @"pkg::lockfile_to_ccl"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._1687 = alloca ptr, align 8
@@ -26409,7 +26162,7 @@ abort.dead1898:                                   ; No predecessors!
   br label %b.new.buf.len21896
 }
 
-define internal ptr @"pkg::#empty_lock_pkg"() #0 {
+define internal ptr @"pkg::#empty_lock_pkg"() #3 {
 entry:
   %var.deps = alloca ptr, align 8
   store ptr null, ptr %var.deps, align 8
@@ -26465,7 +26218,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %rec.alloc
 }
 
-define internal { i64, ptr } @"pkg::#tmp_path"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#tmp_path"(ptr %0) #3 {
 entry:
   %cat.ibuf14 = alloca [24 x i8], align 1
   %cat.ibuf = alloca [24 x i8], align 1
@@ -26566,7 +26319,7 @@ abort.dead27:                                     ; No predecessors!
   br label %concat.tot.len25
 }
 
-define internal { i64, ptr } @"pkg::#capture"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#capture"(ptr %0, ptr %1) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -26811,7 +26564,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-define internal { i64, ptr } @"pkg::#git_cmd"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#git_cmd"(ptr %0, ptr %1) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %ret.ub.salloc9 = alloca { i64, ptr }, align 8
@@ -26932,7 +26685,7 @@ abort.dead39:                                     ; No predecessors!
   br label %concat.tot.len37
 }
 
-define internal { i64, ptr } @"pkg::#mirror_dir"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#mirror_dir"(ptr %0, ptr %1) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.url = alloca ptr, align 8
@@ -26958,7 +26711,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define internal ptr @"pkg::#load_manifest"(ptr %0) #0 {
+define internal ptr @"pkg::#load_manifest"(ptr %0) #3 {
 entry:
   %var.e70 = alloca ptr, align 8
   %var._69 = alloca ptr, align 8
@@ -27140,9 +26893,9 @@ abort.dead57:                                     ; No predecessors!
   br label %concat.tot.len55
 }
 
-declare { i1, i64 } @"ccl::parse_file"(ptr) #0
+declare { i1, i64 } @"ccl::parse_file"(ptr) #3
 
-define internal i1 @"pkg::#ensure_mirror"(ptr %0, ptr %1, ptr %2) #0 {
+define internal i1 @"pkg::#ensure_mirror"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.rc = alloca i64, align 8
   %var.tmp = alloca ptr, align 8
@@ -28278,7 +28031,7 @@ or.359.exit:                                      ; preds = %or.359.else, %or.35
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
 declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #8
 
-define internal void @"pkg::#fetch_mirror"(ptr %0, ptr %1) #0 {
+define internal void @"pkg::#fetch_mirror"(ptr %0, ptr %1) #3 {
 entry:
   %ret.ub.salloc224 = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -28864,7 +28617,7 @@ abort.dead248:                                    ; No predecessors!
   br label %concat.tot.len246
 }
 
-define internal i1 @"pkg::#has_commit"(ptr %0, ptr %1, ptr %2) #0 {
+define internal i1 @"pkg::#has_commit"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %ret.ub.salloc24 = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -29023,7 +28776,7 @@ abort.dead53:                                     ; No predecessors!
   br label %concat.tot.len51
 }
 
-define internal { i64, ptr } @"pkg::#rev_parse"(ptr %0, ptr %1, ptr %2) #0 {
+define internal { i64, ptr } @"pkg::#rev_parse"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.c2 = alloca ptr, align 8
   %var._179 = alloca ptr, align 8
@@ -29554,7 +29307,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-define internal { i64, ptr } @"pkg::#resolve_commit"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define internal { i64, ptr } @"pkg::#resolve_commit"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.c962 = alloca ptr, align 8
   %var._961 = alloca ptr, align 8
@@ -31914,9 +31667,9 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-declare { i64, ptr } @"diag::locked_manifest_stale_prefix"() #0
+declare { i64, ptr } @"diag::locked_manifest_stale_prefix"() #3
 
-define internal i1 @"pkg::#check_tree_security"(ptr %0, ptr %1) #0 {
+define internal i1 @"pkg::#check_tree_security"(ptr %0, ptr %1) #3 {
 entry:
   %var.cmd = alloca ptr, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -32099,7 +31852,7 @@ abort.dead59:                                     ; No predecessors!
   br label %concat.tot.len57
 }
 
-define internal { i64, ptr } @"pkg::#compute_tree_hash"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#compute_tree_hash"(ptr %0, ptr %1) #3 {
 entry:
   %var.h = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -32953,7 +32706,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-define internal ptr @"pkg::#checkout_git"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define internal ptr @"pkg::#checkout_git"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.ren_rc = alloca i64, align 8
   %var.target = alloca ptr, align 8
@@ -35614,11 +35367,11 @@ abort.dead1456:                                   ; No predecessors!
   br label %concat.tot.len1454
 }
 
-declare { i64, ptr } @"diag::repository_illegal_path_suffix"() #0
+declare { i64, ptr } @"diag::repository_illegal_path_suffix"() #3
 
-declare { i64, ptr } @"diag::vendor_tree_mismatch_prefix"() #0
+declare { i64, ptr } @"diag::vendor_tree_mismatch_prefix"() #3
 
-define internal { i64, ptr } @"pkg::#archive_root"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#archive_root"(ptr %0, ptr %1) #3 {
 entry:
   %var.only = alloca ptr, align 8
   %var._55 = alloca ptr, align 8
@@ -35910,7 +35663,7 @@ choice.exit78:                                    ; preds = %choice.else77, %cho
   br label %choice.exit26
 }
 
-define internal { i64, ptr } @"pkg::#fetch_archive"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define internal { i64, ptr } @"pkg::#fetch_archive"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.store_dir = alloca ptr, align 8
   %var.expected_hash = alloca ptr, align 8
@@ -37068,9 +36821,9 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-declare { i64, ptr } @"diag::archive_illegal_path_suffix"() #0
+declare { i64, ptr } @"diag::archive_illegal_path_suffix"() #3
 
-define internal { i64, ptr } @"pkg::#download_archive"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define internal { i64, ptr } @"pkg::#download_archive"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.ren_rc = alloca i64, align 8
   %var.mrc = alloca i64, align 8
@@ -39561,7 +39314,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-define internal { i64, ptr } @"pkg::#source_base"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#source_base"(ptr %0, ptr %1) #3 {
 entry:
   %concat.str86 = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -39760,7 +39513,7 @@ abort.dead81:                                     ; No predecessors!
   br label %concat.tot.len79
 }
 
-define internal ptr @"pkg::#fetch_dep"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define internal ptr @"pkg::#fetch_dep"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %var.id1985 = alloca ptr, align 8
   %var.pkg1895 = alloca ptr, align 8
@@ -43262,7 +43015,7 @@ abort.dead2049:                                   ; No predecessors!
   br label %concat.tot.len2047
 }
 
-define internal ptr @"pkg::#fetch_path"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4) #0 {
+define internal ptr @"pkg::#fetch_path"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4) #3 {
 entry:
   %var.pkg = alloca ptr, align 8
   %var.tree_hash = alloca ptr, align 8
@@ -44660,7 +44413,7 @@ abort.dead706:                                    ; No predecessors!
   br label %concat.tot.len704
 }
 
-define internal i1 @"pkg::#is_lib_file_path"(ptr %0) #0 {
+define internal i1 @"pkg::#is_lib_file_path"(ptr %0) #3 {
 entry:
   %var.l = alloca ptr, align 8
   store ptr %0, ptr %var.l, align 8
@@ -44741,7 +44494,7 @@ or.385.exit:                                      ; preds = %or.385.else, %or.38
   ret i1 %or.385.phi
 }
 
-define internal i1 @"pkg::#check_manifest"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define internal i1 @"pkg::#check_manifest"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %concat.str188 = alloca { i64, ptr }, align 8
   %var._68 = alloca ptr, align 8
@@ -45206,9 +44959,9 @@ abort.dead172:                                    ; No predecessors!
   br label %concat.tot.len170
 }
 
-declare void @"log::warn"(ptr) #0
+declare void @"log::warn"(ptr) #3
 
-define internal { i64, ptr } @"pkg::#cycle_chain"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#cycle_chain"(ptr %0, ptr %1) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca ptr, align 8
@@ -45576,7 +45329,7 @@ abort.dead117:                                    ; No predecessors!
   br label %b.new.buf.len2115
 }
 
-define internal { i64, ptr } @"pkg::#resolve_dep"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define internal { i64, ptr } @"pkg::#resolve_dep"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %var.prev_key = alloca ptr, align 8
   %var._133 = alloca ptr, align 8
@@ -46217,7 +45970,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-define internal { i64, ptr } @"pkg::#resolve_node"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#resolve_node"(ptr %0, ptr %1) #3 {
 entry:
   %var._128 = alloca ptr, align 8
   %var._125 = alloca ptr, align 8
@@ -47239,7 +46992,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-define internal i64 @"pkg::#run_generators"(ptr %0, ptr %1, ptr %2) #0 {
+define internal i64 @"pkg::#run_generators"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %cat.ibuf = alloca [24 x i8], align 1
   %var.step_rc = alloca i64, align 8
@@ -48476,7 +48229,7 @@ abort.dead622:                                    ; No predecessors!
   br label %concat.tot.len620
 }
 
-define internal { i1, ptr, i64 } @"pkg::#expand_generate_cmd"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define internal { i1, ptr, i64 } @"pkg::#expand_generate_cmd"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.is_s_out = alloca i1, align 1
   %var.is_s_src = alloca i1, align 1
@@ -50028,7 +49781,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i1, ptr, i64 } %ret.pack
 }
 
-define internal i1 @"pkg::#is_var_cont"(i64 %0) #0 {
+define internal i1 @"pkg::#is_var_cont"(i64 %0) #3 {
 entry:
   %var.c = alloca i64, align 8
   store i64 %0, ptr %var.c, align 8
@@ -50088,7 +49841,7 @@ and.407.exit:                                     ; preds = %and.407.else, %and.
   br i1 %case.or9, label %choice.case, label %choice.next
 }
 
-define internal ptr @"pkg::#resolve_dep_tool_bin"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define internal ptr @"pkg::#resolve_dep_tool_bin"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var._855 = alloca ptr, align 8
   %var.out_ovr = alloca ptr, align 8
@@ -51741,7 +51494,7 @@ abort.dead826:                                    ; No predecessors!
   br label %concat.tot.len824
 }
 
-define internal i64 @"pkg::#run_fetch"(ptr %0) #0 {
+define internal i64 @"pkg::#run_fetch"(ptr %0) #3 {
 entry:
   %var.e = alloca ptr, align 8
   %var._37 = alloca ptr, align 8
@@ -51864,7 +51617,7 @@ choice.exit29:                                    ; preds = %choice.else28, %cho
   br label %choice.exit
 }
 
-define internal { i1, i64 } @"pkg::#read_lock"(ptr %0) #0 {
+define internal { i1, i64 } @"pkg::#read_lock"(ptr %0) #3 {
 entry:
   %var.e = alloca ptr, align 8
   %var._6 = alloca ptr, align 8
@@ -51902,7 +51655,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define internal i64 @"pkg::#resolve_root"(ptr %0, ptr %1, i1 %2) #0 {
+define internal i64 @"pkg::#resolve_root"(ptr %0, ptr %1, i1 %2) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._1210 = alloca ptr, align 8
@@ -53975,7 +53728,7 @@ choice.exit1209:                                  ; preds = %choice.else1208, %c
   br label %choice.exit
 }
 
-define internal i1 @"pkg::#load_vendor_map"(ptr %0) #0 {
+define internal i1 @"pkg::#load_vendor_map"(ptr %0) #3 {
 entry:
   %var._3942 = alloca ptr, align 8
   %concat.str = alloca { i64, ptr }, align 8
@@ -59935,7 +59688,7 @@ mk.eq.merge3899:                                  ; preds = %mk.eq.else3898, %mk
   br i1 %mk.eq3906, label %m.overwrite3873, label %m.next3874
 }
 
-define internal i1 @"pkg::#has_root_dep"(ptr %0, ptr %1, ptr %2) #0 {
+define internal i1 @"pkg::#has_root_dep"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -60079,7 +59832,7 @@ choice.exit:                                      ; preds = %and.422.exit
   br label %loop.latch.421
 }
 
-define internal i64 @"pkg::#resolve_with_root"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define internal i64 @"pkg::#resolve_with_root"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %var._97 = alloca ptr, align 8
   %var._i96 = alloca i64, align 8
@@ -60720,7 +60473,7 @@ a.after233:                                       ; preds = %a.create232, %choic
   br label %choice.exit224
 }
 
-define internal i1 @"pkg::#install_overrides"(ptr %0, ptr %1) #0 {
+define internal i1 @"pkg::#install_overrides"(ptr %0, ptr %1) #3 {
 entry:
   %var.base = alloca ptr, align 8
   %var._259 = alloca ptr, align 8
@@ -62637,7 +62390,7 @@ mk.eq.merge1129:                                  ; preds = %mk.eq.else1128, %mk
   br i1 %mk.eq1136, label %m.overwrite1103, label %m.next1104
 }
 
-define internal i1 @"pkg::#dep_matches_target"(ptr %0, ptr %1) #0 {
+define internal i1 @"pkg::#dep_matches_target"(ptr %0, ptr %1) #3 {
 entry:
   %var.is_wasm_active = alloca i1, align 1
   %var.parts = alloca ptr, align 8
@@ -62976,7 +62729,7 @@ ret.dead149:                                      ; No predecessors!
   br label %choice.exit147
 }
 
-define internal i64 @"pkg::#write_outputs"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4) #0 {
+define internal i64 @"pkg::#write_outputs"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4) #3 {
 entry:
   %cat.ibuf = alloca [24 x i8], align 1
   %var.n = alloca i64, align 8
@@ -64531,7 +64284,7 @@ abort.dead781:                                    ; No predecessors!
   br label %concat.tot.len779
 }
 
-define internal ptr @"pkg::#lock_pkgs"(ptr %0) #0 {
+define internal ptr @"pkg::#lock_pkgs"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -64648,7 +64401,7 @@ a.after15:                                        ; preds = %a.create14, %loop.e
   ret ptr %a.load223
 }
 
-define internal { i64, ptr } @"pkg::#lock_change"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#lock_change"(ptr %0, ptr %1) #3 {
 entry:
   %var._162 = alloca ptr, align 8
   %var._i161 = alloca i64, align 8
@@ -65122,7 +64875,7 @@ choice.exit211:                                   ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define internal { i64, ptr } @"pkg::#lock_dep_id"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#lock_dep_id"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -65246,7 +64999,7 @@ choice.exit:                                      ; preds = %str.eq.merge
   br label %loop.latch.439
 }
 
-define internal i1 @"pkg::#lock_has_pkg"(ptr %0, ptr %1) #0 {
+define internal i1 @"pkg::#lock_has_pkg"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -65351,7 +65104,7 @@ choice.exit:                                      ; preds = %str.eq.merge
   br label %loop.latch.444
 }
 
-define internal { i64, ptr } @"pkg::#import_map_text"(ptr %0, ptr %1, ptr %2) #0 {
+define internal { i64, ptr } @"pkg::#import_map_text"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.is_wasm = alloca i1, align 1
@@ -65398,7 +65151,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret { i64, ptr } %ret.pack
 }
 
-define internal { i64, ptr } @"pkg::#import_map_text_for_target"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define internal { i64, ptr } @"pkg::#import_map_text_for_target"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._682 = alloca ptr, align 8
@@ -66930,7 +66683,7 @@ abort.dead802:                                    ; No predecessors!
   br label %b.new.buf.len2800
 }
 
-define internal { i64, ptr } @"pkg::#inst_section"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define internal { i64, ptr } @"pkg::#inst_section"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca ptr, align 8
@@ -68164,7 +67917,7 @@ abort.dead644:                                    ; No predecessors!
   br label %b.new.buf.len2642
 }
 
-define internal ptr @"pkg::#filter_root_deps_for_target"(ptr %0, ptr %1, ptr %2) #0 {
+define internal ptr @"pkg::#filter_root_deps_for_target"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var._35 = alloca ptr, align 8
   %var._i34 = alloca i64, align 8
@@ -68426,9 +68179,9 @@ a.after76:                                        ; preds = %a.create75, %loop.e
   ret ptr %a.load284
 }
 
-declare void @"log::info"(ptr) #0
+declare void @"log::info"(ptr) #3
 
-define { i64, ptr } @"pkg::default_cache"() #0 {
+define { i64, ptr } @"pkg::default_cache"() #3 {
 entry:
   %var.xdg = alloca ptr, align 8
   %call.res = call { i64, ptr } @"pkg::#env_or"(ptr @str.264.struct, ptr @str.265.struct)
@@ -68453,7 +68206,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define internal i64 @"pkg::#max_src_mtime_ns"(ptr %0) #0 {
+define internal i64 @"pkg::#max_src_mtime_ns"(ptr %0) #3 {
 entry:
   %var.m = alloca i64, align 8
   %var.sub_m = alloca i64, align 8
@@ -68590,11 +68343,11 @@ choice.exit30:                                    ; preds = %choice.then29, %cho
   br label %choice.exit16
 }
 
-declare ptr @"fs::read_dir"(ptr) #0
+declare ptr @"fs::read_dir"(ptr) #3
 
-declare i64 @"fs::mtime_ns"(ptr) #0
+declare i64 @"fs::mtime_ns"(ptr) #3
 
-define { i64, ptr } @"pkg::self_exe_path"() #0 {
+define { i64, ptr } @"pkg::self_exe_path"() #3 {
 entry:
   %var.argv_exe = alloca ptr, align 8
   %var.argv0 = alloca ptr, align 8
@@ -68770,9 +68523,9 @@ choice.exit43:                                    ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack46
 }
 
-declare { i64, ptr } @"sys::argv_string"(i64) #0
+declare { i64, ptr } @"sys::argv_string"(i64) #3
 
-define internal i64 @"pkg::#cmd_build_ex"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define internal i64 @"pkg::#cmd_build_ex"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.rc1409 = alloca i64, align 8
   %"var.cmd'1406" = alloca ptr, align 8
@@ -71478,7 +71231,7 @@ choice.exit1482:                                  ; preds = %choice.else1481, %c
   br label %choice.exit1230
 }
 
-define internal i1 @"pkg::#is_dva_file_target"(ptr %0) #0 {
+define internal i1 @"pkg::#is_dva_file_target"(ptr %0) #3 {
 entry:
   %var.target = alloca ptr, align 8
   store ptr %0, ptr %var.target, align 8
@@ -71545,7 +71298,7 @@ and.479.exit:                                     ; preds = %and.479.else, %and.
   br label %or.478.exit
 }
 
-define internal i64 @"pkg::#ensure_pkg_fetched_for_file"(ptr %0, ptr %1) #0 {
+define internal i64 @"pkg::#ensure_pkg_fetched_for_file"(ptr %0, ptr %1) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -71736,7 +71489,7 @@ choice.exit70:                                    ; preds = %choice.else69, %cho
   br label %choice.exit64
 }
 
-define internal { i64, ptr } @"pkg::#find_root"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#find_root"(ptr %0) #3 {
 entry:
   %var.parent = alloca ptr, align 8
   %var._ = alloca i64, align 8
@@ -71884,7 +71637,7 @@ choice.exit40:                                    ; preds = %or.481.exit
   br label %loop.latch.480
 }
 
-define internal { i64, ptr } @"pkg::#append_compiler_flags"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define internal { i64, ptr } @"pkg::#append_compiler_flags"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %ret.ub.salloc211 = alloca { i64, ptr }, align 8
   %ret.ub.salloc145 = alloca { i64, ptr }, align 8
@@ -72490,7 +72243,7 @@ abort.dead272:                                    ; No predecessors!
   br label %concat.tot.len270
 }
 
-define { i64, ptr } @"pkg::u64_to_hex16"(i64 %0) #0 {
+define { i64, ptr } @"pkg::u64_to_hex16"(i64 %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.nib = alloca i64, align 8
@@ -72671,7 +72424,7 @@ abort.dead18:                                     ; No predecessors!
   br label %b.new.buf.len16
 }
 
-define { i64, ptr } @"pkg::fast_hash256_bytes"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"pkg::fast_hash256_bytes"(ptr %0, i64 %1) #3 {
 entry:
   %var.h3 = alloca i64, align 8
   %var.h2 = alloca i64, align 8
@@ -72980,7 +72733,7 @@ abort.dead157:                                    ; No predecessors!
   br label %concat.tot.len155
 }
 
-define { i64, ptr } @"pkg::hash_file"(ptr %0) #0 {
+define { i64, ptr } @"pkg::hash_file"(ptr %0) #3 {
 entry:
   %var.content = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -73045,7 +72798,7 @@ tag.slow_check:                                   ; preds = %choice.then
   br label %str_ok
 }
 
-define { i64, ptr } @"pkg::hash_string"(ptr %0) #0 {
+define { i64, ptr } @"pkg::hash_string"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -73081,7 +72834,7 @@ tag.slow_check:                                   ; preds = %entry
   br label %str_ok
 }
 
-define { i64, ptr } @"pkg::compiler_build_id"() #0 {
+define { i64, ptr } @"pkg::compiler_build_id"() #3 {
 entry:
   %var.id = alloca ptr, align 8
   %var.commit = alloca ptr, align 8
@@ -73462,7 +73215,7 @@ choice.exit164:                                   ; preds = %choice.else163, %ch
   br label %choice.exit61
 }
 
-define { i64, ptr } @"pkg::backend_toolchain_id"() #0 {
+define { i64, ptr } @"pkg::backend_toolchain_id"() #3 {
 entry:
   %var.clean_id = alloca ptr, align 8
   %var._184 = alloca i64, align 8
@@ -74171,7 +73924,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack242
 }
 
-define i1 @"pkg::is_file_link_input"(ptr %0) #0 {
+define i1 @"pkg::is_file_link_input"(ptr %0) #3 {
 entry:
   %var.lib = alloca ptr, align 8
   store ptr %0, ptr %var.lib, align 8
@@ -74228,11 +73981,11 @@ or.510.exit:                                      ; preds = %or.510.else, %or.51
   ret i1 %or.510.phi
 }
 
-declare i1 @"str::contains"(ptr, ptr) #0
+declare i1 @"str::contains"(ptr, ptr) #3
 
-declare i1 @"str::ends_with"(ptr, ptr) #0
+declare i1 @"str::ends_with"(ptr, ptr) #3
 
-define { ptr, ptr } @"pkg::compute_ir_cache_key"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6, ptr %7) #0 {
+define { ptr, ptr } @"pkg::compute_ir_cache_key"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6, ptr %7) #3 {
 entry:
   %var.k = alloca ptr, align 8
   %var.meta = alloca ptr, align 8
@@ -80410,7 +80163,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { ptr, ptr } %ret.pack
 }
 
-define { i64, ptr } @"pkg::cache_lookup"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"pkg::cache_lookup"(ptr %0, ptr %1) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.err = alloca ptr, align 8
@@ -80670,7 +80423,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-define i1 @"pkg::cache_store"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define i1 @"pkg::cache_store"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.ren_rc = alloca i64, align 8
   %var.target_dir = alloca ptr, align 8
@@ -81242,7 +80995,7 @@ abort.dead233:                                    ; No predecessors!
   br label %concat.tot.len231
 }
 
-define { i64, ptr } @"pkg::cache_lookup_artifact"(ptr %0, ptr %1, ptr %2) #0 {
+define { i64, ptr } @"pkg::cache_lookup_artifact"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.err = alloca ptr, align 8
@@ -81541,9 +81294,9 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-declare i64 @"fs::size"(ptr) #0
+declare i64 @"fs::size"(ptr) #3
 
-define i1 @"pkg::cache_store_artifact"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define i1 @"pkg::cache_store_artifact"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.ren_rc = alloca i64, align 8
   %var.dest_file = alloca ptr, align 8
@@ -82133,9 +81886,9 @@ ret.dead265:                                      ; No predecessors!
   br label %choice.exit234
 }
 
-declare i1 @"fs::copy_file"(ptr, ptr) #0
+declare i1 @"fs::copy_file"(ptr, ptr) #3
 
-define internal { i64, ptr } @"pkg::#default_store"() #0 {
+define internal { i64, ptr } @"pkg::#default_store"() #3 {
 entry:
   %var.xdg = alloca ptr, align 8
   %call.res = call { i64, ptr } @"pkg::#env_or"(ptr @str.264.struct, ptr @str.265.struct)
@@ -82160,7 +81913,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define internal ptr @"pkg::#opts_from_parsed"(ptr %0, ptr %1) #0 {
+define internal ptr @"pkg::#opts_from_parsed"(ptr %0, ptr %1) #3 {
 entry:
   %var.fuzz = alloca i1, align 1
   %var.no_cache = alloca i1, align 1
@@ -82438,11 +82191,11 @@ choice.exit106:                                   ; preds = %choice.else105, %ch
   ret ptr %rec.alloc
 }
 
-declare i1 @"cli::flag"(ptr, ptr) #0
+declare i1 @"cli::flag"(ptr, ptr) #3
 
-declare { i64, ptr } @"cli::str"(ptr, ptr) #0
+declare { i64, ptr } @"cli::str"(ptr, ptr) #3
 
-define internal i64 @"pkg::#cmd_init"(ptr %0, ptr %1, i1 %2) #0 {
+define internal i64 @"pkg::#cmd_init"(ptr %0, ptr %1, i1 %2) #3 {
 entry:
   %var.main_text = alloca ptr, align 8
   %var.main_file = alloca ptr, align 8
@@ -83499,7 +83252,7 @@ abort.dead555:                                    ; No predecessors!
   br label %concat.tot.len553
 }
 
-define internal { ptr, ptr } @"pkg::#split_at_rev"(ptr %0) #0 {
+define internal { ptr, ptr } @"pkg::#split_at_rev"(ptr %0) #3 {
 entry:
   %rec.salloc81 = alloca { ptr, ptr }, align 8
   %rec.salloc = alloca { ptr, ptr }, align 8
@@ -83725,7 +83478,7 @@ choice.exit23:                                    ; preds = %choice.else22, %cho
   ret { ptr, ptr } %ret.pack
 }
 
-define internal { i64, ptr } @"pkg::#infer_alias_from_git"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#infer_alias_from_git"(ptr %0) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %"var.base'" = alloca ptr, align 8
@@ -83819,7 +83572,7 @@ choice.exit:                                      ; preds = %choice.then, %and.5
   ret { i64, ptr } %ret.pack
 }
 
-define internal { i64, ptr } @"pkg::#infer_alias_from_path"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"pkg::#infer_alias_from_path"(ptr %0, ptr %1) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -83941,7 +83694,7 @@ choice.exit34:                                    ; preds = %choice.else33, %cho
   br label %choice.exit26
 }
 
-define internal i64 @"pkg::#find_char_idx"(ptr %0, i64 %1) #0 {
+define internal i64 @"pkg::#find_char_idx"(ptr %0, i64 %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -84009,7 +83762,7 @@ choice.exit:                                      ; preds = %loop.body.537
   br label %loop.latch.537
 }
 
-define internal i1 @"pkg::#is_domain_shorthand"(ptr %0) #0 {
+define internal i1 @"pkg::#is_domain_shorthand"(ptr %0) #3 {
 entry:
   %var.dot_idx = alloca i64, align 8
   %var.host = alloca ptr, align 8
@@ -84136,7 +83889,7 @@ str.eq.merge25:                                   ; preds = %str.eq.else24, %str
   br label %and.539.exit
 }
 
-define internal i1 @"pkg::#is_github_shorthand"(ptr %0) #0 {
+define internal i1 @"pkg::#is_github_shorthand"(ptr %0) #3 {
 entry:
   %var.rest = alloca ptr, align 8
   %var.owner = alloca ptr, align 8
@@ -84337,7 +84090,7 @@ and.544.exit:                                     ; preds = %and.544.else, %and.
   br label %choice.exit
 }
 
-define internal ptr @"pkg::#classify_dep_spec"(ptr %0, ptr %1) #0 {
+define internal ptr @"pkg::#classify_dep_spec"(ptr %0, ptr %1) #3 {
 entry:
   %var.cand_local = alloca ptr, align 8
   %var.is_Explicit_path = alloca i1, align 1
@@ -84851,7 +84604,7 @@ abort.dead164:                                    ; No predecessors!
   br label %concat.tot.len162
 }
 
-define internal ptr @"pkg::#resolve_add_opts"(ptr %0) #0 {
+define internal ptr @"pkg::#resolve_add_opts"(ptr %0) #3 {
 entry:
   %var.has_source = alloca i1, align 1
   %var.root_for_infer = alloca ptr, align 8
@@ -86940,9 +86693,9 @@ choice.exit1132:                                  ; preds = %choice.else1131, %c
   ret ptr %choice.res1149
 }
 
-declare ptr @"cli::rest"(ptr) #0
+declare ptr @"cli::rest"(ptr) #3
 
-define internal i64 @"pkg::#cmd_add"(ptr %0) #0 {
+define internal i64 @"pkg::#cmd_add"(ptr %0) #3 {
 entry:
   %var._544 = alloca ptr, align 8
   %var._i543 = alloca i64, align 8
@@ -88417,7 +88170,7 @@ abort.dead751:                                    ; No predecessors!
   br label %concat.tot.len749
 }
 
-define internal i64 @"pkg::#cmd_rm"(ptr %0, ptr %1) #0 {
+define internal i64 @"pkg::#cmd_rm"(ptr %0, ptr %1) #3 {
 entry:
   %var.fetch_rc = alloca i64, align 8
   %var.new_ccl = alloca ptr, align 8
@@ -89237,7 +88990,7 @@ abort.dead369:                                    ; No predecessors!
   br label %concat.tot.len367
 }
 
-define internal i64 @"pkg::#cmd_fetch"(ptr %0) #0 {
+define internal i64 @"pkg::#cmd_fetch"(ptr %0) #3 {
 entry:
   %var.root = alloca ptr, align 8
   %var.opts = alloca ptr, align 8
@@ -89395,7 +89148,7 @@ abort.dead32:                                     ; No predecessors!
   br label %concat.tot.len30
 }
 
-define internal i64 @"pkg::#cmd_build"(ptr %0) #0 {
+define internal i64 @"pkg::#cmd_build"(ptr %0) #3 {
 entry:
   %var.opts = alloca ptr, align 8
   store ptr %0, ptr %var.opts, align 8
@@ -89414,7 +89167,7 @@ entry:
   ret i64 %call.res
 }
 
-define internal i64 @"pkg::#cmd_check"(ptr %0, ptr %1) #0 {
+define internal i64 @"pkg::#cmd_check"(ptr %0, ptr %1) #3 {
 entry:
   %var.rc1379 = alloca i64, align 8
   %"var.cmd'1376" = alloca ptr, align 8
@@ -92031,7 +91784,7 @@ abort.dead1449:                                   ; No predecessors!
   br label %concat.tot.len1447
 }
 
-define internal i64 @"pkg::#cmd_run"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define internal i64 @"pkg::#cmd_run"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.r_rc957 = alloca i64, align 8
   %var._889 = alloca ptr, align 8
@@ -93902,7 +93655,7 @@ choice.exit962:                                   ; preds = %choice.else961, %ch
   br label %choice.exit808
 }
 
-define internal ptr @"pkg::#list_test_files"(ptr %0) #0 {
+define internal ptr @"pkg::#list_test_files"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -94130,7 +93883,7 @@ a.after49:                                        ; preds = %a.create48, %loop.e
   ret ptr %call.res58
 }
 
-define internal i64 @"pkg::#cmd_test"(ptr %0) #0 {
+define internal i64 @"pkg::#cmd_test"(ptr %0) #3 {
 entry:
   %cat.ibuf1537 = alloca [24 x i8], align 1
   %cat.ibuf1533 = alloca [24 x i8], align 1
@@ -96986,7 +96739,7 @@ choice.exit1585:                                  ; preds = %choice.else1584, %c
   br label %choice.exit840
 }
 
-define internal i1 @"pkg::#has_dep_alias"(ptr %0, ptr %1) #0 {
+define internal i1 @"pkg::#has_dep_alias"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -97091,7 +96844,7 @@ choice.exit:                                      ; preds = %str.eq.merge
   br label %loop.latch.588
 }
 
-define internal i64 @"pkg::#cmd_cache_action"(ptr %0, ptr %1) #0 {
+define internal i64 @"pkg::#cmd_cache_action"(ptr %0, ptr %1) #3 {
 entry:
   %cat.ibuf481 = alloca [24 x i8], align 1
   %cat.ibuf461 = alloca [24 x i8], align 1
@@ -98163,7 +97916,7 @@ abort.dead507:                                    ; No predecessors!
   br label %concat.tot.len505
 }
 
-define internal i64 @"pkg::#cmd_update"(ptr %0, ptr %1) #0 {
+define internal i64 @"pkg::#cmd_update"(ptr %0, ptr %1) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -98507,7 +98260,7 @@ abort.dead132:                                    ; No predecessors!
   br label %concat.tot.len130
 }
 
-define internal ptr @"pkg::#find_lock_pkg"(ptr %0, ptr %1) #0 {
+define internal ptr @"pkg::#find_lock_pkg"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -98613,7 +98366,7 @@ choice.exit:                                      ; preds = %str.eq.merge
   br label %loop.latch.593
 }
 
-define internal { i64, ptr } @"pkg::#format_pkg_source"(ptr %0) #0 {
+define internal { i64, ptr } @"pkg::#format_pkg_source"(ptr %0) #3 {
 entry:
   %concat.str253 = alloca { i64, ptr }, align 8
   %var.hash_short = alloca ptr, align 8
@@ -99122,7 +98875,7 @@ abort.dead241:                                    ; No predecessors!
   br label %concat.tot.len239
 }
 
-define internal void @"pkg::#print_dep_tree"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define internal void @"pkg::#print_dep_tree"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %concat.str634 = alloca { i64, ptr }, align 8
   %concat.str316 = alloca { i64, ptr }, align 8
@@ -100446,7 +100199,7 @@ abort.dead617:                                    ; No predecessors!
   br label %concat.tot.len615
 }
 
-define internal i64 @"pkg::#print_dependency_graph"(ptr %0, ptr %1, ptr %2) #0 {
+define internal i64 @"pkg::#print_dependency_graph"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %concat.str1613 = alloca { i64, ptr }, align 8
   %var.ids_str = alloca ptr, align 8
@@ -103137,7 +102890,7 @@ abort.dead1603:                                   ; No predecessors!
   br label %concat.tot.len1601
 }
 
-define internal i64 @"pkg::#cmd_graph"(ptr %0) #0 {
+define internal i64 @"pkg::#cmd_graph"(ptr %0) #3 {
 entry:
   %var.e = alloca ptr, align 8
   %var._88 = alloca ptr, align 8
@@ -103387,7 +103140,7 @@ choice.exit78:                                    ; preds = %choice.else77, %cho
   br label %choice.exit72
 }
 
-define internal i64 @"pkg::#cmd_vendor_materialize"(ptr %0, ptr %1) #0 {
+define internal i64 @"pkg::#cmd_vendor_materialize"(ptr %0, ptr %1) #3 {
 entry:
   %cat.ibuf = alloca [24 x i8], align 1
   %var.v_ccl = alloca ptr, align 8
@@ -107988,7 +107741,7 @@ abort.dead2613:                                   ; No predecessors!
   br label %concat.tot.len2611
 }
 
-define internal i64 @"pkg::#cmd_vendor"(ptr %0) #0 {
+define internal i64 @"pkg::#cmd_vendor"(ptr %0) #3 {
 entry:
   %var.e = alloca ptr, align 8
   %var._72 = alloca ptr, align 8
@@ -108204,7 +107957,7 @@ choice.exit66:                                    ; preds = %choice.else65, %cho
   br label %choice.exit
 }
 
-define i64 @"pkg::dispatch"(ptr %0, ptr %1) #0 {
+define i64 @"pkg::dispatch"(ptr %0, ptr %1) #3 {
 entry:
   %var.action_s = alloca ptr, align 8
   %var.nested_sub = alloca ptr, align 8
@@ -109370,18 +109123,18 @@ abort.dead623:                                    ; No predecessors!
   br label %concat.tot.len621
 }
 
-declare ptr @"cli::strs"(ptr, ptr) #0
+declare ptr @"cli::strs"(ptr, ptr) #3
 
-declare ptr @"cli::passthrough"(ptr) #0
+declare ptr @"cli::passthrough"(ptr) #3
 
-declare ptr @"cli::sub"(ptr) #0
+declare ptr @"cli::sub"(ptr) #3
 
-declare { i64, ptr } @"cli::subcmd"(ptr) #0
+declare { i64, ptr } @"cli::subcmd"(ptr) #3
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

@@ -3060,5 +3060,27 @@ if [ "$(find "$T60_DIR/cache/entries" -name output.ll | wc -l)" -ne 2 ] ||
 fi
 echo "PASS"
 
+# --- Test 61: reachability and canonical generic keys in emitted LLVM IR ---
+echo -n "Testing reachability and canonical specialization emission... "
+T61_SRC=tests/pass/456_reachable_codegen.dva
+for target in native wasm; do
+    target_args=()
+    if [ "$target" = wasm ]; then
+        target_args+=(-target wasm32-unknown-unknown)
+    fi
+    T61_IR="$TMPDIR/reachable-$target.ll"
+    timeout 30 ./edva "$T61_SRC" --ir --no-cache -O0 "${target_args[@]}" \
+        -o "$T61_IR" < /dev/null >"$TMPDIR/reachable-$target.log" 2>&1
+    if grep -Eq 'dead_private|var[.]unused_value|define .*@dva_arena_adopt' "$T61_IR" ||
+       ! grep -Eq '^define .*@dva_reachability_probe' "$T61_IR" ||
+       ! grep -Eq '^define .*@live_private' "$T61_IR" ||
+       [ "$(grep -c '^define .*@"tag[$]s_' "$T61_IR")" -ne 2 ] ||
+       [ "$(grep -c '^define .*@"item_count[$]' "$T61_IR")" -ne 1 ]; then
+        echo "FAILED: reachability or specialization IR differs on $target"
+        exit 1
+    fi
+done
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

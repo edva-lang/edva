@@ -1,0 +1,36 @@
+#use io
+
+#private
+   dead_private: Int => Int
+   dead_private = input => input * 117
+
+   live_private: Int => Int
+   live_private = input => input + 1
+
+   init_value: () => Int
+   init_value = !=>
+      io::out("initialized")
+      40
+
+run_callback: (Int => Int), Int => Int
+run_callback = cb, input => cb(input)
+
+item_count: #param T: Type, T => Int
+item_count = items => ?items
+
+tag: #param Prefix: String, String => String
+tag = value => "${Prefix}:${value}"
+
+#export("dva_reachability_probe") probe: Int => Int
+probe = input => live_private(input)
+
+unused_value = init_value!
+io::out(run_callback(live_private, 40))
+io::out(tag("/", "first"))
+io::out(tag("_47", "second"))
+io::out(tag("/" + "", "third"))
+small = Int{8}
+large = Int{32}
+large += 1
+io::out(item_count(small))
+io::out(item_count(large))

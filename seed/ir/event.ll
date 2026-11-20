@@ -4,22 +4,8 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
-@dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@sys_argc_global = external global i64
-@sys_argv_global = external global ptr
-@"var.sys::STDIN" = external global i64
-@"var.sys::STDOUT" = external global i64
-@"var.sys::STDERR" = external global i64
-@"var.sys::addr_null" = external global ptr
 @"var.event::READ" = global i64 1
 @"var.event::WRITE" = global i64 2
 @"var.event::PRI" = global i64 4
@@ -69,21 +55,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.event::poll_out" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_event, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -117,30 +93,9 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
-
-; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_event() #0 {
+define internal void @__dva_global_init_event() #3 {
 entry:
   store i64 1, ptr @"var.event::READ", align 8
   store i64 2, ptr @"var.event::WRITE", align 8
@@ -169,162 +124,20 @@ entry:
   ret void
 }
 
-declare i32 @open(ptr, i32)
-
-declare i64 @creat(ptr, i64)
-
-declare i32 @close(i32)
-
-declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @posix_spawnp(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @waitpid(i64, ptr, i64)
-
-declare i64 @read(i32, ptr, i64)
-
-declare i64 @lseek(i32, i64, i64)
-
 declare i64 @write(i32, ptr, i64)
-
-declare i64 @writev(i32, ptr, i64)
-
-declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
 
-declare i64 @htons(i64)
-
-declare i64 @htonl(i64)
-
-declare i64 @ntohs(i64)
-
-declare i64 @ntohl(i64)
-
-declare i64 @inet_addr(ptr)
-
-declare i64 @socket(i64, i64, i64)
-
-declare i64 @connect(i64, ptr, i64)
-
-declare i64 @bind(i64, ptr, i64)
-
-declare i64 @listen(i64, i64)
-
-declare i64 @accept(i64, ptr, ptr)
-
-declare i64 @send(i64, ptr, i64, i32)
-
-declare i64 @recv(i64, ptr, i64, i32)
-
-declare i64 @sendto(i64, ptr, i64, i32, ptr, i64)
-
-declare i64 @recvfrom(i64, ptr, i64, i32, ptr, ptr)
-
-declare i64 @setsockopt(i64, i64, i64, ptr, i64)
-
-declare i64 @getsockopt(i64, i64, i64, ptr, ptr)
-
-declare i64 @getpeername(i64, ptr, ptr)
-
-declare i64 @getsockname(i64, ptr, ptr)
-
-declare i64 @shutdown(i64, i64)
-
-declare i64 @fcntl(i32, i64, i64)
-
-declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
-
-declare void @freeaddrinfo(ptr)
-
-declare i64 @getifaddrs(ptr)
-
-declare void @freeifaddrs(ptr)
-
-declare ptr @memset(ptr, i64, i64)
-
-declare i64 @atoi(ptr)
-
-declare ptr @opendir(ptr)
-
-declare ptr @readdir(ptr)
-
-declare i64 @closedir(ptr)
-
-declare i64 @strlen(ptr) #0
-
-declare i64 @strcmp(ptr, ptr)
-
-declare ptr @memcpy(ptr, ptr, i64)
-
-declare ptr @memmove(ptr, ptr, i64)
-
-declare i64 @stat(ptr, ptr)
-
-declare i64 @fstat(i32, ptr)
-
-declare i64 @rename(ptr, ptr)
-
-declare i64 @unlink(ptr)
-
-declare i64 @pipe(ptr)
-
-declare ptr @__errno_location()
-
-declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
-
-declare i64 @munmap(ptr, i64)
-
-declare i64 @syscall(i64, ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @dlopen(ptr, i32)
-
-declare ptr @dlsym(ptr, ptr)
-
-declare i64 @dlclose(ptr)
-
-declare ptr @dlerror()
-
-declare i64 @system(ptr)
-
-declare ptr @realpath(ptr, ptr)
-
-declare i64 @isatty(i32)
-
-declare i64 @tcgetattr(i32, ptr)
-
-declare i64 @tcsetattr(i32, i64, ptr)
-
-declare void @cfmakeraw(ptr)
-
 declare i64 @poll(ptr, i64, i64)
 
-declare i64 @epoll_create1(i32)
-
-declare i64 @epoll_ctl(i64, i64, i32, ptr)
-
-declare i64 @epoll_wait(i64, ptr, i64, i64)
-
-declare i64 @time(ptr)
-
-declare ptr @signal(i64, ptr)
-
-declare i64 @raise(i64)
-
-declare i64 @getrlimit(i64, ptr)
-
-declare i64 @setrlimit(i64, ptr)
-
-declare i64 @uname(ptr)
-
-define { i1, i64 } @"event::new"() #0 {
+define { i1, i64 } @"event::new"() #3 {
 entry:
   %call.res = call { i1, i64 } @"event::new_with_cap"(i64 64)
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"event::new_with_cap"(i64 %0) #0 {
+define { i1, i64 } @"event::new_with_cap"(i64 %0) #3 {
 entry:
   %var.cap = alloca i64, align 8
   %var.max_ev = alloca i64, align 8
@@ -369,7 +182,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %ram.pay
 }
 
-define i1 @"event::add"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define i1 @"event::add"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -648,7 +461,7 @@ a.store:                                          ; preds = %a.grow, %a.check
   br label %choice.exit63
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -696,7 +509,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #5 {
@@ -712,7 +525,7 @@ abort.dead:                                       ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #6
 
-define i1 @"event::add_fd"(ptr %0, i64 %1, i64 %2) #0 {
+define i1 @"event::add_fd"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.mask = alloca i64, align 8
   %var.fd = alloca i64, align 8
@@ -728,7 +541,7 @@ entry:
   ret i1 %call.res
 }
 
-define i1 @"event::mod"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define i1 @"event::mod"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -901,7 +714,7 @@ ret.dead36:                                       ; No predecessors!
   br label %choice.exit13
 }
 
-define i1 @"event::mod_fd"(ptr %0, i64 %1, i64 %2) #0 {
+define i1 @"event::mod_fd"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.mask = alloca i64, align 8
   %var.fd = alloca i64, align 8
@@ -917,7 +730,7 @@ entry:
   ret i1 %call.res
 }
 
-define i1 @"event::del"(ptr %0, i64 %1) #0 {
+define i1 @"event::del"(ptr %0, i64 %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -1083,7 +896,7 @@ ret.dead33:                                       ; No predecessors!
   br label %choice.exit13
 }
 
-define ptr @"event::wait"(ptr %0, i64 %1) #0 {
+define ptr @"event::wait"(ptr %0, i64 %1) #3 {
 entry:
   %var.ev_mask = alloca i64, align 8
   %var.ev = alloca ptr, align 8
@@ -1915,15 +1728,11 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
-
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-define void @"event::close"(ptr %0) #0 {
+define void @"event::close"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -1943,7 +1752,7 @@ choice.exit:                                      ; preds = %choice.then, %entry
   ret void
 }
 
-define i1 @"event::is_read"(ptr %0) #0 {
+define i1 @"event::is_read"(ptr %0) #3 {
 entry:
   %var.ev = alloca ptr, align 8
   store ptr %0, ptr %var.ev, align 8
@@ -1956,7 +1765,7 @@ entry:
   ret i1 %cmptmp
 }
 
-define i1 @"event::is_write"(ptr %0) #0 {
+define i1 @"event::is_write"(ptr %0) #3 {
 entry:
   %var.ev = alloca ptr, align 8
   store ptr %0, ptr %var.ev, align 8
@@ -1969,7 +1778,7 @@ entry:
   ret i1 %cmptmp
 }
 
-define i1 @"event::is_err"(ptr %0) #0 {
+define i1 @"event::is_err"(ptr %0) #3 {
 entry:
   %var.ev = alloca ptr, align 8
   store ptr %0, ptr %var.ev, align 8
@@ -1982,7 +1791,7 @@ entry:
   ret i1 %cmptmp
 }
 
-define i1 @"event::is_hup"(ptr %0) #0 {
+define i1 @"event::is_hup"(ptr %0) #3 {
 entry:
   %var.ev = alloca ptr, align 8
   store ptr %0, ptr %var.ev, align 8
@@ -1997,7 +1806,7 @@ entry:
   ret i1 %cmptmp
 }
 
-define i1 @"event::poll_in"(i64 %0, i64 %1) #0 {
+define i1 @"event::poll_in"(i64 %0, i64 %1) #3 {
 entry:
   %var.timeout_ms = alloca i64, align 8
   %var.fd = alloca i64, align 8
@@ -2009,9 +1818,9 @@ entry:
   ret i1 %call.res
 }
 
-declare i1 @"sys::poll_in"(i64, i64) #0
+declare i1 @"sys::poll_in"(i64, i64) #3
 
-define i1 @"event::poll_out"(i64 %0, i64 %1) #0 {
+define i1 @"event::poll_out"(i64 %0, i64 %1) #3 {
 entry:
   %var.timeout_ms = alloca i64, align 8
   %var.fd = alloca i64, align 8
@@ -2023,12 +1832,12 @@ entry:
   ret i1 %call.res
 }
 
-declare i1 @"sys::poll_out"(i64, i64) #0
+declare i1 @"sys::poll_out"(i64, i64) #3
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

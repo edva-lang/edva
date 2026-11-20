@@ -4,64 +4,11 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
 @global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
 @sys_argc_global = external global i64
-@sys_argv_global = external global ptr
-@"var.sys::STDIN" = external global i64
-@"var.sys::STDOUT" = external global i64
-@"var.sys::STDERR" = external global i64
-@"var.sys::addr_null" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
-@"var.io::STDIN" = external global i64
-@"var.io::STDOUT" = external global i64
-@"var.io::STDERR" = external global i64
-@"var.io::EOF" = external global i64
-@"var.io::EINTR" = external global i64
-@"var.io::EBADF" = external global i64
-@"var.io::EAGAIN" = external global i64
-@"var.io::EWOULDBLOCK" = external global i64
 @clo.const = internal constant { ptr, ptr } { ptr @"cli::ok_flag", ptr null }
 @"var.cli::ok_flag" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"cli::ok_int", ptr null }
@@ -328,21 +275,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.cli::passthrough" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_cli, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -376,30 +313,14 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
+declare void @dva_arena_destroy(ptr) #3
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_cli() #0 {
+define internal void @__dva_global_init_cli() #3 {
 entry:
   store ptr @clo.const, ptr @"var.cli::ok_flag", align 8
   store ptr @clo.const.1, ptr @"var.cli::ok_int", align 8
@@ -466,184 +387,40 @@ entry:
   ret void
 }
 
-declare i32 @open(ptr, i32)
-
-declare i64 @creat(ptr, i64)
-
-declare i32 @close(i32)
-
-declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @posix_spawnp(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @waitpid(i64, ptr, i64)
-
-declare i64 @read(i32, ptr, i64)
-
-declare i64 @lseek(i32, i64, i64)
-
 declare i64 @write(i32, ptr, i64)
-
-declare i64 @writev(i32, ptr, i64)
-
-declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
 
-declare i64 @htons(i64)
-
-declare i64 @htonl(i64)
-
-declare i64 @ntohs(i64)
-
-declare i64 @ntohl(i64)
-
-declare i64 @inet_addr(ptr)
-
-declare i64 @socket(i64, i64, i64)
-
-declare i64 @connect(i64, ptr, i64)
-
-declare i64 @bind(i64, ptr, i64)
-
-declare i64 @listen(i64, i64)
-
-declare i64 @accept(i64, ptr, ptr)
-
-declare i64 @send(i64, ptr, i64, i32)
-
-declare i64 @recv(i64, ptr, i64, i32)
-
-declare i64 @sendto(i64, ptr, i64, i32, ptr, i64)
-
-declare i64 @recvfrom(i64, ptr, i64, i32, ptr, ptr)
-
-declare i64 @setsockopt(i64, i64, i64, ptr, i64)
-
-declare i64 @getsockopt(i64, i64, i64, ptr, ptr)
-
-declare i64 @getpeername(i64, ptr, ptr)
-
-declare i64 @getsockname(i64, ptr, ptr)
-
-declare i64 @shutdown(i64, i64)
-
-declare i64 @fcntl(i32, i64, i64)
-
-declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
-
-declare void @freeaddrinfo(ptr)
-
-declare i64 @getifaddrs(ptr)
-
-declare void @freeifaddrs(ptr)
-
-declare ptr @memset(ptr, i64, i64)
-
-declare i64 @atoi(ptr)
-
-declare ptr @opendir(ptr)
-
-declare ptr @readdir(ptr)
-
-declare i64 @closedir(ptr)
-
-declare i64 @strlen(ptr) #0
-
-declare i64 @strcmp(ptr, ptr)
-
-declare ptr @memcpy(ptr, ptr, i64)
-
-declare ptr @memmove(ptr, ptr, i64)
-
-declare i64 @stat(ptr, ptr)
-
-declare i64 @fstat(i32, ptr)
-
-declare i64 @rename(ptr, ptr)
-
-declare i64 @unlink(ptr)
-
-declare i64 @pipe(ptr)
-
-declare ptr @__errno_location()
-
-declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
-
-declare i64 @munmap(ptr, i64)
-
-declare i64 @syscall(i64, ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @dlopen(ptr, i32)
-
-declare ptr @dlsym(ptr, ptr)
-
-declare i64 @dlclose(ptr)
-
-declare ptr @dlerror()
-
-declare i64 @system(ptr)
-
-declare ptr @realpath(ptr, ptr)
-
-declare i64 @isatty(i32)
-
-declare i64 @tcgetattr(i32, ptr)
-
-declare i64 @tcsetattr(i32, i64, ptr)
-
-declare void @cfmakeraw(ptr)
-
-declare i64 @poll(ptr, i64, i64)
-
-declare i64 @epoll_create1(i32)
-
-declare i64 @epoll_ctl(i64, i64, i32, ptr)
-
-declare i64 @epoll_wait(i64, ptr, i64, i64)
-
-declare i64 @time(ptr)
-
-declare ptr @signal(i64, ptr)
-
-declare i64 @raise(i64)
-
-declare i64 @getrlimit(i64, ptr)
-
-declare i64 @setrlimit(i64, ptr)
-
-declare i64 @uname(ptr)
-
-define { i64, ptr } @"cli::ok_flag"(i1 %0) #0 {
+define { i64, ptr } @"cli::ok_flag"(i1 %0) #3 {
 entry:
   %var.v = alloca i1, align 1
   store i1 %0, ptr %var.v, align 1
   ret { i64, ptr } zeroinitializer
 }
 
-define { i64, ptr } @"cli::ok_int"(i64 %0) #0 {
+define { i64, ptr } @"cli::ok_int"(i64 %0) #3 {
 entry:
   %var.v = alloca i64, align 8
   store i64 %0, ptr %var.v, align 8
   ret { i64, ptr } zeroinitializer
 }
 
-define { i64, ptr } @"cli::ok_float"(double %0) #0 {
+define { i64, ptr } @"cli::ok_float"(double %0) #3 {
 entry:
   %var.v = alloca double, align 8
   store double %0, ptr %var.v, align 8
   ret { i64, ptr } zeroinitializer
 }
 
-define { i64, ptr } @"cli::ok_str"(ptr %0) #0 {
+define { i64, ptr } @"cli::ok_str"(ptr %0) #3 {
 entry:
   %var.v = alloca ptr, align 8
   store ptr %0, ptr %var.v, align 8
   ret { i64, ptr } zeroinitializer
 }
 
-define internal { i64, ptr } @"cli::#prog_basename"(ptr %0) #0 {
+define internal { i64, ptr } @"cli::#prog_basename"(ptr %0) #3 {
 entry:
   %str.view87 = alloca { i64, ptr }, align 8
   %var.idx56 = alloca i64, align 8
@@ -857,9 +634,9 @@ choice.exit53:                                    ; preds = %choice.else52, %cho
   br label %choice.exit
 }
 
-declare ptr @"str::split_once"(ptr, ptr) #0
+declare ptr @"str::split_once"(ptr, ptr) #3
 
-declare { i1, i64 } @"str::rfind"(ptr, ptr) #0
+declare { i1, i64 } @"str::rfind"(ptr, ptr) #3
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_str_overflow_msg() #5 {
@@ -875,7 +652,7 @@ abort.dead:                                       ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #6
 
-define internal { ptr, ptr } @"cli::#split_spec"(ptr %0) #0 {
+define internal { ptr, ptr } @"cli::#split_spec"(ptr %0) #3 {
 entry:
   %rec.salloc = alloca { ptr, ptr }, align 8
   %var.pair = alloca ptr, align 8
@@ -907,7 +684,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { ptr, ptr } %ret.pack
 }
 
-define internal ptr @"cli::#split_cmd_spec"(ptr %0) #0 {
+define internal ptr @"cli::#split_cmd_spec"(ptr %0) #3 {
 entry:
   %var.aliases = alloca ptr, align 8
   %var._map_v_77 = alloca ptr, align 8
@@ -1448,19 +1225,15 @@ a.after208:                                       ; preds = %a.create207, %a.aft
   br label %choice.exit
 }
 
-declare ptr @"str::split"(ptr, ptr) #0
-
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
+declare ptr @"str::split"(ptr, ptr) #3
 
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -1508,7 +1281,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #5 {
@@ -1521,7 +1294,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define ptr @"cli::make_flag_opt"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define ptr @"cli::make_flag_opt"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.long = alloca ptr, align 8
   %var.short = alloca ptr, align 8
@@ -1620,7 +1393,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"cli::make_flag_opt_def"(ptr %0, i1 %1, ptr %2) #0 {
+define ptr @"cli::make_flag_opt_def"(ptr %0, i1 %1, ptr %2) #3 {
 entry:
   %var.desc = alloca ptr, align 8
   %var.def_v = alloca i1, align 1
@@ -1636,7 +1409,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"cli::make_int_opt"(ptr %0, i64 %1, ptr %2, ptr %3) #0 {
+define ptr @"cli::make_int_opt"(ptr %0, i64 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.long = alloca ptr, align 8
   %var.short = alloca ptr, align 8
@@ -1735,7 +1508,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"cli::make_int_opt_def"(ptr %0, i64 %1, ptr %2) #0 {
+define ptr @"cli::make_int_opt_def"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %var.desc = alloca ptr, align 8
   %var.def_v = alloca i64, align 8
@@ -1751,7 +1524,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"cli::make_float_opt"(ptr %0, double %1, ptr %2, ptr %3) #0 {
+define ptr @"cli::make_float_opt"(ptr %0, double %1, ptr %2, ptr %3) #3 {
 entry:
   %var.long = alloca ptr, align 8
   %var.short = alloca ptr, align 8
@@ -1850,7 +1623,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"cli::make_float_opt_def"(ptr %0, double %1, ptr %2) #0 {
+define ptr @"cli::make_float_opt_def"(ptr %0, double %1, ptr %2) #3 {
 entry:
   %var.desc = alloca ptr, align 8
   %var.def_v = alloca double, align 8
@@ -1866,7 +1639,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"cli::make_str_opt"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"cli::make_str_opt"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.long = alloca ptr, align 8
   %var.short = alloca ptr, align 8
@@ -1965,7 +1738,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"cli::make_str_opt_def"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"cli::make_str_opt_def"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.desc = alloca ptr, align 8
   %var.def_v = alloca ptr, align 8
@@ -1981,7 +1754,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"cli::make_str_list_opt"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"cli::make_str_list_opt"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.long = alloca ptr, align 8
   %var.short = alloca ptr, align 8
@@ -2077,7 +1850,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"cli::make_str_list_opt_def"(ptr %0, ptr %1) #0 {
+define ptr @"cli::make_str_list_opt_def"(ptr %0, ptr %1) #3 {
 entry:
   %var.desc = alloca ptr, align 8
   %var.spec = alloca ptr, align 8
@@ -2090,7 +1863,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"cli::make_req_opt"(ptr %0, i64 %1, ptr %2) #0 {
+define ptr @"cli::make_req_opt"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %var.req = alloca i1, align 1
   %var.kind = alloca ptr, align 8
@@ -2261,7 +2034,7 @@ choice.next:                                      ; preds = %choice.exit
   br label %choice.exit31
 }
 
-define ptr @"cli::make_req_int_opt"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"cli::make_req_int_opt"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.long = alloca ptr, align 8
   %var.short = alloca ptr, align 8
@@ -2357,7 +2130,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"cli::make_req_float_opt"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"cli::make_req_float_opt"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.long = alloca ptr, align 8
   %var.short = alloca ptr, align 8
@@ -2453,7 +2226,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"cli::make_req_str_opt"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"cli::make_req_str_opt"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.long = alloca ptr, align 8
   %var.short = alloca ptr, align 8
@@ -2549,7 +2322,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"cli::as_pos_opt"(ptr %0) #0 {
+define ptr @"cli::as_pos_opt"(ptr %0) #3 {
 entry:
   %var.__ctor_arg_140 = alloca ptr, align 8
   %var.__ctor_arg_139 = alloca ptr, align 8
@@ -2772,9 +2545,9 @@ a.after:                                          ; preds = %a.create, %choice.e
   ret ptr %rec.alloc
 }
 
-declare i1 @"str::ends_with"(ptr, ptr) #0
+declare i1 @"str::ends_with"(ptr, ptr) #3
 
-define ptr @"cli::make_cmd_opt"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"cli::make_cmd_opt"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.aliases = alloca ptr, align 8
   %var.primary = alloca ptr, align 8
@@ -2899,7 +2672,7 @@ a.after27:                                        ; preds = %a.create26, %a.afte
   ret ptr %rec.alloc
 }
 
-define internal i1 @"cli::#has_required_opt"(ptr %0) #0 {
+define internal i1 @"cli::#has_required_opt"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -3005,7 +2778,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit10
 }
 
-define internal i64 @"cli::#find_opt_idx"(ptr %0, ptr %1) #0 {
+define internal i64 @"cli::#find_opt_idx"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -3213,7 +2986,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit57
 }
 
-define internal i64 @"cli::#find_long_idx"(ptr %0, ptr %1) #0 {
+define internal i64 @"cli::#find_long_idx"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -3384,7 +3157,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit34
 }
 
-define internal i64 @"cli::#find_short_idx"(ptr %0, ptr %1) #0 {
+define internal i64 @"cli::#find_short_idx"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -3555,7 +3328,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit34
 }
 
-define internal i64 @"cli::#find_cmd_idx"(ptr %0, ptr %1) #0 {
+define internal i64 @"cli::#find_cmd_idx"(ptr %0, ptr %1) #3 {
 entry:
   %var._34 = alloca ptr, align 8
   %var._i33 = alloca i64, align 8
@@ -3767,7 +3540,7 @@ ret.dead57:                                       ; No predecessors!
   br label %choice.exit55
 }
 
-define internal i1 @"cli::#has_opt_named"(ptr %0, ptr %1, ptr %2) #0 {
+define internal i1 @"cli::#has_opt_named"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.short_name = alloca ptr, align 8
   %var.long_name = alloca ptr, align 8
@@ -3836,7 +3609,7 @@ a.after8:                                         ; preds = %a.create7, %or.138.
   br label %or.138.exit
 }
 
-define internal { i64, ptr } @"cli::#pos_token"(ptr %0) #0 {
+define internal { i64, ptr } @"cli::#pos_token"(ptr %0) #3 {
 entry:
   %concat.str90 = alloca { i64, ptr }, align 8
   %concat.str = alloca { i64, ptr }, align 8
@@ -4049,7 +3822,7 @@ abort.dead80:                                     ; No predecessors!
   br label %concat.tot.len78
 }
 
-define internal { i64, ptr } @"cli::#cmd_left_col"(ptr %0) #0 {
+define internal { i64, ptr } @"cli::#cmd_left_col"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca ptr, align 8
@@ -4426,7 +4199,7 @@ abort.dead146:                                    ; No predecessors!
   br label %b.new.buf.len2144
 }
 
-define internal { i64, ptr } @"cli::#opt_left_col"(ptr %0) #0 {
+define internal { i64, ptr } @"cli::#opt_left_col"(ptr %0) #3 {
 entry:
   %concat.str149 = alloca { i64, ptr }, align 8
   %var.tp = alloca ptr, align 8
@@ -4759,7 +4532,7 @@ abort.dead139:                                    ; No predecessors!
   br label %concat.tot.len137
 }
 
-define internal { i64, ptr } @"cli::#opt_right_col"(ptr %0) #0 {
+define internal { i64, ptr } @"cli::#opt_right_col"(ptr %0) #3 {
 entry:
   %concat.str211 = alloca { i64, ptr }, align 8
   %var.suffix = alloca ptr, align 8
@@ -5210,7 +4983,7 @@ abort.dead207:                                    ; No predecessors!
   br label %concat.tot.len205
 }
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -5274,9 +5047,9 @@ done:                                             ; preds = %copyloop
   ret i64 %fmt.tot
 }
 
-declare { i64, ptr } @"str::from_float"(double) #0
+declare { i64, ptr } @"str::from_float"(double) #3
 
-define internal { i64, ptr } @"cli::#run_flag_val"(ptr %0, i1 %1) #0 {
+define internal { i64, ptr } @"cli::#run_flag_val"(ptr %0, i1 %1) #3 {
 entry:
   %var.err = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -5333,7 +5106,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define internal { i64, ptr } @"cli::#run_int_val"(ptr %0, i64 %1) #0 {
+define internal { i64, ptr } @"cli::#run_int_val"(ptr %0, i64 %1) #3 {
 entry:
   %var.err = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -5390,7 +5163,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define internal { i64, ptr } @"cli::#run_float_val"(ptr %0, double %1) #0 {
+define internal { i64, ptr } @"cli::#run_float_val"(ptr %0, double %1) #3 {
 entry:
   %var.err = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -5447,7 +5220,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define internal { i64, ptr } @"cli::#run_str_val"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"cli::#run_str_val"(ptr %0, ptr %1) #3 {
 entry:
   %var.err = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -5504,7 +5277,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define internal { i64, ptr } @"cli::#opt_err_label"(ptr %0) #0 {
+define internal { i64, ptr } @"cli::#opt_err_label"(ptr %0) #3 {
 entry:
   %concat.str87 = alloca { i64, ptr }, align 8
   %concat.str57 = alloca { i64, ptr }, align 8
@@ -5736,7 +5509,7 @@ abort.dead82:                                     ; No predecessors!
   br label %concat.tot.len80
 }
 
-define internal { i64, ptr } @"cli::#apply_opt_val"(ptr %0, i64 %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6, ptr %7) #0 {
+define internal { i64, ptr } @"cli::#apply_opt_val"(ptr %0, i64 %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6, ptr %7) #3 {
 entry:
   %var._1251 = alloca ptr, align 8
   %var._1250 = alloca ptr, align 8
@@ -8085,11 +7858,11 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare { i1, i64 } @"str::parse_int"(ptr) #0
+declare { i1, i64 } @"str::parse_int"(ptr) #3
 
-declare { i1, i64 } @"str::parse_float"(ptr) #0
+declare { i1, i64 } @"str::parse_float"(ptr) #3
 
-define internal { i1, i64 } @"cli::#parse_argv"(ptr %0, ptr %1, i1 %2) #0 {
+define internal { i1, i64 } @"cli::#parse_argv"(ptr %0, ptr %1, i1 %2) #3 {
 entry:
   %var._6492 = alloca ptr, align 8
   %var._i6491 = alloca i64, align 8
@@ -19506,7 +19279,7 @@ a.after6812:                                      ; preds = %a.create6811, %a.af
   br label %choice.exit6333
 }
 
-declare i1 @"str::starts_with"(ptr, ptr) #0
+declare i1 @"str::starts_with"(ptr, ptr) #3
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_str_oob_msg() #5 {
@@ -19519,7 +19292,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define internal { i64, ptr } @"cli::#format_active_help"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define internal { i64, ptr } @"cli::#format_active_help"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %ret.ub.salloc93 = alloca { i64, ptr }, align 8
   %ret.ub.salloc85 = alloca { i64, ptr }, align 8
@@ -19825,7 +19598,7 @@ abort.dead75:                                     ; No predecessors!
   br label %concat.tot.len73
 }
 
-define { i64, ptr } @"cli::format_help"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define { i64, ptr } @"cli::format_help"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.r_col2764 = alloca ptr, align 8
@@ -24898,9 +24671,9 @@ abort.dead2887:                                   ; No predecessors!
   br label %b.new.buf.len22885
 }
 
-declare { i64, ptr } @"str::pad_right"(ptr, i64, i64) #0
+declare { i64, ptr } @"str::pad_right"(ptr, i64, i64) #3
 
-define ptr @"cli::parse_impl"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define ptr @"cli::parse_impl"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %var.prefix = alloca ptr, align 8
   %var.pname230 = alloca ptr, align 8
@@ -25751,7 +25524,7 @@ a.after352:                                       ; preds = %a.create351, %exit.
   br label %choice.exit73
 }
 
-define ptr @"cli::args"() #0 {
+define ptr @"cli::args"() #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -25874,9 +25647,9 @@ a.after20:                                        ; preds = %a.create19, %loop.e
   ret ptr %a.load228
 }
 
-declare { i64, ptr } @"sys::argv_string"(i64) #0
+declare { i64, ptr } @"sys::argv_string"(i64) #3
 
-define { i64, ptr } @"cli::program"() #0 {
+define { i64, ptr } @"cli::program"() #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.load = load i64, ptr @sys_argc_global, align 8
@@ -25897,17 +25670,17 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-declare void @"io::outs"(ptr) #0
+declare void @"io::outs"(ptr) #3
 
-declare void @"io::errs"(ptr) #0
+declare void @"io::errs"(ptr) #3
 
-define i64 @"cli::count"() #0 {
+define i64 @"cli::count"() #3 {
 entry:
   %var.load = load i64, ptr @sys_argc_global, align 8
   ret i64 %var.load
 }
 
-define { i64, ptr } @"cli::arg"(i64 %0) #0 {
+define { i64, ptr } @"cli::arg"(i64 %0) #3 {
 entry:
   %ret.niche.salloc = alloca { i64, ptr }, align 8
   %var.idx = alloca i64, align 8
@@ -25930,9 +25703,9 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %en
   ret { i64, ptr } %ret.niche.pack
 }
 
-declare { i64, ptr } @"sys::argv"(i64) #0
+declare { i64, ptr } @"sys::argv"(i64) #3
 
-define { i64, ptr } @"cli::arg_or"(i64 %0, ptr %1) #0 {
+define { i64, ptr } @"cli::arg_or"(i64 %0, ptr %1) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.fallback = alloca ptr, align 8
@@ -25981,7 +25754,7 @@ choice.exit3:                                     ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define ptr @"cli::all_args"() #0 {
+define ptr @"cli::all_args"() #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -26104,7 +25877,7 @@ a.after20:                                        ; preds = %a.create19, %loop.e
   ret ptr %a.load228
 }
 
-define { i1, i64 } @"cli::parse_args"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"cli::parse_args"(ptr %0, ptr %1) #3 {
 entry:
   %var.argv = alloca ptr, align 8
   %var.opts = alloca ptr, align 8
@@ -26156,7 +25929,7 @@ a.after7:                                         ; preds = %a.create6, %a.after
   ret { i1, i64 } %call.res
 }
 
-define { i64, ptr } @"cli::subcmd"(ptr %0) #0 {
+define { i64, ptr } @"cli::subcmd"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -26167,7 +25940,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define ptr @"cli::sub"(ptr %0) #0 {
+define ptr @"cli::sub"(ptr %0) #3 {
 entry:
   %var.sub_p = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -26197,7 +25970,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"cli::has"(ptr %0, ptr %1) #0 {
+define i1 @"cli::has"(ptr %0, ptr %1) #3 {
 entry:
   %var.idx47 = alloca i64, align 8
   %var.idx = alloca i64, align 8
@@ -26513,7 +26286,7 @@ err.normal126:                                    ; preds = %unwrap.abort.202
   unreachable
 }
 
-define internal i1 @"cli::#has_spec"(ptr %0, ptr %1) #0 {
+define internal i1 @"cli::#has_spec"(ptr %0, ptr %1) #3 {
 entry:
   %var.sub_p = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -26569,7 +26342,7 @@ or.203.exit:                                      ; preds = %or.203.else, %or.20
   br label %choice.exit
 }
 
-define internal ptr @"cli::#find_active_opt"(ptr %0, ptr %1) #0 {
+define internal ptr @"cli::#find_active_opt"(ptr %0, ptr %1) #3 {
 entry:
   %var.idx49 = alloca i64, align 8
   %var.idx = alloca i64, align 8
@@ -26891,7 +26664,7 @@ err.normal128:                                    ; preds = %unwrap.abort.206
   unreachable
 }
 
-define i1 @"cli::flag"(ptr %0, ptr %1) #0 {
+define i1 @"cli::flag"(ptr %0, ptr %1) #3 {
 entry:
   %var.idx224 = alloca i64, align 8
   %var.idx = alloca i64, align 8
@@ -27482,7 +27255,7 @@ err.normal303:                                    ; preds = %unwrap.abort.211
   unreachable
 }
 
-define i64 @"cli::int"(ptr %0, ptr %1) #0 {
+define i64 @"cli::int"(ptr %0, ptr %1) #3 {
 entry:
   %var.idx222 = alloca i64, align 8
   %var.idx = alloca i64, align 8
@@ -28070,7 +27843,7 @@ err.normal301:                                    ; preds = %unwrap.abort.216
   unreachable
 }
 
-define double @"cli::float"(ptr %0, ptr %1) #0 {
+define double @"cli::float"(ptr %0, ptr %1) #3 {
 entry:
   %var.idx223 = alloca i64, align 8
   %var.idx = alloca i64, align 8
@@ -28661,7 +28434,7 @@ err.normal302:                                    ; preds = %unwrap.abort.221
   unreachable
 }
 
-define { i64, ptr } @"cli::str"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"cli::str"(ptr %0, ptr %1) #3 {
 entry:
   %var.idx224 = alloca i64, align 8
   %ret.ub.salloc131 = alloca { i64, ptr }, align 8
@@ -29257,7 +29030,7 @@ err.normal303:                                    ; preds = %unwrap.abort.226
   unreachable
 }
 
-define ptr @"cli::strs"(ptr %0, ptr %1) #0 {
+define ptr @"cli::strs"(ptr %0, ptr %1) #3 {
 entry:
   %var.idx225 = alloca i64, align 8
   %var.idx = alloca i64, align 8
@@ -29868,7 +29641,7 @@ err.normal304:                                    ; preds = %unwrap.abort.231
   unreachable
 }
 
-define ptr @"cli::rest"(ptr %0) #0 {
+define ptr @"cli::rest"(ptr %0) #3 {
 entry:
   %var.sub_p = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -29902,7 +29675,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"cli::passthrough"(ptr %0) #0 {
+define ptr @"cli::passthrough"(ptr %0) #3 {
 entry:
   %var.sp = alloca ptr, align 8
   %var.sub_p = alloca ptr, align 8
@@ -29996,10 +29769,10 @@ a.after11:                                        ; preds = %a.create10, %choice
   br label %choice.exit6
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

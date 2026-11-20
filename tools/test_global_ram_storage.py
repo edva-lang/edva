@@ -60,6 +60,8 @@ finish: Int => ()
 finish = expected =>
    done = !=> exit(expected - 23)
    ram_storage::install(done)
+   present = <>(ram_storage::callback)
+   !present | exit(5)
    ram_storage::invoke!
    exit(4)
 ram_storage::assign(23)

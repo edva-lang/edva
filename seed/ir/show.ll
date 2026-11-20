@@ -3,54 +3,9 @@ source_filename = "dva_module"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-@fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@"var.ast::cell_var_names" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
 @stale_str_msg = internal unnamed_addr constant [46 x i8] c"E4010: stale String read after arena restore\0A\00"
 @b_byte_msg = internal unnamed_addr constant [58 x i8] c"E4007: Builder append byte out of range (must be 0..255)\0A\00"
 @clo.const = internal constant { ptr, ptr } { ptr @"show::#print", ptr null }
@@ -445,21 +400,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.show::dump_typed_program" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_show, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -493,30 +438,12 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
-
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_show() #0 {
+define internal void @__dva_global_init_show() #3 {
 entry:
   store ptr @clo.const, ptr @"var.show::#print", align 8
   store ptr @clo.const.16, ptr @"var.show::show_expr", align 8
@@ -555,7 +482,7 @@ entry:
 
 declare i64 @write(i32, ptr, i64)
 
-define internal i64 @"show::#print"(ptr %0) #0 {
+define internal i64 @"show::#print"(ptr %0) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -828,7 +755,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define { i64, ptr } @"show::show_expr"(ptr %0) #0 {
+define { i64, ptr } @"show::show_expr"(ptr %0) #3 {
 entry:
   %concat.str2201 = alloca { i64, ptr }, align 8
   %ret.ub.salloc2168 = alloca { i64, ptr }, align 8
@@ -4692,7 +4619,7 @@ abort.dead2192:                                   ; No predecessors!
   br label %concat.tot.len2190
 }
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -4756,9 +4683,9 @@ done:                                             ; preds = %copyloop
   ret i64 %fmt.tot
 }
 
-declare { i64, ptr } @"str::from_float"(double) #0
+declare { i64, ptr } @"str::from_float"(double) #3
 
-define { i64, ptr } @"show::show_op"(ptr %0) #0 {
+define { i64, ptr } @"show::show_op"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -4996,7 +4923,7 @@ choice.next117:                                   ; preds = %choice.next112
   br label %choice.exit
 }
 
-define { i64, ptr } @"show::show_unop"(ptr %0) #0 {
+define { i64, ptr } @"show::show_unop"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -5090,7 +5017,7 @@ choice.next37:                                    ; preds = %choice.next32
   br label %choice.exit
 }
 
-define { i64, ptr } @"show::show_tag"(ptr %0) #0 {
+define { i64, ptr } @"show::show_tag"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -5157,7 +5084,7 @@ choice.next22:                                    ; preds = %choice.next17
   br label %choice.exit
 }
 
-define { i64, ptr } @"show::show_exprs"(ptr %0) #0 {
+define { i64, ptr } @"show::show_exprs"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca ptr, align 8
@@ -5432,7 +5359,7 @@ abort.dead64:                                     ; No predecessors!
   br label %b.new.buf.len262
 }
 
-define { i64, ptr } @"show::show_fwd_rhs"(ptr %0) #0 {
+define { i64, ptr } @"show::show_fwd_rhs"(ptr %0) #3 {
 entry:
   %ret.ub.salloc5 = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -5469,7 +5396,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i64, ptr } @"show::show_fwd_name"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"show::show_fwd_name"(ptr %0, ptr %1) #3 {
 entry:
   %ret.ub.salloc15 = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -5550,9 +5477,9 @@ choice.exit11:                                    ; preds = %choice.else10, %cho
   br label %choice.exit
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define { i64, ptr } @"show::show_branches"(ptr %0) #0 {
+define { i64, ptr } @"show::show_branches"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca ptr, align 8
@@ -5827,7 +5754,7 @@ abort.dead64:                                     ; No predecessors!
   br label %b.new.buf.len262
 }
 
-define { i64, ptr } @"show::show_branch"(ptr %0) #0 {
+define { i64, ptr } @"show::show_branch"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %ret.ub.salloc29 = alloca { i64, ptr }, align 8
@@ -5962,7 +5889,7 @@ abort.dead46:                                     ; No predecessors!
   br label %concat.tot.len44
 }
 
-define { i64, ptr } @"show::show_var"(ptr %0) #0 {
+define { i64, ptr } @"show::show_var"(ptr %0) #3 {
 entry:
   %var._18 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -6056,7 +5983,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"show::show_val"(ptr %0) #0 {
+define { i64, ptr } @"show::show_val"(ptr %0) #3 {
 entry:
   %ret.ub.salloc9 = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -6092,7 +6019,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"show::show_single"(ptr %0) #0 {
+define { i64, ptr } @"show::show_single"(ptr %0) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var._21 = alloca ptr, align 8
@@ -6213,7 +6140,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"show::show_member_suffix"(ptr %0) #0 {
+define { i64, ptr } @"show::show_member_suffix"(ptr %0) #3 {
 entry:
   %concat.str90 = alloca { i64, ptr }, align 8
   %ret.ub.salloc65 = alloca { i64, ptr }, align 8
@@ -6443,7 +6370,7 @@ abort.dead85:                                     ; No predecessors!
   br label %concat.tot.len83
 }
 
-define { i64, ptr } @"show::show_fields"(ptr %0) #0 {
+define { i64, ptr } @"show::show_fields"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca ptr, align 8
@@ -6854,7 +6781,7 @@ abort.dead136:                                    ; No predecessors!
   br label %b.new.buf.len2134
 }
 
-define { i64, ptr } @"show::show_map_pairs"(ptr %0) #0 {
+define { i64, ptr } @"show::show_map_pairs"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca ptr, align 8
@@ -7214,7 +7141,7 @@ abort.dead123:                                    ; No predecessors!
   br label %b.new.buf.len2121
 }
 
-define { i64, ptr } @"show::show_vt"(ptr %0) #0 {
+define { i64, ptr } @"show::show_vt"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -7281,7 +7208,7 @@ choice.next22:                                    ; preds = %choice.next17
   br label %choice.exit
 }
 
-define { i64, ptr } @"show::show_indent"(i64 %0) #0 {
+define { i64, ptr } @"show::show_indent"(i64 %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -7352,7 +7279,7 @@ abort.dead13:                                     ; No predecessors!
   br label %concat.tot.len11
 }
 
-define { i64, ptr } @"show::show_names"(ptr %0) #0 {
+define { i64, ptr } @"show::show_names"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca ptr, align 8
@@ -7622,7 +7549,7 @@ abort.dead62:                                     ; No predecessors!
   br label %b.new.buf.len260
 }
 
-define { i64, ptr } @"show::show_tree_exprs"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"show::show_tree_exprs"(ptr %0, i64 %1) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca ptr, align 8
@@ -7899,7 +7826,7 @@ abort.dead64:                                     ; No predecessors!
   br label %b.new.buf.len262
 }
 
-define { i64, ptr } @"show::show_tree"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"show::show_tree"(ptr %0, i64 %1) #3 {
 entry:
   %concat.str971 = alloca { i64, ptr }, align 8
   %ret.ub.salloc948 = alloca { i64, ptr }, align 8
@@ -9639,7 +9566,7 @@ abort.dead967:                                    ; No predecessors!
   br label %concat.tot.len965
 }
 
-define { i64, ptr } @"show::show_tree_branches"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"show::show_tree_branches"(ptr %0, i64 %1) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.g = alloca ptr, align 8
@@ -10077,7 +10004,7 @@ abort.dead133:                                    ; No predecessors!
   br label %b.new.buf.len2131
 }
 
-define { i64, ptr } @"show::show_typed_target"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"show::show_typed_target"(ptr %0, ptr %1) #3 {
 entry:
   %var.te = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -10109,7 +10036,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"show::show_typed_expr"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"show::show_typed_expr"(ptr %0, ptr %1) #3 {
 entry:
   %cat.ibuf2773 = alloca [24 x i8], align 1
   %var.t2768 = alloca ptr, align 8
@@ -15051,9 +14978,9 @@ abort.dead2888:                                   ; No predecessors!
   br label %concat.tot.len2886
 }
 
-declare { i64, ptr } @"unify::show_utype"(ptr, ptr) #0
+declare { i64, ptr } @"unify::show_utype"(ptr, ptr) #3
 
-define { i64, ptr } @"show::show_typed_exprs"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"show::show_typed_exprs"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -15396,7 +15323,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #7
 
-define { i64, ptr } @"show::show_typed_fields"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"show::show_typed_fields"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -15893,9 +15820,9 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack
 }
 
-declare { i64, ptr } @"unify::show_ram_shape"(ptr) #0
+declare { i64, ptr } @"unify::show_ram_shape"(ptr) #3
 
-define { i64, ptr } @"show::show_typed_tree_exprs"(ptr %0, ptr %1, i64 %2) #0 {
+define { i64, ptr } @"show::show_typed_tree_exprs"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -16238,7 +16165,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"show::show_typed_tree"(ptr %0, ptr %1, i64 %2) #0 {
+define { i64, ptr } @"show::show_typed_tree"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.t3218 = alloca ptr, align 8
   %var._3217 = alloca ptr, align 8
@@ -21896,7 +21823,7 @@ abort.dead3354:                                   ; No predecessors!
   br label %concat.tot.len3352
 }
 
-define { i64, ptr } @"show::show_typed_tree_branches"(ptr %0, ptr %1, i64 %2) #0 {
+define { i64, ptr } @"show::show_typed_tree_branches"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.g = alloca ptr, align 8
   %var._33 = alloca ptr, align 8
@@ -22541,7 +22468,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"show::show_typed_stmt"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"show::show_typed_stmt"(ptr %0, ptr %1) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var._134 = alloca ptr, align 8
@@ -22897,7 +22824,7 @@ abort.dead161:                                    ; No predecessors!
   br label %concat.tot.len159
 }
 
-define { i64, ptr } @"show::show_typed_tree_stmt"(ptr %0, ptr %1, i64 %2) #0 {
+define { i64, ptr } @"show::show_typed_tree_stmt"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var._202 = alloca ptr, align 8
@@ -23420,7 +23347,7 @@ abort.dead256:                                    ; No predecessors!
   br label %concat.tot.len254
 }
 
-define void @"show::dump_typed_program"(ptr %0, ptr %1, i1 %2) #0 {
+define void @"show::dump_typed_program"(ptr %0, ptr %1, i1 %2) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -23514,10 +23441,10 @@ choice.exit:                                      ; preds = %choice.else, %choic
   br label %loop.latch.191
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noinline "nounwind" }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { cold noreturn "nounwind" }

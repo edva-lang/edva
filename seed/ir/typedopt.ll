@@ -4,53 +4,7 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
-@dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
-@str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@"var.ast::cell_var_names" = external global ptr
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
 @clo.const = internal constant { ptr, ptr } { ptr @"typedopt::#is_int", ptr null }
 @"var.typedopt::#is_int" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"typedopt::#scalar_literal", ptr null }
@@ -91,21 +45,8 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.typedopt::run" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_typedopt, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
-; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
-
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #0 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -139,30 +80,9 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #1
 
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
-
-; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_typedopt() #0 {
+define internal void @__dva_global_init_typedopt() #2 {
 entry:
   store ptr @clo.const, ptr @"var.typedopt::#is_int", align 8
   store ptr @clo.const.1, ptr @"var.typedopt::#scalar_literal", align 8
@@ -181,7 +101,7 @@ entry:
   ret void
 }
 
-define internal i1 @"typedopt::#is_int"(ptr %0) #0 {
+define internal i1 @"typedopt::#is_int"(ptr %0) #2 {
 entry:
   %var.p = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -224,7 +144,7 @@ choice.next4:                                     ; preds = %choice.case
   br label %choice.exit2
 }
 
-define internal i1 @"typedopt::#scalar_literal"(ptr %0) #0 {
+define internal i1 @"typedopt::#scalar_literal"(ptr %0) #2 {
 entry:
   %var.p = alloca ptr, align 8
   %var._17 = alloca ptr, align 8
@@ -329,7 +249,7 @@ choice.next21:                                    ; preds = %choice.case10
   br label %choice.exit19
 }
 
-define internal i1 @"typedopt::#same_scalar_type"(ptr %0, ptr %1) #0 {
+define internal i1 @"typedopt::#same_scalar_type"(ptr %0, ptr %1) #2 {
 entry:
   %var.q = alloca ptr, align 8
   %var._12 = alloca ptr, align 8
@@ -389,7 +309,7 @@ choice.next6:                                     ; preds = %choice.case
   br label %choice.exit4
 }
 
-define internal ptr @"typedopt::#replace"(ptr %0, ptr %1) #0 {
+define internal ptr @"typedopt::#replace"(ptr %0, ptr %1) #2 {
 entry:
   %var.__ctor_arg_114 = alloca ptr, align 8
   %var.value = alloca ptr, align 8
@@ -433,9 +353,9 @@ entry:
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #4
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #3
 
-define internal ptr @"typedopt::#scalar_operand"(ptr %0, ptr %1) #0 {
+define internal ptr @"typedopt::#scalar_operand"(ptr %0, ptr %1) #2 {
 entry:
   %var.fact = alloca ptr, align 8
   %var._11 = alloca ptr, align 8
@@ -557,9 +477,9 @@ choice.exit29:                                    ; preds = %choice.else28, %cho
   br label %choice.exit10
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #2
 
-define internal ptr @"typedopt::#simplify_bin"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define internal ptr @"typedopt::#simplify_bin"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #2 {
 entry:
   %var.__ctor_arg_200 = alloca ptr, align 8
   %var._207 = alloca ptr, align 8
@@ -1146,7 +1066,7 @@ ret.dead239:                                      ; No predecessors!
   br label %choice.exit235
 }
 
-define internal ptr @"typedopt::#simplify_member"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define internal ptr @"typedopt::#simplify_member"(ptr %0, ptr %1, ptr %2, i64 %3) #2 {
 entry:
   %var.value = alloca ptr, align 8
   %var._117 = alloca ptr, align 8
@@ -1702,22 +1622,18 @@ choice.exit193:                                   ; preds = %choice.else192, %ch
   br label %choice.exit78
 }
 
-declare i1 @"str::is_digit"(i64) #0
+declare i1 @"str::is_digit"(i64) #2
 
-declare { i1, i64 } @"str::parse_int"(ptr) #0
-
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
+declare { i1, i64 } @"str::parse_int"(ptr) #2
 
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
 ; Function Attrs: cold noreturn
-declare void @exit(i32) #5
+declare void @exit(i32) #4
 
-define internal ptr @"typedopt::#rewrite_list"(ptr %0, ptr %1) #0 {
+define internal ptr @"typedopt::#rewrite_list"(ptr %0, ptr %1) #2 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -1866,7 +1782,7 @@ a.after33:                                        ; preds = %a.create32, %loop.e
   ret ptr %a.load241
 }
 
-define internal ptr @"typedopt::#rewrite"(ptr %0, ptr %1) #0 {
+define internal ptr @"typedopt::#rewrite"(ptr %0, ptr %1) #2 {
 entry:
   %var.__ctor_arg_517 = alloca ptr, align 8
   %var.r814 = alloca ptr, align 8
@@ -3199,7 +3115,7 @@ choice.next807:                                   ; preds = %choice.next759
   br label %choice.exit
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #2 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -3247,7 +3163,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #5
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #6 {
@@ -3262,7 +3178,7 @@ abort.dead:                                       ; No predecessors!
 
 declare i64 @write(i32, ptr, i64)
 
-define internal ptr @"typedopt::#simplify_choice"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define internal ptr @"typedopt::#simplify_choice"(ptr %0, ptr %1, ptr %2, ptr %3) #2 {
 entry:
   %var.take_yes = alloca i1, align 1
   %var.flag = alloca i1, align 1
@@ -4067,7 +3983,7 @@ choice.exit328:                                   ; preds = %choice.else, %choic
   ret ptr %call.res334
 }
 
-define internal ptr @"typedopt::#rewrite_block"(ptr %0, ptr %1) #0 {
+define internal ptr @"typedopt::#rewrite_block"(ptr %0, ptr %1) #2 {
 entry:
   %var.eligible = alloca i1, align 1
   %var.a = alloca ptr, align 8
@@ -4387,7 +4303,7 @@ a.after83:                                        ; preds = %a.create82, %loop.e
   ret ptr %a.load291
 }
 
-define internal ptr @"typedopt::#rewrite_optional"(ptr %0, ptr %1) #0 {
+define internal ptr @"typedopt::#rewrite_optional"(ptr %0, ptr %1) #2 {
 entry:
   %var._ = alloca ptr, align 8
   %var.e = alloca ptr, align 8
@@ -4413,7 +4329,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define internal ptr @"typedopt::#rewrite_stmt"(ptr %0, ptr %1) #0 {
+define internal ptr @"typedopt::#rewrite_stmt"(ptr %0, ptr %1) #2 {
 entry:
   %var.b40 = alloca ptr, align 8
   %var._39 = alloca ptr, align 8
@@ -4535,7 +4451,7 @@ choice.next33:                                    ; preds = %choice.next6
   br label %choice.exit
 }
 
-define ptr @"typedopt::run"(ptr %0) #0 {
+define ptr @"typedopt::run"(ptr %0) #2 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -4690,10 +4606,10 @@ a.after35:                                        ; preds = %a.create34, %loop.e
   ret ptr %a.load243
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
-attributes #4 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
-attributes #5 = { cold noreturn "nounwind" }
+attributes #0 = { alwaysinline "nounwind" }
+attributes #1 = { noinline "nounwind" }
+attributes #2 = { "nounwind" }
+attributes #3 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #4 = { cold noreturn "nounwind" }
+attributes #5 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
 attributes #6 = { cold noinline noreturn "nounwind" }

@@ -9506,13 +9506,19 @@ extract_ct_from_sig = ctx, env, param_tis, ret_ti, rt_args, call_ret_ut, call_re
          (u, res_ti, dt, <+>)
       | (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), "", <->)
 
-sanitize_mono_key_str: String => String
-sanitize_mono_key_str = s =>
-   b = {?s + 4}
+// Encode every non-alphanumeric byte (including the escape marker).
+// These keys may contain embedded NUL or Unicode source bytes.
+mono_key_bytes: String => String
+mono_key_bytes = s =>
+   b = {?s + 1}
+   hex = "0123456789abcdef"
    s @ c =>
-      c ['a...'z, 'A...'Z, '0...'9, '_]
+      c ['a...'z, 'A...'Z, '0...'9]
          | b += c
-         | b += ('_, str::from_int(c))
+         |
+            b += '_
+            b += hex(c .>. 4)
+            b += hex(c .&. 15)
    +b
 
 has_user_type_ref: type_env::TypeEnv, String => <>
@@ -9521,6 +9527,9 @@ has_user_type_ref = env, tv =>
 
 utype_type_key: unify::Ctx, type_env::TypeEnv, unify::UType, ast::TypeInfo, String => String
 utype_type_key = ctx, env, ut, ti, dtype =>
+   ti
+      [Align a]
+         --| "Align(${str::from_int(a.0)},${utype_type_key(ctx, env, ut, a.1, dtype)})"
    c = unify::canon(ctx, ut)
    tvar_dt = ti
       [TypeVar tv]
@@ -9552,7 +9561,8 @@ utype_type_key = ctx, env, ut, ti, dtype =>
             | "Unknown"
       [Array a]
          e_ti = extract_child_ti(ctx, env, ti, 0, a.elem)
-         "Array(" + utype_type_key(ctx, env, a.elem, e_ti, "") + ")"
+         // Initial capacity belongs to the value, not the growable array type.
+         "Array(${utype_type_key(ctx, env, a.elem, e_ti, "")})"
       [Slice s]
          e_ti = extract_child_ti(ctx, env, ti, 0, s)
          "Slice(" + utype_type_key(ctx, env, s, e_ti, "") + ")"
@@ -9579,6 +9589,11 @@ utype_type_key = ctx, env, ut, ti, dtype =>
             f_ti = extract_child_ti(ctx, env, ti, i, fld.ut)
             fk += utype_type_key(ctx, env, fld.ut, f_ti, "")
          f_s = +fk
+         ti
+            [Rec r]
+               r.5 | b += "Packed"
+               r.1 | b += "Slice"
+               r.2 | b += "Homogeneous[${str::from_int(r.4)}]"
          eff_dt != "" && eff_dt(0) != '# && !(?eff_dt !< 9 && eff_dt(0..9) == "__fld_ti_")
             | b += ("Rec(", eff_dt, ":", f_s, ")")
             | b += ("Rec(", f_s, ")")
@@ -9589,14 +9604,15 @@ utype_type_key = ctx, env, ut, ti, dtype =>
             | (ue.name != "" | ue.name | "Enum")
       [Fn f]
          b = {48}
+         params = ti [Fn ft] ft.1 | ast::VInfos()
+         ret = ti [Fn ft] ft.3 | unify::type_info_from_utype(ctx, f.ret)
          b += "Fn("
-         f.params @ el_, i =>
+         f.params @ el, i =>
             i > 0 | b += ',
-            b += utype_type_key(ctx, env, el_,
-              ast::TypeInfo(Prim, ast::ValueType(Unknown)), "")
+            pt = params(i) |_| unify::type_info_from_utype(ctx, el)
+            b += utype_type_key(ctx, env, el, pt, "")
          b += "=>"
-         b += utype_type_key(ctx, env, f.ret,
-           ast::TypeInfo(Prim, ast::ValueType(Unknown)), "")
+         b += utype_type_key(ctx, env, f.ret, ret, "")
          b += ")"
          +b
       | (eff_dt != "" | eff_dt | "Unknown")
@@ -9605,12 +9621,22 @@ ct_val_mono_key: tast::TypedExpr => String
 ct_val_mono_key = te =>
    te.kind
       [LitInt n] str::from_int(n)
-      [LitFloat f] str::from_float(f)
-      [LitStr s] sanitize_mono_key_str(s)
+      [LitFloat f] "f${str::from_u64(%bitcast(u64, f))}"
+      [LitStr s] "s${mono_key_bytes(s)}"
       [LitFlag fl]
          fl | "true" | "false"
-      [LitRune r] "r" + str::from_int(r)
+      [LitRune r] "r${str::from_int(r)}"
+      [Record fields]
+         b = {64}
+         b += "rec("
+         fields @ fld =>
+            key = ct_val_mono_key(fld.val)
+            b += "${mono_key_bytes(fld.name)}:${str::from_int(?key)}:${key},"
+         b += ')
+         +b
       | "val"
+
+#type MonoKeys String ^ <>
 
 #type MonoWorkStacks unify::InstStack{}
 
@@ -9627,7 +9653,7 @@ ct_val_mono_key = te =>
    env: type_env::TypeEnv,
    exprs: ast::Exprs,
    gen_names: ast::Names,
-   mono_done: ast::Names,
+   mono_done: MonoKeys,
    work: tast::TypedStmts,
    work_files: ast::Names,
    work_lines: ast::Ints,
@@ -9792,11 +9818,9 @@ mono_specialize_call = mctx, call_te, cname, args =>
          --| tast::TypedExpr(tast::TypedExprKind(Call, (cname, <-->, rt_args)),
            call_te.ut, call_te.ti, p_lay, call_te.line, call_te.col)
    mono_name = +bkey
-   !has_name_in(mctx.mono_done, mono_name)
+   !(mctx.mono_done ^? mono_name)
       |
-         done2 = mctx.mono_done
-         done2 += mono_name
-         mctx.mono_done = done2
+         mctx.mono_done ^ mono_name = <+>
          saved_file = mctx.ctx.cur_file
          saved_line = mctx.ctx.cur_line
          saved_col = mctx.ctx.cur_col
@@ -10037,7 +10061,7 @@ monomorphize_program_stmts: unify::Ctx, type_env::TypeEnv, ast::Exprs,
 monomorphize_program_stmts = ctx, env, exprs, gen_names, stmts, st_files, st_lines, st_cols =>
    init_stacks = MonoWorkStacks()
    ?stmts @ init_stacks += unify::InstStack()
-   mctx = MonoCtx(ctx, env, exprs, gen_names, ast::Names(), stmts,
+   mctx = MonoCtx(ctx, env, exprs, gen_names, MonoKeys(), stmts,
      ++st_files, ++st_lines, ++st_cols, init_stacks)
    rewritten = tast::TypedStmts()
    i' = 0

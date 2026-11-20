@@ -3,17 +3,7 @@ source_filename = "dva_module"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-@fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
-@dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
-@str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
 @clo.const = internal constant { ptr, ptr } { ptr @"ast::mk_rfield_type", ptr null }
 @"var.ast::mk_rfield_type" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"ast::mk_rfield_type_default", ptr null }
@@ -95,21 +85,8 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.ast::triple_arch" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_ast, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
-; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
-
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #0 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -143,30 +120,9 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #1
 
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
-
-; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_ast() #0 {
+define internal void @__dva_global_init_ast() #2 {
 entry:
   store ptr @clo.const, ptr @"var.ast::mk_rfield_type", align 8
   store ptr @clo.const.1, ptr @"var.ast::mk_rfield_type_default", align 8
@@ -194,7 +150,7 @@ entry:
   ret void
 }
 
-define ptr @"ast::mk_rfield_type"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"ast::mk_rfield_type"(ptr %0, ptr %1, ptr %2) #2 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.vt = alloca ptr, align 8
@@ -230,7 +186,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"ast::mk_rfield_type_default"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"ast::mk_rfield_type_default"(ptr %0, ptr %1, ptr %2, ptr %3) #2 {
 entry:
   %var.def_expr = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -259,7 +215,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define i1 @"ast::has_cell_name_at"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i1 @"ast::has_cell_name_at"(ptr %0, ptr %1, i64 %2, i64 %3) #2 {
 entry:
   %var.v = alloca ptr, align 8
   %var._27 = alloca ptr, align 8
@@ -454,9 +410,9 @@ a.after43:                                        ; preds = %a.create42, %choice
   br label %choice.exit38
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #2
 
-define i1 @"ast::has_cell_name"(ptr %0, ptr %1) #0 {
+define i1 @"ast::has_cell_name"(ptr %0, ptr %1) #2 {
 entry:
   %var.s = alloca ptr, align 8
   %var.arr = alloca ptr, align 8
@@ -511,7 +467,7 @@ a.after8:                                         ; preds = %a.create7, %a.after
   ret i1 %call.res
 }
 
-define void @"ast::cell_var_add"(ptr %0) #0 {
+define void @"ast::cell_var_add"(ptr %0) #2 {
 entry:
   %var.name = alloca ptr, align 8
   store ptr %0, ptr %var.name, align 8
@@ -612,9 +568,9 @@ a.store:                                          ; preds = %a.grow, %a.check
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #4
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #3
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #2 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -662,7 +618,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #4
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #5 {
@@ -680,7 +636,7 @@ declare i64 @write(i32, ptr, i64)
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #6
 
-define i1 @"ast::is_cell_var"(ptr %0) #0 {
+define i1 @"ast::is_cell_var"(ptr %0) #2 {
 entry:
   %var.name = alloca ptr, align 8
   store ptr %0, ptr %var.name, align 8
@@ -710,7 +666,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret i1 %call.res
 }
 
-define void @"ast::cell_var_reset"() #0 {
+define void @"ast::cell_var_reset"() #2 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %a.new = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
@@ -726,7 +682,7 @@ entry:
   ret void
 }
 
-define i1 @"ast::str_has_sub_at"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4) #0 {
+define i1 @"ast::str_has_sub_at"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4) #2 {
 entry:
   %var.m = alloca i64, align 8
   %var.n = alloca i64, align 8
@@ -820,7 +776,7 @@ choice.exit18:                                    ; preds = %choice.else17, %cho
   br label %choice.exit
 }
 
-define i1 @"ast::str_has_sub"(ptr %0, ptr %1) #0 {
+define i1 @"ast::str_has_sub"(ptr %0, ptr %1) #2 {
 entry:
   %var.m = alloca i64, align 8
   %var.sub = alloca ptr, align 8
@@ -855,7 +811,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i1 %choice.res
 }
 
-define { i64, ptr } @"ast::triple_os"(ptr %0) #0 {
+define { i64, ptr } @"ast::triple_os"(ptr %0) #2 {
 entry:
   %var.triple = alloca ptr, align 8
   store ptr %0, ptr %var.triple, align 8
@@ -1007,7 +963,7 @@ choice.exit43:                                    ; preds = %choice.else42, %cho
   br label %choice.exit38
 }
 
-define { i64, ptr } @"ast::triple_first_seg_at"(ptr %0, i64 %1, i64 %2) #0 {
+define { i64, ptr } @"ast::triple_first_seg_at"(ptr %0, i64 %1, i64 %2) #2 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %str.view = alloca { i64, ptr }, align 8
@@ -1112,7 +1068,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define { i64, ptr } @"ast::triple_arch"(ptr %0) #0 {
+define { i64, ptr } @"ast::triple_arch"(ptr %0) #2 {
 entry:
   %var.seg = alloca ptr, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -1354,10 +1310,10 @@ str.eq.merge132:                                  ; preds = %str.eq.else131, %st
   br i1 %str.eq.result138, label %choice.case122, label %choice.next123
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
-attributes #4 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #0 = { alwaysinline "nounwind" }
+attributes #1 = { noinline "nounwind" }
+attributes #2 = { "nounwind" }
+attributes #3 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #4 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { cold noreturn "nounwind" }

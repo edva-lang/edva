@@ -4,58 +4,8 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
-@dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
-@"var.io::STDIN" = external global i64
-@"var.io::STDOUT" = external global i64
-@"var.io::STDERR" = external global i64
-@"var.io::EOF" = external global i64
-@"var.io::EINTR" = external global i64
-@"var.io::EBADF" = external global i64
-@"var.io::EAGAIN" = external global i64
-@"var.io::EWOULDBLOCK" = external global i64
 @clo.const = internal constant { ptr, ptr } { ptr @"ccl::doc_new", ptr null }
 @"var.ccl::doc_new" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"ccl::entry_new_str", ptr null }
@@ -148,21 +98,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.ccl::non_comment_entries" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_ccl, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -196,30 +136,9 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
-
-; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_ccl() #0 {
+define internal void @__dva_global_init_ccl() #3 {
 entry:
   store ptr @clo.const, ptr @"var.ccl::doc_new", align 8
   store ptr @clo.const.1, ptr @"var.ccl::entry_new_str", align 8
@@ -254,154 +173,14 @@ entry:
 
 declare i32 @open(ptr, i32)
 
-declare i64 @creat(ptr, i64)
-
 declare i32 @close(i32)
 
-declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @posix_spawnp(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @waitpid(i64, ptr, i64)
-
-declare i64 @read(i32, ptr, i64)
-
-declare i64 @lseek(i32, i64, i64)
-
 declare i64 @write(i32, ptr, i64)
-
-declare i64 @writev(i32, ptr, i64)
-
-declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
 
-declare i64 @htons(i64)
-
-declare i64 @htonl(i64)
-
-declare i64 @ntohs(i64)
-
-declare i64 @ntohl(i64)
-
-declare i64 @inet_addr(ptr)
-
-declare i64 @socket(i64, i64, i64)
-
-declare i64 @connect(i64, ptr, i64)
-
-declare i64 @bind(i64, ptr, i64)
-
-declare i64 @listen(i64, i64)
-
-declare i64 @accept(i64, ptr, ptr)
-
-declare i64 @send(i64, ptr, i64, i32)
-
-declare i64 @recv(i64, ptr, i64, i32)
-
-declare i64 @sendto(i64, ptr, i64, i32, ptr, i64)
-
-declare i64 @recvfrom(i64, ptr, i64, i32, ptr, ptr)
-
-declare i64 @setsockopt(i64, i64, i64, ptr, i64)
-
-declare i64 @getsockopt(i64, i64, i64, ptr, ptr)
-
-declare i64 @getpeername(i64, ptr, ptr)
-
-declare i64 @getsockname(i64, ptr, ptr)
-
-declare i64 @shutdown(i64, i64)
-
-declare i64 @fcntl(i32, i64, i64)
-
-declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
-
-declare void @freeaddrinfo(ptr)
-
-declare i64 @getifaddrs(ptr)
-
-declare void @freeifaddrs(ptr)
-
-declare ptr @memset(ptr, i64, i64)
-
-declare i64 @atoi(ptr)
-
-declare ptr @opendir(ptr)
-
-declare ptr @readdir(ptr)
-
-declare i64 @closedir(ptr)
-
-declare i64 @strlen(ptr) #0
-
-declare i64 @strcmp(ptr, ptr)
-
-declare ptr @memcpy(ptr, ptr, i64)
-
-declare ptr @memmove(ptr, ptr, i64)
-
-declare i64 @stat(ptr, ptr)
-
-declare i64 @fstat(i32, ptr)
-
-declare i64 @rename(ptr, ptr)
-
-declare i64 @unlink(ptr)
-
-declare i64 @pipe(ptr)
-
-declare ptr @__errno_location()
-
-declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
-
-declare i64 @munmap(ptr, i64)
-
-declare i64 @syscall(i64, ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @dlopen(ptr, i32)
-
-declare ptr @dlsym(ptr, ptr)
-
-declare i64 @dlclose(ptr)
-
-declare ptr @dlerror()
-
-declare i64 @system(ptr)
-
-declare ptr @realpath(ptr, ptr)
-
-declare i64 @isatty(i32)
-
-declare i64 @tcgetattr(i32, ptr)
-
-declare i64 @tcsetattr(i32, i64, ptr)
-
-declare void @cfmakeraw(ptr)
-
-declare i64 @poll(ptr, i64, i64)
-
-declare i64 @epoll_create1(i32)
-
-declare i64 @epoll_ctl(i64, i64, i32, ptr)
-
-declare i64 @epoll_wait(i64, ptr, i64, i64)
-
-declare i64 @time(ptr)
-
-declare ptr @signal(i64, ptr)
-
-declare i64 @raise(i64)
-
-declare i64 @getrlimit(i64, ptr)
-
-declare i64 @setrlimit(i64, ptr)
-
-declare i64 @uname(ptr)
-
-define ptr @"ccl::doc_new"() #0 {
+define ptr @"ccl::doc_new"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %a.new = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
@@ -416,7 +195,7 @@ entry:
   ret ptr %a.new
 }
 
-define ptr @"ccl::entry_new_str"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define ptr @"ccl::entry_new_str"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -449,7 +228,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"ccl::entry_new_block"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define ptr @"ccl::entry_new_block"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -502,7 +281,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %rec.alloc
 }
 
-define i1 @"ccl::is_space"(i64 %0) #0 {
+define i1 @"ccl::is_space"(i64 %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -523,7 +302,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i64 @"ccl::trim_left_idx"(ptr %0, i64 %1) #0 {
+define i64 @"ccl::trim_left_idx"(ptr %0, i64 %1) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.s = alloca ptr, align 8
@@ -596,7 +375,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define i64 @"ccl::trim_right_idx"(ptr %0, i64 %1) #0 {
+define i64 @"ccl::trim_right_idx"(ptr %0, i64 %1) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.s = alloca ptr, align 8
@@ -671,7 +450,7 @@ choice.exit11:                                    ; preds = %choice.else, %choic
   ret i64 %choice.res16
 }
 
-define { i64, ptr } @"ccl::trim_str"(ptr %0) #0 {
+define { i64, ptr } @"ccl::trim_str"(ptr %0) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.end = alloca i64, align 8
@@ -763,7 +542,7 @@ choice.exit19:                                    ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack26
 }
 
-define i64 @"ccl::find_char_idx"(ptr %0, i64 %1, i64 %2) #0 {
+define i64 @"ccl::find_char_idx"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.ch = alloca i64, align 8
@@ -828,7 +607,7 @@ choice.exit12:                                    ; preds = %choice.else, %choic
   ret i64 %choice.res
 }
 
-define i64 @"ccl::find_first_eq"(ptr %0) #0 {
+define i64 @"ccl::find_first_eq"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -837,7 +616,7 @@ entry:
   ret i64 %call.res
 }
 
-define ptr @"ccl::sort_strings"(ptr %0) #0 {
+define ptr @"ccl::sort_strings"(ptr %0) #3 {
 entry:
   %var._308 = alloca ptr, align 8
   %var._307 = alloca ptr, align 8
@@ -1647,7 +1426,7 @@ a.after345:                                       ; preds = %a.create344, %loop.
   ret ptr %a.load2353
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -1695,7 +1474,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #5 {
@@ -1711,17 +1490,13 @@ abort.dead:                                       ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #6
 
-declare i64 @"str::cmp"(ptr, ptr) #0
-
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
+declare i64 @"str::cmp"(ptr, ptr) #3
 
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-define ptr @"ccl::ccl_error"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define ptr @"ccl::ccl_error"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -1765,7 +1540,7 @@ entry:
   ret ptr %err.alloc
 }
 
-define i1 @"ccl::has"(ptr %0, ptr %1) #0 {
+define i1 @"ccl::has"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -1869,9 +1644,9 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define i64 @"ccl::count"(ptr %0, ptr %1) #0 {
+define i64 @"ccl::count"(ptr %0, ptr %1) #3 {
 entry:
   %var._fold_v_98 = alloca i64, align 8
   %var._18 = alloca i64, align 8
@@ -1999,7 +1774,7 @@ choice.exit16:                                    ; preds = %choice.then15, %cho
   br label %loop.latch.94
 }
 
-define ptr @"ccl::get_entry"(ptr %0, ptr %1) #0 {
+define ptr @"ccl::get_entry"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -2104,7 +1879,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit
 }
 
-define { i64, ptr } @"ccl::get"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"ccl::get"(ptr %0, ptr %1) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %var._17 = alloca ptr, align 8
@@ -2239,7 +2014,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit16
 }
 
-define { i1, i64 } @"ccl::get_section"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"ccl::get_section"(ptr %0, ptr %1) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var._17 = alloca ptr, align 8
@@ -2387,7 +2162,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit16
 }
 
-define { i1, i64 } @"ccl::get_list"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"ccl::get_list"(ptr %0, ptr %1) #3 {
 entry:
   %var._map_v_122 = alloca ptr, align 8
   %var._39 = alloca ptr, align 8
@@ -2638,7 +2413,7 @@ a.after61:                                        ; preds = %a.create60, %loop.e
   ret { i1, i64 } %ram.pay
 }
 
-define ptr @"ccl::entries_for"(ptr %0, ptr %1) #0 {
+define ptr @"ccl::entries_for"(ptr %0, ptr %1) #3 {
 entry:
   %var._map_v_131 = alloca ptr, align 8
   %var._22 = alloca ptr, align 8
@@ -2834,7 +2609,7 @@ a.after44:                                        ; preds = %a.create43, %loop.e
   ret ptr %a.load252
 }
 
-define ptr @"ccl::split_raw_lines"(ptr %0) #0 {
+define ptr @"ccl::split_raw_lines"(ptr %0) #3 {
 entry:
   %var.ind160 = alloca i64, align 8
   %var.raw157 = alloca ptr, align 8
@@ -3307,7 +3082,7 @@ a.after229:                                       ; preds = %a.create228, %choic
   ret ptr %a.load2237
 }
 
-define { i1, i64 } @"ccl::parse_block_from"(ptr %0, i64 %1, i64 %2, ptr %3) #0 {
+define { i1, i64 } @"ccl::parse_block_from"(ptr %0, i64 %1, i64 %2, ptr %3) #3 {
 entry:
   %var.cl = alloca ptr, align 8
   %rec.salloc691 = alloca { i64, i64, ptr }, align 8
@@ -5089,7 +4864,7 @@ abort.dead:                                       ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #6
 
-define { i1, i64 } @"ccl::parse"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"ccl::parse"(ptr %0, ptr %1) #3 {
 entry:
   %var.bad = alloca ptr, align 8
   %rec.salloc = alloca { i64, i64, ptr }, align 8
@@ -5305,7 +5080,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit
 }
 
-define { i1, i64 } @"ccl::parse_file"(ptr %0) #0 {
+define { i1, i64 } @"ccl::parse_file"(ptr %0) #3 {
 entry:
   %var.content = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -5510,11 +5285,11 @@ abort.dead64:                                     ; No predecessors!
   br label %concat.tot.len62
 }
 
-declare ptr @"io::reader"(i64) #0
+declare ptr @"io::reader"(i64) #3
 
-declare { i64, ptr } @"io::read_all"(ptr, i64) #0
+declare { i64, ptr } @"io::read_all"(ptr, i64) #3
 
-define i1 @"ccl::has_newline"(ptr %0) #0 {
+define i1 @"ccl::has_newline"(ptr %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -5572,7 +5347,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit
 }
 
-define void @"ccl::append_multiline_str"(ptr %0, i64 %1, ptr %2) #0 {
+define void @"ccl::append_multiline_str"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %var._146 = alloca i64, align 8
   %var._i145 = alloca i64, align 8
@@ -6230,7 +6005,7 @@ abort.dead226:                                    ; No predecessors!
   br label %b.new.buf.len2224
 }
 
-define void @"ccl::serialize_doc_indent"(ptr %0, i64 %1, ptr %2) #0 {
+define void @"ccl::serialize_doc_indent"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %var.sub527 = alloca ptr, align 8
   %var._526 = alloca ptr, align 8
@@ -7398,7 +7173,7 @@ a.after580:                                       ; preds = %a.create579, %b.gro
   br label %choice.exit395
 }
 
-define { i64, ptr } @"ccl::to_ccl"(ptr %0) #0 {
+define { i64, ptr } @"ccl::to_ccl"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.b = alloca ptr, align 8
@@ -7507,7 +7282,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack
 }
 
-define ptr @"ccl::first_non_comment_entry"(ptr %0) #0 {
+define ptr @"ccl::first_non_comment_entry"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -7608,7 +7383,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit
 }
 
-define ptr @"ccl::non_comment_entries"(ptr %0) #0 {
+define ptr @"ccl::non_comment_entries"(ptr %0) #3 {
 entry:
   %var._map_v_318 = alloca ptr, align 8
   %var._19 = alloca ptr, align 8
@@ -7800,10 +7575,10 @@ a.after41:                                        ; preds = %a.create40, %loop.e
   ret ptr %a.load249
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

@@ -4,111 +4,11 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@sys_argc_global = external global i64
-@sys_argv_global = external global ptr
-@"var.annotate::cur_expected_ut" = external global { i1, i64 }
-@"var.main::empty_fndef" = external global ptr
-@"var.stmt::empty_fndef" = external global ptr
-@"var.stmt::lambda_expected_ti" = external global ptr
-@"var.expr::empty_fndef" = external global ptr
-@"var.runtime::empty_fndef" = external global ptr
-@"var.types::codegen_layout" = external global ptr
 @"var.match::empty_fndef" = global ptr null
-@"var.ast::cell_var_names" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
-@"var.layout::target_triple" = external global ptr
-@"var.sys::STDIN" = external global i64
-@"var.sys::STDOUT" = external global i64
-@"var.sys::STDERR" = external global i64
-@"var.sys::addr_null" = external global ptr
-@"var.time::CLOCK_REALTIME" = external global i64
-@"var.time::CLOCK_MONOTONIC" = external global i64
-@"var.time::NS_PER_US" = external global i64
-@"var.time::NS_PER_MS" = external global i64
-@"var.time::NS_PER_SEC" = external global i64
-@"var.time::SEC_PER_MIN" = external global i64
-@"var.time::SEC_PER_HOUR" = external global i64
-@"var.time::SEC_PER_DAY" = external global i64
-@"var.log::#owned_fd" = external global i64
-@"var.log::#O_LOG_APPEND" = external global i64
-@"var.annotate::cur_source_file" = external global ptr
-@"var.annotate::cur_target_triple" = external global ptr
-@"var.annotate::cur_stmt_files" = external global ptr
-@"var.annotate::cur_stmt_lines" = external global ptr
-@"var.annotate::cur_stmt_cols" = external global ptr
-@"var.annotate::cur_stmt_mods" = external global ptr
-@"var.annotate::cur_is_call_arg" = external global i1
-@"var.annotate::in_ct_expr" = external global i1
-@"var.annotate::cur_fn_name" = external global ptr
-@"var.annotate::unroll_seq" = external global i64
-@"var.annotate::cur_program_exprs" = external global ptr
-@"var.annotate::invalid_scc_fns" = external global ptr
-@"var.annotate::cur_ct_types" = external global ptr
-@"var.annotate::cur_ct_vals" = external global ptr
-@"var.annotate::cur_ct_cursors" = external global ptr
-@"var.annotate::cur_ct_ints" = external global ptr
-@"var.annotate::view_vars" = external global ptr
-@"var.annotate::declared_fns" = external global ptr
-@"var.annotate::called_fns" = external global ptr
-@"var.annotate::user_fns" = external global ptr
-@"var.annotate::value_used_fns" = external global ptr
-@"var.annotate::fn_alias_vars" = external global ptr
-@"var.annotate::fn_alias_tgts" = external global ptr
-@"var.path::SEP" = external global i32
-@"var.path::SEP_STR" = external global ptr
-@"var.path::LIST_SEP" = external global i32
-@"var.path::LIST_SEP_STR" = external global ptr
-@"var.path::IS_WIN" = external global i1
-@"var.types::empty_fndef" = external global ptr
 @"var.types::g" = external global ptr
-@"var.types::fneff" = external global ptr
-@"var.types::cg_timings" = external global ptr
-@"var.types::vra" = external global ptr
 @clo.const = internal constant { ptr, ptr } { ptr @"match::c_str", ptr null }
 @"var.match::c_str" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"match::dbg", ptr null }
@@ -1125,21 +1025,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.match::codegen_unboxed_ram_construct" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_match, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -1173,30 +1063,12 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
-
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_match() #0 {
+define internal void @__dva_global_init_match() #3 {
 entry:
   store ptr @clo.const, ptr @"var.match::c_str", align 8
   store ptr @clo.const.1, ptr @"var.match::dbg", align 8
@@ -1454,22 +1326,6 @@ entry:
   ret void
 }
 
-declare ptr @LLVMModuleCreateWithName(ptr)
-
-declare void @LLVMDisposeModule(ptr)
-
-declare i64 @LLVMPrintModuleToFile(ptr, ptr, ptr)
-
-declare void @LLVMDisposeMessage(ptr)
-
-declare i64 @LLVMVerifyModule(ptr, i64, ptr)
-
-declare ptr @LLVMCreateBuilder()
-
-declare void @LLVMDisposeBuilder(ptr)
-
-declare ptr @LLVMVoidType()
-
 declare ptr @LLVMInt64Type()
 
 declare ptr @LLVMInt32Type()
@@ -1488,23 +1344,9 @@ declare ptr @LLVMPointerType(ptr, i64)
 
 declare ptr @LLVMArrayType(ptr, i64)
 
-declare ptr @LLVMStructType(ptr, i64, i64)
-
 declare ptr @LLVMStructGetTypeAtIndex(ptr, i64)
 
 declare i64 @LLVMCountStructElementTypes(ptr)
-
-declare ptr @LLVMSizeOf(ptr)
-
-declare ptr @LLVMFunctionType(ptr, ptr, i64, i64)
-
-declare ptr @LLVMAddFunction(ptr, ptr, ptr)
-
-declare ptr @LLVMGetParam(ptr, i64)
-
-declare i64 @LLVMCountParams(ptr)
-
-declare ptr @LLVMGetNamedFunction(ptr, ptr)
 
 declare ptr @LLVMAppendBasicBlock(ptr, ptr)
 
@@ -1520,23 +1362,11 @@ declare i64 @LLVMConstIntGetZExtValue(ptr)
 
 declare ptr @LLVMConstReal(ptr, double)
 
-declare ptr @LLVMConstString(ptr, i64, i64)
-
-declare ptr @LLVMConstGEP2(ptr, ptr, ptr, i64)
-
 declare ptr @LLVMConstStruct(ptr, i64, i64)
 
 declare ptr @LLVMConstArray2(ptr, ptr, i64)
 
-declare ptr @LLVMConstPtrToInt(ptr, ptr)
-
-declare ptr @LLVMConstPointerCast(ptr, ptr)
-
-declare ptr @LLVMConstAdd(ptr, ptr)
-
 declare ptr @LLVMAddGlobal(ptr, ptr, ptr)
-
-declare ptr @LLVMGetNamedGlobal(ptr, ptr)
 
 declare void @LLVMSetInitializer(ptr, ptr)
 
@@ -1546,55 +1376,11 @@ declare void @LLVMSetUnnamedAddr(ptr, i64)
 
 declare void @LLVMSetLinkage(ptr, i64)
 
-declare void @LLVMSetSection(ptr, ptr)
-
-declare void @LLVMSetThreadLocal(ptr, i64)
-
-declare ptr @LLVMBuildAlloca(ptr, ptr, ptr)
-
 declare ptr @LLVMBuildStore(ptr, ptr, ptr)
-
-declare void @LLVMSetAlignment(ptr, i64)
-
-declare ptr @LLVMConstVector(ptr, i64)
-
-declare ptr @LLVMBuildInsertElement(ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildExtractElement(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildShuffleVector(ptr, ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildLoad2(ptr, ptr, ptr, ptr)
 
-declare ptr @LLVMBuildGEP2(ptr, ptr, ptr, ptr, i64, ptr)
-
 declare ptr @LLVMBuildStructGEP2(ptr, ptr, ptr, i64, ptr)
-
-declare ptr @LLVMBuildCall2(ptr, ptr, ptr, ptr, i64, ptr)
-
-declare ptr @LLVMBuildAdd(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildSub(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildMul(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildSDiv(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildUDiv(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildSRem(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildURem(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFAdd(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFSub(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFMul(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFDiv(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFRem(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildICmp(ptr, i64, ptr, ptr, ptr)
 
@@ -1602,33 +1388,9 @@ declare ptr @LLVMBuildAnd(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildOr(ptr, ptr, ptr, ptr)
 
-declare ptr @LLVMBuildXor(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildShl(ptr, ptr, ptr, ptr)
-
 declare ptr @LLVMBuildLShr(ptr, ptr, ptr, ptr)
 
-declare ptr @LLVMBuildAShr(ptr, ptr, ptr, ptr)
-
 declare ptr @LLVMBuildFCmp(ptr, i64, ptr, ptr, ptr)
-
-declare i64 @LLVMCanValueUseFastMathFlags(ptr)
-
-declare i64 @LLVMGetFastMathFlags(ptr)
-
-declare void @LLVMSetFastMathFlags(ptr, i64)
-
-declare ptr @LLVMBuildSIToFP(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildUIToFP(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFPToSI(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFPToUI(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFPTrunc(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFPExt(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildSelect(ptr, ptr, ptr, ptr, ptr)
 
@@ -1638,21 +1400,11 @@ declare ptr @LLVMBuildCondBr(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildPhi(ptr, ptr, ptr)
 
-declare void @LLVMAddIncoming(ptr, ptr, ptr, i64)
-
 declare ptr @LLVMBuildSwitch(ptr, ptr, ptr, i64)
 
 declare void @LLVMAddCase(ptr, ptr, ptr)
 
 declare ptr @LLVMGetInsertBlock(ptr)
-
-declare ptr @LLVMGetBasicBlockParent(ptr)
-
-declare ptr @LLVMGetBasicBlockTerminator(ptr)
-
-declare ptr @LLVMBuildRet(ptr, ptr)
-
-declare ptr @LLVMBuildRetVoid(ptr)
 
 declare ptr @LLVMBuildUnreachable(ptr)
 
@@ -1670,418 +1422,22 @@ declare ptr @LLVMBuildTrunc(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildBitCast(ptr, ptr, ptr, ptr)
 
-declare ptr @LLVMBuildMemCpy(ptr, ptr, i64, ptr, i64, ptr, i64)
-
-declare ptr @LLVMBuildMemMove(ptr, ptr, i64, ptr, i64, ptr, i64)
-
-declare ptr @LLVMBuildMemSet(ptr, ptr, ptr, ptr, i64)
-
 declare ptr @LLVMBuildExtractValue(ptr, ptr, i64, ptr)
 
 declare ptr @LLVMBuildInsertValue(ptr, ptr, ptr, i64, ptr)
 
 declare ptr @LLVMTypeOf(ptr)
 
-declare void @LLVMSetVolatile(ptr, i64)
-
-declare i64 @LLVMGetIntTypeWidth(ptr)
-
 declare ptr @LLVMBuildNot(ptr, ptr, ptr)
-
-declare ptr @LLVMBuildNeg(ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFNeg(ptr, ptr, ptr)
 
 declare i64 @LLVMGetTypeKind(ptr)
 
-declare ptr @LLVMGetEntryBasicBlock(ptr)
-
-declare ptr @LLVMGetFirstInstruction(ptr)
-
-declare void @LLVMPositionBuilderBefore(ptr, ptr)
-
-declare void @LLVMDisposeTargetData(ptr)
-
-declare i64 @LLVMABISizeOfType(ptr, ptr)
-
-declare i64 @LLVMABIAlignmentOfType(ptr, ptr)
-
-declare void @LLVMSetDataLayout(ptr, ptr)
-
-declare void @LLVMSetTarget(ptr, ptr)
-
-declare ptr @LLVMGetDefaultTargetTriple()
-
-declare i64 @LLVMGetTargetFromTriple(ptr, ptr, ptr)
-
-declare ptr @LLVMCreateTargetMachine(ptr, ptr, ptr, ptr, i64, i64, i64)
-
-declare void @LLVMDisposeTargetMachine(ptr)
-
-declare ptr @LLVMCreateTargetDataLayout(ptr)
-
-declare ptr @LLVMCopyStringRepOfTargetData(ptr)
-
-declare void @LLVMInitializeAArch64Target()
-
-declare void @LLVMInitializeAArch64TargetInfo()
-
-declare void @LLVMInitializeAArch64TargetMC()
-
-declare void @LLVMInitializeAMDGPUTarget()
-
-declare void @LLVMInitializeAMDGPUTargetInfo()
-
-declare void @LLVMInitializeAMDGPUTargetMC()
-
-declare void @LLVMInitializeARMTarget()
-
-declare void @LLVMInitializeARMTargetInfo()
-
-declare void @LLVMInitializeARMTargetMC()
-
-declare void @LLVMInitializeAVRTarget()
-
-declare void @LLVMInitializeAVRTargetInfo()
-
-declare void @LLVMInitializeAVRTargetMC()
-
-declare void @LLVMInitializeBPFTarget()
-
-declare void @LLVMInitializeBPFTargetInfo()
-
-declare void @LLVMInitializeBPFTargetMC()
-
-declare void @LLVMInitializeHexagonTarget()
-
-declare void @LLVMInitializeHexagonTargetInfo()
-
-declare void @LLVMInitializeHexagonTargetMC()
-
-declare void @LLVMInitializeLanaiTarget()
-
-declare void @LLVMInitializeLanaiTargetInfo()
-
-declare void @LLVMInitializeLanaiTargetMC()
-
-declare void @LLVMInitializeLoongArchTarget()
-
-declare void @LLVMInitializeLoongArchTargetInfo()
-
-declare void @LLVMInitializeLoongArchTargetMC()
-
-declare void @LLVMInitializeMipsTarget()
-
-declare void @LLVMInitializeMipsTargetInfo()
-
-declare void @LLVMInitializeMipsTargetMC()
-
-declare void @LLVMInitializeMSP430Target()
-
-declare void @LLVMInitializeMSP430TargetInfo()
-
-declare void @LLVMInitializeMSP430TargetMC()
-
-declare void @LLVMInitializeNVPTXTarget()
-
-declare void @LLVMInitializeNVPTXTargetInfo()
-
-declare void @LLVMInitializeNVPTXTargetMC()
-
-declare void @LLVMInitializePowerPCTarget()
-
-declare void @LLVMInitializePowerPCTargetInfo()
-
-declare void @LLVMInitializePowerPCTargetMC()
-
-declare void @LLVMInitializeRISCVTarget()
-
-declare void @LLVMInitializeRISCVTargetInfo()
-
-declare void @LLVMInitializeRISCVTargetMC()
-
-declare void @LLVMInitializeSparcTarget()
-
-declare void @LLVMInitializeSparcTargetInfo()
-
-declare void @LLVMInitializeSparcTargetMC()
-
-declare void @LLVMInitializeSystemZTarget()
-
-declare void @LLVMInitializeSystemZTargetInfo()
-
-declare void @LLVMInitializeSystemZTargetMC()
-
-declare void @LLVMInitializeVETarget()
-
-declare void @LLVMInitializeVETargetInfo()
-
-declare void @LLVMInitializeVETargetMC()
-
-declare void @LLVMInitializeWebAssemblyTarget()
-
-declare void @LLVMInitializeWebAssemblyTargetInfo()
-
-declare void @LLVMInitializeWebAssemblyTargetMC()
-
-declare void @LLVMInitializeX86Target()
-
-declare void @LLVMInitializeX86TargetInfo()
-
-declare void @LLVMInitializeX86TargetMC()
-
-declare void @LLVMInitializeXCoreTarget()
-
-declare void @LLVMInitializeXCoreTargetInfo()
-
-declare void @LLVMInitializeXCoreTargetMC()
-
-declare void @LLVMInitializeAArch64AsmPrinter()
-
-declare void @LLVMInitializeAMDGPUAsmPrinter()
-
-declare void @LLVMInitializeARMAsmPrinter()
-
-declare void @LLVMInitializeAVRAsmPrinter()
-
-declare void @LLVMInitializeBPFAsmPrinter()
-
-declare void @LLVMInitializeHexagonAsmPrinter()
-
-declare void @LLVMInitializeLanaiAsmPrinter()
-
-declare void @LLVMInitializeLoongArchAsmPrinter()
-
-declare void @LLVMInitializeMipsAsmPrinter()
-
-declare void @LLVMInitializeMSP430AsmPrinter()
-
-declare void @LLVMInitializeNVPTXAsmPrinter()
-
-declare void @LLVMInitializePowerPCAsmPrinter()
-
-declare void @LLVMInitializeRISCVAsmPrinter()
-
-declare void @LLVMInitializeSparcAsmPrinter()
-
-declare void @LLVMInitializeSystemZAsmPrinter()
-
-declare void @LLVMInitializeVEAsmPrinter()
-
-declare void @LLVMInitializeWebAssemblyAsmPrinter()
-
-declare void @LLVMInitializeX86AsmPrinter()
-
-declare void @LLVMInitializeXCoreAsmPrinter()
-
-declare ptr @LLVMOrcCreateLLJITBuilder()
-
-declare void @LLVMOrcDisposeLLJITBuilder(ptr)
-
-declare ptr @LLVMOrcCreateLLJIT(ptr, ptr)
-
-declare ptr @LLVMOrcDisposeLLJIT(ptr)
-
-declare ptr @LLVMOrcLLJITGetMainJITDylib(ptr)
-
-declare ptr @LLVMOrcLLJITAddLLVMIRModule(ptr, ptr, ptr)
-
-declare ptr @LLVMOrcLLJITLookup(ptr, ptr, ptr)
-
-declare ptr @LLVMOrcCreateNewThreadSafeContext()
-
-declare void @LLVMOrcDisposeThreadSafeContext(ptr)
-
-declare ptr @LLVMOrcCreateNewThreadSafeModule(ptr, ptr)
-
-declare void @LLVMOrcDisposeThreadSafeModule(ptr)
-
-declare ptr @LLVMOrcCreateDynamicLibrarySearchGeneratorForProcess(ptr, i64, ptr, ptr)
-
-declare void @LLVMOrcJITDylibAddGenerator(ptr, ptr)
-
-declare ptr @LLVMGetErrorMessage(ptr)
-
-declare void @LLVMDisposeErrorMessage(ptr)
-
-declare void @LLVMConsumeError(ptr)
-
-declare ptr @LLVMGetGlobalContext()
-
-declare ptr @LLVMCreateStringAttribute(ptr, ptr, i64, ptr, i64)
-
-declare i64 @LLVMGetEnumAttributeKindForName(ptr, i64)
-
-declare ptr @LLVMCreateEnumAttribute(ptr, i64, i64)
-
-declare void @LLVMAddAttributeAtIndex(ptr, i64, ptr)
-
-declare i64 @LLVMGetMDKindIDInContext(ptr, ptr, i64)
-
-declare ptr @LLVMValueAsMetadata(ptr)
-
-declare ptr @LLVMMDNodeInContext2(ptr, ptr, i64)
-
-declare ptr @LLVMMetadataAsValue(ptr, ptr)
-
-declare void @LLVMSetMetadata(ptr, i64, ptr)
-
-declare i32 @open(ptr, i32)
-
-declare i64 @creat(ptr, i64)
-
-declare i32 @close(i32)
-
-declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @posix_spawnp(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @waitpid(i64, ptr, i64)
-
-declare i64 @read(i32, ptr, i64)
-
-declare i64 @lseek(i32, i64, i64)
-
 declare i64 @write(i32, ptr, i64)
-
-declare i64 @writev(i32, ptr, i64)
-
-declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
 
-declare i64 @htons(i64)
-
-declare i64 @htonl(i64)
-
-declare i64 @ntohs(i64)
-
-declare i64 @ntohl(i64)
-
-declare i64 @inet_addr(ptr)
-
-declare i64 @socket(i64, i64, i64)
-
-declare i64 @connect(i64, ptr, i64)
-
-declare i64 @bind(i64, ptr, i64)
-
-declare i64 @listen(i64, i64)
-
-declare i64 @accept(i64, ptr, ptr)
-
-declare i64 @send(i64, ptr, i64, i32)
-
-declare i64 @recv(i64, ptr, i64, i32)
-
-declare i64 @sendto(i64, ptr, i64, i32, ptr, i64)
-
-declare i64 @recvfrom(i64, ptr, i64, i32, ptr, ptr)
-
-declare i64 @setsockopt(i64, i64, i64, ptr, i64)
-
-declare i64 @getsockopt(i64, i64, i64, ptr, ptr)
-
-declare i64 @getpeername(i64, ptr, ptr)
-
-declare i64 @getsockname(i64, ptr, ptr)
-
-declare i64 @shutdown(i64, i64)
-
-declare i64 @fcntl(i32, i64, i64)
-
-declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
-
-declare void @freeaddrinfo(ptr)
-
-declare i64 @getifaddrs(ptr)
-
-declare void @freeifaddrs(ptr)
-
-declare ptr @memset(ptr, i64, i64)
-
-declare i64 @atoi(ptr)
-
-declare ptr @opendir(ptr)
-
-declare ptr @readdir(ptr)
-
-declare i64 @closedir(ptr)
-
-declare i64 @strlen(ptr) #0
-
-declare i64 @strcmp(ptr, ptr)
-
-declare ptr @memcpy(ptr, ptr, i64)
-
-declare ptr @memmove(ptr, ptr, i64)
-
-declare i64 @stat(ptr, ptr)
-
-declare i64 @fstat(i32, ptr)
-
-declare i64 @rename(ptr, ptr)
-
-declare i64 @unlink(ptr)
-
-declare i64 @pipe(ptr)
-
-declare ptr @__errno_location()
-
-declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
-
-declare i64 @munmap(ptr, i64)
-
-declare i64 @syscall(i64, ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @dlopen(ptr, i32)
-
-declare ptr @dlsym(ptr, ptr)
-
-declare i64 @dlclose(ptr)
-
-declare ptr @dlerror()
-
-declare i64 @system(ptr)
-
-declare ptr @realpath(ptr, ptr)
-
-declare i64 @isatty(i32)
-
-declare i64 @tcgetattr(i32, ptr)
-
-declare i64 @tcsetattr(i32, i64, ptr)
-
-declare void @cfmakeraw(ptr)
-
-declare i64 @poll(ptr, i64, i64)
-
-declare i64 @epoll_create1(i32)
-
-declare i64 @epoll_ctl(i64, i64, i32, ptr)
-
-declare i64 @epoll_wait(i64, ptr, i64, i64)
-
-declare i64 @time(ptr)
-
-declare ptr @signal(i64, ptr)
-
-declare i64 @raise(i64)
-
-declare i64 @getrlimit(i64, ptr)
-
-declare i64 @setrlimit(i64, ptr)
-
-declare i64 @uname(ptr)
-
-declare i32 @nanosleep(ptr, ptr)
-
-declare ptr @localtime_r(ptr, ptr)
-
-declare ptr @strptime(ptr, ptr, ptr)
-
-define { i64, ptr } @"match::c_str"(ptr %0) #0 {
+define { i64, ptr } @"match::c_str"(ptr %0) #3 {
 entry:
   %var.raw = alloca ptr, align 8
   store ptr %0, ptr %var.raw, align 8
@@ -2094,9 +1450,9 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-declare { i64, ptr } @"types::c_str"(ptr) #0
+declare { i64, ptr } @"types::c_str"(ptr) #3
 
-define i64 @"match::dbg"(ptr %0) #0 {
+define i64 @"match::dbg"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -2105,9 +1461,9 @@ entry:
   ret i64 %call.res
 }
 
-declare i64 @"types::dbg"(ptr) #0
+declare i64 @"types::dbg"(ptr) #3
 
-define internal i64 @"match::#print"(ptr %0) #0 {
+define internal i64 @"match::#print"(ptr %0) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -2377,7 +1733,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define i1 @"match::is_cmp_eq_op"(ptr %0) #0 {
+define i1 @"match::is_cmp_eq_op"(ptr %0) #3 {
 entry:
   %var.op = alloca ptr, align 8
   store ptr %0, ptr %var.op, align 8
@@ -2400,7 +1756,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"match::codegen_emit_cmp"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::codegen_emit_cmp"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.cval = alloca ptr, align 8
   %var.i1t = alloca ptr, align 8
@@ -2498,9 +1854,9 @@ choice.exit17:                                    ; preds = %choice.else16, %cho
   br label %choice.exit
 }
 
-declare { i64, i1 } @"types::ctfe_eval_type_flag"(ptr, ptr) #0
+declare { i64, i1 } @"types::ctfe_eval_type_flag"(ptr, ptr) #3
 
-define ptr @"match::codegen_emit_cmp_eval"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::codegen_emit_cmp_eval"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.mixed_float = alloca i1, align 1
   %var.enum_order = alloca i1, align 1
@@ -3086,11 +2442,11 @@ choice.exit251:                                   ; preds = %choice.else250, %ch
   br label %choice.exit161
 }
 
-declare ptr @"expr::codegen_eval"(ptr, ptr) #0
+declare ptr @"expr::codegen_eval"(ptr, ptr) #3
 
-declare i1 @"types::is_enum_vt"(ptr) #0
+declare i1 @"types::is_enum_vt"(ptr) #3
 
-define { i64, ptr } @"match::expr_enum_dtype"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"match::expr_enum_dtype"(ptr %0, ptr %1) #3 {
 entry:
   %var.idx = alloca i64, align 8
   %var._91 = alloca i64, align 8
@@ -3346,27 +2702,27 @@ choice.exit90:                                    ; preds = %choice.else89, %cho
   br label %choice.exit34
 }
 
-declare { i64, ptr } @"types::var_dtype"(ptr, ptr) #0
+declare { i64, ptr } @"types::var_dtype"(ptr, ptr) #3
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-declare ptr @"types::typedef_ti"(ptr, ptr) #0
+declare ptr @"types::typedef_ti"(ptr, ptr) #3
 
-declare ptr @"types::var_fnames"(ptr, ptr) #0
+declare ptr @"types::var_fnames"(ptr, ptr) #3
 
-declare { i1, i64 } @"types::member_static_index"(ptr, ptr, ptr) #0
+declare { i1, i64 } @"types::member_static_index"(ptr, ptr, ptr) #3
 
-declare { i64, ptr } @"types::record_field_dtype"(ptr, ptr, i64) #0
+declare { i64, ptr } @"types::record_field_dtype"(ptr, ptr, i64) #3
 
-declare { i64, ptr } @"types::resolve_type_name"(ptr, ptr) #0
+declare { i64, ptr } @"types::resolve_type_name"(ptr, ptr) #3
 
-declare ptr @"expr::codegen_emit_unassignable_binop_error"(ptr) #0
+declare ptr @"expr::codegen_emit_unassignable_binop_error"(ptr) #3
 
-declare i1 @"expr::is_cmp_fixed_record"(ptr, { i1, i64 }, ptr) #0
+declare i1 @"expr::is_cmp_fixed_record"(ptr, { i1, i64 }, ptr) #3
 
-declare ptr @"expr::codegen_emit_array_cmp"(ptr, ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_emit_array_cmp"(ptr, ptr, ptr, ptr) #3
 
-define i1 @"match::cmp_order_op"(ptr %0) #0 {
+define i1 @"match::cmp_order_op"(ptr %0) #3 {
 entry:
   %var.op = alloca ptr, align 8
   store ptr %0, ptr %var.op, align 8
@@ -3393,7 +2749,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"match::cmp_expr_is_enum"(ptr %0, ptr %1) #0 {
+define i1 @"match::cmp_expr_is_enum"(ptr %0, ptr %1) #3 {
 entry:
   %var._14 = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -3450,9 +2806,9 @@ choice.next8:                                     ; preds = %choice.exit
   br label %choice.exit6
 }
 
-declare i1 @"types::is_float_vt"(ptr) #0
+declare i1 @"types::is_float_vt"(ptr) #3
 
-define ptr @"match::codegen_emit_cmp_enum_order_error"(ptr %0, ptr %1) #0 {
+define ptr @"match::codegen_emit_cmp_enum_order_error"(ptr %0, ptr %1) #3 {
 entry:
   %var.op = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -3583,7 +2939,7 @@ abort.dead32:                                     ; No predecessors!
   br label %concat.tot.len30
 }
 
-define { i64, ptr } @"match::binop_name"(ptr %0) #0 {
+define { i64, ptr } @"match::binop_name"(ptr %0) #3 {
 entry:
   %var.op = alloca ptr, align 8
   store ptr %0, ptr %var.op, align 8
@@ -3695,11 +3051,11 @@ choice.next47:                                    ; preds = %choice.next42
   br label %choice.exit
 }
 
-declare { i64, ptr } @"diag::E3127_enum_ordering_suffix"() #0
+declare { i64, ptr } @"diag::E3127_enum_ordering_suffix"() #3
 
-declare void @"types::init_error"(ptr, ptr, ptr, i64, i64) #0
+declare void @"types::init_error"(ptr, ptr, ptr, i64, i64) #3
 
-define ptr @"match::codegen_emit_cmp_nonenum_order"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #0 {
+define ptr @"match::codegen_emit_cmp_nonenum_order"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #3 {
 entry:
   %var.mixed_float = alloca i1, align 1
   %var.rr = alloca ptr, align 8
@@ -3732,7 +3088,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"match::codegen_emit_mixed_float_cmp_error"(ptr %0) #0 {
+define ptr @"match::codegen_emit_mixed_float_cmp_error"(ptr %0) #3 {
 entry:
   %var.cg = alloca ptr, align 8
   store ptr %0, ptr %var.cg, align 8
@@ -3806,7 +3162,7 @@ abort.dead10:                                     ; No predecessors!
   br label %concat.tot.len8
 }
 
-define ptr @"match::codegen_emit_cmp_nonmixed"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_emit_cmp_nonmixed"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.r_ptr = alloca i1, align 1
   %var.l_ptr = alloca i1, align 1
@@ -4512,9 +3868,9 @@ abort.dead291:                                    ; No predecessors!
   br label %nulcopy.len289
 }
 
-declare { i1, i64 } @"types::llvm_val_opt"(ptr) #0
+declare { i1, i64 } @"types::llvm_val_opt"(ptr) #3
 
-define ptr @"match::find_enum_slots_for_cmp"(ptr %0) #0 {
+define ptr @"match::find_enum_slots_for_cmp"(ptr %0) #3 {
 entry:
   %var.s105 = alloca ptr, align 8
   %var._104 = alloca ptr, align 8
@@ -4847,7 +4203,7 @@ a.after110:                                       ; preds = %a.create109, %choic
   br label %choice.exit96
 }
 
-define ptr @"match::codegen_emit_enum_deep_cmp"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"match::codegen_emit_enum_deep_cmp"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.slots = alloca ptr, align 8
   %var.rr = alloca ptr, align 8
@@ -4888,7 +4244,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %call.res
 }
 
-define ptr @"match::codegen_emit_enum_deep_cmp_depth"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5) #0 {
+define ptr @"match::codegen_emit_enum_deep_cmp_depth"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5) #3 {
 entry:
   %var.res977 = alloca ptr, align 8
   %var.p_val = alloca ptr, align 8
@@ -6653,7 +6009,7 @@ abort.dead969:                                    ; No predecessors!
   br label %nulcopy.len967
 }
 
-define i1 @"match::enum_slots_have_payload"(ptr %0, i64 %1, i64 %2) #0 {
+define i1 @"match::enum_slots_have_payload"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %rec.salloc = alloca { ptr, i1, ptr, ptr }, align 8
@@ -6850,7 +6206,7 @@ a.after48:                                        ; preds = %a.create47, %choice
   br label %choice.exit43
 }
 
-define i1 @"match::enum_slots_have_unit"(ptr %0, i64 %1, i64 %2) #0 {
+define i1 @"match::enum_slots_have_unit"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %rec.salloc = alloca { ptr, i1, ptr, ptr }, align 8
@@ -7048,9 +6404,9 @@ a.after48:                                        ; preds = %a.create47, %choice
   br label %choice.exit43
 }
 
-declare void @"stmt::branch_to"(ptr, ptr) #0
+declare void @"stmt::branch_to"(ptr, ptr) #3
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -7114,7 +6470,7 @@ done:                                             ; preds = %copyloop
   ret i64 %fmt.tot
 }
 
-define ptr @"match::eval_heap_pay_value"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::eval_heap_pay_value"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.pay_type = alloca ptr, align 8
   %var.ppay = alloca ptr, align 8
@@ -7224,9 +6580,9 @@ choice.exit39:                                    ; preds = %choice.else38, %cho
   br label %choice.exit29
 }
 
-declare i1 @"types::is_int_vt"(ptr) #0
+declare i1 @"types::is_int_vt"(ptr) #3
 
-define ptr @"match::union_int_chain"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::union_int_chain"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.phi = alloca ptr, align 8
   %var.val = alloca ptr, align 8
@@ -7619,11 +6975,11 @@ abort.dead232:                                    ; No predecessors!
   br label %nulcopy.len230
 }
 
-declare ptr @"types::llvm_type_of_vt"(ptr) #0
+declare ptr @"types::llvm_type_of_vt"(ptr) #3
 
-declare void @"stmt::llvm_add_incoming1"(ptr, ptr, ptr, ptr) #0
+declare void @"stmt::llvm_add_incoming1"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"match::union_float_chain"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::union_float_chain"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.phi = alloca ptr, align 8
   %var.val = alloca ptr, align 8
@@ -8016,7 +7372,7 @@ abort.dead232:                                    ; No predecessors!
   br label %nulcopy.len230
 }
 
-define i1 @"match::is_flag_pay_vt"(ptr %0, ptr %1) #0 {
+define i1 @"match::is_flag_pay_vt"(ptr %0, ptr %1) #3 {
 entry:
   %var.pay_type = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -8039,7 +7395,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"match::load_flag_pay"(ptr %0, ptr %1) #0 {
+define ptr @"match::load_flag_pay"(ptr %0, ptr %1) #3 {
 entry:
   %var.p = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -8081,7 +7437,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"match::codegen_compare_payload"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5) #0 {
+define ptr @"match::codegen_compare_payload"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5) #3 {
 entry:
   %var.r_i491 = alloca ptr, align 8
   %var.l_i456 = alloca ptr, align 8
@@ -8999,7 +8355,7 @@ abort.dead520:                                    ; No predecessors!
   br label %nulcopy.len518
 }
 
-define ptr @"match::codegen_emit_fcmp"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_emit_fcmp"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.r = alloca ptr, align 8
   %var.l = alloca ptr, align 8
@@ -9370,13 +8726,13 @@ abort.dead204:                                    ; No predecessors!
   br label %nulcopy.len202
 }
 
-declare i1 @"types::is_flag_vt"(ptr) #0
+declare i1 @"types::is_flag_vt"(ptr) #3
 
-declare i1 @"types::is_str_vt"(ptr) #0
+declare i1 @"types::is_str_vt"(ptr) #3
 
-declare ptr @"stmt::codegen_string_eq"(ptr, ptr, ptr) #0
+declare ptr @"stmt::codegen_string_eq"(ptr, ptr, ptr) #3
 
-define ptr @"match::find_enum_slots_from_ti"(ptr %0, ptr %1) #0 {
+define ptr @"match::find_enum_slots_from_ti"(ptr %0, ptr %1) #3 {
 entry:
   %var.s24 = alloca ptr, align 8
   %var._23 = alloca ptr, align 8
@@ -9507,7 +8863,7 @@ a.after29:                                        ; preds = %a.create28, %choice
   br label %choice.exit15
 }
 
-define ptr @"match::codegen_error_pay_eq"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::codegen_error_pay_eq"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.phi = alloca ptr, align 8
   %var.fields_end_b = alloca ptr, align 8
@@ -10480,17 +9836,17 @@ abort.dead576:                                    ; No predecessors!
   br label %nulcopy.len574
 }
 
-declare ptr @"main::error_struct_type"(ptr) #0
+declare ptr @"main::error_struct_type"(ptr) #3
 
-declare ptr @"types::error_field_vts"() #0
+declare ptr @"types::error_field_vts"() #3
 
-declare ptr @"types::error_field_ti_by_idx"(i64) #0
+declare ptr @"types::error_field_ti_by_idx"(i64) #3
 
-declare ptr @"types::resolve_record_ti"(ptr, ptr) #0
+declare ptr @"types::resolve_record_ti"(ptr, ptr) #3
 
-declare ptr @"runtime::record_meta_from_ti"(ptr, ptr) #0
+declare ptr @"runtime::record_meta_from_ti"(ptr, ptr) #3
 
-define ptr @"match::codegen_record_pay_eq"(ptr %0, ptr %1, ptr %2, { i1, i64 } %3, ptr %4, i64 %5) #0 {
+define ptr @"match::codegen_record_pay_eq"(ptr %0, ptr %1, ptr %2, { i1, i64 } %3, ptr %4, i64 %5) #3 {
 entry:
   %var.phi = alloca ptr, align 8
   %var.fields_end_b = alloca ptr, align 8
@@ -11544,7 +10900,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -11592,7 +10948,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #6 {
@@ -11605,17 +10961,13 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
-
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-declare i1 @"types::is_any_ram_vt"(ptr) #0
+declare i1 @"types::is_any_ram_vt"(ptr) #3
 
-define ptr @"match::codegen_emit_flag_eq"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"match::codegen_emit_flag_eq"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.pred = alloca i64, align 8
   %var.r1 = alloca ptr, align 8
@@ -11710,9 +11062,9 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len21
 }
 
-declare ptr @"stmt::codegen_cond_value_valid"(ptr, ptr, ptr) #0
+declare ptr @"stmt::codegen_cond_value_valid"(ptr, ptr, ptr) #3
 
-define ptr @"match::codegen_emit_cmp_flag_ram_error"(ptr %0, ptr %1) #0 {
+define ptr @"match::codegen_emit_cmp_flag_ram_error"(ptr %0, ptr %1) #3 {
 entry:
   %var.op = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -11869,15 +11221,15 @@ abort.dead40:                                     ; No predecessors!
   br label %concat.tot.len38
 }
 
-declare { i64, ptr } @"diag::E3127_ram_ordering_suffix"() #0
+declare { i64, ptr } @"diag::E3127_ram_ordering_suffix"() #3
 
-declare i1 @"types::is_unsigned_vt"(ptr) #0
+declare i1 @"types::is_unsigned_vt"(ptr) #3
 
-declare i1 @"types::is_ptr_vt"(ptr) #0
+declare i1 @"types::is_ptr_vt"(ptr) #3
 
-declare ptr @"stmt::coerce_int_ext"(ptr, ptr, ptr, i1) #0
+declare ptr @"stmt::coerce_int_ext"(ptr, ptr, ptr, i1) #3
 
-define ptr @"match::codegen_emit_icmp"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #0 {
+define ptr @"match::codegen_emit_icmp"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #3 {
 entry:
   %var.is_unsigned = alloca i1, align 1
   %var.r = alloca ptr, align 8
@@ -12619,7 +11971,7 @@ abort.dead447:                                    ; No predecessors!
   br label %nulcopy.len445
 }
 
-define ptr @"match::find_enum_slots_search"(ptr %0, i64 %1, i64 %2) #0 {
+define ptr @"match::find_enum_slots_search"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.n = alloca i64, align 8
   %var.i = alloca i64, align 8
@@ -12640,7 +11992,7 @@ entry:
   ret ptr %a.new
 }
 
-define ptr @"match::codegen_emit_compile_time_error"(ptr %0) #0 {
+define ptr @"match::codegen_emit_compile_time_error"(ptr %0) #3 {
 entry:
   %var.cg = alloca ptr, align 8
   store ptr %0, ptr %var.cg, align 8
@@ -12666,7 +12018,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define i1 @"match::ctfe_truthy"(ptr %0) #0 {
+define i1 @"match::ctfe_truthy"(ptr %0) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._41 = alloca ptr, align 8
@@ -12798,7 +12150,7 @@ choice.next35:                                    ; preds = %choice.next24
   br label %choice.exit
 }
 
-define i1 @"match::ctfe_records_equal_at"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i1 @"match::ctfe_records_equal_at"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.bi = alloca ptr, align 8
   %var.ai = alloca ptr, align 8
@@ -13157,7 +12509,7 @@ a.after142:                                       ; preds = %a.create141, %a.aft
   br label %choice.exit124
 }
 
-define i1 @"match::ctfe_eq"(ptr %0, ptr %1) #0 {
+define i1 @"match::ctfe_eq"(ptr %0, ptr %1) #3 {
 entry:
   %var.br = alloca ptr, align 8
   %var._90 = alloca ptr, align 8
@@ -13423,7 +12775,7 @@ and.1465.exit:                                    ; preds = %and.1465.else, %and
   br label %choice.exit82
 }
 
-define ptr @"match::ctfe_val_vt"(ptr %0) #0 {
+define ptr @"match::ctfe_val_vt"(ptr %0) #3 {
 entry:
   %var._58 = alloca ptr, align 8
   %var._46 = alloca ptr, align 8
@@ -13579,7 +12931,7 @@ choice.next52:                                    ; preds = %choice.next40
   br label %choice.exit
 }
 
-define i1 @"match::ctfe_is_none"(ptr %0) #0 {
+define i1 @"match::ctfe_is_none"(ptr %0) #3 {
 entry:
   %var.v = alloca ptr, align 8
   store ptr %0, ptr %var.v, align 8
@@ -13600,7 +12952,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"match::ctfe_vals_get"(ptr %0, i64 %1) #0 {
+define ptr @"match::ctfe_vals_get"(ptr %0, i64 %1) #3 {
 entry:
   %var.idx = alloca i64, align 8
   %var.vals = alloca ptr, align 8
@@ -13744,7 +13096,7 @@ err.normal:                                       ; preds = %unwrap.abort.1466
   unreachable
 }
 
-define ptr @"match::ctfe_int_bool"(i1 %0) #0 {
+define ptr @"match::ctfe_int_bool"(i1 %0) #3 {
 entry:
   %var.b = alloca i1, align 1
   store i1 %0, ptr %var.b, align 1
@@ -13806,7 +13158,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"match::ctfe_eval_int_bin"(ptr %0, i64 %1, i64 %2) #0 {
+define ptr @"match::ctfe_eval_int_bin"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.b = alloca i64, align 8
   %var.a = alloca i64, align 8
@@ -14390,7 +13742,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define ptr @"match::ctfe_eval_flt_bin"(ptr %0, double %1, double %2) #0 {
+define ptr @"match::ctfe_eval_flt_bin"(ptr %0, double %1, double %2) #3 {
 entry:
   %var.b = alloca double, align 8
   %var.a = alloca double, align 8
@@ -14638,7 +13990,7 @@ choice.next118:                                   ; preds = %choice.next109
   br label %choice.exit
 }
 
-define { i64, ptr } @"match::ctfe_encode_rune"(i64 %0) #0 {
+define { i64, ptr } @"match::ctfe_encode_rune"(i64 %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.b = alloca ptr, align 8
@@ -15414,7 +14766,7 @@ abort.dead395:                                    ; No predecessors!
   br label %b.new.buf.len393
 }
 
-define i64 @"match::str_count_runes"(ptr %0) #0 {
+define i64 @"match::str_count_runes"(ptr %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -15476,7 +14828,7 @@ choice.exit:                                      ; preds = %choice.then, %loop.
   br label %loop.latch.1468
 }
 
-define ptr @"match::ctfe_eval_bin_vals"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::ctfe_eval_bin_vals"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.rf290 = alloca double, align 8
   %var._289 = alloca double, align 8
@@ -16095,7 +15447,7 @@ pay.float.merge286:                               ; preds = %pay.float.nullbb285
   br label %choice.exit256
 }
 
-define ptr @"match::ctfe_lookup_frame_at"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"match::ctfe_lookup_frame_at"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -16517,7 +15869,7 @@ a.after169:                                       ; preds = %a.create168, %a.aft
   br label %choice.exit57
 }
 
-define ptr @"match::ctfe_lookup_var_at"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"match::ctfe_lookup_var_at"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.found = alloca ptr, align 8
   %var.fr = alloca ptr, align 8
@@ -16738,7 +16090,7 @@ a.after49:                                        ; preds = %a.create48, %choice
   br label %choice.exit43
 }
 
-define ptr @"match::ctfe_push_frame"(ptr %0, ptr %1) #0 {
+define ptr @"match::ctfe_push_frame"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -16931,7 +16283,7 @@ a.after61:                                        ; preds = %a.create60, %a.stor
   ret ptr %a.load269
 }
 
-define i1 @"match::ctfe_match_range"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #0 {
+define i1 @"match::ctfe_match_range"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #3 {
 entry:
   %var.rhs_op = alloca ptr, align 8
   %var.r_res = alloca ptr, align 8
@@ -17128,7 +16480,7 @@ choice.exit68:                                    ; preds = %choice.else67, %cho
   br label %choice.exit57
 }
 
-define ptr @"match::ctfe_eval"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"match::ctfe_eval"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.r568 = alloca ptr, align 8
   %var._567 = alloca ptr, align 8
@@ -18202,7 +17554,7 @@ a.after583:                                       ; preds = %a.create582, %choic
   br label %choice.exit574
 }
 
-define ptr @"match::ctfe_eval_unary"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #0 {
+define ptr @"match::ctfe_eval_unary"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._338 = alloca ptr, align 8
@@ -18944,9 +18296,9 @@ choice.next342:                                   ; preds = %choice.case331
   br label %choice.exit340
 }
 
-declare i1 @"types::is_rune_vt"(ptr) #0
+declare i1 @"types::is_rune_vt"(ptr) #3
 
-define ptr @"match::ctfe_eval_bin"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5) #0 {
+define ptr @"match::ctfe_eval_bin"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5) #3 {
 entry:
   %"var.rres'265" = alloca ptr, align 8
   %"var.rres'218" = alloca ptr, align 8
@@ -19489,7 +18841,7 @@ choice.next271:                                   ; preds = %a.after253
   br label %choice.exit269
 }
 
-define ptr @"match::ctfe_eval_block_at"(ptr %0, ptr %1, i64 %2, ptr %3, i64 %4) #0 {
+define ptr @"match::ctfe_eval_block_at"(ptr %0, ptr %1, i64 %2, ptr %3, i64 %4) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.next_frames = alloca ptr, align 8
@@ -20225,7 +19577,7 @@ a.after360:                                       ; preds = %a.create359, %a.aft
   br label %choice.exit322
 }
 
-define ptr @"match::ctfe_set_var"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::ctfe_set_var"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.cur = alloca ptr, align 8
   %var._ = alloca i64, align 8
@@ -21167,7 +20519,7 @@ a.after475:                                       ; preds = %a.create474, %a.sto
   br label %choice.exit
 }
 
-define ptr @"match::ctfe_set_frame_var_at"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, ptr %5) #0 {
+define ptr @"match::ctfe_set_frame_var_at"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, ptr %5) #3 {
 entry:
   %var.next_acc = alloca ptr, align 8
   %var.cur_v = alloca ptr, align 8
@@ -22027,7 +21379,7 @@ a.after416:                                       ; preds = %a.create415, %a.aft
   br label %choice.exit69
 }
 
-define ptr @"match::ctfe_eval_choice"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"match::ctfe_eval_choice"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.cond_res = alloca ptr, align 8
   %var.depth = alloca i64, align 8
@@ -22168,7 +21520,7 @@ a.after45:                                        ; preds = %a.create44, %choice
   br label %choice.exit20
 }
 
-define ptr @"match::ctfe_eval_branches"(ptr %0, ptr %1, ptr %2, i64 %3, ptr %4, i64 %5) #0 {
+define ptr @"match::ctfe_eval_branches"(ptr %0, ptr %1, ptr %2, i64 %3, ptr %4, i64 %5) #3 {
 entry:
   %var.matched453 = alloca i1, align 1
   %var._ = alloca ptr, align 8
@@ -23239,7 +22591,7 @@ a.after499:                                       ; preds = %a.create498, %a.aft
   br label %choice.exit457
 }
 
-define i1 @"match::ctfe_is_pos_flag_expr"(ptr %0) #0 {
+define i1 @"match::ctfe_is_pos_flag_expr"(ptr %0) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -23298,7 +22650,7 @@ choice.next8:                                     ; preds = %and.1490.then
   br label %choice.exit6
 }
 
-define i1 @"match::ctfe_match_cases"(ptr %0, ptr %1, ptr %2, i64 %3, ptr %4, i64 %5) #0 {
+define i1 @"match::ctfe_match_cases"(ptr %0, ptr %1, ptr %2, i64 %3, ptr %4, i64 %5) #3 {
 entry:
   %var.matched = alloca i1, align 1
   %var.cv_res = alloca ptr, align 8
@@ -23667,7 +23019,7 @@ a.after125:                                       ; preds = %a.create124, %a.aft
   br label %choice.exit103
 }
 
-define ptr @"match::ctfe_eval_var"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"match::ctfe_eval_var"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var._321 = alloca ptr, align 8
   %var._304 = alloca ptr, align 8
@@ -24516,17 +23868,17 @@ a.after461:                                       ; preds = %a.create460, %choic
   br label %choice.exit342
 }
 
-declare { i64, ptr } @"types::resolve_fn_name"(ptr, ptr) #0
+declare { i64, ptr } @"types::resolve_fn_name"(ptr, ptr) #3
 
-declare ptr @"stmt::fndef_of"(ptr, ptr, i64) #0
+declare ptr @"stmt::fndef_of"(ptr, ptr, i64) #3
 
-declare ptr @"types::ct_val_bind_find"(ptr) #0
+declare ptr @"types::ct_val_bind_find"(ptr) #3
 
-declare { i64, ptr } @"ast::triple_os"(ptr) #0
+declare { i64, ptr } @"ast::triple_os"(ptr) #3
 
-declare { i64, ptr } @"ast::triple_arch"(ptr) #0
+declare { i64, ptr } @"ast::triple_arch"(ptr) #3
 
-define ptr @"match::ctfe_lookup_top_const"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"match::ctfe_lookup_top_const"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.res1 = alloca ptr, align 8
   %var.priv_name = alloca ptr, align 8
@@ -25058,9 +24410,9 @@ a.after247:                                       ; preds = %a.create246, %a.aft
   br label %choice.exit221
 }
 
-declare i1 @"types::name_is_qualified"(ptr, i64) #0
+declare i1 @"types::name_is_qualified"(ptr, i64) #3
 
-define ptr @"match::ctfe_lookup_top_const_at"(ptr %0, ptr %1, ptr %2, i1 %3, i64 %4, i64 %5, ptr %6, i64 %7) #0 {
+define ptr @"match::ctfe_lookup_top_const_at"(ptr %0, ptr %1, ptr %2, i1 %3, i64 %4, i64 %5, ptr %6, i64 %7) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.b = alloca ptr, align 8
@@ -25810,11 +25162,11 @@ a.after322:                                       ; preds = %a.create321, %a.aft
   br label %choice.exit47
 }
 
-declare i1 @"types::has_str"(ptr, ptr) #0
+declare i1 @"types::has_str"(ptr, ptr) #3
 
-declare i1 @"types::sig_name_matches"(ptr, ptr) #0
+declare i1 @"types::sig_name_matches"(ptr, ptr) #3
 
-define ptr @"match::ctfe_eval_call"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"match::ctfe_eval_call"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.ct_v = alloca ptr, align 8
   %var.callee = alloca ptr, align 8
@@ -27104,7 +26456,7 @@ a.after695:                                       ; preds = %a.create694, %choic
   br label %choice.exit663
 }
 
-define ptr @"match::ctfe_eval_call_val"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #0 {
+define ptr @"match::ctfe_eval_call_val"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #3 {
 entry:
   %var.val_elem = alloca ptr, align 8
   %var.idx387 = alloca i64, align 8
@@ -27962,7 +27314,7 @@ choice.exit392:                                   ; preds = %choice.else391, %ch
   br label %choice.exit362
 }
 
-define ptr @"match::ctfe_eval_call_fn"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #0 {
+define ptr @"match::ctfe_eval_call_fn"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #3 {
 entry:
   %var.new_frames = alloca ptr, align 8
   %var.new_frame = alloca ptr, align 8
@@ -28335,7 +27687,7 @@ a.after154:                                       ; preds = %a.create153, %a.aft
   br label %choice.exit120
 }
 
-define ptr @"match::ctfe_eval_args"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4, ptr %5) #0 {
+define ptr @"match::ctfe_eval_args"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4, ptr %5) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -28879,7 +28231,7 @@ a.after204:                                       ; preds = %a.create203, %a.aft
   br label %choice.exit83
 }
 
-define i64 @"match::ctfe_map_find_key"(ptr %0, ptr %1, i64 %2) #0 {
+define i64 @"match::ctfe_map_find_key"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.ki = alloca ptr, align 8
   %var.i = alloca i64, align 8
@@ -29101,7 +28453,7 @@ a.after54:                                        ; preds = %a.create53, %choice
   br label %choice.exit48
 }
 
-define ptr @"match::ctfe_eval_user_diag"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"match::ctfe_eval_user_diag"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %cat.ibuf83 = alloca [24 x i8], align 1
   %cat.ibuf = alloca [24 x i8], align 1
@@ -29501,9 +28853,9 @@ abort.dead127:                                    ; No predecessors!
   br label %concat.tot.len125
 }
 
-declare void @"log::warn"(ptr) #0
+declare void @"log::warn"(ptr) #3
 
-define ptr @"match::ctfe_eval_record"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"match::ctfe_eval_record"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.f_res = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -29876,7 +29228,7 @@ a.after141:                                       ; preds = %a.create140, %a.aft
   br label %choice.exit111
 }
 
-define ptr @"match::ctfe_eval_map_literal"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"match::ctfe_eval_map_literal"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var._122 = alloca ptr, align 8
   %var._121 = alloca ptr, align 8
@@ -30459,7 +29811,7 @@ a.after225:                                       ; preds = %a.create224, %a.aft
   br label %choice.exit196
 }
 
-define ptr @"match::ctfe_eval_member"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"match::ctfe_eval_member"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.elem = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -31515,7 +30867,7 @@ err.normal:                                       ; preds = %str_ok480
   unreachable
 }
 
-define { i64, ptr } @"match::module_member_name"(ptr %0) #0 {
+define { i64, ptr } @"match::module_member_name"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -31648,7 +31000,7 @@ abort.dead38:                                     ; No predecessors!
   br label %concat.tot.len36
 }
 
-define i1 @"match::ctfe_target_is_frame_var"(ptr %0, ptr %1) #0 {
+define i1 @"match::ctfe_target_is_frame_var"(ptr %0, ptr %1) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -31726,9 +31078,9 @@ a.after9:                                         ; preds = %a.create8, %a.after
   br label %choice.exit
 }
 
-declare ptr @"types::resolve_type_value"(ptr, ptr) #0
+declare ptr @"types::resolve_type_value"(ptr, ptr) #3
 
-define ptr @"match::ctfe_eval_type_prop"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::ctfe_eval_type_prop"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.len = alloca i64, align 8
   %var.s = alloca ptr, align 8
@@ -32128,17 +31480,17 @@ choice.exit155:                                   ; preds = %choice.else154, %ch
   br label %choice.exit
 }
 
-declare { i64, ptr } @"types::type_info_display_name"(ptr, ptr, ptr) #0
+declare { i64, ptr } @"types::type_info_display_name"(ptr, ptr, ptr) #3
 
-declare ptr @"types::vt_from_ti_cg"(ptr, ptr) #0
+declare ptr @"types::vt_from_ti_cg"(ptr, ptr) #3
 
-declare i64 @"types::codegen_sizeof_bytes"(ptr, ptr) #0
+declare i64 @"types::codegen_sizeof_bytes"(ptr, ptr) #3
 
-declare i64 @"types::codegen_alignof_bytes"(ptr, ptr) #0
+declare i64 @"types::codegen_alignof_bytes"(ptr, ptr) #3
 
-declare ptr @"types::ctfe_canonical_ti"(ptr, ptr) #0
+declare ptr @"types::ctfe_canonical_ti"(ptr, ptr) #3
 
-define ptr @"match::ctfe_eval_type_index"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"match::ctfe_eval_type_index"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %var._100 = alloca ptr, align 8
@@ -32731,9 +32083,9 @@ err.normal215:                                    ; preds = %str_ok203
   unreachable
 }
 
-declare { i64, ptr } @"str::from_int"(i64) #0
+declare { i64, ptr } @"str::from_int"(i64) #3
 
-define i64 @"match::find_name_index_at"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i64 @"match::find_name_index_at"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.ni = alloca ptr, align 8
   %var.n = alloca i64, align 8
@@ -32958,7 +32310,7 @@ a.after47:                                        ; preds = %a.create46, %choice
   br label %choice.exit41
 }
 
-define i1 @"match::is_all_digits_at"(ptr %0, i64 %1, i64 %2) #0 {
+define i1 @"match::is_all_digits_at"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.c = alloca i64, align 8
   %var.n = alloca i64, align 8
@@ -33047,9 +32399,9 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare ptr @"str::to_int"(ptr) #0
+declare ptr @"str::to_int"(ptr) #3
 
-define ptr @"match::ctfe_eval_key_access"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"match::ctfe_eval_key_access"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var.idx = alloca i64, align 8
@@ -33298,7 +32650,7 @@ choice.exit79:                                    ; preds = %choice.else78, %cho
   br label %choice.exit57
 }
 
-define i64 @"match::ctfe_hash_val"(ptr %0) #0 {
+define i64 @"match::ctfe_hash_val"(ptr %0) #3 {
 entry:
   %var._26 = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -33429,7 +32781,7 @@ loop.exit.1538:                                   ; preds = %loop.exit.nat.1538
   br label %choice.exit
 }
 
-define i64 @"match::ctfe_next_cap"(i64 %0) #0 {
+define i64 @"match::ctfe_next_cap"(i64 %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -33480,7 +32832,7 @@ choice.exit:                                      ; preds = %loop.body.1539
   br label %loop.latch.1539
 }
 
-define ptr @"match::ctfe_lower_record"(ptr %0, ptr %1) #0 {
+define ptr @"match::ctfe_lower_record"(ptr %0, ptr %1) #3 {
 entry:
   %var.gv = alloca ptr, align 8
   %var.gname = alloca ptr, align 8
@@ -34326,7 +33678,7 @@ abort.dead343:                                    ; No predecessors!
   br label %nulcopy.len341
 }
 
-define ptr @"match::ctfe_lower"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::ctfe_lower"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._110 = alloca ptr, align 8
@@ -34587,9 +33939,9 @@ choice.next104:                                   ; preds = %choice.next93
   br label %choice.exit8
 }
 
-declare ptr @"stmt::codegen_string_literal"(ptr, ptr) #0
+declare ptr @"stmt::codegen_string_literal"(ptr, ptr) #3
 
-define ptr @"match::ctfe_lower_map"(ptr %0, ptr %1) #0 {
+define ptr @"match::ctfe_lower_map"(ptr %0, ptr %1) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.tname = alloca ptr, align 8
@@ -38826,23 +38178,23 @@ choice.exit2445:                                  ; preds = %choice.then2444, %c
   br label %choice.exit2354
 }
 
-declare ptr @"types::addrs_buf"(ptr) #0
+declare ptr @"types::addrs_buf"(ptr) #3
 
-declare ptr @"runtime::map_struct_type"(ptr) #0
+declare ptr @"runtime::map_struct_type"(ptr) #3
 
-declare { i64, ptr } @"types::value_type_name"(ptr) #0
+declare { i64, ptr } @"types::value_type_name"(ptr) #3
 
-declare i1 @"types::has_type_name"(ptr, ptr) #0
+declare i1 @"types::has_type_name"(ptr, ptr) #3
 
-declare void @"runtime::add_type"(ptr, ptr, ptr) #0
+declare void @"runtime::add_type"(ptr, ptr, ptr) #3
 
-declare ptr @"types::struct_type_n"(ptr, ptr, i64) #0
+declare ptr @"types::struct_type_n"(ptr, ptr, i64) #3
 
-declare { i64, ptr } @"types::typedef_name_of_rt"(ptr, ptr) #0
+declare { i64, ptr } @"types::typedef_name_of_rt"(ptr, ptr) #3
 
-declare void @"runtime::push_typedef"(ptr, ptr) #0
+declare void @"runtime::push_typedef"(ptr, ptr) #3
 
-define ptr @"match::codegen_eval_user_diag"(ptr %0, ptr %1) #0 {
+define ptr @"match::codegen_eval_user_diag"(ptr %0, ptr %1) #3 {
 entry:
   %cat.ibuf80 = alloca [24 x i8], align 1
   %cat.ibuf = alloca [24 x i8], align 1
@@ -39223,7 +38575,7 @@ abort.dead124:                                    ; No predecessors!
   br label %concat.tot.len122
 }
 
-define ptr @"match::codegen_emit_logical"(ptr %0, i1 %1, ptr %2) #0 {
+define ptr @"match::codegen_emit_logical"(ptr %0, i1 %1, ptr %2) #3 {
 entry:
   %var.rhs_arr = alloca i1, align 1
   %var.r_fvts = alloca ptr, align 8
@@ -39451,13 +38803,13 @@ a.after88:                                        ; preds = %a.create87, %a.afte
   br label %choice.exit
 }
 
-declare i1 @"expr::is_flag_fixed_record"(ptr, { i1, i64 }, ptr) #0
+declare i1 @"expr::is_flag_fixed_record"(ptr, { i1, i64 }, ptr) #3
 
-declare i1 @"expr::is_flag_vector_expr"(ptr, ptr) #0
+declare i1 @"expr::is_flag_vector_expr"(ptr, ptr) #3
 
-declare ptr @"expr::codegen_emit_array_logical"(ptr, i1, ptr, ptr) #0
+declare ptr @"expr::codegen_emit_array_logical"(ptr, i1, ptr, ptr) #3
 
-define ptr @"match::codegen_emit_logical_scalar"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_emit_logical_scalar"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.phi = alloca ptr, align 8
   %var.res_lt = alloca ptr, align 8
@@ -40297,7 +39649,7 @@ choice.exit471:                                   ; preds = %choice.then470, %st
   ret ptr %rec.alloc
 }
 
-define void @"match::codegen_check_logical_ram_layout"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define void @"match::codegen_check_logical_ram_layout"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.rname = alloca ptr, align 8
   %var.lname = alloca ptr, align 8
@@ -40416,7 +39768,7 @@ choice.exit41:                                    ; preds = %choice.then40, %str
   ret void
 }
 
-define { i64, ptr } @"match::ram_expr_dtype"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"match::ram_expr_dtype"(ptr %0, ptr %1) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var._10 = alloca ptr, align 8
@@ -40479,7 +39831,7 @@ choice.next4:                                     ; preds = %choice.next
   br label %choice.exit
 }
 
-define { i64, ptr } @"match::ram_bin_dtype"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"match::ram_bin_dtype"(ptr %0, ptr %1) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -40536,7 +39888,7 @@ choice.next7:                                     ; preds = %choice.next
   br label %choice.exit
 }
 
-define { i64, ptr } @"match::ram_expr_call_dtype"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"match::ram_expr_call_dtype"(ptr %0, ptr %1) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -40574,7 +39926,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i64, ptr } @"match::ram_user_type_name"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"match::ram_user_type_name"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -40598,9 +39950,9 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-declare i1 @"types::is_user_type"(ptr, ptr) #0
+declare i1 @"types::is_user_type"(ptr, ptr) #3
 
-define void @"match::codegen_check_logical_right_name"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define void @"match::codegen_check_logical_right_name"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.rname = alloca ptr, align 8
   %var.lname = alloca ptr, align 8
@@ -40659,7 +40011,7 @@ choice.exit:                                      ; preds = %choice.then, %str.e
   ret void
 }
 
-define void @"match::codegen_check_logical_named"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define void @"match::codegen_check_logical_named"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.left = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -40698,7 +40050,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define void @"match::codegen_check_logical_right_type"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define void @"match::codegen_check_logical_right_type"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.right = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -40737,7 +40089,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define void @"match::codegen_check_logical_heap_pair"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define void @"match::codegen_check_logical_heap_pair"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.right = alloca ptr, align 8
   %var.left = alloca ptr, align 8
@@ -40755,7 +40107,7 @@ entry:
   ret void
 }
 
-define void @"match::codegen_check_logical_shared_slot"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define void @"match::codegen_check_logical_shared_slot"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.right = alloca ptr, align 8
   %var.left = alloca ptr, align 8
@@ -40790,7 +40142,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret void
 }
 
-define void @"match::codegen_check_logical_slots"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"match::codegen_check_logical_slots"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.right = alloca ptr, align 8
   %var.left = alloca ptr, align 8
@@ -40861,7 +40213,7 @@ abort.dead12:                                     ; No predecessors!
   br label %concat.tot.len10
 }
 
-define i1 @"match::ram_slots_equal"(ptr %0, ptr %1) #0 {
+define i1 @"match::ram_slots_equal"(ptr %0, ptr %1) #3 {
 entry:
   %var.right = alloca ptr, align 8
   %var.left = alloca ptr, align 8
@@ -40890,7 +40242,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i1 %choice.res
 }
 
-define i1 @"match::ram_payload_slots_equal"(ptr %0, ptr %1) #0 {
+define i1 @"match::ram_payload_slots_equal"(ptr %0, ptr %1) #3 {
 entry:
   %var.right = alloca ptr, align 8
   %var.left = alloca ptr, align 8
@@ -40919,7 +40271,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i1 %choice.res
 }
 
-define i1 @"match::ram_payload_types_equal"(ptr %0, ptr %1) #0 {
+define i1 @"match::ram_payload_types_equal"(ptr %0, ptr %1) #3 {
 entry:
   %var.right = alloca ptr, align 8
   %var.left = alloca ptr, align 8
@@ -40985,7 +40337,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   ret i1 %str.eq.result
 }
 
-define void @"match::codegen_mark_logical_type"(ptr %0, ptr %1) #0 {
+define void @"match::codegen_mark_logical_type"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -40998,13 +40350,13 @@ entry:
   ret void
 }
 
-declare ptr @"stmt::codegen_cond_value"(ptr, ptr, ptr) #0
+declare ptr @"stmt::codegen_cond_value"(ptr, ptr, ptr) #3
 
-declare void @"types::emit_cov_edge"(ptr) #0
+declare void @"types::emit_cov_edge"(ptr) #3
 
-declare ptr @"stmt::coerce_int"(ptr, ptr, ptr) #0
+declare ptr @"stmt::coerce_int"(ptr, ptr, ptr) #3
 
-define i1 @"match::ram_named"(ptr %0, ptr %1) #0 {
+define i1 @"match::ram_named"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -41033,7 +40385,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"match::ram_slots_of"(ptr %0, ptr %1) #0 {
+define ptr @"match::ram_slots_of"(ptr %0, ptr %1) #3 {
 entry:
   %var.slots = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -41101,7 +40453,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { ptr, i1 } @"match::entry_is_predicate"(ptr %0, ptr %1) #0 {
+define { ptr, i1 } @"match::entry_is_predicate"(ptr %0, ptr %1) #3 {
 entry:
   %"var.is_fn'144" = alloca i1, align 1
   %var.mname = alloca ptr, align 8
@@ -41531,17 +40883,17 @@ choice.exit148:                                   ; preds = %choice.else147, %ch
   br label %choice.exit83
 }
 
-declare i1 @"types::var_has_storage"(ptr, ptr) #0
+declare i1 @"types::var_has_storage"(ptr, ptr) #3
 
-declare i1 @"types::is_fn_name"(ptr, ptr) #0
+declare i1 @"types::is_fn_name"(ptr, ptr) #3
 
-declare { i64, ptr } @"expr::fn_alias"(ptr, ptr) #0
+declare { i64, ptr } @"expr::fn_alias"(ptr, ptr) #3
 
-declare i1 @"types::has_fn_name"(ptr, ptr) #0
+declare i1 @"types::has_fn_name"(ptr, ptr) #3
 
-declare i1 @"stmt::fn_has_signature"(ptr, ptr, i64) #0
+declare i1 @"stmt::fn_has_signature"(ptr, ptr, i64) #3
 
-define ptr @"match::codegen_choice_match_range"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_choice_match_range"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.rhs_ok = alloca ptr, align 8
   %var.rv = alloca ptr, align 8
@@ -41761,7 +41113,7 @@ choice.exit96:                                    ; preds = %choice.else95, %cho
   br label %choice.exit69
 }
 
-define ptr @"match::codegen_choice_match_entry"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_choice_match_entry"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.cint_safe = alloca ptr, align 8
   %var.ci = alloca ptr, align 8
@@ -42094,7 +41446,7 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len144
 }
 
-define ptr @"match::codegen_eval_predicate"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_eval_predicate"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.bv = alloca ptr, align 8
   %var.ptype = alloca ptr, align 8
@@ -42498,11 +41850,11 @@ a.store117:                                       ; preds = %a.grow116, %a.check
   br label %choice.exit80
 }
 
-declare ptr @"stmt::truncate_vars"(ptr, i64) #0
+declare ptr @"stmt::truncate_vars"(ptr, i64) #3
 
-declare ptr @"expr::call_named"(ptr, ptr, ptr) #0
+declare ptr @"expr::call_named"(ptr, ptr, ptr) #3
 
-define ptr @"match::codegen_choice_match"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_choice_match"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.values = alloca ptr, align 8
   %var.cond_type = alloca ptr, align 8
@@ -42563,7 +41915,7 @@ a.after10:                                        ; preds = %a.create9, %a.after
   ret ptr %call.res
 }
 
-define ptr @"match::codegen_choice_match_at"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5, { i1, i64 } %6) #0 {
+define ptr @"match::codegen_choice_match_at"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5, { i1, i64 } %6) #3 {
 entry:
   %var.m2 = alloca ptr, align 8
   %var.prev = alloca ptr, align 8
@@ -42885,7 +42237,7 @@ a.after88:                                        ; preds = %a.create87, %choice
   br label %choice.exit
 }
 
-define ptr @"match::branch_test"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::branch_test"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.cond_type = alloca ptr, align 8
   %var.cond_val = alloca ptr, align 8
@@ -42942,7 +42294,7 @@ choice.next8:                                     ; preds = %choice.next
   br label %choice.exit
 }
 
-define i1 @"match::choice_is_value_switch"(ptr %0) #0 {
+define i1 @"match::choice_is_value_switch"(ptr %0) #3 {
 entry:
   %var.nb = alloca i64, align 8
   %var.ch = alloca ptr, align 8
@@ -42973,7 +42325,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i1 %choice.res
 }
 
-define i1 @"match::choice_is_value_switch_at"(ptr %0, i64 %1, i64 %2, i1 %3) #0 {
+define i1 @"match::choice_is_value_switch_at"(ptr %0, i64 %1, i64 %2, i1 %3) #3 {
 entry:
   %var.ncv = alloca i64, align 8
   %var.is_last = alloca i1, align 1
@@ -43264,7 +42616,7 @@ a.after83:                                        ; preds = %a.create82, %choice
   br label %choice.exit78
 }
 
-define i1 @"match::choice_case_values_are_ints"(ptr %0, i64 %1, i64 %2) #0 {
+define i1 @"match::choice_case_values_are_ints"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var._61 = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -43530,7 +42882,7 @@ a.after66:                                        ; preds = %a.create65, %pay.in
   br label %choice.exit32
 }
 
-define { i1, i64 } @"match::choice_first_live_val"(ptr %0, ptr %1, i64 %2) #0 {
+define { i1, i64 } @"match::choice_first_live_val"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var._112 = alloca ptr, align 8
   %var.v = alloca ptr, align 8
@@ -43881,7 +43233,7 @@ a.after130:                                       ; preds = %a.create129, %a.aft
   br label %choice.exit47
 }
 
-define ptr @"match::choice_first_live_vt"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"match::choice_first_live_vt"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var._111 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -44239,7 +43591,7 @@ a.after133:                                       ; preds = %a.create132, %a.aft
   br label %choice.exit48
 }
 
-define i1 @"match::choice_has_unassignable"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"match::choice_has_unassignable"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.un = alloca i1, align 1
   %var.vt = alloca ptr, align 8
@@ -44620,7 +43972,7 @@ a.after134:                                       ; preds = %a.create133, %a.aft
   br label %choice.exit116
 }
 
-define i64 @"match::choice_count_live"(ptr %0, i64 %1, i64 %2) #0 {
+define i64 @"match::choice_count_live"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.inc = alloca i64, align 8
   %var.e = alloca i1, align 1
@@ -44845,7 +44197,7 @@ a.after53:                                        ; preds = %a.create52, %choice
   br label %choice.exit
 }
 
-define void @"match::codegen_add_phi_incomings_at"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #0 {
+define void @"match::codegen_add_phi_incomings_at"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #3 {
 entry:
   %var.e = alloca i1, align 1
   %var.n = alloca i64, align 8
@@ -45438,9 +44790,9 @@ a.after283:                                       ; preds = %a.create282, %a.aft
   br label %choice.exit
 }
 
-declare ptr @"stmt::choice_coerce"(ptr, ptr, ptr) #0
+declare ptr @"stmt::choice_coerce"(ptr, ptr, ptr) #3
 
-define void @"match::codegen_add_phi_incomings_chain_at"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #0 {
+define void @"match::codegen_add_phi_incomings_chain_at"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #3 {
 entry:
   %var.e = alloca i1, align 1
   %var.n = alloca i64, align 8
@@ -46202,7 +45554,7 @@ a.after390:                                       ; preds = %a.create389, %a.aft
   br label %choice.exit
 }
 
-define void @"match::codegen_eval_choice_switch_case_values_at"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4, ptr %5) #0 {
+define void @"match::codegen_eval_choice_switch_case_values_at"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4, ptr %5) #3 {
 entry:
   %"var.cval'86" = alloca ptr, align 8
   %var.n79 = alloca i64, align 8
@@ -46549,7 +45901,7 @@ a.after124:                                       ; preds = %a.create123, %choic
   br label %choice.exit32
 }
 
-define void @"match::codegen_eval_choice_switch_cases_at"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5, ptr %6, ptr %7, ptr %8, ptr %9, ptr %10) #0 {
+define void @"match::codegen_eval_choice_switch_cases_at"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5, ptr %6, ptr %7, ptr %8, ptr %9, ptr %10) #3 {
 entry:
   %var.bv = alloca ptr, align 8
   %var.saved_nbindings = alloca i64, align 8
@@ -47326,9 +46678,9 @@ a.after351:                                       ; preds = %a.create350, %a.aft
   br label %choice.exit38
 }
 
-declare ptr @"runtime::binding_truncate"(ptr, i64) #0
+declare ptr @"runtime::binding_truncate"(ptr, i64) #3
 
-define ptr @"match::codegen_eval_choice_switch"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_eval_choice_switch"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.cv = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -47382,7 +46734,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"match::codegen_eval_choice_switch_valid"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_eval_choice_switch_valid"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.phi = alloca ptr, align 8
   %var.is_void = alloca i1, align 1
@@ -49130,11 +48482,11 @@ a.after926:                                       ; preds = %a.create925, %a.aft
   br label %choice.exit839
 }
 
-declare void @"types::choice_branch_reset"(ptr) #0
+declare void @"types::choice_branch_reset"(ptr) #3
 
-declare void @"types::choice_branch_capture"(ptr) #0
+declare void @"types::choice_branch_capture"(ptr) #3
 
-define ptr @"match::codegen_eval_choice_case_chain_at"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6, ptr %7, ptr %8, ptr %9, ptr %10, ptr %11) #0 {
+define ptr @"match::codegen_eval_choice_case_chain_at"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6, ptr %7, ptr %8, ptr %9, ptr %10, ptr %11) #3 {
 entry:
   %var.bv = alloca ptr, align 8
   %var.saved_nbindings = alloca i64, align 8
@@ -49985,7 +49337,7 @@ a.after403:                                       ; preds = %a.create402, %a.aft
   br label %choice.exit
 }
 
-define ptr @"match::codegen_eval_choice_case_chain"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_eval_choice_case_chain"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.phi = alloca ptr, align 8
   %var.is_void = alloca i1, align 1
@@ -51490,7 +50842,7 @@ a.after785:                                       ; preds = %a.create784, %a.aft
   br label %choice.exit698
 }
 
-define ptr @"match::codegen_eval_choice_case"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_eval_choice_case"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.cv = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -51561,7 +50913,7 @@ choice.exit5:                                     ; preds = %choice.else4, %choi
   br label %choice.exit
 }
 
-define ptr @"match::vt_of_llvm_type"(ptr %0) #0 {
+define ptr @"match::vt_of_llvm_type"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -51684,7 +51036,7 @@ choice.exit46:                                    ; preds = %choice.else45, %cho
   br label %choice.exit33
 }
 
-define ptr @"match::struct_sub_fvts"(ptr %0) #0 {
+define ptr @"match::struct_sub_fvts"(ptr %0) #3 {
 entry:
   %var.ft = alloca ptr, align 8
   %var._22 = alloca i64, align 8
@@ -51901,7 +51253,7 @@ a.after64:                                        ; preds = %a.create63, %choice
   br label %choice.exit
 }
 
-define ptr @"match::codegen_eval_choice_bare_single"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"match::codegen_eval_choice_bare_single"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.pdt_s = alloca ptr, align 8
   %var.pdt = alloca ptr, align 8
@@ -52744,7 +52096,7 @@ choice.exit311:                                   ; preds = %choice.then310, %ch
   br label %choice.exit305
 }
 
-define i1 @"match::codegen_choice_uses_payload"(i1 %0, ptr %1) #0 {
+define i1 @"match::codegen_choice_uses_payload"(i1 %0, ptr %1) #3 {
 entry:
   %var.dtype = alloca ptr, align 8
   %var.is_heap = alloca i1, align 1
@@ -52787,9 +52139,9 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %choice.exit
 }
 
-declare ptr @"types::slot_payload_type"(ptr, ptr) #0
+declare ptr @"types::slot_payload_type"(ptr, ptr) #3
 
-define ptr @"match::ram_pos_rec"(ptr %0) #0 {
+define ptr @"match::ram_pos_rec"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -52832,7 +52184,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"match::union_pay_ptr"(ptr %0, ptr %1) #0 {
+define ptr @"match::union_pay_ptr"(ptr %0, ptr %1) #3 {
 entry:
   %var.pgep = alloca ptr, align 8
   %var.union_ptr = alloca ptr, align 8
@@ -52947,11 +52299,11 @@ abort.dead48:                                     ; No predecessors!
   br label %nulcopy.len46
 }
 
-declare ptr @"types::field_vts"(ptr, ptr) #0
+declare ptr @"types::field_vts"(ptr, ptr) #3
 
-declare { i64, ptr } @"types::ensure_ti_dtype"(ptr, ptr) #0
+declare { i64, ptr } @"types::ensure_ti_dtype"(ptr, ptr) #3
 
-define ptr @"match::codegen_eval_branch_body"(ptr %0, ptr %1, { i1, i64 } %2, ptr %3, i1 %4, i1 %5) #0 {
+define ptr @"match::codegen_eval_branch_body"(ptr %0, ptr %1, { i1, i64 } %2, ptr %3, i1 %4, i1 %5) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.saved_nbindings = alloca i64, align 8
@@ -53033,7 +52385,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define ptr @"match::eval_heap_branch"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::eval_heap_branch"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.call_e = alloca ptr, align 8
   %var.cargs = alloca ptr, align 8
@@ -53802,9 +53154,9 @@ choice.exit340:                                   ; preds = %choice.else339, %ch
   br label %choice.exit
 }
 
-declare ptr @"types::hoisted_alloca"(ptr, ptr, ptr) #0
+declare ptr @"types::hoisted_alloca"(ptr, ptr, ptr) #3
 
-define ptr @"match::eval_heap_under"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::eval_heap_under"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %"var.slot'140" = alloca ptr, align 8
   %var.vf = alloca ptr, align 8
@@ -54053,7 +53405,7 @@ choice.exit100:                                   ; preds = %choice.else99, %cho
   br label %choice.exit55
 }
 
-define ptr @"match::codegen_error_or_yield"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::codegen_error_or_yield"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.dead = alloca ptr, align 8
   %var.slot2 = alloca ptr, align 8
@@ -54210,9 +53562,9 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len52
 }
 
-declare void @"main::codegen_emit_error_panic"(ptr, ptr) #0
+declare void @"main::codegen_emit_error_panic"(ptr, ptr) #3
 
-define ptr @"match::eval_heap_branch_with_under"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::eval_heap_branch_with_under"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.pay_dt = alloca ptr, align 8
   %var.fv0 = alloca ptr, align 8
@@ -54443,9 +53795,9 @@ a.store:                                          ; preds = %a.grow, %a.check
   ret ptr %call.res103
 }
 
-declare i1 @"stmt::refs_name"(ptr, ptr) #0
+declare i1 @"stmt::refs_name"(ptr, ptr) #3
 
-define ptr @"match::codegen_eval_branch_body_under"(ptr %0, ptr %1, { i1, i64 } %2, ptr %3, i1 %4) #0 {
+define ptr @"match::codegen_eval_branch_body_under"(ptr %0, ptr %1, { i1, i64 } %2, ptr %3, i1 %4) #3 {
 entry:
   %var.pay = alloca ptr, align 8
   %var._3 = alloca ptr, align 8
@@ -54556,7 +53908,7 @@ choice.exit22:                                    ; preds = %choice.else21, %cho
   br label %choice.exit2
 }
 
-define ptr @"match::codegen_payload_extractor_error"(ptr %0) #0 {
+define ptr @"match::codegen_payload_extractor_error"(ptr %0) #3 {
 entry:
   %var.cg = alloca ptr, align 8
   store ptr %0, ptr %var.cg, align 8
@@ -54582,7 +53934,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"match::codegen_eval_choice_bare"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"match::codegen_eval_choice_bare"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.has_extractor = alloca i1, align 1
   %var.else_b = alloca ptr, align 8
@@ -54998,7 +54350,7 @@ choice.exit153:                                   ; preds = %choice.else152, %ch
   br label %choice.exit5
 }
 
-define i1 @"match::choice_branch_is_payload_extractor"(ptr %0) #0 {
+define i1 @"match::choice_branch_is_payload_extractor"(ptr %0) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -55049,7 +54401,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %choice.exit
 }
 
-define ptr @"match::codegen_eval_choice_bare_valid"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"match::codegen_eval_choice_bare_valid"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.phi = alloca ptr, align 8
   %var.res_lt2 = alloca ptr, align 8
@@ -57615,9 +56967,9 @@ abort.dead1360:                                   ; No predecessors!
   br label %nulcopy.len1358
 }
 
-declare ptr @"types::member_target_ti"(ptr, ptr) #0
+declare ptr @"types::member_target_ti"(ptr, ptr) #3
 
-define ptr @"match::ram_neg_rec"(ptr %0) #0 {
+define ptr @"match::ram_neg_rec"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -57660,7 +57012,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i1, i64 } @"match::bare_branch_pay"(ptr %0, ptr %1, i1 %2, i1 %3, i1 %4, i1 %5, ptr %6) #0 {
+define { i1, i64 } @"match::bare_branch_pay"(ptr %0, ptr %1, i1 %2, i1 %3, i1 %4, i1 %5, ptr %6) #3 {
 entry:
   %var.pay_raw = alloca ptr, align 8
   %var.pay_type = alloca ptr, align 8
@@ -57784,7 +57136,7 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len26
 }
 
-define ptr @"match::convert_unboxed_pay"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::convert_unboxed_pay"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.f32_i32 = alloca ptr, align 8
   %var.i8p = alloca ptr, align 8
@@ -58398,13 +57750,13 @@ abort.dead349:                                    ; No predecessors!
   br label %nulcopy.len347
 }
 
-declare i1 @"types::is_ptrish_vt"(ptr) #0
+declare i1 @"types::is_ptrish_vt"(ptr) #3
 
-declare { i64, ptr } @"types::fn_ret_sig_with_ti"(ptr, ptr) #0
+declare { i64, ptr } @"types::fn_ret_sig_with_ti"(ptr, ptr) #3
 
-declare ptr @"types::ti_fn_ret_vt"(ptr, ptr) #0
+declare ptr @"types::ti_fn_ret_vt"(ptr, ptr) #3
 
-define ptr @"match::branch_res_value"(i1 %0, ptr %1, ptr %2) #0 {
+define ptr @"match::branch_res_value"(i1 %0, ptr %1, ptr %2) #3 {
 entry:
   %var.tv = alloca ptr, align 8
   %var.ev = alloca ptr, align 8
@@ -58428,7 +57780,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"match::ram_neg_payload_type"(ptr %0) #0 {
+define ptr @"match::ram_neg_payload_type"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -58465,7 +57817,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"match::union_payload"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::union_payload"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.is_scalar = alloca i1, align 1
   %var.pay_ptr = alloca ptr, align 8
@@ -58662,7 +58014,7 @@ abort.dead88:                                     ; No predecessors!
   br label %nulcopy.len86
 }
 
-define i1 @"match::ram_ti_is_heap"(ptr %0, ptr %1) #0 {
+define i1 @"match::ram_ti_is_heap"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var._17 = alloca ptr, align 8
@@ -58727,9 +58079,9 @@ choice.next11:                                    ; preds = %choice.next2
   br label %choice.exit
 }
 
-declare i1 @"types::ram_slots_are_flag"(ptr) #0
+declare i1 @"types::ram_slots_are_flag"(ptr) #3
 
-define ptr @"match::enum_slots_for_label_at"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define ptr @"match::enum_slots_for_label_at"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var._57 = alloca i64, align 8
   %var.slots = alloca ptr, align 8
@@ -59015,9 +58367,9 @@ a.after65:                                        ; preds = %a.create64, %choice
   br label %choice.exit55
 }
 
-declare { i1, i64 } @"types::enum_slot_index"(ptr, ptr) #0
+declare { i1, i64 } @"types::enum_slot_index"(ptr, ptr) #3
 
-define ptr @"match::enum_slots_for_label"(ptr %0, ptr %1) #0 {
+define ptr @"match::enum_slots_for_label"(ptr %0, ptr %1) #3 {
 entry:
   %var.label = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -59034,7 +58386,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"match::enum_slots_for_ti_or_label"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::enum_slots_for_ti_or_label"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ms = alloca ptr, align 8
   %var._102 = alloca ptr, align 8
@@ -59340,11 +58692,11 @@ a.after107:                                       ; preds = %a.create106, %choic
   br label %choice.exit94
 }
 
-declare { i64, ptr } @"types::decl_module"(ptr, i64) #0
+declare { i64, ptr } @"types::decl_module"(ptr, i64) #3
 
-declare { i64, ptr } @"types::decl_bare_name"(ptr, i64) #0
+declare { i64, ptr } @"types::decl_bare_name"(ptr, i64) #3
 
-define ptr @"match::codegen_variant_tag_match_at"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5, { i1, i64 } %6) #0 {
+define ptr @"match::codegen_variant_tag_match_at"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5, { i1, i64 } %6) #3 {
 entry:
   %var.m2 = alloca ptr, align 8
   %var.prev = alloca ptr, align 8
@@ -59725,7 +59077,7 @@ a.after149:                                       ; preds = %a.create148, %a.aft
   br label %choice.exit
 }
 
-define ptr @"match::codegen_eval_choice_variant_at"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6, ptr %7, ptr %8, ptr %9, ptr %10, ptr %11) #0 {
+define ptr @"match::codegen_eval_choice_variant_at"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6, ptr %7, ptr %8, ptr %9, ptr %10, ptr %11) #3 {
 entry:
   %var.bv = alloca ptr, align 8
   %var.saved_nbindings = alloca i64, align 8
@@ -60871,11 +60223,11 @@ a.after589:                                       ; preds = %a.create588, %a.aft
   br label %choice.exit
 }
 
-declare ptr @"types::enum_slot_payload"(ptr, ptr) #0
+declare ptr @"types::enum_slot_payload"(ptr, ptr) #3
 
-declare ptr @"types::enum_slot_ti"(ptr, ptr) #0
+declare ptr @"types::enum_slot_ti"(ptr, ptr) #3
 
-define ptr @"match::eval_variant_branch"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"match::eval_variant_branch"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.call_e = alloca ptr, align 8
   %var.cargs = alloca ptr, align 8
@@ -62755,13 +62107,13 @@ a.after991:                                       ; preds = %a.create990, %a.sto
   br label %choice.exit938
 }
 
-declare ptr @"runtime::build_rec_meta"(ptr, ptr, i64, i64, ptr, ptr) #0
+declare ptr @"runtime::build_rec_meta"(ptr, ptr, i64, i64, ptr, ptr) #3
 
-declare ptr @"runtime::field_vts_step"(ptr, ptr, i64, i64, ptr) #0
+declare ptr @"runtime::field_vts_step"(ptr, ptr, i64, i64, ptr) #3
 
-declare void @"runtime::add_type_rec"(ptr, ptr, ptr, { i1, i64 }, ptr) #0
+declare void @"runtime::add_type_rec"(ptr, ptr, ptr, { i1, i64 }, ptr) #3
 
-define ptr @"match::codegen_eval_choice_variant"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"match::codegen_eval_choice_variant"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.cv = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -62818,7 +62170,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"match::codegen_eval_choice_variant_valid"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"match::codegen_eval_choice_variant_valid"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.phi = alloca ptr, align 8
   %var.is_void = alloca i1, align 1
@@ -65026,9 +64378,9 @@ a.after1211:                                      ; preds = %a.create1210, %a.af
   br label %choice.exit1124
 }
 
-declare void @"types::codegen_check_enum_choice_coverage"(ptr, ptr, ptr) #0
+declare void @"types::codegen_check_enum_choice_coverage"(ptr, ptr, ptr) #3
 
-define i1 @"match::choice_branch_is_constant"(ptr %0) #0 {
+define i1 @"match::choice_branch_is_constant"(ptr %0) #3 {
 entry:
   %var.fe = alloca ptr, align 8
   %var._101 = alloca ptr, align 8
@@ -65351,7 +64703,7 @@ choice.next95:                                    ; preds = %choice.next42
   br label %choice.exit
 }
 
-define i1 @"match::choice_has_constant_branch"(ptr %0) #0 {
+define i1 @"match::choice_has_constant_branch"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -65413,7 +64765,7 @@ choice.exit:                                      ; preds = %loop.body.1658
   br label %loop.latch.1658
 }
 
-define ptr @"match::codegen_discarded_choice_constant_error"(ptr %0) #0 {
+define ptr @"match::codegen_discarded_choice_constant_error"(ptr %0) #3 {
 entry:
   %var.cg = alloca ptr, align 8
   store ptr %0, ptr %var.cg, align 8
@@ -65443,9 +64795,9 @@ entry:
   ret ptr %rec.alloc
 }
 
-declare { i64, ptr } @"diag::E3175_choice_const_discarded"() #0
+declare { i64, ptr } @"diag::E3175_choice_const_discarded"() #3
 
-define ptr @"match::codegen_eval_choice"(ptr %0, ptr %1) #0 {
+define ptr @"match::codegen_eval_choice"(ptr %0, ptr %1) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -65484,7 +64836,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"match::codegen_eval_choice_body"(ptr %0, ptr %1) #0 {
+define ptr @"match::codegen_eval_choice_body"(ptr %0, ptr %1) #3 {
 entry:
   %var._110 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -65837,15 +65189,15 @@ choice.exit109:                                   ; preds = %choice.else108, %ch
   br label %choice.exit102
 }
 
-declare { i64, i1 } @"types::ctfe_eval_type_choice"(ptr, ptr) #0
+declare { i64, i1 } @"types::ctfe_eval_type_choice"(ptr, ptr) #3
 
-declare void @"types::ctfe_push_branch_type_binds"(ptr, ptr, ptr) #0
+declare void @"types::ctfe_push_branch_type_binds"(ptr, ptr, ptr) #3
 
-declare void @"types::ct_bind_pop_to"(i64) #0
+declare void @"types::ct_bind_pop_to"(i64) #3
 
-declare { i64, ptr } @"diag::E3136_type_choice_no_branch"() #0
+declare { i64, ptr } @"diag::E3136_type_choice_no_branch"() #3
 
-define { i64, ptr } @"match::choice_untyped_fn_value"(ptr %0, ptr %1, i64 %2) #0 {
+define { i64, ptr } @"match::choice_untyped_fn_value"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.meta = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -66165,7 +65517,7 @@ choice.exit82:                                    ; preds = %choice.else81, %cho
   br label %choice.exit52
 }
 
-define { i64, ptr } @"match::fn_name_of_expr"(ptr %0) #0 {
+define { i64, ptr } @"match::fn_name_of_expr"(ptr %0) #3 {
 entry:
   %var.name79 = alloca ptr, align 8
   %var._78 = alloca ptr, align 8
@@ -66401,13 +65753,13 @@ choice.next72:                                    ; preds = %choice.exit60
   br label %choice.exit70
 }
 
-declare i1 @"stmt::compile_fn_lazy"(ptr, ptr, ptr) #0
+declare i1 @"stmt::compile_fn_lazy"(ptr, ptr, ptr) #3
 
-declare ptr @"expr::fn_value_meta"(ptr, ptr) #0
+declare ptr @"expr::fn_value_meta"(ptr, ptr) #3
 
-declare ptr @"expr::codegen_untyped_fn_value_error"(ptr, ptr) #0
+declare ptr @"expr::codegen_untyped_fn_value_error"(ptr, ptr) #3
 
-define ptr @"match::codegen_eval_choice_after_fn_values"(ptr %0, ptr %1) #0 {
+define ptr @"match::codegen_eval_choice_after_fn_values"(ptr %0, ptr %1) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -66449,7 +65801,7 @@ choice.exit8:                                     ; preds = %choice.else7, %choi
   br label %choice.exit
 }
 
-define i1 @"match::choice_is_malformed_bare_pipe"(ptr %0) #0 {
+define i1 @"match::choice_is_malformed_bare_pipe"(ptr %0) #3 {
 entry:
   %var.choice = alloca ptr, align 8
   store ptr %0, ptr %var.choice, align 8
@@ -66476,7 +65828,7 @@ and.1666.exit:                                    ; preds = %and.1666.else, %and
   ret i1 %and.1666.phi
 }
 
-define i1 @"match::choice_condition_is_underscore"(ptr %0) #0 {
+define i1 @"match::choice_condition_is_underscore"(ptr %0) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -66525,7 +65877,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %choice.exit
 }
 
-define ptr @"match::codegen_malformed_bare_pipe_error"(ptr %0) #0 {
+define ptr @"match::codegen_malformed_bare_pipe_error"(ptr %0) #3 {
 entry:
   %var.cg = alloca ptr, align 8
   store ptr %0, ptr %var.cg, align 8
@@ -66555,9 +65907,9 @@ entry:
   ret ptr %rec.alloc
 }
 
-declare { i64, ptr } @"diag::E2024_bare_bar_position"() #0
+declare { i64, ptr } @"diag::E2024_bare_bar_position"() #3
 
-define i1 @"match::choice_branch_types_mismatch"(ptr %0, ptr %1) #0 {
+define i1 @"match::choice_branch_types_mismatch"(ptr %0, ptr %1) #3 {
 entry:
   %var.rt = alloca ptr, align 8
   %var.lt = alloca ptr, align 8
@@ -67250,7 +66602,7 @@ and.1675.exit:                                    ; preds = %and.1675.else, %and
   br label %choice.exit147
 }
 
-define ptr @"match::choice_branch_result_type"(ptr %0) #0 {
+define ptr @"match::choice_branch_result_type"(ptr %0) #3 {
 entry:
   %var.body_t = alloca ptr, align 8
   %var.f = alloca ptr, align 8
@@ -67301,7 +66653,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"match::static_expr_vt_no_cg"(ptr %0) #0 {
+define ptr @"match::static_expr_vt_no_cg"(ptr %0) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var._114 = alloca ptr, align 8
@@ -67623,7 +66975,7 @@ choice.exit124:                                   ; preds = %choice.else123, %ch
   br label %choice.exit
 }
 
-define ptr @"match::choice_call_first_arg"(ptr %0) #0 {
+define ptr @"match::choice_call_first_arg"(ptr %0) #3 {
 entry:
   %var._18 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -67722,11 +67074,11 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-declare ptr @"expr::codegen_ram_type_of_expr"(ptr, ptr) #0
+declare ptr @"expr::codegen_ram_type_of_expr"(ptr, ptr) #3
 
-declare i1 @"expr::ram_shape_compatible"(ptr, ptr, ptr) #0
+declare i1 @"expr::ram_shape_compatible"(ptr, ptr, ptr) #3
 
-define ptr @"match::codegen_choice_branch_type_error"(ptr %0, ptr %1) #0 {
+define ptr @"match::codegen_choice_branch_type_error"(ptr %0, ptr %1) #3 {
 entry:
   %var.rt = alloca ptr, align 8
   %var.lt = alloca ptr, align 8
@@ -68923,9 +68275,9 @@ abort.dead619:                                    ; No predecessors!
   br label %concat.tot.len617
 }
 
-declare { i64, ptr } @"expr::ram_shape_str"(ptr, ptr) #0
+declare { i64, ptr } @"expr::ram_shape_str"(ptr, ptr) #3
 
-define ptr @"match::codegen_eval_choice_after_shape"(ptr %0, ptr %1) #0 {
+define ptr @"match::codegen_eval_choice_after_shape"(ptr %0, ptr %1) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -68952,7 +68304,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define i1 @"match::choice_omits_undefined_condition"(ptr %0, ptr %1) #0 {
+define i1 @"match::choice_omits_undefined_condition"(ptr %0, ptr %1) #3 {
 entry:
   %var.is_omitted = alloca i1, align 1
   %var.has_branches = alloca i1, align 1
@@ -68991,7 +68343,7 @@ and.1683.exit:                                    ; preds = %and.1683.else, %and
   ret i1 %and.1683.phi
 }
 
-define i1 @"match::choice_condition_is_undefined_underscore"(ptr %0, ptr %1) #0 {
+define i1 @"match::choice_condition_is_undefined_underscore"(ptr %0, ptr %1) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -69068,9 +68420,9 @@ and.1682.exit:                                    ; preds = %and.1682.else, %and
   br label %choice.exit
 }
 
-declare i1 @"types::has_var_name"(ptr, ptr) #0
+declare i1 @"types::has_var_name"(ptr, ptr) #3
 
-define ptr @"match::codegen_omitted_choice_condition_error"(ptr %0) #0 {
+define ptr @"match::codegen_omitted_choice_condition_error"(ptr %0) #3 {
 entry:
   %var.cg = alloca ptr, align 8
   store ptr %0, ptr %var.cg, align 8
@@ -69100,9 +68452,9 @@ entry:
   ret ptr %rec.alloc
 }
 
-declare { i64, ptr } @"diag::E3003_choice_underscore_undefined"() #0
+declare { i64, ptr } @"diag::E3003_choice_underscore_undefined"() #3
 
-define ptr @"match::codegen_eval_choice_valid"(ptr %0, ptr %1) #0 {
+define ptr @"match::codegen_eval_choice_valid"(ptr %0, ptr %1) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.last_is_bare = alloca i1, align 1
@@ -69839,11 +69191,11 @@ choice.next355:                                   ; preds = %choice.next341
   br label %choice.exit325
 }
 
-declare void @"types::choice_enter"(ptr, i1) #0
+declare void @"types::choice_enter"(ptr, i1) #3
 
-declare void @"types::choice_leave"(ptr) #0
+declare void @"types::choice_leave"(ptr) #3
 
-define i1 @"match::choice_mixed_declared_fns"(ptr %0, ptr %1) #0 {
+define i1 @"match::choice_mixed_declared_fns"(ptr %0, ptr %1) #3 {
 entry:
   %var.right = alloca ptr, align 8
   %var.left = alloca ptr, align 8
@@ -70178,7 +69530,7 @@ err.normal125:                                    ; preds = %str_ok113
   unreachable
 }
 
-define i1 @"match::choice_fn_values_differ"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"match::choice_fn_values_differ"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.rr = alloca ptr, align 8
   %var.lr = alloca ptr, align 8
@@ -70423,13 +69775,13 @@ or.1693.exit:                                     ; preds = %or.1693.else, %or.1
   br label %and.1692.exit
 }
 
-declare ptr @"stmt::fn_signature_param_types"(ptr, ptr, ptr, i64) #0
+declare ptr @"stmt::fn_signature_param_types"(ptr, ptr, ptr, i64) #3
 
-declare ptr @"stmt::fn_signature_return"(ptr, ptr, ptr, i64) #0
+declare ptr @"stmt::fn_signature_return"(ptr, ptr, ptr, i64) #3
 
-declare i1 @"runtime::vtypes_same"(ptr, ptr, i64) #0
+declare i1 @"runtime::vtypes_same"(ptr, ptr, i64) #3
 
-define ptr @"match::fn_param_types"(ptr %0, ptr %1) #0 {
+define ptr @"match::fn_param_types"(ptr %0, ptr %1) #3 {
 entry:
   %var.idx = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -70610,9 +69962,9 @@ err.normal:                                       ; preds = %str_ok30
   unreachable
 }
 
-declare { i1, i64 } @"types::fninfo_index"(ptr, ptr) #0
+declare { i1, i64 } @"types::fninfo_index"(ptr, ptr) #3
 
-define ptr @"match::field_vts_from_ti"(ptr %0, ptr %1) #0 {
+define ptr @"match::field_vts_from_ti"(ptr %0, ptr %1) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -70624,7 +69976,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"match::resolve_enum_slots_for_val"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::resolve_enum_slots_for_val"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.s3 = alloca ptr, align 8
   %var._163 = alloca ptr, align 8
@@ -71049,9 +70401,9 @@ a.after168:                                       ; preds = %a.create167, %choic
   br label %choice.exit155
 }
 
-declare ptr @"types::ct_cursor_find"(ptr) #0
+declare ptr @"types::ct_cursor_find"(ptr) #3
 
-define ptr @"match::codegen_eval_enum_variant_access"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"match::codegen_eval_enum_variant_access"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.pgep = alloca ptr, align 8
   %var.tgep = alloca ptr, align 8
@@ -72268,13 +71620,13 @@ abort.dead593:                                    ; No predecessors!
   br label %nulcopy.len591
 }
 
-declare ptr @"types::norm_slot_ti"(ptr, ptr) #0
+declare ptr @"types::norm_slot_ti"(ptr, ptr) #3
 
-declare ptr @"expr::codegen_call_arena_alloc"(ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_call_arena_alloc"(ptr, ptr, ptr) #3
 
-declare { i64, ptr } @"diag::enum_variant_index_constant"() #0
+declare { i64, ptr } @"diag::enum_variant_index_constant"() #3
 
-define ptr @"match::codeg_eval_member_valid"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codeg_eval_member_valid"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.es_res = alloca ptr, align 8
   %var.is_enum_bv = alloca i1, align 1
@@ -72478,7 +71830,7 @@ choice.exit56:                                    ; preds = %choice.else55, %cho
   ret ptr %choice.res71
 }
 
-define ptr @"match::codeg_eval_member_non_enum"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"match::codeg_eval_member_non_enum"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.res0 = alloca ptr, align 8
@@ -74943,19 +74295,19 @@ abort.dead1382:                                   ; No predecessors!
   br label %concat.tot.len1380
 }
 
-declare ptr @"types::ti_get_bitfield"(ptr, ptr) #0
+declare ptr @"types::ti_get_bitfield"(ptr, ptr) #3
 
-declare ptr @"types::find_bitfield_field"(ptr, ptr) #0
+declare ptr @"types::find_bitfield_field"(ptr, ptr) #3
 
-declare { i1, i64 } @"types::var_slot"(ptr, ptr) #0
+declare { i1, i64 } @"types::var_slot"(ptr, ptr) #3
 
-declare ptr @"types::td_record_meta_by_name"(ptr, ptr) #0
+declare ptr @"types::td_record_meta_by_name"(ptr, ptr) #3
 
-declare ptr @"types::error_field_names"() #0
+declare ptr @"types::error_field_names"() #3
 
-declare { i1, i64 } @"types::var_rt"(ptr, ptr) #0
+declare { i1, i64 } @"types::var_rt"(ptr, ptr) #3
 
-define ptr @"match::var_fvts"(ptr %0, ptr %1) #0 {
+define ptr @"match::var_fvts"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -74994,9 +74346,9 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-declare i64 @"types::find_dot"(ptr, i64) #0
+declare i64 @"types::find_dot"(ptr, i64) #3
 
-define ptr @"match::dotted_var_fvts"(ptr %0, ptr %1) #0 {
+define ptr @"match::dotted_var_fvts"(ptr %0, ptr %1) #3 {
 entry:
   %var.rt = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -75037,9 +74389,9 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-declare { i64, ptr } @"types::resolve_var_name"(ptr, ptr) #0
+declare { i64, ptr } @"types::resolve_var_name"(ptr, ptr) #3
 
-define ptr @"match::var_fvts_at"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"match::var_fvts_at"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var.i = alloca i64, align 8
@@ -75286,11 +74638,11 @@ choice.exit61:                                    ; preds = %choice.else60, %cho
   br label %choice.exit52
 }
 
-declare { i64, ptr } @"diag::member_index_constant"() #0
+declare { i64, ptr } @"diag::member_index_constant"() #3
 
-declare { i1, i64 } @"types::record_field_gep_opt"(ptr, ptr, ptr, ptr, i64) #0
+declare { i1, i64 } @"types::record_field_gep_opt"(ptr, ptr, ptr, ptr, i64) #3
 
-define ptr @"match::member_field_vt"(ptr %0, ptr %1, i64 %2, ptr %3) #0 {
+define ptr @"match::member_field_vt"(ptr %0, ptr %1, i64 %2, ptr %3) #3 {
 entry:
   %var.ft = alloca ptr, align 8
   %var.idx = alloca i64, align 8
@@ -75475,11 +74827,11 @@ err.normal:                                       ; preds = %unwrap.abort.1708
   unreachable
 }
 
-declare ptr @"types::typedef_ti_of_rt"(ptr, ptr) #0
+declare ptr @"types::typedef_ti_of_rt"(ptr, ptr) #3
 
-declare ptr @"types::record_field_ti"(ptr, ptr, i64) #0
+declare ptr @"types::record_field_ti"(ptr, ptr, i64) #3
 
-define void @"match::codegen_check_member_read_init"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #0 {
+define void @"match::codegen_check_member_read_init"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #3 {
 entry:
   %var.key = alloca ptr, align 8
   %var.fname = alloca ptr, align 8
@@ -75966,13 +75318,13 @@ abort.dead176:                                    ; No predecessors!
   br label %concat.tot.len174
 }
 
-declare i1 @"main::var_partial"(ptr, ptr) #0
+declare i1 @"main::var_partial"(ptr, ptr) #3
 
-declare { i64, ptr } @"types::member_fpath"(ptr) #0
+declare { i64, ptr } @"types::member_fpath"(ptr) #3
 
-declare i1 @"types::init_ok"(ptr, ptr) #0
+declare i1 @"types::init_ok"(ptr, ptr) #3
 
-define ptr @"match::convert_abi_ram_to_heap_union"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::convert_abi_ram_to_heap_union"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.pgep = alloca ptr, align 8
   %var.tgep = alloca ptr, align 8
@@ -76450,7 +75802,7 @@ abort.dead253:                                    ; No predecessors!
   br label %nulcopy.len251
 }
 
-define ptr @"match::convert_unboxed_ram_to_heap"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::convert_unboxed_ram_to_heap"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %"var.pay_ptr'1100" = alloca ptr, align 8
   %"var.raw_ptr'1018" = alloca ptr, align 8
@@ -78188,9 +77540,9 @@ abort.dead1093:                                   ; No predecessors!
   br label %nulcopy.len1091
 }
 
-declare ptr @"types::is_niche_ram_ti"(ptr, ptr) #0
+declare ptr @"types::is_niche_ram_ti"(ptr, ptr) #3
 
-define { i64, ptr } @"match::ti_enum_slot_label"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"match::ti_enum_slot_label"(ptr %0, i64 %1) #3 {
 entry:
   %var.sl = alloca ptr, align 8
   %var.slots = alloca ptr, align 8
@@ -78360,7 +77712,7 @@ err.normal:                                       ; preds = %unwrap.abort.1716
   unreachable
 }
 
-define i64 @"match::ti_enum_slots_len"(ptr %0) #0 {
+define i64 @"match::ti_enum_slots_len"(ptr %0) #3 {
 entry:
   %var.slots = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -78410,7 +77762,7 @@ a.after:                                          ; preds = %a.create, %choice.c
   br label %choice.exit
 }
 
-define ptr @"match::codegen_eval_member_rec_reflect"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::codegen_eval_member_rec_reflect"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.lbl = alloca ptr, align 8
   %var.f = alloca ptr, align 8
@@ -78995,9 +78347,9 @@ choice.exit201:                                   ; preds = %choice.else200, %ch
   br label %choice.exit69
 }
 
-declare { i64, ptr } @"diag::record_field_index_constant"() #0
+declare { i64, ptr } @"diag::record_field_index_constant"() #3
 
-define ptr @"match::codegen_eval_member_type_reflect_ti"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::codegen_eval_member_type_reflect_ti"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.lbl = alloca ptr, align 8
   %cat.ibuf280 = alloca [24 x i8], align 1
@@ -79812,9 +79164,9 @@ abort.dead306:                                    ; No predecessors!
   br label %concat.tot.len304
 }
 
-declare ptr @"types::codegen_eval_ctor_ex"(ptr, ptr, ptr, i1) #0
+declare ptr @"types::codegen_eval_ctor_ex"(ptr, ptr, ptr, i1) #3
 
-define ptr @"match::codegen_eval_member_enum_reflect"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::codegen_eval_member_enum_reflect"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ct_ti = alloca ptr, align 8
   %var.is_ut = alloca i1, align 1
@@ -79971,9 +79323,9 @@ choice.exit40:                                    ; preds = %choice.else39, %cho
   br label %choice.exit6
 }
 
-declare ptr @"types::ct_bind_find"(ptr) #0
+declare ptr @"types::ct_bind_find"(ptr) #3
 
-define ptr @"match::codegen_eval_cursor_member"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::codegen_eval_cursor_member"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.u582 = alloca ptr, align 8
   %var.u = alloca ptr, align 8
@@ -81229,11 +80581,11 @@ str.eq.merge623:                                  ; preds = %str.eq.else622, %st
   br i1 %case.or, label %choice.case598, label %choice.next599
 }
 
-declare ptr @"types::field_type_info"(ptr) #0
+declare ptr @"types::field_type_info"(ptr) #3
 
-declare ptr @"types::codegen_build_union"(ptr, i64, ptr, ptr) #0
+declare ptr @"types::codegen_build_union"(ptr, i64, ptr, ptr) #3
 
-define ptr @"match::codegen_eval_type_prop_ti"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_eval_type_prop_ti"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.arity = alloca i64, align 8
   %var.s = alloca ptr, align 8
@@ -81601,9 +80953,9 @@ choice.exit146:                                   ; preds = %choice.else145, %ch
   br label %choice.exit
 }
 
-declare ptr @"expr::codegen_materialize_zero"(ptr, ptr) #0
+declare ptr @"expr::codegen_materialize_zero"(ptr, ptr) #3
 
-define ptr @"match::codegen_eval_type_prop_member"(ptr %0, ptr %1) #0 {
+define ptr @"match::codegen_eval_type_prop_member"(ptr %0, ptr %1) #3 {
 entry:
   %var.rtv = alloca ptr, align 8
   %var.is_prop = alloca i1, align 1
@@ -81790,7 +81142,7 @@ choice.exit79:                                    ; preds = %choice.else78, %cho
   br label %choice.exit69
 }
 
-define ptr @"match::codegen_eval_member"(ptr %0, ptr %1) #0 {
+define ptr @"match::codegen_eval_member"(ptr %0, ptr %1) #3 {
 entry:
   %var.bv146 = alloca ptr, align 8
   %var.bv = alloca ptr, align 8
@@ -82130,7 +81482,7 @@ choice.exit127:                                   ; preds = %choice.else126, %ch
   br label %choice.exit115
 }
 
-define ptr @"match::codegen_unresolved_module_member"(ptr %0, ptr %1) #0 {
+define ptr @"match::codegen_unresolved_module_member"(ptr %0, ptr %1) #3 {
 entry:
   %var._235 = alloca ptr, align 8
   %var._234 = alloca ptr, align 8
@@ -82645,13 +81997,13 @@ choice.exit233:                                   ; preds = %choice.else232, %ch
   br label %choice.exit191
 }
 
-declare ptr @"expr::codegen_named_fn_value"(ptr, ptr) #0
+declare ptr @"expr::codegen_named_fn_value"(ptr, ptr) #3
 
-declare ptr @"types::codegen_eval_type_value"(ptr, ptr) #0
+declare ptr @"types::codegen_eval_type_value"(ptr, ptr) #3
 
-declare ptr @"types::codegen_load"(ptr, ptr) #0
+declare ptr @"types::codegen_load"(ptr, ptr) #3
 
-define { i1, i64 } @"match::typed_branch_pay"(ptr %0, ptr %1, i1 %2, { i1, i64 } %3, ptr %4) #0 {
+define { i1, i64 } @"match::typed_branch_pay"(ptr %0, ptr %1, i1 %2, { i1, i64 } %3, ptr %4) #3 {
 entry:
   %var.p = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -82780,7 +82132,7 @@ choice.exit24:                                    ; preds = %choice.else23, %cho
   br label %choice.exit6
 }
 
-define i1 @"match::cond_niche_str_non_escaping"(ptr %0, ptr %1, ptr %2, i1 %3, i64 %4) #0 {
+define i1 @"match::cond_niche_str_non_escaping"(ptr %0, ptr %1, ptr %2, i1 %3, i64 %4) #3 {
 entry:
   %var.bv_bad = alloca i1, align 1
   %var._269 = alloca ptr, align 8
@@ -83617,13 +82969,13 @@ choice.exit332:                                   ; preds = %choice.then331, %or
   br label %choice.exit319
 }
 
-declare i1 @"types::fn_uses_c_ret_abi"(ptr, ptr) #0
+declare i1 @"types::fn_uses_c_ret_abi"(ptr, ptr) #3
 
-declare i1 @"stmt::str_var_only_safe_uses"(ptr, ptr, ptr, i1) #0
+declare i1 @"stmt::str_var_only_safe_uses"(ptr, ptr, ptr, i1) #3
 
-declare i64 @"stmt::count_var_assigns"(ptr, ptr) #0
+declare i64 @"stmt::count_var_assigns"(ptr, ptr) #3
 
-define i1 @"match::cond_niche_rec_non_escaping"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define i1 @"match::cond_niche_rec_non_escaping"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %var.bv_bad = alloca i1, align 1
   %var._263 = alloca ptr, align 8
@@ -84439,9 +83791,9 @@ choice.exit325:                                   ; preds = %choice.then324, %or
   br label %choice.exit313
 }
 
-declare i1 @"stmt::param_proj_safe"(ptr, ptr, ptr, i1, i1) #0
+declare i1 @"stmt::param_proj_safe"(ptr, ptr, ptr, i1, i1) #3
 
-define ptr @"match::codegen_typed_eval_cond_choice_tail"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #0 {
+define ptr @"match::codegen_typed_eval_cond_choice_tail"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #3 {
 entry:
   %var.phi = alloca ptr, align 8
   %var.pty3188 = alloca ptr, align 8
@@ -90211,17 +89563,17 @@ abort.dead3239:                                   ; No predecessors!
   unreachable
 }
 
-declare ptr @"main::codegen_typed_eval"(ptr, ptr) #0
+declare ptr @"main::codegen_typed_eval"(ptr, ptr) #3
 
-declare i1 @"types::is_ram_vt"(ptr) #0
+declare i1 @"types::is_ram_vt"(ptr) #3
 
-declare ptr @"tast::mk_lit_unit"(i64, i64) #0
+declare ptr @"tast::mk_lit_unit"(i64, i64) #3
 
-declare i1 @"stmt::fn_body_has_arena_restore"(ptr, ptr) #0
+declare i1 @"stmt::fn_body_has_arena_restore"(ptr, ptr) #3
 
-declare i1 @"types::is_unboxed_ram_ti"(ptr, ptr) #0
+declare i1 @"types::is_unboxed_ram_ti"(ptr, ptr) #3
 
-define ptr @"match::unboxed_ram_struct_t"(ptr %0) #0 {
+define ptr @"match::unboxed_ram_struct_t"(ptr %0) #3 {
 entry:
   %var.cg = alloca ptr, align 8
   store ptr %0, ptr %var.cg, align 8
@@ -90231,13 +89583,13 @@ entry:
   ret ptr %call.res2
 }
 
-declare ptr @"types::struct_type2"(ptr, ptr) #0
+declare ptr @"types::struct_type2"(ptr, ptr) #3
 
-declare ptr @"expr::coerce_phi_incoming"(ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"expr::coerce_phi_incoming"(ptr, ptr, ptr, ptr, ptr) #3
 
-declare i1 @"stmt::block_is_terminated"(ptr) #0
+declare i1 @"stmt::block_is_terminated"(ptr) #3
 
-define ptr @"match::codegen_typed_eval_cond_choice"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_typed_eval_cond_choice"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.branches = alloca ptr, align 8
@@ -90275,7 +89627,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %call.res
 }
 
-define ptr @"match::codegen_typed_choice_case_match"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_typed_choice_case_match"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.cint_safe = alloca ptr, align 8
   %var.ci267 = alloca ptr, align 8
@@ -90926,7 +90278,7 @@ abort.dead303:                                    ; No predecessors!
   br label %nulcopy.len301
 }
 
-define ptr @"match::codegen_typed_eval_predicate"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_typed_eval_predicate"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.pv = alloca ptr, align 8
   %var.saved_nvars = alloca i64, align 8
@@ -91299,7 +90651,7 @@ a.store107:                                       ; preds = %a.grow106, %a.check
   br label %choice.exit70
 }
 
-define ptr @"match::codegen_typed_choice_case_match_step"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5, { i1, i64 } %6) #0 {
+define ptr @"match::codegen_typed_choice_case_match_step"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5, { i1, i64 } %6) #3 {
 entry:
   %var.new_match = alloca ptr, align 8
   %var.acc = alloca ptr, align 8
@@ -91621,7 +90973,7 @@ a.after88:                                        ; preds = %a.create87, %choice
   br label %choice.exit
 }
 
-define i64 @"match::homogeneous_rec_field_idx"(ptr %0, ptr %1, ptr %2) #0 {
+define i64 @"match::homogeneous_rec_field_idx"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.vok = alloca i1, align 1
   %var.v = alloca ptr, align 8
@@ -91851,9 +91203,9 @@ a.after69:                                        ; preds = %a.create68, %choice
   br label %choice.exit64
 }
 
-declare i64 @"types::member_index"(ptr, ptr) #0
+declare i64 @"types::member_index"(ptr, ptr) #3
 
-define ptr @"match::try_homogeneous_record_choice"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::try_homogeneous_record_choice"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.m670 = alloca ptr, align 8
   %var._669 = alloca ptr, align 8
@@ -93357,9 +92709,9 @@ abort.dead708:                                    ; No predecessors!
   br label %nulcopy.len706
 }
 
-declare ptr @"types::gep1"(ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"types::gep1"(ptr, ptr, ptr, ptr, ptr) #3
 
-define ptr @"match::codegen_typed_eval_guarded_choice_tail"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #0 {
+define ptr @"match::codegen_typed_eval_guarded_choice_tail"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #3 {
 entry:
   %var.fast = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -93441,7 +92793,7 @@ a.after13:                                        ; preds = %a.create12, %choice
   br label %choice.exit
 }
 
-define ptr @"match::codegen_typed_eval_guarded_choice_slow_tail"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #0 {
+define ptr @"match::codegen_typed_eval_guarded_choice_slow_tail"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #3 {
 entry:
   %var._1886 = alloca i64, align 8
   %var._i1885 = alloca i64, align 8
@@ -97084,13 +96436,13 @@ err.normal2089:                                   ; preds = %str_ok2077
   unreachable
 }
 
-declare i1 @"types::enum_slot_has_payload"(ptr, ptr) #0
+declare i1 @"types::enum_slot_has_payload"(ptr, ptr) #3
 
-declare ptr @"types::create_slot"(ptr, ptr, ptr, i1) #0
+declare ptr @"types::create_slot"(ptr, ptr, ptr, i1) #3
 
-declare i1 @"stmt::typed_branches_have_restore"(ptr, ptr, i64, i64) #0
+declare i1 @"stmt::typed_branches_have_restore"(ptr, ptr, i64, i64) #3
 
-define ptr @"match::codegen_typed_eval_guarded_choice"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_typed_eval_guarded_choice"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.branches = alloca ptr, align 8
@@ -97128,7 +96480,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %call.res
 }
 
-define ptr @"match::codegen_typed_eval_guarded_choice_slow"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_typed_eval_guarded_choice_slow"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.branches = alloca ptr, align 8
@@ -97166,7 +96518,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %call.res
 }
 
-define ptr @"match::codegen_typed_eval_choice_tail"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #0 {
+define ptr @"match::codegen_typed_eval_choice_tail"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #3 {
 entry:
   %var.is_b1_bare = alloca i1, align 1
   %var.b1 = alloca ptr, align 8
@@ -97776,7 +97128,7 @@ a.after267:                                       ; preds = %a.create266, %choic
   br label %choice.exit107
 }
 
-define ptr @"match::codegen_typed_eval_choice"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_typed_eval_choice"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.branches = alloca ptr, align 8
@@ -97814,7 +97166,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %call.res
 }
 
-define ptr @"match::codegen_typed_build_union"(ptr %0, i64 %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_typed_build_union"(ptr %0, i64 %1, ptr %2, ptr %3) #3 {
 entry:
   %"var.box_ptr'413" = alloca ptr, align 8
   %"var.box'344" = alloca ptr, align 8
@@ -98517,7 +97869,7 @@ abort.dead407:                                    ; No predecessors!
   br label %nulcopy.len405
 }
 
-define ptr @"match::codegen_niche_ram_construct"(ptr %0, i1 %1, i1 %2, ptr %3) #0 {
+define ptr @"match::codegen_niche_ram_construct"(ptr %0, i1 %1, i1 %2, ptr %3) #3 {
 entry:
   %var.ptr_val = alloca ptr, align 8
   %var.pv = alloca ptr, align 8
@@ -98698,7 +98050,7 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len34
 }
 
-define ptr @"match::coerce_pay_to_i64"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::coerce_pay_to_i64"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.f32_i32 = alloca ptr, align 8
   %var.vv = alloca ptr, align 8
@@ -99097,7 +98449,7 @@ abort.dead199:                                    ; No predecessors!
   br label %nulcopy.len197
 }
 
-define ptr @"match::convert_heap_ram_to_unboxed"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::convert_heap_ram_to_unboxed"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.u1 = alloca ptr, align 8
   %var.u0 = alloca ptr, align 8
@@ -100036,7 +99388,7 @@ abort.dead563:                                    ; No predecessors!
   br label %nulcopy.len561
 }
 
-define ptr @"match::codegen_typed_coerce_ram"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_typed_coerce_ram"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %"var.val_tk'303" = alloca i64, align 8
   %var.u2 = alloca ptr, align 8
@@ -100639,9 +99991,9 @@ choice.exit308:                                   ; preds = %choice.else307, %ch
   br label %choice.exit64
 }
 
-declare ptr @"types::codegen_cond_value_with_ti"(ptr, ptr, ptr, ptr) #0
+declare ptr @"types::codegen_cond_value_with_ti"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"match::coerce_ram_repr"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"match::coerce_ram_repr"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.cond_pos = alloca ptr, align 8
   %var.pay_ptr = alloca ptr, align 8
@@ -101306,7 +100658,7 @@ abort.dead376:                                    ; No predecessors!
   br label %nulcopy.len374
 }
 
-define ptr @"match::codegen_unboxed_ram_construct"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define ptr @"match::codegen_unboxed_ram_construct"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.u2 = alloca ptr, align 8
   %var.u1 = alloca ptr, align 8
@@ -101871,10 +101223,10 @@ abort.dead309:                                    ; No predecessors!
   br label %nulcopy.len307
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { cold noinline "nounwind" }
 attributes #6 = { cold noinline noreturn "nounwind" }

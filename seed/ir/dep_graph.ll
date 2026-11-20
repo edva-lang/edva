@@ -4,17 +4,8 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
-@dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@"var.ast::cell_var_names" = external global ptr
 @str.0 = internal unnamed_addr constant [6 x i8] c"<fwd>\00"
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.0 }
 @clo.const = internal constant { ptr, ptr } { ptr @"dep_graph::is_fwd_assign", ptr null }
@@ -76,21 +67,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.dep_graph::tarjan_scc" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_dep_graph, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -124,30 +105,11 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
-
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
-
-; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
 declare i64 @dva_hash_string(ptr, i64)
 
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_dep_graph() #0 {
+define internal void @__dva_global_init_dep_graph() #3 {
 entry:
   store ptr @clo.const, ptr @"var.dep_graph::is_fwd_assign", align 8
   store ptr @clo.const.1, ptr @"var.dep_graph::copy_names", align 8
@@ -170,7 +132,7 @@ entry:
   ret void
 }
 
-define i1 @"dep_graph::is_fwd_assign"(ptr %0) #0 {
+define i1 @"dep_graph::is_fwd_assign"(ptr %0) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -221,9 +183,9 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %choice.exit
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define ptr @"dep_graph::copy_names"(ptr %0) #0 {
+define ptr @"dep_graph::copy_names"(ptr %0) #3 {
 entry:
   %var.names = alloca ptr, align 8
   store ptr %0, ptr %var.names, align 8
@@ -274,7 +236,7 @@ a.after:                                          ; preds = %a.create, %entry
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #4
 
-define i1 @"dep_graph::has_name_at"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i1 @"dep_graph::has_name_at"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var._27 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -466,7 +428,7 @@ a.after42:                                        ; preds = %a.create41, %choice
   br label %choice.exit37
 }
 
-define i1 @"dep_graph::has_name"(ptr %0, ptr %1) #0 {
+define i1 @"dep_graph::has_name"(ptr %0, ptr %1) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %var.names = alloca ptr, align 8
@@ -521,7 +483,7 @@ a.after8:                                         ; preds = %a.create7, %a.after
   ret i1 %call.res
 }
 
-define i1 @"dep_graph::name_is_qualified"(ptr %0, i64 %1) #0 {
+define i1 @"dep_graph::name_is_qualified"(ptr %0, i64 %1) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.name = alloca ptr, align 8
@@ -664,7 +626,7 @@ declare i64 @write(i32, ptr, i64)
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #6
 
-define i64 @"dep_graph::decl_module_find"(ptr %0, i64 %1, i64 %2) #0 {
+define i64 @"dep_graph::decl_module_find"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.last = alloca i64, align 8
   %var.i = alloca i64, align 8
@@ -800,7 +762,7 @@ choice.exit43:                                    ; preds = %choice.else42, %cho
   br label %choice.exit
 }
 
-define { i64, ptr } @"dep_graph::decl_module"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"dep_graph::decl_module"(ptr %0, i64 %1) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.last = alloca i64, align 8
@@ -855,7 +817,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"dep_graph::resolve_dep_ref"(ptr %0, ptr %1, ptr %2) #0 {
+define { i64, ptr } @"dep_graph::resolve_dep_ref"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %concat.str228 = alloca { i64, ptr }, align 8
   %concat.str88 = alloca { i64, ptr }, align 8
@@ -1453,7 +1415,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define void @"dep_graph::collect_expr_refs"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"dep_graph::collect_expr_refs"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.rm = alloca ptr, align 8
   %var._1977 = alloca ptr, align 8
@@ -5019,7 +4981,7 @@ a.after1998:                                      ; preds = %a.create1997, %a.af
   br label %choice.exit
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -5067,7 +5029,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #5 {
@@ -5080,7 +5042,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define i64 @"dep_graph::find_node_idx"(ptr %0, ptr %1) #0 {
+define i64 @"dep_graph::find_node_idx"(ptr %0, ptr %1) #3 {
 entry:
   %var.idx = alloca i64, align 8
   %var._60 = alloca ptr, align 8
@@ -5342,15 +5304,11 @@ err.abort:                                        ; No predecessors!
   br label %choice.exit55
 }
 
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
-
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-define i1 @"dep_graph::node_has_dep"(ptr %0, ptr %1) #0 {
+define i1 @"dep_graph::node_has_dep"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.node = alloca ptr, align 8
@@ -5364,7 +5322,7 @@ entry:
   ret i1 %call.res
 }
 
-define i1 @"dep_graph::is_generic_sig"(ptr %0) #0 {
+define i1 @"dep_graph::is_generic_sig"(ptr %0) #3 {
 entry:
   %var.is_ti = alloca i1, align 1
   %var.f = alloca ptr, align 8
@@ -5472,7 +5430,7 @@ or.52.exit:                                       ; preds = %or.52.else, %or.52.
   ret i1 %or.52.phi
 }
 
-define ptr @"dep_graph::build_dep_graph"(ptr %0) #0 {
+define ptr @"dep_graph::build_dep_graph"(ptr %0) #3 {
 entry:
   %var.known = alloca i1, align 1
   %var.node_indices = alloca ptr, align 8
@@ -7776,7 +7734,7 @@ a.store1256:                                      ; preds = %a.grow1255, %a.chec
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
 declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #7
 
-define ptr @"dep_graph::init_tarjan_state"(i64 %0) #0 {
+define ptr @"dep_graph::init_tarjan_state"(i64 %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -8210,7 +8168,7 @@ a.after197:                                       ; preds = %a.create196, %a.aft
   ret ptr %rec.alloc
 }
 
-define void @"dep_graph::push_stack"(ptr %0, i64 %1) #0 {
+define void @"dep_graph::push_stack"(ptr %0, i64 %1) #3 {
 entry:
   %var._190 = alloca ptr, align 8
   %var._189 = alloca ptr, align 8
@@ -8719,7 +8677,7 @@ err.abort220:                                     ; No predecessors!
   br label %choice.exit187
 }
 
-define i64 @"dep_graph::pop_stack"(ptr %0) #0 {
+define i64 @"dep_graph::pop_stack"(ptr %0) #3 {
 entry:
   %var.stk = alloca ptr, align 8
   %var._71 = alloca ptr, align 8
@@ -9157,7 +9115,7 @@ err.normal186:                                    ; preds = %unwrap.abort.73
   unreachable
 }
 
-define void @"dep_graph::tarjan_dfs"(ptr %0, ptr %1, i64 %2) #0 {
+define void @"dep_graph::tarjan_dfs"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.is_rec = alloca i1, align 1
   %var.w_node = alloca ptr, align 8
@@ -11990,9 +11948,9 @@ a.store1639:                                      ; preds = %a.grow1638, %a.chec
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare i64 @llvm.smin.i64(i64, i64) #1
+declare i64 @llvm.smin.i64(i64, i64) #0
 
-define ptr @"dep_graph::tarjan_scc"(ptr %0) #0 {
+define ptr @"dep_graph::tarjan_scc"(ptr %0) #3 {
 entry:
   %var.idx = alloca i64, align 8
   %var._29 = alloca ptr, align 8
@@ -12169,10 +12127,10 @@ choice.exit32:                                    ; preds = %choice.then31, %cho
   br label %loop.latch.87
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { cold noreturn "nounwind" }

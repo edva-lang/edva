@@ -4,76 +4,10 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@sys_argc_global = external global i64
-@sys_argv_global = external global ptr
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
 @"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
-@"var.sys::STDIN" = external global i64
-@"var.sys::STDOUT" = external global i64
-@"var.sys::STDERR" = external global i64
-@"var.sys::addr_null" = external global ptr
-@"var.time::CLOCK_REALTIME" = external global i64
-@"var.time::CLOCK_MONOTONIC" = external global i64
-@"var.time::NS_PER_US" = external global i64
-@"var.time::NS_PER_MS" = external global i64
-@"var.time::NS_PER_SEC" = external global i64
-@"var.time::SEC_PER_MIN" = external global i64
-@"var.time::SEC_PER_HOUR" = external global i64
-@"var.time::SEC_PER_DAY" = external global i64
-@"var.log::#owned_fd" = external global i64
-@"var.log::#O_LOG_APPEND" = external global i64
-@"var.lexer::cur_lex_file" = external global ptr
-@"var.lexer::cur_lex_failed" = external global i1
-@"var.ast::cell_var_names" = external global ptr
-@"var.path::SEP" = external global i32
-@"var.path::SEP_STR" = external global ptr
-@"var.path::LIST_SEP" = external global i32
-@"var.path::LIST_SEP_STR" = external global ptr
-@"var.path::IS_WIN" = external global i1
 @stale_str_msg = internal unnamed_addr constant [46 x i8] c"E4010: stale String read after arena restore\0A\00"
 @b_byte_msg = internal unnamed_addr constant [58 x i8] c"E4007: Builder append byte out of range (must be 0..255)\0A\00"
 @clo.const = internal constant { ptr, ptr } { ptr @"parser::#print", ptr null }
@@ -1882,21 +1816,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.parser::has_free_underscore_map" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_parser, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -1930,30 +1854,12 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
-
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_parser() #0 {
+define internal void @__dva_global_init_parser() #3 {
 entry:
   store ptr @clo.const, ptr @"var.parser::#print", align 8
   store ptr @str.0.struct, ptr @"var.parser::cur_target_triple", align 8
@@ -2507,162 +2413,12 @@ entry:
   ret void
 }
 
-declare i32 @open(ptr, i32)
-
-declare i64 @creat(ptr, i64)
-
-declare i32 @close(i32)
-
-declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @posix_spawnp(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @waitpid(i64, ptr, i64)
-
-declare i64 @read(i32, ptr, i64)
-
-declare i64 @lseek(i32, i64, i64)
-
 declare i64 @write(i32, ptr, i64)
-
-declare i64 @writev(i32, ptr, i64)
-
-declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
 
-declare i64 @htons(i64)
-
-declare i64 @htonl(i64)
-
-declare i64 @ntohs(i64)
-
-declare i64 @ntohl(i64)
-
-declare i64 @inet_addr(ptr)
-
-declare i64 @socket(i64, i64, i64)
-
-declare i64 @connect(i64, ptr, i64)
-
-declare i64 @bind(i64, ptr, i64)
-
-declare i64 @listen(i64, i64)
-
-declare i64 @accept(i64, ptr, ptr)
-
-declare i64 @send(i64, ptr, i64, i32)
-
-declare i64 @recv(i64, ptr, i64, i32)
-
-declare i64 @sendto(i64, ptr, i64, i32, ptr, i64)
-
-declare i64 @recvfrom(i64, ptr, i64, i32, ptr, ptr)
-
-declare i64 @setsockopt(i64, i64, i64, ptr, i64)
-
-declare i64 @getsockopt(i64, i64, i64, ptr, ptr)
-
-declare i64 @getpeername(i64, ptr, ptr)
-
-declare i64 @getsockname(i64, ptr, ptr)
-
-declare i64 @shutdown(i64, i64)
-
-declare i64 @fcntl(i32, i64, i64)
-
-declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
-
-declare void @freeaddrinfo(ptr)
-
-declare i64 @getifaddrs(ptr)
-
-declare void @freeifaddrs(ptr)
-
-declare ptr @memset(ptr, i64, i64)
-
-declare i64 @atoi(ptr)
-
-declare ptr @opendir(ptr)
-
-declare ptr @readdir(ptr)
-
-declare i64 @closedir(ptr)
-
-declare i64 @strlen(ptr) #0
-
-declare i64 @strcmp(ptr, ptr)
-
-declare ptr @memcpy(ptr, ptr, i64)
-
-declare ptr @memmove(ptr, ptr, i64)
-
-declare i64 @stat(ptr, ptr)
-
-declare i64 @fstat(i32, ptr)
-
-declare i64 @rename(ptr, ptr)
-
-declare i64 @unlink(ptr)
-
-declare i64 @pipe(ptr)
-
-declare ptr @__errno_location()
-
-declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
-
-declare i64 @munmap(ptr, i64)
-
-declare i64 @syscall(i64, ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @dlopen(ptr, i32)
-
-declare ptr @dlsym(ptr, ptr)
-
-declare i64 @dlclose(ptr)
-
-declare ptr @dlerror()
-
-declare i64 @system(ptr)
-
-declare ptr @realpath(ptr, ptr)
-
-declare i64 @isatty(i32)
-
-declare i64 @tcgetattr(i32, ptr)
-
-declare i64 @tcsetattr(i32, i64, ptr)
-
-declare void @cfmakeraw(ptr)
-
-declare i64 @poll(ptr, i64, i64)
-
-declare i64 @epoll_create1(i32)
-
-declare i64 @epoll_ctl(i64, i64, i32, ptr)
-
-declare i64 @epoll_wait(i64, ptr, i64, i64)
-
-declare i64 @time(ptr)
-
-declare ptr @signal(i64, ptr)
-
-declare i64 @raise(i64)
-
-declare i64 @getrlimit(i64, ptr)
-
-declare i64 @setrlimit(i64, ptr)
-
-declare i64 @uname(ptr)
-
-declare i32 @nanosleep(ptr, ptr)
-
-declare ptr @localtime_r(ptr, ptr)
-
-declare ptr @strptime(ptr, ptr, ptr)
-
-define internal i64 @"parser::#print"(ptr %0) #0 {
+define internal i64 @"parser::#print"(ptr %0) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -2932,7 +2688,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define void @"parser::set_target_triple"(ptr %0) #0 {
+define void @"parser::set_target_triple"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -2941,7 +2697,7 @@ entry:
   ret void
 }
 
-define i1 @"parser::tok_is_op"(ptr %0) #0 {
+define i1 @"parser::tok_is_op"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -2964,7 +2720,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"parser::tok_is_nl"(ptr %0) #0 {
+define i1 @"parser::tok_is_nl"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -2987,7 +2743,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"parser::tok_is_eof"(ptr %0) #0 {
+define i1 @"parser::tok_is_eof"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -3010,7 +2766,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"parser::tok_is_indent"(ptr %0) #0 {
+define i1 @"parser::tok_is_indent"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -3033,7 +2789,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"parser::tok_is_dedent"(ptr %0) #0 {
+define i1 @"parser::tok_is_dedent"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -3056,7 +2812,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"parser::token_is_op"(ptr %0, ptr %1) #0 {
+define i1 @"parser::token_is_op"(ptr %0, ptr %1) #3 {
 entry:
   %var.text = alloca ptr, align 8
   %var.t = alloca ptr, align 8
@@ -3104,9 +2860,9 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %and.375.exit
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define i1 @"parser::token_is_pipe"(ptr %0) #0 {
+define i1 @"parser::token_is_pipe"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -3269,7 +3025,7 @@ str.eq.merge77:                                   ; preds = %str.eq.else76, %str
   br i1 %case.or84, label %choice.case, label %choice.next
 }
 
-define i1 @"parser::op_is_reserved"(ptr %0) #0 {
+define i1 @"parser::op_is_reserved"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var.text = alloca ptr, align 8
@@ -4391,9 +4147,9 @@ str.eq.merge766:                                  ; preds = %str.eq.else765, %st
   br i1 %case.or773, label %choice.case, label %choice.next
 }
 
-declare ptr @"operators::bin_info"(ptr) #0
+declare ptr @"operators::bin_info"(ptr) #3
 
-define { i1, i64, i64 } @"parser::user_op_lookup"(ptr %0, ptr %1) #0 {
+define { i1, i64, i64 } @"parser::user_op_lookup"(ptr %0, ptr %1) #3 {
 entry:
   %rec.salloc = alloca { i1, i64, i64 }, align 8
   %var._ = alloca ptr, align 8
@@ -4520,7 +4276,7 @@ choice.exit:                                      ; preds = %str.eq.merge
   br label %loop.latch.379
 }
 
-define ptr @"parser::user_op_add"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define ptr @"parser::user_op_add"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.rbp = alloca i64, align 8
   %var.lbp = alloca i64, align 8
@@ -4610,7 +4366,7 @@ a.after16:                                        ; preds = %a.create15, %a.stor
   ret ptr %a.load224
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -4658,7 +4414,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #6 {
@@ -4671,7 +4427,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define i1 @"parser::is_continuation_op"(ptr %0) #0 {
+define i1 @"parser::is_continuation_op"(ptr %0) #3 {
 entry:
   %var.is_op = alloca i1, align 1
   %var.is_delim = alloca i1, align 1
@@ -5216,7 +4972,7 @@ or.381.exit:                                      ; preds = %or.381.else, %or.38
   ret i1 %or.381.phi
 }
 
-define ptr @"parser::parser_init"(ptr %0) #0 {
+define ptr @"parser::parser_init"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   %rec.salloc = alloca { ptr, i64, i64, i64, i64, i1, i1, ptr }, align 8
@@ -5516,9 +5272,9 @@ a.after103:                                       ; preds = %a.create102, %a.aft
   ret ptr %var.load149
 }
 
-declare { i64, ptr } @"lexer::lex_get_file"() #0
+declare { i64, ptr } @"lexer::lex_get_file"() #3
 
-define void @"parser::parser_advance"(ptr %0) #0 {
+define void @"parser::parser_advance"(ptr %0) #3 {
 entry:
   %var.ded = alloca i1, align 1
   %var.ind = alloca i1, align 1
@@ -5618,9 +5374,9 @@ choice.exit38:                                    ; preds = %choice.then37, %cho
   ret void
 }
 
-declare ptr @"lexer::next_tok"(ptr, i64) #0
+declare ptr @"lexer::next_tok"(ptr, i64) #3
 
-define void @"parser::skip_cont"(ptr %0) #0 {
+define void @"parser::skip_cont"(ptr %0) #3 {
 entry:
   %var.ind = alloca i1, align 1
   %var.p = alloca ptr, align 8
@@ -5698,7 +5454,7 @@ choice.exit21:                                    ; preds = %choice.else20, %cho
   br label %choice.exit
 }
 
-define void @"parser::parser_set_file"(ptr %0, ptr %1) #0 {
+define void @"parser::parser_set_file"(ptr %0, ptr %1) #3 {
 entry:
   %var.file = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -5711,7 +5467,7 @@ entry:
   ret void
 }
 
-define void @"parser::parser_skip_layout"(ptr %0) #0 {
+define void @"parser::parser_skip_layout"(ptr %0) #3 {
 entry:
   %var.is_lay = alloca i1, align 1
   %var.p = alloca ptr, align 8
@@ -5760,7 +5516,7 @@ choice.exit:                                      ; preds = %choice.then, %or.38
   ret void
 }
 
-define void @"parser::parser_error"(ptr %0, i64 %1, ptr %2) #0 {
+define void @"parser::parser_error"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %cat.ibuf73 = alloca [24 x i8], align 1
   %cat.ibuf69 = alloca [24 x i8], align 1
@@ -6111,11 +5867,11 @@ abort.dead135:                                    ; No predecessors!
   br label %concat.tot.len133
 }
 
-declare i1 @"diag::is_capturing"() #0
+declare i1 @"diag::is_capturing"() #3
 
-declare void @"diag::record_diag"(i64, ptr, i64, i64, ptr, i1) #0
+declare void @"diag::record_diag"(i64, ptr, i64, i64, ptr, i1) #3
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -6179,9 +5935,9 @@ done:                                             ; preds = %copyloop
   ret i64 %fmt.tot
 }
 
-declare void @"log::error"(ptr) #0
+declare void @"log::error"(ptr) #3
 
-define ptr @"parser::parse"(ptr %0) #0 {
+define ptr @"parser::parse"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var.r = alloca { i1, i64 }, align 8
@@ -6215,7 +5971,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"parser::parse_init"(ptr %0) #0 {
+define ptr @"parser::parse_init"(ptr %0) #3 {
 entry:
   %var.src = alloca ptr, align 8
   store ptr %0, ptr %var.src, align 8
@@ -6225,9 +5981,9 @@ entry:
   ret ptr %call.res1
 }
 
-declare ptr @"lexer::lex_init"(ptr) #0
+declare ptr @"lexer::lex_init"(ptr) #3
 
-define { i1, i64 } @"parser::parse_expr"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_expr"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -6236,7 +5992,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::parse_sequence"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_sequence"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -6264,7 +6020,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_cycle"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_cycle"(ptr %0) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -6318,7 +6074,7 @@ choice.exit9:                                     ; preds = %choice.else8, %choi
   ret { i1, i64 } %choice.res14
 }
 
-define { i1, i64 } @"parser::parse_choice"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_choice"(ptr %0) #3 {
 entry:
   %var._46 = alloca ptr, align 8
   %var.r = alloca ptr, align 8
@@ -6452,7 +6208,7 @@ choice.next30:                                    ; preds = %choice.then24
   br label %choice.exit28
 }
 
-define i1 @"parser::tok_is_neg_lbracket"(ptr %0) #0 {
+define i1 @"parser::tok_is_neg_lbracket"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -6489,7 +6245,7 @@ and.390.exit:                                     ; preds = %and.390.else, %and.
   ret i1 %and.390.phi
 }
 
-define i1 @"parser::peek_is_lbracket"(ptr %0) #0 {
+define i1 @"parser::peek_is_lbracket"(ptr %0) #3 {
 entry:
   %var.nxt = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -6516,7 +6272,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"parser::parser_peek_next"(ptr %0) #0 {
+define ptr @"parser::parser_peek_next"(ptr %0) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -6530,9 +6286,9 @@ entry:
   ret ptr %call.res2
 }
 
-declare ptr @"lexer::clone_lx"(ptr) #0
+declare ptr @"lexer::clone_lx"(ptr) #3
 
-define { i1, i64 } @"parser::headless_choice_resume"(ptr %0, i64 %1) #0 {
+define { i1, i64 } @"parser::headless_choice_resume"(ptr %0, i64 %1) #3 {
 entry:
   %var.rr = alloca ptr, align 8
   %var._25 = alloca ptr, align 8
@@ -6638,7 +6394,7 @@ choice.exit22:                                    ; preds = %choice.else21, %cho
   br label %choice.exit9
 }
 
-define { i1, i64 } @"parser::headless_choice_cont"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::headless_choice_cont"(ptr %0, ptr %1) #3 {
 entry:
   %var.lhs = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -6656,7 +6412,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::choice_cont_init_at"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define { i1, i64 } @"parser::choice_cont_init_at"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.pbrs = alloca ptr, align 8
   %var._60 = alloca ptr, align 8
@@ -6801,7 +6557,7 @@ choice.exit57:                                    ; preds = %choice.else56, %cho
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_neg_guard_choice"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_neg_guard_choice"(ptr %0, ptr %1) #3 {
 entry:
   %var.ce = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -6853,7 +6609,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::parse_pos_guard_choice"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_pos_guard_choice"(ptr %0, ptr %1) #3 {
 entry:
   %var.brs = alloca ptr, align 8
   %var.neg_b = alloca ptr, align 8
@@ -7090,7 +6846,7 @@ a.after97:                                        ; preds = %a.create96, %a.stor
   br label %choice.exit
 }
 
-define ptr @"parser::choice_guard"(ptr %0) #0 {
+define ptr @"parser::choice_guard"(ptr %0) #3 {
 entry:
   %var.is_rec = alloca i1, align 1
   %var.is_var = alloca i1, align 1
@@ -7204,7 +6960,7 @@ choice.exit26:                                    ; preds = %choice.else25, %cho
   br label %choice.exit14
 }
 
-define ptr @"parser::choice_guard_type_pattern"(ptr %0) #0 {
+define ptr @"parser::choice_guard_type_pattern"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -7419,7 +7175,7 @@ choice.exit105:                                   ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define ptr @"parser::choice_guard_type_lparen"(ptr %0) #0 {
+define ptr @"parser::choice_guard_type_lparen"(ptr %0) #3 {
 entry:
   %var.binds = alloca ptr, align 8
   %var.t5 = alloca ptr, align 8
@@ -8056,7 +7812,7 @@ a.after266:                                       ; preds = %a.create265, %conca
   br label %choice.exit229
 }
 
-define ptr @"parser::mk_type_pat_pb"(ptr %0, i64 %1, ptr %2, ptr %3) #0 {
+define ptr @"parser::mk_type_pat_pb"(ptr %0, i64 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.br = alloca ptr, align 8
   %var.vnames = alloca ptr, align 8
@@ -8327,7 +8083,7 @@ a.after71:                                        ; preds = %a.create70, %a.afte
   ret ptr %rec.alloc94
 }
 
-define { i64, ptr } @"parser::ct_names_append"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"parser::ct_names_append"(ptr %0, ptr %1) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %var.name = alloca ptr, align 8
@@ -8439,7 +8195,7 @@ abort.dead28:                                     ; No predecessors!
   br label %concat.tot.len26
 }
 
-define ptr @"parser::pat_wildcard"() #0 {
+define ptr @"parser::pat_wildcard"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -8484,7 +8240,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"parser::choice_guard_type_ident"(ptr %0) #0 {
+define ptr @"parser::choice_guard_type_ident"(ptr %0) #3 {
 entry:
   %var.binds300 = alloca ptr, align 8
   %var.t3269 = alloca ptr, align 8
@@ -9233,7 +8989,7 @@ a.after368:                                       ; preds = %a.create367, %a.sto
   br label %choice.exit292
 }
 
-define ptr @"parser::choice_guard_type_angle"(ptr %0) #0 {
+define ptr @"parser::choice_guard_type_angle"(ptr %0) #3 {
 entry:
   %var.binds = alloca ptr, align 8
   %var.t3 = alloca ptr, align 8
@@ -9950,7 +9706,7 @@ a.after340:                                       ; preds = %a.create339, %a.sto
   br label %choice.exit313
 }
 
-define ptr @"parser::choice_guard_type_lt"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::choice_guard_type_lt"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.binds606 = alloca ptr, align 8
   %var.t5 = alloca ptr, align 8
@@ -11269,7 +11025,7 @@ a.after674:                                       ; preds = %a.create673, %a.sto
   br label %choice.exit598
 }
 
-define i1 @"parser::guard_is_expr_op_tok"(ptr %0) #0 {
+define i1 @"parser::guard_is_expr_op_tok"(ptr %0) #3 {
 entry:
   %var.nxt = alloca ptr, align 8
   store ptr %0, ptr %var.nxt, align 8
@@ -11427,7 +11183,7 @@ or.424.exit:                                      ; preds = %or.424.else, %or.42
   br label %and.423.exit
 }
 
-define i1 @"parser::token_is_range_op"(ptr %0) #0 {
+define i1 @"parser::token_is_range_op"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -11448,7 +11204,7 @@ or.421.exit:                                      ; preds = %or.421.else, %or.42
   ret i1 %or.421.phi
 }
 
-define i1 @"parser::guard_is_variant"(ptr %0) #0 {
+define i1 @"parser::guard_is_variant"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -11493,11 +11249,11 @@ and.425.exit:                                     ; preds = %and.425.else, %and.
   br label %choice.exit
 }
 
-declare i32 @"unicode::decode_rune"(ptr, i64) #0
+declare i32 @"unicode::decode_rune"(ptr, i64) #3
 
-declare i1 @"unicode::is_upper"(i32) #0
+declare i1 @"unicode::is_upper"(i32) #3
 
-define ptr @"parser::choice_guard_variant"(ptr %0) #0 {
+define ptr @"parser::choice_guard_variant"(ptr %0) #3 {
 entry:
   %var.is_deep = alloca i1, align 1
   %var.pat = alloca ptr, align 8
@@ -11547,7 +11303,7 @@ choice.exit7:                                     ; preds = %choice.else6, %choi
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_pattern"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_pattern"(ptr %0) #3 {
 entry:
   %var.vname = alloca ptr, align 8
   %var.subs = alloca ptr, align 8
@@ -11878,7 +11634,7 @@ choice.exit142:                                   ; preds = %choice.else141, %ch
   br label %choice.exit
 }
 
-define i1 @"parser::pat_tok_is_delim"(ptr %0) #0 {
+define i1 @"parser::pat_tok_is_delim"(ptr %0) #3 {
 entry:
   %var.tok = alloca ptr, align 8
   store ptr %0, ptr %var.tok, align 8
@@ -11919,7 +11675,7 @@ choice.exit5:                                     ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define ptr @"parser::pat_rec"(ptr %0) #0 {
+define ptr @"parser::pat_rec"(ptr %0) #3 {
 entry:
   %var.pr = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -11981,9 +11737,9 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-declare { i64, ptr } @"diag::E2109_disallowed_variant_wildcard"(ptr) #0
+declare { i64, ptr } @"diag::E2109_disallowed_variant_wildcard"(ptr) #3
 
-define ptr @"parser::pat_variant"(ptr %0, ptr %1) #0 {
+define ptr @"parser::pat_variant"(ptr %0, ptr %1) #3 {
 entry:
   %var.subs = alloca ptr, align 8
   %var.tag = alloca ptr, align 8
@@ -12044,7 +11800,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %enum.alloc
 }
 
-define ptr @"parser::pat_bind"(ptr %0) #0 {
+define ptr @"parser::pat_bind"(ptr %0) #3 {
 entry:
   %var.name = alloca ptr, align 8
   store ptr %0, ptr %var.name, align 8
@@ -12092,7 +11848,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define { i1, i64 } @"parser::parse_record_pattern"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_record_pattern"(ptr %0) #3 {
 entry:
   %var.subs = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -12177,7 +11933,7 @@ a.after17:                                        ; preds = %a.create16, %choice
   br label %choice.exit
 }
 
-define ptr @"parser::pat_record"(ptr %0) #0 {
+define ptr @"parser::pat_record"(ptr %0) #3 {
 entry:
   %var.subs = alloca ptr, align 8
   store ptr %0, ptr %var.subs, align 8
@@ -12235,7 +11991,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %enum.alloc
 }
 
-define { i1, i64 } @"parser::parse_record_pattern_loop"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_record_pattern_loop"(ptr %0, ptr %1) #3 {
 entry:
   %var.ep58 = alloca ptr, align 8
   %var._57 = alloca ptr, align 8
@@ -12492,7 +12248,7 @@ a.after93:                                        ; preds = %a.create92, %a.stor
   br label %choice.exit54
 }
 
-define i1 @"parser::pat_peek_is_eq"(ptr %0) #0 {
+define i1 @"parser::pat_peek_is_eq"(ptr %0) #3 {
 entry:
   %var.tok = alloca ptr, align 8
   %var.c = alloca ptr, align 8
@@ -12510,7 +12266,7 @@ entry:
   ret i1 %call.res4
 }
 
-define { i1, i64 } @"parser::parse_record_pattern_cont"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_record_pattern_cont"(ptr %0, ptr %1) #3 {
 entry:
   %var.is_group = alloca i1, align 1
   %var.s0_pr = alloca ptr, align 8
@@ -13043,15 +12799,11 @@ a.after222:                                       ; preds = %a.create221, %choic
   br label %choice.exit114
 }
 
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
-
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-define { i1, i64 } @"parser::parse_lit_pattern"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_lit_pattern"(ptr %0) #3 {
 entry:
   %var.neg_val = alloca double, align 8
   %var.fval158 = alloca double, align 8
@@ -13384,7 +13136,7 @@ choice.exit162:                                   ; preds = %choice.else161, %ch
   br label %choice.exit105
 }
 
-define { i1, i64 } @"parser::parse_int_text"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_int_text"(ptr %0) #3 {
 entry:
   %var.dv = alloca i64, align 8
   %var._26 = alloca i64, align 8
@@ -13570,7 +13322,7 @@ choice.exit40:                                    ; preds = %choice.else39, %cho
   br label %choice.exit
 }
 
-define { i64, ptr } @"parser::int_clean"(ptr %0) #0 {
+define { i64, ptr } @"parser::int_clean"(ptr %0) #3 {
 entry:
   %str.view196 = alloca { i64, ptr }, align 8
   %str.view72 = alloca { i64, ptr }, align 8
@@ -13889,7 +13641,7 @@ str.eq.merge166:                                  ; preds = %str.eq.else165, %st
   br i1 %case.or173, label %choice.case77, label %choice.next78
 }
 
-define { i64, ptr } @"parser::expand_int_repeats"(ptr %0) #0 {
+define { i64, ptr } @"parser::expand_int_repeats"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._164 = alloca i64, align 8
@@ -14583,7 +14335,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-define i1 @"parser::has_char"(ptr %0, i32 %1) #0 {
+define i1 @"parser::has_char"(ptr %0, i32 %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -14657,9 +14409,9 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare ptr @"str::to_int"(ptr) #0
+declare ptr @"str::to_int"(ptr) #3
 
-define i64 @"parser::int_base"(ptr %0) #0 {
+define i64 @"parser::int_base"(ptr %0) #3 {
 entry:
   %var.text = alloca ptr, align 8
   store ptr %0, ptr %var.text, align 8
@@ -14855,7 +14607,7 @@ str.eq.merge84:                                   ; preds = %str.eq.else83, %str
   br i1 %str.eq.result90, label %choice.case74, label %choice.next75
 }
 
-define i32 @"parser::digit_val"(i32 %0) #0 {
+define i32 @"parser::digit_val"(i32 %0) #3 {
 entry:
   %var.c = alloca i32, align 4
   store i32 %0, ptr %var.c, align 4
@@ -14935,7 +14687,7 @@ and.447.exit:                                     ; preds = %and.447.else, %and.
   br i1 %and.447.phi, label %choice.case12, label %choice.next13
 }
 
-define ptr @"parser::pat_lit"(ptr %0) #0 {
+define ptr @"parser::pat_lit"(ptr %0) #3 {
 entry:
   %var.lit = alloca ptr, align 8
   store ptr %0, ptr %var.lit, align 8
@@ -14977,7 +14729,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define { i1, i64 } @"parser::parse_float_text"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_float_text"(ptr %0) #3 {
 entry:
   %var.m3 = alloca double, align 8
   %var.m2 = alloca double, align 8
@@ -15324,7 +15076,7 @@ choice.exit106:                                   ; preds = %choice.else105, %ch
   br label %choice.exit84
 }
 
-define { i64, ptr } @"parser::float_clean"(ptr %0) #0 {
+define { i64, ptr } @"parser::float_clean"(ptr %0) #3 {
 entry:
   %str.view132 = alloca { i64, ptr }, align 8
   %str.view72 = alloca { i64, ptr }, align 8
@@ -15555,9 +15307,9 @@ str.eq.merge102:                                  ; preds = %str.eq.else101, %st
   br i1 %case.or109, label %choice.case77, label %choice.next78
 }
 
-declare i1 @"str::is_digit"(i64) #0
+declare i1 @"str::is_digit"(i64) #3
 
-define { i64, i64, i64 } @"parser::digit_add"(i1 %0, i32 %1, ptr %2, i1 %3) #0 {
+define { i64, i64, i64 } @"parser::digit_add"(i1 %0, i32 %1, ptr %2, i1 %3) #3 {
 entry:
   %rec.salloc57 = alloca { i64, i64, i64 }, align 8
   %var.nv = alloca i64, align 8
@@ -15682,7 +15434,7 @@ choice.exit51:                                    ; preds = %choice.else50, %cho
   br label %choice.exit16
 }
 
-define double @"parser::pow10"(i64 %0) #0 {
+define double @"parser::pow10"(i64 %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -15756,7 +15508,7 @@ choice.exit9:                                     ; preds = %choice.else8, %choi
   ret double %choice.res12
 }
 
-define i1 @"parser::pattern_is_deep"(ptr %0) #0 {
+define i1 @"parser::pattern_is_deep"(ptr %0) #3 {
 entry:
   %var.sub = alloca ptr, align 8
   %var._42 = alloca ptr, align 8
@@ -15933,7 +15685,7 @@ choice.next50:                                    ; preds = %choice.exit38
   br label %choice.exit48
 }
 
-define ptr @"parser::choice_guard_deep_variant"(ptr %0, ptr %1) #0 {
+define ptr @"parser::choice_guard_deep_variant"(ptr %0, ptr %1) #3 {
 entry:
   %var.pat = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -15951,7 +15703,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"parser::choice_guard_pattern_or"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"parser::choice_guard_pattern_or"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.base_binds = alloca ptr, align 8
   %var.alts = alloca ptr, align 8
@@ -16103,7 +15855,7 @@ a.after52:                                        ; preds = %a.create51, %a.afte
   ret ptr %call.res
 }
 
-define void @"parser::pat_collect_binds_into"(ptr %0, ptr %1) #0 {
+define void @"parser::pat_collect_binds_into"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -16256,7 +16008,7 @@ a.after29:                                        ; preds = %a.create28, %loop.b
   br label %loop.latch.455
 }
 
-define ptr @"parser::choice_guard_pattern_or_loop"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"parser::choice_guard_pattern_or_loop"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.dummy_br = alloca ptr, align 8
   %var.final_pat = alloca ptr, align 8
@@ -16743,7 +16495,7 @@ a.after163:                                       ; preds = %a.create162, %choic
   br label %choice.exit117
 }
 
-define i1 @"parser::names_same_bind_set"(ptr %0, ptr %1) #0 {
+define i1 @"parser::names_same_bind_set"(ptr %0, ptr %1) #3 {
 entry:
   %var._74 = alloca ptr, align 8
   %var._i73 = alloca i64, align 8
@@ -16991,7 +16743,7 @@ choice.exit92:                                    ; preds = %choice.then91, %a.a
   br label %loop.latch.458
 }
 
-define i1 @"parser::names_has_str"(ptr %0, ptr %1) #0 {
+define i1 @"parser::names_has_str"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -17094,7 +16846,7 @@ choice.exit:                                      ; preds = %choice.then, %str.e
   br label %loop.latch.457
 }
 
-define ptr @"parser::pat_or"(ptr %0) #0 {
+define ptr @"parser::pat_or"(ptr %0) #3 {
 entry:
   %var.subs = alloca ptr, align 8
   store ptr %0, ptr %var.subs, align 8
@@ -17152,7 +16904,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %enum.alloc
 }
 
-define ptr @"parser::choice_guard_shallow_variant"(ptr %0, ptr %1) #0 {
+define ptr @"parser::choice_guard_shallow_variant"(ptr %0, ptr %1) #3 {
 entry:
   %var.binds = alloca ptr, align 8
   %var.vnames = alloca ptr, align 8
@@ -17318,7 +17070,7 @@ a.after55:                                        ; preds = %a.create54, %a.afte
   br label %choice.exit
 }
 
-define ptr @"parser::pat_extract_binds"(ptr %0) #0 {
+define ptr @"parser::pat_extract_binds"(ptr %0) #3 {
 entry:
   %var.is_b = alloca i1, align 1
   %var.sp = alloca ptr, align 8
@@ -17541,7 +17293,7 @@ a.after65:                                        ; preds = %a.create64, %loop.e
   ret ptr %a.load273
 }
 
-define i1 @"parser::guard_comma_needs_deep_or"(ptr %0, ptr %1) #0 {
+define i1 @"parser::guard_comma_needs_deep_or"(ptr %0, ptr %1) #3 {
 entry:
   %var.t2 = alloca ptr, align 8
   %var.t1 = alloca ptr, align 8
@@ -17704,7 +17456,7 @@ choice.exit42:                                    ; preds = %choice.exit33
   br label %loop.latch.460
 }
 
-define ptr @"parser::guard_variants"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::guard_variants"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -18300,7 +18052,7 @@ a.after241:                                       ; preds = %a.create240, %a.aft
   br label %choice.exit
 }
 
-define ptr @"parser::gv"(ptr %0, ptr %1) #0 {
+define ptr @"parser::gv"(ptr %0, ptr %1) #3 {
 entry:
   %var.ve = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -18505,7 +18257,7 @@ a.after40:                                        ; preds = %a.create39, %choice
   br label %choice.exit12
 }
 
-define { i1, i64 } @"parser::parse_range"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_range"(ptr %0) #3 {
 entry:
   %var.a = alloca ptr, align 8
   %var._80 = alloca ptr, align 8
@@ -18716,7 +18468,7 @@ choice.exit77:                                    ; preds = %choice.else76, %cho
   br label %choice.exit
 }
 
-define i1 @"parser::is_range_start"(ptr %0) #0 {
+define i1 @"parser::is_range_start"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -18829,9 +18581,9 @@ and.467.exit:                                     ; preds = %and.467.else, %and.
   br label %or.466.exit
 }
 
-declare { i64, ptr } @"diag::E2025_range_endpoint_whitespace"() #0
+declare { i64, ptr } @"diag::E2025_range_endpoint_whitespace"() #3
 
-define { i1, i64 } @"parser::parse_bp"(ptr %0, i64 %1) #0 {
+define { i1, i64 } @"parser::parse_bp"(ptr %0, i64 %1) #3 {
 entry:
   %var.min_bp = alloca i64, align 8
   %var.p = alloca ptr, align 8
@@ -18866,7 +18618,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::parse_bp_depth_error"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_bp_depth_error"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -18886,9 +18638,9 @@ entry:
   ret { i1, i64 } zeroinitializer
 }
 
-declare { i64, ptr } @"diag::E2039_expr_too_deep"() #0
+declare { i64, ptr } @"diag::E2039_expr_too_deep"() #3
 
-define { i1, i64 } @"parser::parse_bp_depth_ok"(ptr %0, i64 %1) #0 {
+define { i1, i64 } @"parser::parse_bp_depth_ok"(ptr %0, i64 %1) #3 {
 entry:
   %var.r = alloca { i1, i64 }, align 8
   %var.lre = alloca ptr, align 8
@@ -18939,7 +18691,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %var.load13
 }
 
-define { i1, i64 } @"parser::parse_unary"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_unary"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -18967,7 +18719,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_unary_op"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_unary_op"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -19244,7 +18996,7 @@ and.789.exit:                                     ; preds = %and.789.else, %and.
   br i1 %and.789.phi, label %choice.case111, label %choice.next112
 }
 
-define { i1, i64 } @"parser::atom_neg"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_neg"(ptr %0) #3 {
 entry:
   %var.oe = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -19293,7 +19045,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::atom_copy"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_copy"(ptr %0) #3 {
 entry:
   %var.oe = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -19330,7 +19082,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::atom_bitnot"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_bitnot"(ptr %0) #3 {
 entry:
   %var.be = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -19379,7 +19131,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::atom_binding"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_binding"(ptr %0) #3 {
 entry:
   %var.target = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -19419,7 +19171,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::parse_primary"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_primary"(ptr %0) #3 {
 entry:
   %var._6 = alloca ptr, align 8
   %var.a = alloca ptr, align 8
@@ -19452,7 +19204,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::parse_atom"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_atom"(ptr %0) #3 {
 entry:
   %var.is_id = alloca i1, align 1
   %var.k = alloca ptr, align 8
@@ -20275,7 +20027,7 @@ abort.dead424:                                    ; No predecessors!
   br label %concat.tot.len422
 }
 
-define { i1, i64 } @"parser::parse_fn"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_fn"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -20314,7 +20066,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::fn_params"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define { i1, i64 } @"parser::fn_params"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.is_colon = alloca i1, align 1
   %var.pname292 = alloca ptr, align 8
@@ -21381,9 +21133,9 @@ a.after556:                                       ; preds = %a.create555, %a.aft
   br label %choice.exit
 }
 
-declare { i64, ptr } @"diag::E2040_underscore_param"() #0
+declare { i64, ptr } @"diag::E2040_underscore_param"() #3
 
-define i1 @"parser::name_is_primed"(ptr %0) #0 {
+define i1 @"parser::name_is_primed"(ptr %0) #3 {
 entry:
   %var.name = alloca ptr, align 8
   store ptr %0, ptr %var.name, align 8
@@ -21444,9 +21196,9 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %and.469.exit
 }
 
-declare { i64, ptr } @"diag::E2039_param_mutable_prefix"() #0
+declare { i64, ptr } @"diag::E2039_param_mutable_prefix"() #3
 
-define { i1, i64 } @"parser::fn_param_next"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define { i1, i64 } @"parser::fn_param_next"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.pre_stmts = alloca ptr, align 8
   %var.ct_params = alloca ptr, align 8
@@ -21608,7 +21360,7 @@ a.after64:                                        ; preds = %a.create63, %a.afte
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::fn_arrow"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define { i1, i64 } @"parser::fn_arrow"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.eff_b = alloca ptr, align 8
   %var._179 = alloca ptr, align 8
@@ -22343,7 +22095,7 @@ abort.dead312:                                    ; No predecessors!
   br label %concat.tot.len310
 }
 
-define ptr @"parser::split_ct_scope_names"(ptr %0, i64 %1, ptr %2, ptr %3) #0 {
+define ptr @"parser::split_ct_scope_names"(ptr %0, i64 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.c = alloca i64, align 8
   %var.acc = alloca ptr, align 8
@@ -22702,7 +22454,7 @@ a.after135:                                       ; preds = %a.create134, %conca
   br label %choice.exit40
 }
 
-define { i1, i64 } @"parser::parse_block"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_block"(ptr %0) #3 {
 entry:
   %var.first_res = alloca { i1, i64 }, align 8
   %var.res = alloca { i1, i64 }, align 8
@@ -22824,7 +22576,7 @@ choice.next42:                                    ; preds = %choice.case
   br label %choice.exit40
 }
 
-define { i1, i64 } @"parser::block_stmts"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::block_stmts"(ptr %0, ptr %1) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -23357,7 +23109,7 @@ abort.dead230:                                    ; No predecessors!
   br label %concat.tot.len228
 }
 
-define i1 @"parser::is_destructure_seq"(ptr %0) #0 {
+define i1 @"parser::is_destructure_seq"(ptr %0) #3 {
 entry:
   %var.a = alloca ptr, align 8
   %var._18 = alloca ptr, align 8
@@ -23476,7 +23228,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %and.477.exit
 }
 
-define void @"parser::append_stmt_flat"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4, i1 %5) #0 {
+define void @"parser::append_stmt_flat"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4, i1 %5) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -23827,7 +23579,7 @@ a.store164:                                       ; preds = %a.grow163, %a.check
   br label %choice.exit
 }
 
-define void @"parser::mark_decl_item"(ptr %0, ptr %1) #0 {
+define void @"parser::mark_decl_item"(ptr %0, ptr %1) #3 {
 entry:
   %var.f = alloca ptr, align 8
   %var._259 = alloca ptr, align 8
@@ -24543,7 +24295,7 @@ abort.dead333:                                    ; No predecessors!
   br label %concat.tot.len331
 }
 
-define { i64, ptr } @"parser::clean_decl_name"(ptr %0) #0 {
+define { i64, ptr } @"parser::clean_decl_name"(ptr %0) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.s = alloca ptr, align 8
@@ -24626,7 +24378,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define i1 @"parser::names_has"(ptr %0, ptr %1) #0 {
+define i1 @"parser::names_has"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.names = alloca ptr, align 8
@@ -24658,7 +24410,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret i1 %call.res
 }
 
-define i1 @"parser::names_has_at"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"parser::names_has_at"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var._40 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -24869,7 +24621,7 @@ a.after55:                                        ; preds = %a.create54, %choice
   br label %choice.exit50
 }
 
-define void @"parser::add_public_name"(ptr %0, ptr %1) #0 {
+define void @"parser::add_public_name"(ptr %0, ptr %1) #3 {
 entry:
   %var.clean = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -25125,7 +24877,7 @@ a.store:                                          ; preds = %a.grow, %a.check
   br label %choice.exit85
 }
 
-define void @"parser::add_private_name"(ptr %0, ptr %1) #0 {
+define void @"parser::add_private_name"(ptr %0, ptr %1) #3 {
 entry:
   %var.clean = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -25508,7 +25260,7 @@ a.store155:                                       ; preds = %a.grow154, %a.check
   br label %choice.exit148
 }
 
-define i1 @"parser::stmt_end_ok"(ptr %0) #0 {
+define i1 @"parser::stmt_end_ok"(ptr %0) #3 {
 entry:
   %var.tok_end = alloca i1, align 1
   %var.is_nl = alloca i1, align 1
@@ -25570,7 +25322,7 @@ or.481.exit:                                      ; preds = %or.481.else, %or.48
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::maybe_inline_block_cont"(ptr %0, { i1, i64 } %1) #0 {
+define { i1, i64 } @"parser::maybe_inline_block_cont"(ptr %0, { i1, i64 } %1) #3 {
 entry:
   %var.res = alloca { i1, i64 }, align 8
   %var.saved_cl = alloca i1, align 1
@@ -26088,7 +25840,7 @@ choice.next190:                                   ; preds = %a.after165
   br label %choice.exit188
 }
 
-define i1 @"parser::peek_has_block_cont"(ptr %0) #0 {
+define i1 @"parser::peek_has_block_cont"(ptr %0) #3 {
 entry:
   %var._112 = alloca i64, align 8
   %var._i111 = alloca i64, align 8
@@ -26507,7 +26259,7 @@ or.496.exit:                                      ; preds = %or.496.else, %or.49
   br label %choice.exit105
 }
 
-define i1 @"parser::is_feed_cont_op"(ptr %0) #0 {
+define i1 @"parser::is_feed_cont_op"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -26648,7 +26400,7 @@ str.eq.merge61:                                   ; preds = %str.eq.else60, %str
   br i1 %case.or68, label %choice.case, label %choice.next
 }
 
-define i1 @"parser::is_cycle_cont_op"(ptr %0) #0 {
+define i1 @"parser::is_cycle_cont_op"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -26767,7 +26519,7 @@ str.eq.merge45:                                   ; preds = %str.eq.else44, %str
   br i1 %case.or52, label %choice.case, label %choice.next
 }
 
-define { i1, i64 } @"parser::parse_paren_record"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_paren_record"(ptr %0) #3 {
 entry:
   %var.res = alloca { i1, i64 }, align 8
   %var.saved_cl = alloca i1, align 1
@@ -26803,7 +26555,7 @@ entry:
   ret { i1, i64 } %var.load9
 }
 
-define { i1, i64 } @"parser::pr_record_field_loop"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::pr_record_field_loop"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.nt = alloca ptr, align 8
@@ -27097,7 +26849,7 @@ a.after111:                                       ; preds = %a.create110, %choic
   br label %choice.exit11
 }
 
-define { i1, i64 } @"parser::record_closed"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::record_closed"(ptr %0, ptr %1) #3 {
 entry:
   %var.ds_ok = alloca i1, align 1
   %var.stmts = alloca ptr, align 8
@@ -27555,7 +27307,7 @@ a.after185:                                       ; preds = %a.create184, %choic
   br label %choice.exit77
 }
 
-define i1 @"parser::is_destructure_record"(ptr %0) #0 {
+define i1 @"parser::is_destructure_record"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -27668,7 +27420,7 @@ choice.exit21:                                    ; preds = %loop.body.503
   br label %loop.latch.503
 }
 
-define i1 @"parser::is_destructure_field"(ptr %0) #0 {
+define i1 @"parser::is_destructure_field"(ptr %0) #3 {
 entry:
   %var.r = alloca ptr, align 8
   %var._14 = alloca ptr, align 8
@@ -27766,7 +27518,7 @@ and.507.exit:                                     ; preds = %and.507.else, %and.
   br label %choice.exit
 }
 
-define i1 @"parser::name_is_upper"(ptr %0) #0 {
+define i1 @"parser::name_is_upper"(ptr %0) #3 {
 entry:
   %var.name = alloca ptr, align 8
   store ptr %0, ptr %var.name, align 8
@@ -27791,9 +27543,9 @@ and.506.exit:                                     ; preds = %and.506.else, %and.
   ret i1 %and.506.phi
 }
 
-declare { i64, ptr } @"diag::E2037_params_parenthesized"() #0
+declare { i64, ptr } @"diag::E2037_params_parenthesized"() #3
 
-define { i1, i64 } @"parser::parse_assign_rhs"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_assign_rhs"(ptr %0) #3 {
 entry:
   %var.le = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -27898,7 +27650,7 @@ choice.exit23:                                    ; preds = %choice.else22, %cho
   br label %choice.exit13
 }
 
-define { i1, i64 } @"parser::parse_indented_rhs"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_indented_rhs"(ptr %0) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var._76 = alloca ptr, align 8
@@ -28357,7 +28109,7 @@ abort.dead174:                                    ; No predecessors!
   br label %concat.tot.len172
 }
 
-define { i1, i64 } @"parser::choice_cont"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::choice_cont"(ptr %0, ptr %1) #3 {
 entry:
   %var.lhs = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -28372,7 +28124,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define { i64, ptr } @"parser::fresh_dp_var"(ptr %0) #0 {
+define { i64, ptr } @"parser::fresh_dp_var"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %cat.ibuf = alloca [24 x i8], align 1
@@ -28432,7 +28184,7 @@ abort.dead11:                                     ; No predecessors!
   br label %concat.tot.len9
 }
 
-define ptr @"parser::mk_assign"(ptr %0, ptr %1) #0 {
+define ptr @"parser::mk_assign"(ptr %0, ptr %1) #3 {
 entry:
   %var.val = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -28487,7 +28239,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define i1 @"parser::build_destructure_stmts"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4) #0 {
+define i1 @"parser::build_destructure_stmts"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4) #3 {
 entry:
   %var.sub_ok = alloca i1, align 1
   %var.sub_tmp = alloca ptr, align 8
@@ -28995,9 +28747,9 @@ choice.exit185:                                   ; preds = %choice.then184, %a.
   br label %choice.exit30
 }
 
-declare { i64, ptr } @"str::from_int"(i64) #0
+declare { i64, ptr } @"str::from_int"(i64) #3
 
-define ptr @"parser::mk_assign_mut"(ptr %0, i1 %1, ptr %2) #0 {
+define ptr @"parser::mk_assign_mut"(ptr %0, i1 %1, ptr %2) #3 {
 entry:
   %var.val = alloca ptr, align 8
   %var.is_mut = alloca i1, align 1
@@ -29055,7 +28807,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"parser::chain_seq_stmts"(ptr %0) #0 {
+define ptr @"parser::chain_seq_stmts"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -29293,7 +29045,7 @@ choice.exit:                                      ; preds = %choice.then, %loop.
   br label %loop.latch.516
 }
 
-define { i1, i64 } @"parser::seq_cont_loop"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::seq_cont_loop"(ptr %0, ptr %1) #3 {
 entry:
   %var.n = alloca ptr, align 8
   %var.r = alloca ptr, align 8
@@ -29370,7 +29122,7 @@ choice.exit4:                                     ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::pr_field_value"(ptr %0, ptr %1, i1 %2, ptr %3) #0 {
+define { i1, i64 } @"parser::pr_field_value"(ptr %0, ptr %1, i1 %2, ptr %3) #3 {
 entry:
   %var.fs = alloca ptr, align 8
   %var.ve = alloca ptr, align 8
@@ -29618,7 +29370,7 @@ abort.dead83:                                     ; No predecessors!
   br label %concat.tot.len81
 }
 
-define ptr @"parser::append_field"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define ptr @"parser::append_field"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var._8 = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -29940,7 +29692,7 @@ a.after125:                                       ; preds = %a.create124, %a.sto
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::atom_to_ram"({ i1, i64 } %0) #0 {
+define { i1, i64 } @"parser::atom_to_ram"({ i1, i64 } %0) #3 {
 entry:
   %var.e = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -29997,7 +29749,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::atom_op"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_op"(ptr %0) #3 {
 entry:
   %var.se = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -30704,7 +30456,7 @@ abort.dead381:                                    ; No predecessors!
   br label %concat.tot.len379
 }
 
-define { i1, i64 } @"parser::atom_variant_unit"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_variant_unit"(ptr %0, ptr %1) #3 {
 entry:
   %var.tag = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -30740,7 +30492,7 @@ entry:
   ret { i1, i64 } %ram.pay
 }
 
-define { i1, i64 } @"parser::atom_variant_payload"(ptr %0, i1 %1) #0 {
+define { i1, i64 } @"parser::atom_variant_payload"(ptr %0, i1 %1) #3 {
 entry:
   %var.args = alloca ptr, align 8
   %var.t = alloca ptr, align 8
@@ -30892,7 +30644,7 @@ a.after34:                                        ; preds = %a.create33, %a.stor
   br label %choice.exit10
 }
 
-define { i1, i64 } @"parser::variant_tag"(i1 %0, ptr %1) #0 {
+define { i1, i64 } @"parser::variant_tag"(i1 %0, ptr %1) #3 {
 entry:
   %var.closer = alloca ptr, align 8
   %var.is_pos = alloca i1, align 1
@@ -31062,7 +30814,7 @@ str.eq.merge65:                                   ; preds = %str.eq.else64, %str
   br i1 %str.eq.result71, label %choice.case55, label %choice.next56
 }
 
-define { i1, i64 } @"parser::atom_cycle_jump"(ptr %0, i1 %1) #0 {
+define { i1, i64 } @"parser::atom_cycle_jump"(ptr %0, i1 %1) #3 {
 entry:
   %var.v = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -31374,9 +31126,9 @@ abort.dead111:                                    ; No predecessors!
   br label %concat.tot.len109
 }
 
-declare { i64, ptr } @"diag::cycle_jump_depth_prefix"() #0
+declare { i64, ptr } @"diag::cycle_jump_depth_prefix"() #3
 
-define { i1, i64 } @"parser::atom_early_return"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_early_return"(ptr %0) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -31712,7 +31464,7 @@ choice.exit139:                                   ; preds = %choice.else138, %ch
   br label %choice.exit113
 }
 
-define { i1, i64 } @"parser::atom_length"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_length"(ptr %0) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.nxt = alloca ptr, align 8
@@ -31803,7 +31555,7 @@ choice.exit11:                                    ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::atom_length_set"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_length_set"(ptr %0, ptr %1) #3 {
 entry:
   %var.n = alloca ptr, align 8
   %var.re = alloca ptr, align 8
@@ -31893,7 +31645,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::atom_length_op"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_length_op"(ptr %0) #3 {
 entry:
   %var.oe = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -31943,7 +31695,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::atom_rune_count"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_rune_count"(ptr %0) #3 {
 entry:
   %var.oe = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -31995,7 +31747,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::atom_raw_memory"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_raw_memory"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.is_rb = alloca i1, align 1
@@ -32143,7 +31895,7 @@ choice.next36:                                    ; preds = %choice.exit14
   br label %choice.exit34
 }
 
-define ptr @"parser::parse_type"(ptr %0) #0 {
+define ptr @"parser::parse_type"(ptr %0) #3 {
 entry:
   %var.at = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -32185,7 +31937,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"parser::parse_type_atom"(ptr %0) #0 {
+define ptr @"parser::parse_type_atom"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -32484,7 +32236,7 @@ choice.exit142:                                   ; preds = %choice.else, %choic
   br label %choice.exit64
 }
 
-define ptr @"parser::parse_ram_type_empty"(ptr %0) #0 {
+define ptr @"parser::parse_ram_type_empty"(ptr %0) #3 {
 entry:
   %var.e = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -32542,7 +32294,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"parser::mk_tp"(ptr %0, ptr %1, i1 %2) #0 {
+define ptr @"parser::mk_tp"(ptr %0, ptr %1, i1 %2) #3 {
 entry:
   %var.ok = alloca i1, align 1
   %var.ti = alloca ptr, align 8
@@ -32564,7 +32316,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"parser::parse_ram_np_type"(ptr %0) #0 {
+define ptr @"parser::parse_ram_np_type"(ptr %0) #3 {
 entry:
   %rec.salloc = alloca { i1, ptr, ptr }, align 8
   %var.empty_l = alloca ptr, align 8
@@ -32715,7 +32467,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br i1 %str.eq.result, label %choice.case, label %choice.next
 }
 
-define ptr @"parser::parse_ram_type"(ptr %0) #0 {
+define ptr @"parser::parse_ram_type"(ptr %0) #3 {
 entry:
   %var.r = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -32790,7 +32542,7 @@ entry:
   ret ptr %call.res37
 }
 
-define ptr @"parser::slots"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::slots"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.n = alloca ptr, align 8
   %var.pt200 = alloca ptr, align 8
@@ -33208,7 +32960,7 @@ choice.exit207:                                   ; preds = %choice.else206, %ch
   br label %choice.exit157
 }
 
-define ptr @"parser::parse_ct_type_expr"(ptr %0) #0 {
+define ptr @"parser::parse_ct_type_expr"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -33219,7 +32971,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"parser::parse_ct_type_choice"(ptr %0) #0 {
+define ptr @"parser::parse_ct_type_choice"(ptr %0) #3 {
 entry:
   %var.ch_e = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -33270,7 +33022,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"parser::eval_ct_type_expr"(ptr %0, ptr %1) #0 {
+define ptr @"parser::eval_ct_type_expr"(ptr %0, ptr %1) #3 {
 entry:
   %var.is_match = alloca i1, align 1
   %var.br = alloca ptr, align 8
@@ -33937,7 +33689,7 @@ choice.exit247:                                   ; preds = %choice.else246, %ch
   br label %choice.exit
 }
 
-define { i64, ptr } @"parser::member_chain_name"(ptr %0) #0 {
+define { i64, ptr } @"parser::member_chain_name"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %var.b = alloca ptr, align 8
@@ -34109,7 +33861,7 @@ abort.dead52:                                     ; No predecessors!
   br label %concat.tot.len50
 }
 
-define { i1, i64 } @"parser::lookup_type"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::lookup_type"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -34245,7 +33997,7 @@ choice.exit23:                                    ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define ptr @"parser::type_info_value_type"(ptr %0) #0 {
+define ptr @"parser::type_info_value_type"(ptr %0) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   %var._55 = alloca ptr, align 8
@@ -34370,7 +34122,7 @@ choice.next49:                                    ; preds = %choice.next37
   br label %choice.exit
 }
 
-define ptr @"parser::ram_ti_vt"(ptr %0) #0 {
+define ptr @"parser::ram_ti_vt"(ptr %0) #3 {
 entry:
   %var.r = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -34445,7 +34197,7 @@ choice.exit8:                                     ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_dva_type_name"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_dva_type_name"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -35157,7 +34909,7 @@ str.eq.merge429:                                  ; preds = %str.eq.else428, %st
   br i1 %str.eq.result435, label %choice.case419, label %choice.next420
 }
 
-define i1 @"parser::string_has_double_colon"(ptr %0, i64 %1) #0 {
+define i1 @"parser::string_has_double_colon"(ptr %0, i64 %1) #3 {
 entry:
   %var.b = alloca i64, align 8
   %var.a = alloca i64, align 8
@@ -35258,7 +35010,7 @@ choice.exit30:                                    ; preds = %choice.else29, %cho
   br label %choice.exit
 }
 
-define { i64, ptr } @"parser::eval_ct_type_str"(ptr %0) #0 {
+define { i64, ptr } @"parser::eval_ct_type_str"(ptr %0) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._9 = alloca ptr, align 8
@@ -35411,11 +35163,11 @@ str.eq.merge50:                                   ; preds = %str.eq.else49, %str
   br i1 %str.eq.result56, label %choice.case40, label %choice.next41
 }
 
-declare { i64, ptr } @"ast::triple_os"(ptr) #0
+declare { i64, ptr } @"ast::triple_os"(ptr) #3
 
-declare { i64, ptr } @"ast::triple_arch"(ptr) #0
+declare { i64, ptr } @"ast::triple_arch"(ptr) #3
 
-define i1 @"parser::eval_ct_type_bool"(ptr %0) #0 {
+define i1 @"parser::eval_ct_type_bool"(ptr %0) #3 {
 entry:
   %var.u = alloca ptr, align 8
   %var._238 = alloca ptr, align 8
@@ -36031,7 +35783,7 @@ choice.next244:                                   ; preds = %choice.case231
   br label %choice.exit242
 }
 
-define i1 @"parser::eval_ct_case_match"(ptr %0, ptr %1) #0 {
+define i1 @"parser::eval_ct_case_match"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -36162,7 +35914,7 @@ choice.exit:                                      ; preds = %str.eq.merge
   br label %loop.latch.530
 }
 
-define void @"parser::validate_ct_type_branch"(ptr %0, ptr %1) #0 {
+define void @"parser::validate_ct_type_branch"(ptr %0, ptr %1) #3 {
 entry:
   %var._68 = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -36438,7 +36190,7 @@ loop.exit.544:                                    ; preds = %loop.exit.nat.544
   br label %choice.exit
 }
 
-define ptr @"parser::parse_record_type"(ptr %0) #0 {
+define ptr @"parser::parse_record_type"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -36447,7 +36199,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"parser::parse_record_type_inner"(ptr %0, i1 %1) #0 {
+define ptr @"parser::parse_record_type_inner"(ptr %0, i1 %1) #3 {
 entry:
   %var.rf = alloca ptr, align 8
   %var.lp_line = alloca i64, align 8
@@ -36579,7 +36331,7 @@ choice.exit10:                                    ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define void @"parser::skip_type_layout"(ptr %0) #0 {
+define void @"parser::skip_type_layout"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -36610,7 +36362,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"parser::rfields"(ptr %0, ptr %1, i1 %2, i1 %3, ptr %4) #0 {
+define ptr @"parser::rfields"(ptr %0, ptr %1, i1 %2, i1 %3, ptr %4) #3 {
 entry:
   %var.rt = alloca ptr, align 8
   %var.is_double_paren = alloca i1, align 1
@@ -37199,7 +36951,7 @@ a.after237:                                       ; preds = %a.create236, %choic
   br label %choice.exit183
 }
 
-define i1 @"parser::peek_is_indent_after_nl"(ptr %0) #0 {
+define i1 @"parser::peek_is_indent_after_nl"(ptr %0) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -37213,7 +36965,7 @@ entry:
   ret i1 %call.res2
 }
 
-define i1 @"parser::peek_indent_loop"(ptr %0) #0 {
+define i1 @"parser::peek_indent_loop"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.c = alloca ptr, align 8
@@ -37258,7 +37010,7 @@ choice.next9:                                     ; preds = %choice.next
   br label %choice.exit7
 }
 
-define void @"parser::skip_nl_and_indent"(ptr %0) #0 {
+define void @"parser::skip_nl_and_indent"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -37298,7 +37050,7 @@ choice.next5:                                     ; preds = %choice.next
   br label %choice.exit
 }
 
-define void @"parser::skip_nl_only"(ptr %0) #0 {
+define void @"parser::skip_nl_only"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -37325,7 +37077,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"parser::rfield_repeat"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"parser::rfield_repeat"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.rf = alloca ptr, align 8
   %var._162 = alloca i64, align 8
@@ -38107,11 +37859,11 @@ abort.dead348:                                    ; No predecessors!
   br label %concat.tot.len346
 }
 
-declare { i64, ptr } @"diag::record_repeat_count_prefix"() #0
+declare { i64, ptr } @"diag::record_repeat_count_prefix"() #3
 
-declare { i64, ptr } @"diag::record_repeat_limit_suffix"() #0
+declare { i64, ptr } @"diag::record_repeat_limit_suffix"() #3
 
-define ptr @"parser::rfield_tail_with_rf"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"parser::rfield_tail_with_rf"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.has_nl = alloca i1, align 1
   %var.layout = alloca ptr, align 8
@@ -38678,7 +38430,7 @@ a.after249:                                       ; preds = %a.create248, %a.sto
   br label %choice.exit226
 }
 
-define ptr @"parser::rfield_after_comma"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"parser::rfield_after_comma"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.next_layout = alloca ptr, align 8
   %var.layout = alloca ptr, align 8
@@ -38856,7 +38608,7 @@ a.after44:                                        ; preds = %a.create43, %choice
   ret ptr %call.res
 }
 
-define ptr @"parser::rfield_close_rparen"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"parser::rfield_close_rparen"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.flags = alloca ptr, align 8
   %var.rf = alloca ptr, align 8
@@ -39233,7 +38985,7 @@ a.after141:                                       ; preds = %a.create140, %a.aft
   br label %choice.exit97
 }
 
-define void @"parser::unwind_to_indent"(ptr %0, i64 %1) #0 {
+define void @"parser::unwind_to_indent"(ptr %0, i64 %1) #3 {
 entry:
   %var.target_indent = alloca i64, align 8
   %var.p = alloca ptr, align 8
@@ -39284,7 +39036,7 @@ choice.exit:                                      ; preds = %choice.then, %or.56
   ret void
 }
 
-define void @"parser::skip_nl_dedent"(ptr %0) #0 {
+define void @"parser::skip_nl_dedent"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -39313,7 +39065,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"parser::rfield_misaligned"(ptr %0, i64 %1) #0 {
+define ptr @"parser::rfield_misaligned"(ptr %0, i64 %1) #3 {
 entry:
   %cat.ibuf5 = alloca [24 x i8], align 1
   %cat.ibuf = alloca [24 x i8], align 1
@@ -39429,7 +39181,7 @@ abort.dead24:                                     ; No predecessors!
   br label %concat.tot.len22
 }
 
-define void @"parser::skip_nl_indent"(ptr %0) #0 {
+define void @"parser::skip_nl_indent"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -39458,7 +39210,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"parser::rfield_tail"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"parser::rfield_tail"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.rf219 = alloca ptr, align 8
   %var.rf = alloca ptr, align 8
@@ -39974,7 +39726,7 @@ a.after225:                                       ; preds = %a.create224, %choic
   br label %choice.exit136
 }
 
-define ptr @"parser::rfield_fn_type"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"parser::rfield_fn_type"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.fn_ti = alloca ptr, align 8
   %var.is_zero_param = alloca i1, align 1
@@ -40560,7 +40312,7 @@ a.after228:                                       ; preds = %a.create227, %a.aft
   br label %choice.exit21
 }
 
-define ptr @"parser::parse_named_type"(ptr %0) #0 {
+define ptr @"parser::parse_named_type"(ptr %0) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.tok = alloca ptr, align 8
@@ -40670,7 +40422,7 @@ str.eq.merge18:                                   ; preds = %str.eq.else17, %str
   br i1 %case.or, label %choice.case, label %choice.next
 }
 
-define ptr @"parser::parse_named_type_valid"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::parse_named_type_valid"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.frs2 = alloca ptr, align 8
   %var.frs = alloca ptr, align 8
@@ -41584,7 +41336,7 @@ a.after452:                                       ; preds = %a.create451, %a.sto
   br label %choice.exit185
 }
 
-define i1 @"parser::ct_scope_has"(ptr %0, ptr %1) #0 {
+define i1 @"parser::ct_scope_has"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.scope = alloca ptr, align 8
@@ -41611,7 +41363,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i1 %choice.res
 }
 
-define i1 @"parser::ct_scope_has_comma"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i1 @"parser::ct_scope_has_comma"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.cur = alloca i64, align 8
   %var.start = alloca i64, align 8
@@ -41772,7 +41524,7 @@ choice.exit43:                                    ; preds = %choice.else42, %cho
   br label %choice.exit34
 }
 
-define ptr @"parser::parse_type_gen_call"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::parse_type_gen_call"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.subst_vt = alloca ptr, align 8
   %var.subst_ti = alloca ptr, align 8
@@ -42186,7 +41938,7 @@ abort.dead122:                                    ; No predecessors!
   br label %concat.tot.len120
 }
 
-define ptr @"parser::parse_type_gen_args"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::parse_type_gen_args"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.next_tis = alloca ptr, align 8
   %var.next_vts = alloca ptr, align 8
@@ -42536,7 +42288,7 @@ a.after162:                                       ; preds = %a.create161, %a.aft
   br label %choice.exit25
 }
 
-define ptr @"parser::subst_type_gen"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"parser::subst_type_gen"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -42733,7 +42485,7 @@ a.after59:                                        ; preds = %a.create58, %a.afte
   ret ptr %call.res
 }
 
-define ptr @"parser::ctfe_subst_multi"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"parser::ctfe_subst_multi"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.sub_val_vt = alloca ptr, align 8
   %var.sub_val_ti = alloca ptr, align 8
@@ -45126,7 +44878,7 @@ a.after1353:                                      ; preds = %a.create1352, %a.af
   br label %choice.exit
 }
 
-define i64 @"parser::ti_subst_idx"(ptr %0, ptr %1) #0 {
+define i64 @"parser::ti_subst_idx"(ptr %0, ptr %1) #3 {
 entry:
   %var.tv = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -45178,7 +44930,7 @@ a.after:                                          ; preds = %a.create, %choice.c
   br label %choice.exit
 }
 
-define i64 @"parser::subst_name_idx"(ptr %0, ptr %1) #0 {
+define i64 @"parser::subst_name_idx"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -45287,7 +45039,7 @@ choice.exit:                                      ; preds = %str.eq.merge
   br label %loop.latch.576
 }
 
-define ptr @"parser::subst_slot_vt"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"parser::subst_slot_vt"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var._41 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -45450,7 +45202,7 @@ choice.exit37:                                    ; preds = %choice.else36, %cho
   br label %choice.exit
 }
 
-define ptr @"parser::parse_type_suffixes"(ptr %0, ptr %1) #0 {
+define ptr @"parser::parse_type_suffixes"(ptr %0, ptr %1) #3 {
 entry:
   %var.sl_ti = alloca ptr, align 8
   %var.sl_flds = alloca ptr, align 8
@@ -45764,7 +45516,7 @@ abort.dead108:                                    ; No predecessors!
   br label %concat.tot.len106
 }
 
-define ptr @"parser::parse_array_cap_and_close"(ptr %0, ptr %1) #0 {
+define ptr @"parser::parse_array_cap_and_close"(ptr %0, ptr %1) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.cap = alloca i64, align 8
@@ -45932,7 +45684,7 @@ abort.dead43:                                     ; No predecessors!
   br label %concat.tot.len41
 }
 
-define i64 @"parser::array_cap"(ptr %0) #0 {
+define i64 @"parser::array_cap"(ptr %0) #3 {
 entry:
   %var.n22 = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -46002,7 +45754,7 @@ choice.exit21:                                    ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define i64 @"parser::int_of_text"(ptr %0) #0 {
+define i64 @"parser::int_of_text"(ptr %0) #3 {
 entry:
   %var._acc_1 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -46029,7 +45781,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i64 %choice.res
 }
 
-define { i1, i64 } @"parser::lookup_const_int"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::lookup_const_int"(ptr %0, ptr %1) #3 {
 entry:
   %var.n33 = alloca i64, align 8
   %var._32 = alloca i64, align 8
@@ -46163,7 +45915,7 @@ pay.int.merge29:                                  ; preds = %pay.int.nullbb28, %
   br label %choice.exit18
 }
 
-define { i1, i64 } @"parser::lookup_const_entry"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::lookup_const_entry"(ptr %0, ptr %1) #3 {
 entry:
   %var._58 = alloca ptr, align 8
   %var.e = alloca ptr, align 8
@@ -46443,7 +46195,7 @@ choice.exit60:                                    ; preds = %choice.then59, %cho
   br label %loop.exit.582
 }
 
-define ptr @"parser::parse_type_map"(ptr %0, ptr %1) #0 {
+define ptr @"parser::parse_type_map"(ptr %0, ptr %1) #3 {
 entry:
   %var.vt2 = alloca ptr, align 8
   %var.at = alloca ptr, align 8
@@ -46596,7 +46348,7 @@ choice.exit26:                                    ; preds = %choice.else25, %cho
   br label %choice.exit11
 }
 
-define i1 @"parser::map_key_ok"(ptr %0) #0 {
+define i1 @"parser::map_key_ok"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -46639,7 +46391,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i64, ptr } @"parser::type_atom_name"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"parser::type_atom_name"(ptr %0, ptr %1) #3 {
 entry:
   %var.n = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -46671,7 +46423,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::atom_section"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_section"(ptr %0) #3 {
 entry:
   %var.body = alloca ptr, align 8
   %var.params = alloca ptr, align 8
@@ -47032,7 +46784,7 @@ abort.dead138:                                    ; No predecessors!
   br label %concat.tot.len136
 }
 
-define { i1, i64 } @"parser::parse_expr_after_lparen"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_expr_after_lparen"(ptr %0, ptr %1) #3 {
 entry:
   %var.pce = alloca ptr, align 8
   %var._64 = alloca ptr, align 8
@@ -47289,9 +47041,9 @@ str.eq.merge87:                                   ; preds = %str.eq.else86, %str
   br i1 %str.eq.result93, label %choice.case70, label %choice.next71
 }
 
-declare { i64, ptr } @"diag::E2032_call_paren_whitespace"() #0
+declare { i64, ptr } @"diag::E2032_call_paren_whitespace"() #3
 
-define { i1, i64 } @"parser::parse_bitcast_args"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_bitcast_args"(ptr %0) #3 {
 entry:
   %var.res = alloca { i1, i64 }, align 8
   %var.vt = alloca ptr, align 8
@@ -47469,7 +47221,7 @@ a.after52:                                        ; preds = %a.create51, %a.stor
   br label %choice.exit20
 }
 
-define ptr @"parser::parse_ct_type"(ptr %0) #0 {
+define ptr @"parser::parse_ct_type"(ptr %0) #3 {
 entry:
   %var.nm = alloca ptr, align 8
   %var.is_mod_qual = alloca i1, align 1
@@ -47634,7 +47386,7 @@ choice.exit42:                                    ; preds = %choice.else41, %cho
   br label %choice.exit22
 }
 
-define { i1, i64 } @"parser::args_loop"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::args_loop"(ptr %0, ptr %1) #3 {
 entry:
   %var.a = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -47817,7 +47569,7 @@ a.after58:                                        ; preds = %a.create57, %choice
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_arg"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_arg"(ptr %0) #3 {
 entry:
   %var.res = alloca { i1, i64 }, align 8
   %var.val = alloca ptr, align 8
@@ -48001,7 +47753,7 @@ choice.exit47:                                    ; preds = %choice.else46, %cho
   br label %choice.exit36
 }
 
-define { i1, i64 } @"parser::parse_comma_args"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_comma_args"(ptr %0) #3 {
 entry:
   %var.res = alloca { i1, i64 }, align 8
   %var.a = alloca ptr, align 8
@@ -48165,7 +47917,7 @@ a.after42:                                        ; preds = %a.create41, %a.stor
   br label %choice.exit18
 }
 
-define ptr @"parser::make_call"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::make_call"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.args = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -48230,7 +47982,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %enum.alloc
 }
 
-define { i1, i64 } @"parser::parse_postfix_calls"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_postfix_calls"(ptr %0, ptr %1) #3 {
 entry:
   %var.mu301 = alloca ptr, align 8
   %var._300 = alloca ptr, align 8
@@ -48817,7 +48569,7 @@ choice.exit297:                                   ; preds = %choice.else296, %ch
   br label %choice.exit52
 }
 
-define i1 @"parser::is_type_ctor_callee"(ptr %0) #0 {
+define i1 @"parser::is_type_ctor_callee"(ptr %0) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._23 = alloca ptr, align 8
@@ -48961,9 +48713,9 @@ abort.dead43:                                     ; No predecessors!
   br label %idx_ok41
 }
 
-declare i1 @"ascii::is_upper"(i64) #0
+declare i1 @"ascii::is_upper"(i64) #3
 
-define ptr @"parser::make_postfix_call"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::make_postfix_call"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.n = alloca ptr, align 8
   %var.is_empty_arr = alloca i1, align 1
@@ -49181,7 +48933,7 @@ a.after59:                                        ; preds = %a.create58, %choice
   br label %choice.exit17
 }
 
-define { i1, i64 } @"parser::pp_member"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::pp_member"(ptr %0, ptr %1) #3 {
 entry:
   %var.f = alloca ptr, align 8
   %var.is_dot_float = alloca i1, align 1
@@ -49534,7 +49286,7 @@ str.eq.merge142:                                  ; preds = %str.eq.else141, %st
   br i1 %str.eq.result148, label %choice.case132, label %choice.next133
 }
 
-define { i1, i64 } @"parser::pp_double_colon"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::pp_double_colon"(ptr %0, ptr %1) #3 {
 entry:
   %var.f = alloca ptr, align 8
   %var.lhs = alloca ptr, align 8
@@ -49608,7 +49360,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::pp_dot"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::pp_dot"(ptr %0, ptr %1) #3 {
 entry:
   %var.f = alloca ptr, align 8
   %var.lhs = alloca ptr, align 8
@@ -49768,7 +49520,7 @@ abort.dead52:                                     ; No predecessors!
   br label %concat.tot.len50
 }
 
-define { i1, i64 } @"parser::pp_caret"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::pp_caret"(ptr %0, ptr %1) #3 {
 entry:
   %var.key = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -49830,7 +49582,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::parse_key_atom"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_key_atom"(ptr %0) #3 {
 entry:
   %var.res = alloca { i1, i64 }, align 8
   %var._9 = alloca ptr, align 8
@@ -49878,7 +49630,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %var.load13
 }
 
-define { i1, i64 } @"parser::parse_key_chain"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_key_chain"(ptr %0, ptr %1) #3 {
 entry:
   %var.nc2 = alloca ptr, align 8
   %var.nc = alloca ptr, align 8
@@ -50311,7 +50063,7 @@ choice.exit189:                                   ; preds = %choice.else188, %ch
   br label %choice.exit109
 }
 
-define { i1, i64 } @"parser::pp_caret_mem"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::pp_caret_mem"(ptr %0, ptr %1) #3 {
 entry:
   %var.key = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -50373,7 +50125,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::pp_caret_del"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::pp_caret_del"(ptr %0, ptr %1) #3 {
 entry:
   %var.key = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -50435,7 +50187,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::parse_finish_assignment"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_finish_assignment"(ptr %0, ptr %1) #3 {
 entry:
   %var._54 = alloca ptr, align 8
   %var.n = alloca ptr, align 8
@@ -50613,7 +50365,7 @@ choice.next51:                                    ; preds = %choice.then16
   br label %choice.exit49
 }
 
-define { i64, ptr } @"parser::lhs_name"(ptr %0) #0 {
+define { i64, ptr } @"parser::lhs_name"(ptr %0) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -50642,7 +50394,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::atom_double_colon"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_double_colon"(ptr %0) #3 {
 entry:
   %var.is_stmt = alloca i1, align 1
   %var.name = alloca ptr, align 8
@@ -50991,7 +50743,7 @@ abort.dead161:                                    ; No predecessors!
   br label %concat.tot.len159
 }
 
-define { i1, i64 } @"parser::parse_named_assign_g"(ptr %0, ptr %1, i1 %2, i1 %3) #0 {
+define { i1, i64 } @"parser::parse_named_assign_g"(ptr %0, ptr %1, i1 %2, i1 %3) #3 {
 entry:
   %var.n = alloca ptr, align 8
   %var.cs132 = alloca ptr, align 8
@@ -51600,9 +51352,9 @@ a.after172:                                       ; preds = %a.create171, %a.sto
   br label %choice.exit128
 }
 
-declare { i64, ptr } @"diag::E2044_underscore_assign"() #0
+declare { i64, ptr } @"diag::E2044_underscore_assign"() #3
 
-define i1 @"parser::expr_is_string_literal"(ptr %0) #0 {
+define i1 @"parser::expr_is_string_literal"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var.e = alloca ptr, align 8
@@ -51627,7 +51379,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"parser::const_has_name"(ptr %0, ptr %1) #0 {
+define i1 @"parser::const_has_name"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -51732,7 +51484,7 @@ choice.exit:                                      ; preds = %str.eq.merge
   br label %loop.latch.604
 }
 
-define ptr @"parser::fold_const_expr"(ptr %0, ptr %1) #0 {
+define ptr @"parser::fold_const_expr"(ptr %0, ptr %1) #3 {
 entry:
   %var._234 = alloca ptr, align 8
   %var.pr = alloca ptr, align 8
@@ -52224,7 +51976,7 @@ a.after240:                                       ; preds = %a.create239, %choic
   br label %choice.exit226
 }
 
-define ptr @"parser::fold_const_unary"(ptr %0, ptr %1) #0 {
+define ptr @"parser::fold_const_unary"(ptr %0, ptr %1) #3 {
 entry:
   %var.n180 = alloca i64, align 8
   %var._179 = alloca i64, align 8
@@ -52659,7 +52411,7 @@ pay.int.merge176:                                 ; preds = %pay.int.nullbb175, 
   br label %choice.exit165
 }
 
-define ptr @"parser::fold_const_bin"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::fold_const_bin"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.v281 = alloca double, align 8
   %var._280 = alloca double, align 8
@@ -53273,7 +53025,7 @@ choice.exit277:                                   ; preds = %choice.else276, %ch
   br label %choice.exit254
 }
 
-define { i1, i64 } @"parser::fold_const_bin_int_val"(ptr %0, i64 %1, i64 %2) #0 {
+define { i1, i64 } @"parser::fold_const_bin_int_val"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.min_i64 = alloca i64, align 8
   %var.b = alloca i64, align 8
@@ -53616,7 +53368,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define { i1, i64 } @"parser::fold_const_bin_float_val"(ptr %0, double %1, double %2) #0 {
+define { i1, i64 } @"parser::fold_const_bin_float_val"(ptr %0, double %1, double %2) #3 {
 entry:
   %var.b = alloca double, align 8
   %var.a = alloca double, align 8
@@ -53688,7 +53440,7 @@ choice.next22:                                    ; preds = %choice.next13
   br label %choice.exit
 }
 
-define ptr @"parser::fold_const_cast"(ptr %0, ptr %1) #0 {
+define ptr @"parser::fold_const_cast"(ptr %0, ptr %1) #3 {
 entry:
   %var.f497 = alloca double, align 8
   %var._496 = alloca double, align 8
@@ -54605,7 +54357,7 @@ pay.float.merge493:                               ; preds = %pay.float.nullbb492
   br label %choice.exit451
 }
 
-define i1 @"parser::is_const_folded_expr"(ptr %0) #0 {
+define i1 @"parser::is_const_folded_expr"(ptr %0) #3 {
 entry:
   %var._35 = alloca i64, align 8
   %var.tc = alloca ptr, align 8
@@ -54701,7 +54453,7 @@ pay.int.merge32:                                  ; preds = %pay.int.nullbb31, %
   br label %choice.exit15
 }
 
-define i1 @"parser::has_target_query"(ptr %0) #0 {
+define i1 @"parser::has_target_query"(ptr %0) #3 {
 entry:
   %var.ch = alloca ptr, align 8
   %var._72 = alloca ptr, align 8
@@ -54875,7 +54627,7 @@ choice.next66:                                    ; preds = %choice.next50
   br label %choice.exit
 }
 
-define ptr @"parser::prune_target_expr"(ptr %0) #0 {
+define ptr @"parser::prune_target_expr"(ptr %0) #3 {
 entry:
   %var.nbrs = alloca ptr, align 8
   %var._1011 = alloca ptr, align 8
@@ -56683,7 +56435,7 @@ a.after1100:                                      ; preds = %a.create1099, %a.af
   br label %choice.exit
 }
 
-define ptr @"parser::prune_target_type_info"(ptr %0) #0 {
+define ptr @"parser::prune_target_type_info"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var._465 = alloca ptr, align 8
@@ -57551,7 +57303,7 @@ choice.next459:                                   ; preds = %choice.next432
   br label %choice.exit
 }
 
-define ptr @"parser::prune_target_exprs"(ptr %0) #0 {
+define ptr @"parser::prune_target_exprs"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -57697,7 +57449,7 @@ a.after32:                                        ; preds = %a.create31, %loop.e
   ret ptr %a.load240
 }
 
-define { i1, i64 } @"parser::try_pick_target_branch"(ptr %0) #0 {
+define { i1, i64 } @"parser::try_pick_target_branch"(ptr %0) #3 {
 entry:
   %var.cb = alloca i1, align 1
   %var._159 = alloca i1, align 1
@@ -58254,7 +58006,7 @@ ret.dead171:                                      ; No predecessors!
   br label %choice.exit170
 }
 
-define { i64, ptr } @"parser::try_eval_target_str"(ptr %0) #0 {
+define { i64, ptr } @"parser::try_eval_target_str"(ptr %0) #3 {
 entry:
   %var.r = alloca ptr, align 8
   %var._97 = alloca ptr, align 8
@@ -58592,7 +58344,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-define { i1, i64 } @"parser::try_eval_target_bool"(ptr %0) #0 {
+define { i1, i64 } @"parser::try_eval_target_bool"(ptr %0) #3 {
 entry:
   %var.picked = alloca ptr, align 8
   %var._282 = alloca ptr, align 8
@@ -59165,7 +58917,7 @@ choice.exit280:                                   ; preds = %choice.else279, %ch
   br label %choice.exit
 }
 
-define { i1, i1 } @"parser::try_eval_target_case_match"(ptr %0, ptr %1) #0 {
+define { i1, i1 } @"parser::try_eval_target_case_match"(ptr %0, ptr %1) #3 {
 entry:
   %var.cs = alloca ptr, align 8
   %var._7 = alloca ptr, align 8
@@ -59331,7 +59083,7 @@ choice.exit24:                                    ; preds = %choice.then23, %str
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_colon_ctx_g"(ptr %0, ptr %1, i1 %2) #0 {
+define { i1, i64 } @"parser::parse_colon_ctx_g"(ptr %0, ptr %1, i1 %2) #3 {
 entry:
   %var.is_global = alloca i1, align 1
   %var.name = alloca ptr, align 8
@@ -59411,7 +59163,7 @@ choice.exit9:                                     ; preds = %choice.else8, %choi
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_colon_g"(ptr %0, ptr %1, i1 %2) #0 {
+define { i1, i64 } @"parser::parse_colon_g"(ptr %0, ptr %1, i1 %2) #3 {
 entry:
   %var.ok = alloca i1, align 1
   %var.has_lp = alloca i1, align 1
@@ -59589,7 +59341,7 @@ choice.exit45:                                    ; preds = %choice.else44, %cho
   br label %choice.exit34
 }
 
-define i1 @"parser::parse_fixity_clause"(ptr %0, ptr %1) #0 {
+define i1 @"parser::parse_fixity_clause"(ptr %0, ptr %1) #3 {
 entry:
   %cat.ibuf332 = alloca [24 x i8], align 1
   %cat.ibuf245 = alloca [24 x i8], align 1
@@ -60569,7 +60321,7 @@ abort.dead519:                                    ; No predecessors!
   br label %concat.tot.len517
 }
 
-define i1 @"parser::register_user_op"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i1 @"parser::register_user_op"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.dup = alloca ptr, align 8
   %cat.ibuf18 = alloca [24 x i8], align 1
@@ -60914,11 +60666,11 @@ abort.dead118:                                    ; No predecessors!
   br label %concat.tot.len116
 }
 
-declare { i64, ptr } @"diag::infix_right_binding_power_prefix"() #0
+declare { i64, ptr } @"diag::infix_right_binding_power_prefix"() #3
 
-declare { i64, ptr } @"diag::infix_left_binding_power_prefix"() #0
+declare { i64, ptr } @"diag::infix_left_binding_power_prefix"() #3
 
-define { i1, i64 } @"parser::parse_colon_type_g"(ptr %0, ptr %1, i1 %2) #0 {
+define { i1, i64 } @"parser::parse_colon_type_g"(ptr %0, ptr %1, i1 %2) #3 {
 entry:
   %var.is_global = alloca i1, align 1
   %var.name = alloca ptr, align 8
@@ -60964,7 +60716,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::ct_signature_g"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #0 {
+define { i1, i64 } @"parser::ct_signature_g"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #3 {
 entry:
   %var.is_global = alloca i1, align 1
   %var.cps = alloca ptr, align 8
@@ -61007,7 +60759,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::ct_signature_param_g"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #0 {
+define { i1, i64 } @"parser::ct_signature_param_g"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #3 {
 entry:
   %var.next_cps = alloca ptr, align 8
   %var.vt = alloca ptr, align 8
@@ -61365,7 +61117,7 @@ a.after124:                                       ; preds = %a.create123, %a.sto
   br label %choice.exit71
 }
 
-define i1 @"parser::is_valid_ct_param_type"(ptr %0) #0 {
+define i1 @"parser::is_valid_ct_param_type"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -61416,7 +61168,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::ct_params_tail_g"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #0 {
+define { i1, i64 } @"parser::ct_params_tail_g"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #3 {
 entry:
   %var.is_global = alloca i1, align 1
   %var.cps = alloca ptr, align 8
@@ -61713,7 +61465,7 @@ a.after123:                                       ; preds = %a.create122, %choic
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::ct_runtime_params_g"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i1 %6) #0 {
+define { i1, i64 } @"parser::ct_runtime_params_g"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i1 %6) #3 {
 entry:
   %var.next_infos = alloca ptr, align 8
   %var.next_params = alloca ptr, align 8
@@ -62050,7 +61802,7 @@ a.after153:                                       ; preds = %a.create152, %a.aft
   br label %choice.exit74
 }
 
-define { i1, i64 } @"parser::ct_signature_arrow_g"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i1 %6) #0 {
+define { i1, i64 } @"parser::ct_signature_arrow_g"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i1 %6) #3 {
 entry:
   %var.next_ut = alloca ptr, align 8
   %var.gen_ut = alloca ptr, align 8
@@ -62434,7 +62186,7 @@ a.after123:                                       ; preds = %a.create122, %choic
   br label %choice.exit14
 }
 
-define ptr @"parser::add_type"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::add_type"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -62519,7 +62271,7 @@ a.after14:                                        ; preds = %a.create13, %a.stor
   ret ptr %a.load222
 }
 
-define ptr @"parser::fwd_marker"(ptr %0) #0 {
+define ptr @"parser::fwd_marker"(ptr %0) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   store ptr %0, ptr %var.ti, align 8
@@ -62532,7 +62284,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define { i1, i64 } @"parser::parse_colon_type_vt_g"(ptr %0, ptr %1, i1 %2) #0 {
+define { i1, i64 } @"parser::parse_colon_type_vt_g"(ptr %0, ptr %1, i1 %2) #3 {
 entry:
   %var.pk = alloca ptr, align 8
   %var.is_global = alloca i1, align 1
@@ -62646,7 +62398,7 @@ choice.next25:                                    ; preds = %choice.case
   br label %choice.exit23
 }
 
-define { i1, i64 } @"parser::parse_zero_sig_g"(ptr %0, ptr %1, i1 %2) #0 {
+define { i1, i64 } @"parser::parse_zero_sig_g"(ptr %0, ptr %1, i1 %2) #3 {
 entry:
   %var.sig_ti = alloca ptr, align 8
   %var.ret = alloca ptr, align 8
@@ -62825,7 +62577,7 @@ choice.exit13:                                    ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_colon_type_vt_rest_g"(ptr %0, ptr %1, i1 %2) #0 {
+define { i1, i64 } @"parser::parse_colon_type_vt_rest_g"(ptr %0, ptr %1, i1 %2) #3 {
 entry:
   %var.cs = alloca ptr, align 8
   %var.infos2 = alloca ptr, align 8
@@ -63450,7 +63202,7 @@ a.after276:                                       ; preds = %a.create275, %a.sto
   br label %choice.exit234
 }
 
-define { i1, i64 } @"parser::sig_params_g"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i1 %5) #0 {
+define { i1, i64 } @"parser::sig_params_g"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i1 %5) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   %var.is_global = alloca i1, align 1
@@ -63694,7 +63446,7 @@ a.after98:                                        ; preds = %a.create97, %a.afte
   br label %choice.exit47
 }
 
-define { i1, i64 } @"parser::sig_arrow_g"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i1 %5) #0 {
+define { i1, i64 } @"parser::sig_arrow_g"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i1 %5) #3 {
 entry:
   %var.marker = alloca ptr, align 8
   %var.sig_ti = alloca ptr, align 8
@@ -63963,9 +63715,9 @@ abort.dead65:                                     ; No predecessors!
   br label %concat.tot.len63
 }
 
-declare { i64, ptr } @"diag::expected_primary_prefix"() #0
+declare { i64, ptr } @"diag::expected_primary_prefix"() #3
 
-define { i1, i64 } @"parser::atom_op_ident"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_op_ident"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -64227,7 +63979,7 @@ str.eq.merge116:                                  ; preds = %str.eq.else115, %st
   br i1 %str.eq.result122, label %choice.case106, label %choice.next107
 }
 
-define { i1, i64 } @"parser::parse_named_assign"(ptr %0, ptr %1, i1 %2) #0 {
+define { i1, i64 } @"parser::parse_named_assign"(ptr %0, ptr %1, i1 %2) #3 {
 entry:
   %var.is_compound = alloca i1, align 1
   %var.name = alloca ptr, align 8
@@ -64242,7 +63994,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::parse_global_assign"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_global_assign"(ptr %0, ptr %1) #3 {
 entry:
   %var.n = alloca ptr, align 8
   %var.re = alloca ptr, align 8
@@ -64382,7 +64134,7 @@ choice.exit15:                                    ; preds = %choice.else14, %cho
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_colon"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_colon"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -64394,7 +64146,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::atom_builder"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_builder"(ptr %0) #3 {
 entry:
   %var.cre = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -64679,7 +64431,7 @@ abort.dead107:                                    ; No predecessors!
   br label %concat.tot.len105
 }
 
-define { i1, i64 } @"parser::atom_integer"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_integer"(ptr %0, ptr %1) #3 {
 entry:
   %var.has_brace = alloca i1, align 1
   %var.iexpr = alloca ptr, align 8
@@ -64858,7 +64610,7 @@ abort.dead49:                                     ; No predecessors!
   br label %concat.tot.len47
 }
 
-define ptr @"parser::int_suffix_vt"(ptr %0) #0 {
+define ptr @"parser::int_suffix_vt"(ptr %0) #3 {
 entry:
   %var.s3 = alloca ptr, align 8
   %str.view27 = alloca { i64, ptr }, align 8
@@ -65259,7 +65011,7 @@ str.eq.merge199:                                  ; preds = %str.eq.else198, %st
   br i1 %str.eq.result205, label %choice.case189, label %choice.next190
 }
 
-define { i1, i64 } @"parser::atom_float"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_float"(ptr %0, ptr %1) #3 {
 entry:
   %var.flt = alloca ptr, align 8
   %var.vt = alloca ptr, align 8
@@ -65428,7 +65180,7 @@ abort.dead43:                                     ; No predecessors!
   br label %concat.tot.len41
 }
 
-define ptr @"parser::float_suffix_vt"(ptr %0) #0 {
+define ptr @"parser::float_suffix_vt"(ptr %0) #3 {
 entry:
   %var.s1 = alloca ptr, align 8
   %str.view27 = alloca { i64, ptr }, align 8
@@ -65603,7 +65355,7 @@ choice.exit66:                                    ; preds = %choice.else, %choic
   ret ptr %choice.res71
 }
 
-define { i1, i64 } @"parser::atom_str"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_str"(ptr %0, ptr %1) #3 {
 entry:
   %var.text = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -65623,7 +65375,7 @@ entry:
   ret { i1, i64 } %ram.pay
 }
 
-define { i1, i64 } @"parser::atom_rune"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_rune"(ptr %0, ptr %1) #3 {
 entry:
   %var.v = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -65668,7 +65420,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define i1 @"parser::is_fn_start"(ptr %0) #0 {
+define i1 @"parser::is_fn_start"(ptr %0) #3 {
 entry:
   %var.c36 = alloca ptr, align 8
   %var.tok = alloca ptr, align 8
@@ -65763,7 +65515,7 @@ and.653.exit:                                     ; preds = %and.653.else, %and.
   br label %choice.exit
 }
 
-define i1 @"parser::is_fn_scan"(ptr %0) #0 {
+define i1 @"parser::is_fn_scan"(ptr %0) #3 {
 entry:
   %var.nnt_id = alloca i1, align 1
   %var.nnt = alloca ptr, align 8
@@ -66045,7 +65797,7 @@ and.652.exit:                                     ; preds = %and.652.else, %and.
   br label %choice.exit39
 }
 
-define i1 @"parser::scan_paren_param"(ptr %0) #0 {
+define i1 @"parser::scan_paren_param"(ptr %0) #3 {
 entry:
   %var.lx = alloca ptr, align 8
   store ptr %0, ptr %var.lx, align 8
@@ -66054,7 +65806,7 @@ entry:
   ret i1 %call.res
 }
 
-define i1 @"parser::scan_paren_param_step"(ptr %0, i64 %1, i1 %2) #0 {
+define i1 @"parser::scan_paren_param_step"(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.saw_comma = alloca i1, align 1
@@ -66255,7 +66007,7 @@ and.650.exit:                                     ; preds = %and.650.else, %and.
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::atom_ident"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_ident"(ptr %0, ptr %1) #3 {
 entry:
   %var.is_module_param = alloca i1, align 1
   %var.is_upper = alloca i1, align 1
@@ -67032,7 +66784,7 @@ str.eq.merge405:                                  ; preds = %str.eq.else404, %st
   br i1 %str.eq.result411, label %choice.case395, label %choice.next396
 }
 
-define { i1, i64 } @"parser::parse_sizeof"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_sizeof"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.tc = alloca ptr, align 8
@@ -67213,7 +66965,7 @@ choice.exit46:                                    ; preds = %choice.else45, %cho
   br label %choice.exit17
 }
 
-define { i1, i64 } @"parser::parse_cursor_type_expr"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_cursor_type_expr"(ptr %0) #3 {
 entry:
   %var.cname = alloca ptr, align 8
   %var.col = alloca i64, align 8
@@ -67439,7 +67191,7 @@ abort.dead72:                                     ; No predecessors!
   br label %concat.tot.len70
 }
 
-define { i1, i64 } @"parser::parse_alignof"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_alignof"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.tc = alloca ptr, align 8
@@ -67620,7 +67372,7 @@ choice.exit46:                                    ; preds = %choice.else45, %cho
   br label %choice.exit17
 }
 
-define { i1, i64 } @"parser::parse_type_prop"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define { i1, i64 } @"parser::parse_type_prop"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.tc = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -67684,7 +67436,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::parse_type_carrier_expr"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_type_carrier_expr"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -67805,7 +67557,7 @@ choice.exit19:                                    ; preds = %choice.else18, %cho
   br label %choice.exit9
 }
 
-define { i1, i64 } @"parser::parse_hash_has_member"(ptr %0, i64 %1, i64 %2) #0 {
+define { i1, i64 } @"parser::parse_hash_has_member"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.args = alloca ptr, align 8
   %var.mem_e = alloca ptr, align 8
@@ -68698,7 +68450,7 @@ a.after408:                                       ; preds = %a.create407, %a.sto
   ret { i1, i64 } %ram.pay427
 }
 
-define i1 @"parser::is_user_fn_type"(ptr %0, ptr %1) #0 {
+define i1 @"parser::is_user_fn_type"(ptr %0, ptr %1) #3 {
 entry:
   %var._4 = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -68747,7 +68499,7 @@ choice.next:                                      ; preds = %choice.then
   br label %choice.exit3
 }
 
-define i1 @"parser::has_mod_type_call"(ptr %0) #0 {
+define i1 @"parser::has_mod_type_call"(ptr %0) #3 {
 entry:
   %var.t3 = alloca ptr, align 8
   %var.t2 = alloca ptr, align 8
@@ -68959,7 +68711,7 @@ str.eq.merge81:                                   ; preds = %str.eq.else80, %str
   br i1 %case.or88, label %choice.case34, label %choice.next35
 }
 
-define { i1, i64 } @"parser::parse_hash_operand"(ptr %0, i1 %1) #0 {
+define { i1, i64 } @"parser::parse_hash_operand"(ptr %0, i1 %1) #3 {
 entry:
   %var.res = alloca { i1, i64 }, align 8
   %var.a = alloca ptr, align 8
@@ -69062,7 +68814,7 @@ choice.exit21:                                    ; preds = %choice.else20, %cho
   br label %choice.exit13
 }
 
-define { i1, i64 } @"parser::parse_primary_atom"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_primary_atom"(ptr %0, ptr %1) #3 {
 entry:
   %var._59 = alloca ptr, align 8
   %var.t45 = alloca ptr, align 8
@@ -69205,7 +68957,7 @@ choice.next50:                                    ; preds = %choice.next38
   br label %choice.exit3
 }
 
-define { i1, i64 } @"parser::pp_postfix"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::pp_postfix"(ptr %0, ptr %1) #3 {
 entry:
   %var.rc = alloca ptr, align 8
   %var._14 = alloca ptr, align 8
@@ -69277,7 +69029,7 @@ choice.exit11:                                    ; preds = %choice.else10, %cho
   br label %choice.exit4
 }
 
-define { i1, i64 } @"parser::parse_postfix_repetition"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_postfix_repetition"(ptr %0, ptr %1) #3 {
 entry:
   %cat.ibuf = alloca [24 x i8], align 1
   %var.n = alloca i64, align 8
@@ -70076,7 +69828,7 @@ abort.dead392:                                    ; No predecessors!
   br label %concat.tot.len390
 }
 
-define { i1, i64 } @"parser::expr_to_type_info"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::expr_to_type_info"(ptr %0, ptr %1) #3 {
 entry:
   %var.vt258 = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -70789,7 +70541,7 @@ a.after316:                                       ; preds = %a.create315, %a.aft
   br label %choice.exit290
 }
 
-define i64 @"parser::rep_count"(ptr %0) #0 {
+define i64 @"parser::rep_count"(ptr %0) #3 {
 entry:
   %var._acc_2 = alloca ptr, align 8
   %var._19 = alloca ptr, align 8
@@ -70861,7 +70613,7 @@ choice.exit18:                                    ; preds = %choice.else17, %cho
   br label %choice.exit
 }
 
-define ptr @"parser::repeat_fields"(ptr %0, i64 %1) #0 {
+define ptr @"parser::repeat_fields"(ptr %0, i64 %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -70987,7 +70739,7 @@ a.after21:                                        ; preds = %a.create20, %loop.e
   ret ptr %a.load229
 }
 
-define { i1, i64 } @"parser::pp_write"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::pp_write"(ptr %0, ptr %1) #3 {
 entry:
   %var.rc = alloca ptr, align 8
   %var._48 = alloca ptr, align 8
@@ -71189,7 +70941,7 @@ str.eq.merge74:                                   ; preds = %str.eq.else73, %str
   br i1 %str.eq.result80, label %choice.case57, label %choice.next58
 }
 
-define { i1, i64 } @"parser::parse_hash_member"(ptr %0, i64 %1, i64 %2) #0 {
+define { i1, i64 } @"parser::parse_hash_member"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.args = alloca ptr, align 8
   %var.arg3 = alloca ptr, align 8
@@ -72038,7 +71790,7 @@ a.after344:                                       ; preds = %a.create343, %a.sto
   br label %choice.exit238
 }
 
-define i1 @"parser::looks_like_paren_type"(ptr %0) #0 {
+define i1 @"parser::looks_like_paren_type"(ptr %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -72441,7 +72193,7 @@ and.678.exit:                                     ; preds = %and.678.else, %and.
   br label %or.675.exit
 }
 
-define i1 @"parser::tok_could_be_type_start"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"parser::tok_could_be_type_start"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var._142 = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -72797,7 +72549,7 @@ choice.next138:                                   ; preds = %or.674.else
   br label %choice.exit136
 }
 
-define { i1, i64 } @"parser::parse_colon_ctx"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_colon_ctx"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -72809,7 +72561,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::atom_paren"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_paren"(ptr %0) #3 {
 entry:
   %var.res = alloca { i1, i64 }, align 8
   %var.is_multi_hash = alloca i1, align 1
@@ -73093,7 +72845,7 @@ choice.exit88:                                    ; preds = %choice.else87, %cho
   br label %choice.exit40
 }
 
-define i1 @"parser::paren_is_bin_section"(ptr %0) #0 {
+define i1 @"parser::paren_is_bin_section"(ptr %0) #3 {
 entry:
   %var.opb = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -73217,7 +72969,7 @@ choice.next30:                                    ; preds = %choice.then22
   br label %choice.exit28
 }
 
-define { i1, i64 } @"parser::parse_bin_section"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_bin_section"(ptr %0) #3 {
 entry:
   %var.fe = alloca ptr, align 8
   %var.body = alloca ptr, align 8
@@ -73783,7 +73535,7 @@ a.after245:                                       ; preds = %a.create244, %choic
   br label %choice.exit
 }
 
-define i1 @"parser::paren_is_accessor"(ptr %0) #0 {
+define i1 @"parser::paren_is_accessor"(ptr %0) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -73873,7 +73625,7 @@ choice.exit10:                                    ; preds = %choice.else, %choic
   ret i1 %choice.res17
 }
 
-define i1 @"parser::paren_is_accessor_step"(ptr %0, ptr %1) #0 {
+define i1 @"parser::paren_is_accessor_step"(ptr %0, ptr %1) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.c = alloca ptr, align 8
@@ -73951,7 +73703,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_accessor_section"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_accessor_section"(ptr %0) #3 {
 entry:
   %var.cur_target = alloca ptr, align 8
   %var.f_col = alloca i64, align 8
@@ -74139,7 +73891,7 @@ abort.dead66:                                     ; No predecessors!
   br label %concat.tot.len64
 }
 
-define { i64, ptr } @"parser::fresh_accessor_var"(ptr %0) #0 {
+define { i64, ptr } @"parser::fresh_accessor_var"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %cat.ibuf = alloca [24 x i8], align 1
@@ -74199,7 +73951,7 @@ abort.dead11:                                     ; No predecessors!
   br label %concat.tot.len9
 }
 
-define { i1, i64 } @"parser::parse_accessor_chain"(ptr %0, ptr %1, ptr %2) #0 {
+define { i1, i64 } @"parser::parse_accessor_chain"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.fe = alloca ptr, align 8
   %var.params = alloca ptr, align 8
@@ -74735,7 +74487,7 @@ abort.dead230:                                    ; No predecessors!
   br label %concat.tot.len228
 }
 
-define i1 @"parser::paren_has_map"(ptr %0) #0 {
+define i1 @"parser::paren_has_map"(ptr %0) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -74751,7 +74503,7 @@ entry:
   ret i1 %call.res4
 }
 
-define i1 @"parser::paren_has_map_step"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"parser::paren_has_map_step"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.depth = alloca i64, align 8
   %var.t = alloca ptr, align 8
@@ -74949,7 +74701,7 @@ choice.exit75:                                    ; preds = %choice.else74, %cho
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_paren_map_literal"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_paren_map_literal"(ptr %0) #3 {
 entry:
   %var.res = alloca { i1, i64 }, align 8
   %var.saved_cl = alloca i1, align 1
@@ -74983,7 +74735,7 @@ entry:
   ret { i1, i64 } %var.load8
 }
 
-define { i1, i64 } @"parser::ml_pairs"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::ml_pairs"(ptr %0, ptr %1) #3 {
 entry:
   %var._29 = alloca ptr, align 8
   %var.key = alloca ptr, align 8
@@ -75087,7 +74839,7 @@ a.after16:                                        ; preds = %a.create15, %choice
   br label %choice.exit9
 }
 
-define { i1, i64 } @"parser::ml_pair_with_key"(ptr %0, ptr %1, ptr %2) #0 {
+define { i1, i64 } @"parser::ml_pair_with_key"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ve = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -75312,7 +75064,7 @@ a.after60:                                        ; preds = %a.create59, %choice
   br label %choice.exit47
 }
 
-define i1 @"parser::paren_has_comma"(ptr %0) #0 {
+define i1 @"parser::paren_has_comma"(ptr %0) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -75328,7 +75080,7 @@ entry:
   ret i1 %call.res4
 }
 
-define i1 @"parser::paren_has_comma_step"(ptr %0, ptr %1, i64 %2, i1 %3) #0 {
+define i1 @"parser::paren_has_comma_step"(ptr %0, ptr %1, i64 %2, i1 %3) #3 {
 entry:
   %var.next_eq = alloca i1, align 1
   %var.saw_eq = alloca i1, align 1
@@ -75639,7 +75391,7 @@ choice.exit127:                                   ; preds = %choice.else126, %ch
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_paren_group"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_paren_group"(ptr %0) #3 {
 entry:
   %var.ire = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -75804,7 +75556,7 @@ abort.dead46:                                     ; No predecessors!
   br label %concat.tot.len44
 }
 
-define { i1, i64 } @"parser::group_closed"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::group_closed"(ptr %0, ptr %1) #3 {
 entry:
   %var.r = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -76078,7 +75830,7 @@ choice.exit83:                                    ; preds = %choice.else82, %cho
   br label %choice.exit74
 }
 
-define i1 @"parser::is_single_term_expr"(ptr %0, ptr %1) #0 {
+define i1 @"parser::is_single_term_expr"(ptr %0, ptr %1) #3 {
 entry:
   %var.e = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -76103,7 +75855,7 @@ and.716.exit:                                     ; preds = %and.716.else, %and.
   ret i1 %and.716.phi
 }
 
-define i1 @"parser::has_free_underscore"(ptr %0) #0 {
+define i1 @"parser::has_free_underscore"(ptr %0) #3 {
 entry:
   %var.t414 = alloca ptr, align 8
   %var._413 = alloca ptr, align 8
@@ -76919,7 +76671,7 @@ choice.next407:                                   ; preds = %choice.next390
   br label %choice.exit
 }
 
-define i1 @"parser::has_free_underscore_branches"(ptr %0) #0 {
+define i1 @"parser::has_free_underscore_branches"(ptr %0) #3 {
 entry:
   %var.is_payload_branch = alloca i1, align 1
   %var._ = alloca ptr, align 8
@@ -77055,7 +76807,7 @@ choice.exit23:                                    ; preds = %and.705.exit
   br label %choice.exit10
 }
 
-define i1 @"parser::has_free_underscore_exprs"(ptr %0) #0 {
+define i1 @"parser::has_free_underscore_exprs"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -77133,7 +76885,7 @@ choice.exit:                                      ; preds = %loop.body.704
   br label %loop.latch.704
 }
 
-define i1 @"parser::has_free_underscore_fields"(ptr %0) #0 {
+define i1 @"parser::has_free_underscore_fields"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -77213,7 +76965,7 @@ choice.exit:                                      ; preds = %loop.body.711
   br label %loop.latch.711
 }
 
-define i1 @"parser::has_free_underscore_map"(ptr %0) #0 {
+define i1 @"parser::has_free_underscore_map"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -77307,7 +77059,7 @@ choice.exit:                                      ; preds = %or.713.exit
   br label %loop.latch.712
 }
 
-define i1 @"parser::is_single_term_inner"(ptr %0, ptr %1) #0 {
+define i1 @"parser::is_single_term_inner"(ptr %0, ptr %1) #3 {
 entry:
   %var._201 = alloca ptr, align 8
   %var.r = alloca ptr, align 8
@@ -77662,7 +77414,7 @@ choice.next176:                                   ; preds = %choice.next164
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_type_decl"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_type_decl"(ptr %0) #3 {
 entry:
   %var.ty2 = alloca ptr, align 8
   %var._271 = alloca ptr, align 8
@@ -78230,7 +77982,7 @@ choice.exit291:                                   ; preds = %choice.else290, %ch
   br label %choice.exit238
 }
 
-define ptr @"parser::parse_type_mods"(ptr %0) #0 {
+define ptr @"parser::parse_type_mods"(ptr %0) #3 {
 entry:
   %cat.ibuf = alloca [24 x i8], align 1
   %var.is_pow2 = alloca i1, align 1
@@ -79401,7 +79153,7 @@ abort.dead563:                                    ; No predecessors!
   br label %concat.tot.len561
 }
 
-define ptr @"parser::bitfield_backing_info"(ptr %0) #0 {
+define ptr @"parser::bitfield_backing_info"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -79796,7 +79548,7 @@ str.eq.merge200:                                  ; preds = %str.eq.else199, %st
   br i1 %str.eq.result206, label %choice.case190, label %choice.next191
 }
 
-define ptr @"parser::parse_bitfield_with_backing"(ptr %0, ptr %1) #0 {
+define ptr @"parser::parse_bitfield_with_backing"(ptr %0, ptr %1) #3 {
 entry:
   %var.lp_line = alloca i64, align 8
   %var.expected_bits = alloca i64, align 8
@@ -80146,7 +79898,7 @@ abort.dead132:                                    ; No predecessors!
   br label %concat.tot.len130
 }
 
-define ptr @"parser::parse_bitfield_fields"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5) #0 {
+define ptr @"parser::parse_bitfield_fields"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5) #3 {
 entry:
   %cat.ibuf282 = alloca [24 x i8], align 1
   %var.w = alloca i64, align 8
@@ -81120,7 +80872,7 @@ abort.dead484:                                    ; No predecessors!
   br label %concat.tot.len482
 }
 
-define ptr @"parser::parse_bitfield_after_field"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5) #0 {
+define ptr @"parser::parse_bitfield_after_field"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5) #3 {
 entry:
   %var.next_layout2 = alloca ptr, align 8
   %var.has_nl = alloca i1, align 1
@@ -81812,7 +81564,7 @@ a.after326:                                       ; preds = %a.create325, %choic
   br label %choice.exit320
 }
 
-define ptr @"parser::bitfield_misaligned"(ptr %0, i64 %1) #0 {
+define ptr @"parser::bitfield_misaligned"(ptr %0, i64 %1) #3 {
 entry:
   %cat.ibuf5 = alloca [24 x i8], align 1
   %cat.ibuf = alloca [24 x i8], align 1
@@ -81928,7 +81680,7 @@ abort.dead24:                                     ; No predecessors!
   br label %concat.tot.len22
 }
 
-define { i1, i64 } @"parser::finish_type_decl"(ptr %0, ptr %1, ptr %2, i1 %3, i64 %4) #0 {
+define { i1, i64 } @"parser::finish_type_decl"(ptr %0, ptr %1, ptr %2, i1 %3, i64 %4) #3 {
 entry:
   %var.ti2 = alloca ptr, align 8
   %var.ti1 = alloca ptr, align 8
@@ -81992,7 +81744,7 @@ choice.exit6:                                     ; preds = %choice.else5, %choi
   ret { i1, i64 } %call.res16
 }
 
-define ptr @"parser::make_ti_packed"(ptr %0) #0 {
+define ptr @"parser::make_ti_packed"(ptr %0) #3 {
 entry:
   %var.a = alloca ptr, align 8
   %var._134 = alloca ptr, align 8
@@ -82336,7 +82088,7 @@ choice.next128:                                   ; preds = %choice.next
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::declare_type"(ptr %0, ptr %1, ptr %2) #0 {
+define { i1, i64 } @"parser::declare_type"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ut_ti = alloca ptr, align 8
   %var.u_ti = alloca ptr, align 8
@@ -82419,7 +82171,7 @@ choice.exit3:                                     ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_indent_decl_mods"(ptr %0, ptr %1, i1 %2, i64 %3) #0 {
+define { i1, i64 } @"parser::parse_indent_decl_mods"(ptr %0, ptr %1, i1 %2, i64 %3) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -82756,7 +82508,7 @@ choice.exit143:                                   ; preds = %choice.else142, %ch
   br label %choice.exit82
 }
 
-define { i1, i64 } @"parser::indent_fields"(ptr %0, ptr %1, i64 %2) #0 {
+define { i1, i64 } @"parser::indent_fields"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.rf294 = alloca ptr, align 8
   %var.rf = alloca ptr, align 8
@@ -83508,7 +83260,7 @@ choice.next375:                                   ; preds = %choice.next50
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::mk_tp_rec"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::mk_tp_rec"(ptr %0, ptr %1) #3 {
 entry:
   %var.fields = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -83625,7 +83377,7 @@ a.after27:                                        ; preds = %a.create26, %a.afte
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::indent_field_after"(ptr %0, ptr %1, i64 %2) #0 {
+define { i1, i64 } @"parser::indent_field_after"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.has_nl = alloca i1, align 1
   %var.block_indent = alloca i64, align 8
@@ -83849,7 +83601,7 @@ a.after57:                                        ; preds = %a.create56, %choice
   br label %choice.exit23
 }
 
-define i1 @"parser::decl_is_enum"(ptr %0) #0 {
+define i1 @"parser::decl_is_enum"(ptr %0) #3 {
 entry:
   %var.tok2_is_id_or_comma = alloca i1, align 1
   %var.is_ram2 = alloca i1, align 1
@@ -84163,7 +83915,7 @@ str.eq.merge126:                                  ; preds = %str.eq.else125, %st
   br label %or.745.exit
 }
 
-define ptr @"parser::peek_non_layout"(ptr %0) #0 {
+define ptr @"parser::peek_non_layout"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.c = alloca ptr, align 8
@@ -84197,7 +83949,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define void @"parser::peek_skip_parens"(ptr %0, i64 %1) #0 {
+define void @"parser::peek_skip_parens"(ptr %0, i64 %1) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.depth = alloca i64, align 8
@@ -84274,7 +84026,7 @@ choice.next13:                                    ; preds = %choice.next
   br label %choice.exit8
 }
 
-define void @"parser::predeclare"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"parser::predeclare"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ph = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -84294,7 +84046,7 @@ entry:
   ret void
 }
 
-define { i1, i64 } @"parser::parse_enum_decl"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_enum_decl"(ptr %0) #3 {
 entry:
   %var.is_block = alloca i1, align 1
   %var.p = alloca ptr, align 8
@@ -84382,7 +84134,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br i1 %str.eq.result, label %choice.case, label %choice.next
 }
 
-define i1 @"parser::enum_skip_open_block"(ptr %0) #0 {
+define i1 @"parser::enum_skip_open_block"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -84429,7 +84181,7 @@ choice.next9:                                     ; preds = %choice.case
   br label %choice.exit7
 }
 
-define void @"parser::enum_skip_newlines"(ptr %0) #0 {
+define void @"parser::enum_skip_newlines"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -84456,7 +84208,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::enum_slots_loop"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define { i1, i64 } @"parser::enum_slots_loop"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.label = alloca ptr, align 8
   %var.layout = alloca ptr, align 8
@@ -84731,7 +84483,7 @@ a.after95:                                        ; preds = %a.create94, %choice
   br label %choice.exit40
 }
 
-define i1 @"parser::enum_has_label"(ptr %0, ptr %1) #0 {
+define i1 @"parser::enum_has_label"(ptr %0, ptr %1) #3 {
 entry:
   %var.label = alloca ptr, align 8
   %var.es = alloca ptr, align 8
@@ -84763,7 +84515,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret i1 %call.res
 }
 
-define i1 @"parser::enum_has_label_at"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"parser::enum_has_label_at"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %rec.salloc = alloca { ptr, i1, ptr, ptr }, align 8
@@ -85006,7 +84758,7 @@ a.after68:                                        ; preds = %a.create67, %choice
   br label %choice.exit63
 }
 
-define { i1, i64 } @"parser::enum_parse_payload"(ptr %0, i1 %1, ptr %2, ptr %3, ptr %4) #0 {
+define { i1, i64 } @"parser::enum_parse_payload"(ptr %0, i1 %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.pt = alloca ptr, align 8
   %var.layout = alloca ptr, align 8
@@ -85242,7 +84994,7 @@ a.after92:                                        ; preds = %a.create91, %a.stor
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::enum_after_variant"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define { i1, i64 } @"parser::enum_after_variant"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.layout = alloca ptr, align 8
   %var.es = alloca ptr, align 8
@@ -85314,7 +85066,7 @@ a.after11:                                        ; preds = %a.create10, %choice
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::enum_after_variant_block"(ptr %0, ptr %1, ptr %2) #0 {
+define { i1, i64 } @"parser::enum_after_variant_block"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.has_nl = alloca i1, align 1
   %var.layout = alloca ptr, align 8
@@ -85884,7 +85636,7 @@ a.after278:                                       ; preds = %a.create277, %choic
   br label %choice.exit267
 }
 
-define { i1, i64 } @"parser::enum_block_after_comma"(ptr %0, ptr %1, ptr %2) #0 {
+define { i1, i64 } @"parser::enum_block_after_comma"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.layout = alloca ptr, align 8
   %var.es = alloca ptr, align 8
@@ -86022,7 +85774,7 @@ a.after30:                                        ; preds = %a.create29, %choice
   br label %choice.exit12
 }
 
-define { i1, i64 } @"parser::enum_block_misaligned"(ptr %0, i64 %1) #0 {
+define { i1, i64 } @"parser::enum_block_misaligned"(ptr %0, i64 %1) #3 {
 entry:
   %cat.ibuf5 = alloca [24 x i8], align 1
   %cat.ibuf = alloca [24 x i8], align 1
@@ -86119,7 +85871,7 @@ abort.dead24:                                     ; No predecessors!
   br label %concat.tot.len22
 }
 
-define { i1, i64 } @"parser::enum_after_variant_inline"(ptr %0, ptr %1, ptr %2) #0 {
+define { i1, i64 } @"parser::enum_after_variant_inline"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.layout = alloca ptr, align 8
   %var.es = alloca ptr, align 8
@@ -86335,7 +86087,7 @@ a.after75:                                        ; preds = %a.create74, %choice
   br label %choice.exit41
 }
 
-define i1 @"parser::enum_min_variants"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"parser::enum_min_variants"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.n = alloca i64, align 8
   %var.es = alloca ptr, align 8
@@ -86484,7 +86236,7 @@ abort.dead25:                                     ; No predecessors!
   br label %concat.tot.len23
 }
 
-define ptr @"parser::parse_packed_record_type"(ptr %0) #0 {
+define ptr @"parser::parse_packed_record_type"(ptr %0) #3 {
 entry:
   %var.lp_line = alloca i64, align 8
   %var.p = alloca ptr, align 8
@@ -86529,7 +86281,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"parser::rfields_packed"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::rfields_packed"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.has_nl = alloca i1, align 1
   %var.rf = alloca ptr, align 8
@@ -87377,7 +87129,7 @@ a.after396:                                       ; preds = %a.create395, %choic
   br label %choice.exit390
 }
 
-define ptr @"parser::rfields_packed_finish"(ptr %0, ptr %1) #0 {
+define ptr @"parser::rfields_packed_finish"(ptr %0, ptr %1) #3 {
 entry:
   %var.fields = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -87520,7 +87272,7 @@ a.after44:                                        ; preds = %a.create43, %a.afte
   br label %choice.exit
 }
 
-define ptr @"parser::rfields_packed_after_comma"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::rfields_packed_after_comma"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.next_layout = alloca ptr, align 8
   %var.layout = alloca ptr, align 8
@@ -87637,7 +87389,7 @@ a.after:                                          ; preds = %a.create, %choice.e
   ret ptr %call.res
 }
 
-define ptr @"parser::rfields_packed_misaligned"(ptr %0, i64 %1) #0 {
+define ptr @"parser::rfields_packed_misaligned"(ptr %0, i64 %1) #3 {
 entry:
   %cat.ibuf5 = alloca [24 x i8], align 1
   %cat.ibuf = alloca [24 x i8], align 1
@@ -87753,7 +87505,7 @@ abort.dead24:                                     ; No predecessors!
   br label %concat.tot.len22
 }
 
-define { i1, i64 } @"parser::parse_import"(ptr %0, i1 %1, i1 %2) #0 {
+define { i1, i64 } @"parser::parse_import"(ptr %0, i1 %1, i1 %2) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.has_slash = alloca i1, align 1
@@ -88367,7 +88119,7 @@ a.after288:                                       ; preds = %a.create287, %choic
   ret { i1, i64 } %ram.pay
 }
 
-define i64 @"parser::find_use_eq"(ptr %0, i64 %1) #0 {
+define i64 @"parser::find_use_eq"(ptr %0, i64 %1) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.s = alloca ptr, align 8
@@ -88429,7 +88181,7 @@ choice.exit12:                                    ; preds = %choice.else11, %cho
   br label %choice.exit
 }
 
-define { i64, ptr } @"parser::trim_use_str"(ptr %0) #0 {
+define { i64, ptr } @"parser::trim_use_str"(ptr %0) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.c39 = alloca i64, align 8
@@ -88649,7 +88401,7 @@ choice.exit55:                                    ; preds = %choice.else54, %cho
   br label %choice.exit
 }
 
-define i64 @"parser::find_use_lparen"(ptr %0, i64 %1) #0 {
+define i64 @"parser::find_use_lparen"(ptr %0, i64 %1) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.s = alloca ptr, align 8
@@ -88711,7 +88463,7 @@ choice.exit12:                                    ; preds = %choice.else11, %cho
   br label %choice.exit
 }
 
-define void @"parser::parse_use_args"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"parser::parse_use_args"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.arg = alloca ptr, align 8
   %var._ = alloca i64, align 8
@@ -89098,7 +88850,7 @@ abort.dead123:                                    ; No predecessors!
   br label %concat.tot.len121
 }
 
-define i1 @"parser::is_use_arg_name"(ptr %0) #0 {
+define i1 @"parser::is_use_arg_name"(ptr %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -89190,7 +88942,7 @@ choice.next:                                      ; preds = %loop.body.762
   br label %choice.exit8
 }
 
-define i64 @"parser::find_use_slash"(ptr %0, i64 %1) #0 {
+define i64 @"parser::find_use_slash"(ptr %0, i64 %1) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.s = alloca ptr, align 8
@@ -89252,7 +89004,7 @@ choice.exit12:                                    ; preds = %choice.else11, %cho
   br label %choice.exit
 }
 
-define { i64, ptr } @"parser::last_segment"(ptr %0) #0 {
+define { i64, ptr } @"parser::last_segment"(ptr %0) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.p = alloca ptr, align 8
@@ -89268,11 +89020,11 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-declare { i64, ptr } @"path::basename"(ptr) #0
+declare { i64, ptr } @"path::basename"(ptr) #3
 
-declare { i64, ptr } @"path::stem"(ptr) #0
+declare { i64, ptr } @"path::stem"(ptr) #3
 
-define { i1, i64 } @"parser::parse_mod_param"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_mod_param"(ptr %0) #3 {
 entry:
   %var.item = alloca ptr, align 8
   %var._3 = alloca ptr, align 8
@@ -89685,7 +89437,7 @@ a.after115:                                       ; preds = %a.create114, %choic
   br label %choice.exit59
 }
 
-define { i1, i64 } @"parser::parse_mod_param_one"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_mod_param_one"(ptr %0) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.bad = alloca i1, align 1
@@ -90336,7 +90088,7 @@ abort.dead303:                                    ; No predecessors!
   br label %concat.tot.len301
 }
 
-define i1 @"parser::has_module_sep"(ptr %0) #0 {
+define i1 @"parser::has_module_sep"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -90345,7 +90097,7 @@ entry:
   ret i1 %call.res
 }
 
-define { i1, i64 } @"parser::atom_user_diag"(ptr %0, i1 %1) #0 {
+define { i1, i64 } @"parser::atom_user_diag"(ptr %0, i1 %1) #3 {
 entry:
   %var.me126 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -90670,7 +90422,7 @@ choice.exit124:                                   ; preds = %choice.else123, %ch
   br label %choice.exit91
 }
 
-define { i1, i64 } @"parser::atom_ct"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_ct"(ptr %0) #3 {
 entry:
   %var.ie = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -90710,7 +90462,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::atom_pragma_fp"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_pragma_fp"(ptr %0, ptr %1) #3 {
 entry:
   %var.arg = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -90730,7 +90482,7 @@ entry:
   ret { i1, i64 } %ram.pay
 }
 
-define { i1, i64 } @"parser::atom_pragma_number"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_pragma_number"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -90747,7 +90499,7 @@ entry:
   ret { i1, i64 } %ram.pay
 }
 
-define { i1, i64 } @"parser::atom_pragma_swizzle"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_pragma_swizzle"(ptr %0, ptr %1) #3 {
 entry:
   %var.arg = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -90767,7 +90519,7 @@ entry:
   ret { i1, i64 } %ram.pay
 }
 
-define { i1, i64 } @"parser::atom_export"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_export"(ptr %0) #3 {
 entry:
   %var.res245 = alloca { i1, i64 }, align 8
   %var.old_alias231 = alloca ptr, align 8
@@ -91359,7 +91111,7 @@ choice.next255:                                   ; preds = %choice.then206
   br label %choice.exit253
 }
 
-define void @"parser::parser_skip_newlines"(ptr %0) #0 {
+define void @"parser::parser_skip_newlines"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -91379,7 +91131,7 @@ choice.exit:                                      ; preds = %choice.then, %entry
   ret void
 }
 
-define { i1, i64 } @"parser::atom_public"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_public"(ptr %0) #3 {
 entry:
   %var.res99 = alloca { i1, i64 }, align 8
   %var.old_alias87 = alloca ptr, align 8
@@ -91671,7 +91423,7 @@ choice.next109:                                   ; preds = %choice.then62
   br label %choice.exit107
 }
 
-define i1 @"parser::parser_peek_is_indent"(ptr %0) #0 {
+define i1 @"parser::parser_peek_is_indent"(ptr %0) #3 {
 entry:
   %var.tok = alloca ptr, align 8
   %var.c = alloca ptr, align 8
@@ -91718,7 +91470,7 @@ choice.next:                                      ; preds = %choice.else
   br label %choice.exit10
 }
 
-define i1 @"parser::peek_scan_indent"(ptr %0, ptr %1) #0 {
+define i1 @"parser::peek_scan_indent"(ptr %0, ptr %1) #3 {
 entry:
   %var.tok = alloca ptr, align 8
   %var.lx = alloca ptr, align 8
@@ -91756,7 +91508,7 @@ choice.next5:                                     ; preds = %choice.next
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::atom_private"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_private"(ptr %0) #3 {
 entry:
   %var.res99 = alloca { i1, i64 }, align 8
   %var.old_alias87 = alloca ptr, align 8
@@ -92048,7 +91800,7 @@ choice.next109:                                   ; preds = %choice.then62
   br label %choice.exit107
 }
 
-define { i1, i64 } @"parser::atom_foreign"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_foreign"(ptr %0) #3 {
 entry:
   %var.f = alloca ptr, align 8
   %var._164 = alloca ptr, align 8
@@ -92494,7 +92246,7 @@ choice.exit170:                                   ; preds = %choice.else169, %ch
   br label %choice.exit158
 }
 
-define { i1, i64 } @"parser::foreign_decls"(ptr %0, ptr %1, i1 %2, ptr %3) #0 {
+define { i1, i64 } @"parser::foreign_decls"(ptr %0, ptr %1, i1 %2, ptr %3) #3 {
 entry:
   %var.done = alloca i1, align 1
   %var.exprs = alloca ptr, align 8
@@ -92596,7 +92348,7 @@ a.after19:                                        ; preds = %a.create18, %choice
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::foreign_decls_done"(ptr %0, i1 %1, ptr %2) #0 {
+define { i1, i64 } @"parser::foreign_decls_done"(ptr %0, i1 %1, ptr %2) #3 {
 entry:
   %var.is_ded = alloca i1, align 1
   %var.exprs = alloca ptr, align 8
@@ -92658,7 +92410,7 @@ a.after:                                          ; preds = %a.create, %choice.e
   ret { i1, i64 } %ram.pay
 }
 
-define { i1, i64 } @"parser::foreign_decls_step"(ptr %0, ptr %1, i1 %2, ptr %3) #0 {
+define { i1, i64 } @"parser::foreign_decls_step"(ptr %0, ptr %1, i1 %2, ptr %3) #3 {
 entry:
   %var.exprs = alloca ptr, align 8
   %var.is_block = alloca i1, align 1
@@ -92773,7 +92525,7 @@ a.after37:                                        ; preds = %a.create36, %choice
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::foreign_decls_id"(ptr %0, ptr %1, i1 %2, ptr %3) #0 {
+define { i1, i64 } @"parser::foreign_decls_id"(ptr %0, ptr %1, i1 %2, ptr %3) #3 {
 entry:
   %var.has_colon = alloca i1, align 1
   %var.c_name = alloca ptr, align 8
@@ -93061,7 +92813,7 @@ a.after:                                          ; preds = %a.create, %choice.e
   br label %choice.exit53
 }
 
-define { i64, ptr } @"parser::foreign_parse_c_name"(ptr %0) #0 {
+define { i64, ptr } @"parser::foreign_parse_c_name"(ptr %0) #3 {
 entry:
   %var.cn = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -93189,7 +92941,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-define { i1, i64 } @"parser::foreign_decl_after_colon"(ptr %0, ptr %1, i1 %2, ptr %3, ptr %4, ptr %5) #0 {
+define { i1, i64 } @"parser::foreign_decl_after_colon"(ptr %0, ptr %1, i1 %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.is_fn = alloca i1, align 1
   %var.c_name = alloca ptr, align 8
@@ -93290,7 +93042,7 @@ a.after19:                                        ; preds = %a.create18, %choice
   br label %choice.exit3
 }
 
-define { i1, i64 } @"parser::foreign_decl_fn"(ptr %0, ptr %1, i1 %2, ptr %3, ptr %4, ptr %5) #0 {
+define { i1, i64 } @"parser::foreign_decl_fn"(ptr %0, ptr %1, i1 %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.next_exprs = alloca ptr, align 8
   %var.fdecl = alloca ptr, align 8
@@ -93746,7 +93498,7 @@ a.after172:                                       ; preds = %a.create171, %choic
   br label %choice.exit150
 }
 
-define { i1, i64 } @"parser::foreign_params"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::foreign_params"(ptr %0, ptr %1) #3 {
 entry:
   %var.has_comma = alloca i1, align 1
   %var.next_params = alloca ptr, align 8
@@ -94149,7 +93901,7 @@ a.after159:                                       ; preds = %a.create158, %choic
   br label %choice.exit127
 }
 
-define ptr @"parser::foreign_parse_ret_type"(ptr %0) #0 {
+define ptr @"parser::foreign_parse_ret_type"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -94257,7 +94009,7 @@ str.eq.merge15:                                   ; preds = %str.eq.else14, %str
   br i1 %case.or, label %choice.case, label %choice.next
 }
 
-define { i1, i64 } @"parser::foreign_decl_var"(ptr %0, ptr %1, i1 %2, ptr %3, ptr %4, ptr %5) #0 {
+define { i1, i64 } @"parser::foreign_decl_var"(ptr %0, ptr %1, i1 %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.next_exprs = alloca ptr, align 8
   %var.vdecl = alloca ptr, align 8
@@ -94463,7 +94215,7 @@ a.after70:                                        ; preds = %a.create69, %choice
   br label %choice.exit48
 }
 
-define { i1, i64 } @"parser::foreign_decls_other"(ptr %0, i1 %1, ptr %2) #0 {
+define { i1, i64 } @"parser::foreign_decls_other"(ptr %0, i1 %1, ptr %2) #3 {
 entry:
   %var.exprs = alloca ptr, align 8
   %var.is_block = alloca i1, align 1
@@ -94592,7 +94344,7 @@ a.after:                                          ; preds = %a.create, %choice.e
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::atom_binding_target"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_binding_target"(ptr %0, ptr %1) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._37 = alloca ptr, align 8
@@ -94706,7 +94458,7 @@ choice.next31:                                    ; preds = %choice.next10
   br label %choice.exit
 }
 
-define void @"parser::mark_lvalue_cell"(ptr %0) #0 {
+define void @"parser::mark_lvalue_cell"(ptr %0) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._9 = alloca ptr, align 8
@@ -94753,9 +94505,9 @@ choice.next3:                                     ; preds = %choice.next
   br label %choice.exit
 }
 
-declare void @"ast::cell_var_add"(ptr) #0
+declare void @"ast::cell_var_add"(ptr) #3
 
-define { i1, i64 } @"parser::atom_binding_module_var"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_binding_module_var"(ptr %0, ptr %1) #3 {
 entry:
   %var.fields = alloca ptr, align 8
   %var.set_fn = alloca ptr, align 8
@@ -95118,7 +94870,7 @@ a.after176:                                       ; preds = %a.create175, %a.sto
   ret { i1, i64 } %ram.pay
 }
 
-define { i1, i64 } @"parser::atom_binding_member"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_binding_member"(ptr %0, ptr %1) #3 {
 entry:
   %var.stmts = alloca ptr, align 8
   %var.rec_expr = alloca ptr, align 8
@@ -95798,7 +95550,7 @@ a.after361:                                       ; preds = %a.create360, %a.sto
   br label %choice.exit286
 }
 
-define i1 @"parser::expr_is_lvalue"(ptr %0) #0 {
+define i1 @"parser::expr_is_lvalue"(ptr %0) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._8 = alloca ptr, align 8
@@ -95842,7 +95594,7 @@ choice.next2:                                     ; preds = %choice.next
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::atom_binding_call"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_binding_call"(ptr %0, ptr %1) #3 {
 entry:
   %var.rec_expr = alloca ptr, align 8
   %var.fields = alloca ptr, align 8
@@ -96724,7 +96476,7 @@ a.after462:                                       ; preds = %a.create461, %a.sto
   ret { i1, i64 } %ram.pay
 }
 
-define ptr @"parser::dotted_to_expr"(ptr %0) #0 {
+define ptr @"parser::dotted_to_expr"(ptr %0) #3 {
 entry:
   %var.me = alloca ptr, align 8
   %var.field_str = alloca ptr, align 8
@@ -96884,7 +96636,7 @@ ret.dead13:                                       ; No predecessors!
   br label %choice.exit7
 }
 
-define { i1, i64 } @"parser::find_last_dot"(ptr %0, i64 %1) #0 {
+define { i1, i64 } @"parser::find_last_dot"(ptr %0, i64 %1) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.s = alloca ptr, align 8
@@ -96942,9 +96694,9 @@ choice.exit8:                                     ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-declare { i64, ptr } @"diag::E2108_state_binding_target"() #0
+declare { i64, ptr } @"diag::E2108_state_binding_target"() #3
 
-define { i1, i64 } @"parser::atom_binding_var"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_binding_var"(ptr %0, ptr %1) #3 {
 entry:
   %var.fields = alloca ptr, align 8
   %var.set_fn = alloca ptr, align 8
@@ -97331,7 +97083,7 @@ a.after189:                                       ; preds = %a.create188, %a.sto
   ret { i1, i64 } %ram.pay
 }
 
-define { i1, i64 } @"parser::atom_addrof"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_addrof"(ptr %0) #3 {
 entry:
   %var.ae = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -97380,7 +97132,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::atom_freeze"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_freeze"(ptr %0) #3 {
 entry:
   %var.fe = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -97429,7 +97181,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::atom_minus"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_minus"(ptr %0) #3 {
 entry:
   %var.nxt = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -97482,7 +97234,7 @@ choice.next12:                                    ; preds = %choice.next5
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::atom_minus_int"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_minus_int"(ptr %0) #3 {
 entry:
   %var.iexpr = alloca ptr, align 8
   %var.suf = alloca ptr, align 8
@@ -97572,7 +97324,7 @@ choice.exit15:                                    ; preds = %choice.else14, %cho
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::atom_minus_float"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_minus_float"(ptr %0) #3 {
 entry:
   %var.flt = alloca ptr, align 8
   %var.neg_val = alloca double, align 8
@@ -97682,7 +97434,7 @@ choice.next:                                      ; preds = %choice.exit11
   br label %choice.exit16
 }
 
-define { i1, i64 } @"parser::atom_minus_rune"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_minus_rune"(ptr %0) #3 {
 entry:
   %var.v = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -97731,7 +97483,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::atom_minus_other"(ptr %0) #0 {
+define { i1, i64 } @"parser::atom_minus_other"(ptr %0) #3 {
 entry:
   %var.oe = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -97780,7 +97532,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::bp_loop"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4) #0 {
+define { i1, i64 } @"parser::bp_loop"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4) #3 {
 entry:
   %var.uo = alloca ptr, align 8
   %var._102 = alloca ptr, align 8
@@ -98139,7 +97891,7 @@ choice.exit123:                                   ; preds = %choice.else122, %ch
   br label %choice.exit101
 }
 
-define i1 @"parser::feed_peek_op"(ptr %0, i64 %1) #0 {
+define i1 @"parser::feed_peek_op"(ptr %0, i64 %1) #3 {
 entry:
   %var.init_indent = alloca i64, align 8
   %var.tok = alloca ptr, align 8
@@ -98207,7 +97959,7 @@ choice.exit16:                                    ; preds = %choice.else15, %cho
   br label %choice.exit
 }
 
-define i1 @"parser::feed_scan_op"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i1 @"parser::feed_scan_op"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.min_indent = alloca i64, align 8
   %var.cur_indent = alloca i64, align 8
@@ -98303,7 +98055,7 @@ and.793.exit:                                     ; preds = %and.793.else, %and.
   br label %choice.exit
 }
 
-define void @"parser::feed_skip_layout"(ptr %0, i64 %1) #0 {
+define void @"parser::feed_skip_layout"(ptr %0, i64 %1) #3 {
 entry:
   %var.ded = alloca i1, align 1
   %var.ind = alloca i1, align 1
@@ -98417,7 +98169,7 @@ choice.exit35:                                    ; preds = %choice.else34, %cho
   br label %choice.exit
 }
 
-define i1 @"parser::feed_can_skip"(ptr %0, i64 %1) #0 {
+define i1 @"parser::feed_can_skip"(ptr %0, i64 %1) #3 {
 entry:
   %var.min_indent = alloca i64, align 8
   %var.p = alloca ptr, align 8
@@ -98470,7 +98222,7 @@ and.796.exit:                                     ; preds = %and.796.else, %and.
   br label %or.795.exit
 }
 
-define i1 @"parser::lbracket_is_empty_guard"(ptr %0) #0 {
+define i1 @"parser::lbracket_is_empty_guard"(ptr %0) #3 {
 entry:
   %var.after_rb = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -98528,7 +98280,7 @@ choice.exit11:                                    ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define ptr @"parser::scan_past_rbracket"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"parser::scan_past_rbracket"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.depth = alloca i64, align 8
   %var.tok = alloca ptr, align 8
@@ -98639,7 +98391,7 @@ choice.exit38:                                    ; preds = %choice.else37, %cho
   br label %choice.exit
 }
 
-define i1 @"parser::tok_is_empty_guard_follow"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"parser::tok_is_empty_guard_follow"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.bstop = alloca i1, align 1
   %var._ = alloca ptr, align 8
@@ -98887,7 +98639,7 @@ or.812.exit:                                      ; preds = %or.812.else, %or.81
   br label %choice.exit
 }
 
-define i1 @"parser::guard_peek_is_indent"(ptr %0, ptr %1) #0 {
+define i1 @"parser::guard_peek_is_indent"(ptr %0, ptr %1) #3 {
 entry:
   %var.tok = alloca ptr, align 8
   %var.lx = alloca ptr, align 8
@@ -98929,7 +98681,7 @@ choice.next5:                                     ; preds = %choice.next
   br label %choice.exit
 }
 
-define i1 @"parser::guard_peek_after_indent"(ptr %0, ptr %1) #0 {
+define i1 @"parser::guard_peek_after_indent"(ptr %0, ptr %1) #3 {
 entry:
   %var.tok = alloca ptr, align 8
   %var.lx = alloca ptr, align 8
@@ -98975,7 +98727,7 @@ or.807.exit:                                      ; preds = %or.807.else, %or.80
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::bp_cont"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5) #0 {
+define { i1, i64 } @"parser::bp_cont"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5) #3 {
 entry:
   %var.nc = alloca i64, align 8
   %var.node332 = alloca ptr, align 8
@@ -99754,7 +99506,7 @@ choice.exit338:                                   ; preds = %choice.else337, %ch
   br label %choice.exit99
 }
 
-define { i1, i64 } @"parser::parse_trailing_block_expr"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_trailing_block_expr"(ptr %0, ptr %1) #3 {
 entry:
   %var.rec316 = alloca ptr, align 8
   %"var.fields'279" = alloca ptr, align 8
@@ -100463,7 +100215,7 @@ a.after303:                                       ; preds = %a.create302, %a.aft
   br label %choice.exit3
 }
 
-define ptr @"parser::trailing_block_field"(ptr %0, ptr %1) #0 {
+define ptr @"parser::trailing_block_field"(ptr %0, ptr %1) #3 {
 entry:
   %var.a = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -100594,7 +100346,7 @@ a.after35:                                        ; preds = %a.create34, %choice
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_bp_rhs"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_bp_rhs"(ptr %0, ptr %1) #3 {
 entry:
   %var.rre = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -100718,7 +100470,7 @@ choice.exit30:                                    ; preds = %choice.else29, %cho
   br label %choice.exit11
 }
 
-define i1 @"parser::op_is_apply_feed"(ptr %0) #0 {
+define i1 @"parser::op_is_apply_feed"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -100749,7 +100501,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::apply_feed_rhs"(ptr %0, ptr %1, ptr %2) #0 {
+define { i1, i64 } @"parser::apply_feed_rhs"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.is_nl_no_pipe = alloca i1, align 1
   %var.pi = alloca i64, align 8
@@ -100861,7 +100613,7 @@ choice.exit24:                                    ; preds = %choice.else23, %cho
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::choice_peek_pipe"(ptr %0, i64 %1) #0 {
+define { i1, i64 } @"parser::choice_peek_pipe"(ptr %0, i64 %1) #3 {
 entry:
   %var.init_indent = alloca i64, align 8
   %var.tok = alloca ptr, align 8
@@ -100943,7 +100695,7 @@ choice.exit22:                                    ; preds = %choice.else21, %cho
   br label %choice.exit8
 }
 
-define { i1, i64 } @"parser::choice_scan_pipe"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define { i1, i64 } @"parser::choice_scan_pipe"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.is_sep = alloca i1, align 1
   %var.min_indent = alloca i64, align 8
@@ -101052,7 +100804,7 @@ choice.exit43:                                    ; preds = %choice.else42, %cho
   br label %choice.exit
 }
 
-define ptr @"parser::chain_cmp"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"parser::chain_cmp"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.and_e = alloca ptr, align 8
   %var.cmp2129 = alloca ptr, align 8
@@ -101360,7 +101112,7 @@ choice.exit62:                                    ; preds = %choice.else, %choic
   br label %choice.exit2
 }
 
-define i1 @"parser::is_cmp_atom"(ptr %0) #0 {
+define i1 @"parser::is_cmp_atom"(ptr %0) #3 {
 entry:
   %var._8 = alloca i64, align 8
   %var._ = alloca ptr, align 8
@@ -101405,7 +101157,7 @@ pay.int.merge:                                    ; preds = %pay.int.nullbb, %pa
   br label %choice.exit
 }
 
-define ptr @"parser::mk_compose_fn"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::mk_compose_fn"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.params = alloca ptr, align 8
   %var.step2 = alloca ptr, align 8
@@ -101633,7 +101385,7 @@ a.after68:                                        ; preds = %a.create67, %a.stor
   br label %choice.exit
 }
 
-define ptr @"parser::normalize_compose_stage"(ptr %0) #0 {
+define ptr @"parser::normalize_compose_stage"(ptr %0) #3 {
 entry:
   %var.params = alloca ptr, align 8
   %var.v = alloca ptr, align 8
@@ -101822,7 +101574,7 @@ a.after36:                                        ; preds = %a.create35, %a.stor
   br label %choice.exit16
 }
 
-define i1 @"parser::is_compose_fn"(ptr %0) #0 {
+define i1 @"parser::is_compose_fn"(ptr %0) #3 {
 entry:
   %var._41 = alloca ptr, align 8
   %var.p0 = alloca ptr, align 8
@@ -102022,7 +101774,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %and.832.exit
 }
 
-define ptr @"parser::mk_feed_expr"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::mk_feed_expr"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.sub_rhs = alloca ptr, align 8
   %var.asgn = alloca ptr, align 8
@@ -102140,7 +101892,7 @@ choice.exit4:                                     ; preds = %choice.else, %choic
   ret ptr %choice.res40
 }
 
-define ptr @"parser::subst_free_underscore"(ptr %0, ptr %1) #0 {
+define ptr @"parser::subst_free_underscore"(ptr %0, ptr %1) #3 {
 entry:
   %var.ce790 = alloca ptr, align 8
   %var._789 = alloca ptr, align 8
@@ -103393,7 +103145,7 @@ choice.next783:                                   ; preds = %choice.next744
   br label %choice.exit
 }
 
-define ptr @"parser::subst_free_underscore_branches"(ptr %0, ptr %1) #0 {
+define ptr @"parser::subst_free_underscore_branches"(ptr %0, ptr %1) #3 {
 entry:
   %var.new_blk = alloca ptr, align 8
   %var.is_payload_branch = alloca i1, align 1
@@ -103698,7 +103450,7 @@ a.after119:                                       ; preds = %a.create118, %loop.
   ret ptr %a.load2127
 }
 
-define ptr @"parser::subst_free_underscore_exprs"(ptr %0, ptr %1) #0 {
+define ptr @"parser::subst_free_underscore_exprs"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -103847,7 +103599,7 @@ a.after33:                                        ; preds = %a.create32, %loop.e
   ret ptr %a.load241
 }
 
-define ptr @"parser::subst_free_underscore_fields"(ptr %0, ptr %1) #0 {
+define ptr @"parser::subst_free_underscore_fields"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -104012,7 +103764,7 @@ a.after42:                                        ; preds = %a.create41, %loop.e
   ret ptr %a.load250
 }
 
-define ptr @"parser::subst_free_underscore_map"(ptr %0, ptr %1) #0 {
+define ptr @"parser::subst_free_underscore_map"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -104174,7 +103926,7 @@ a.after40:                                        ; preds = %a.create39, %loop.e
   ret ptr %a.load248
 }
 
-define { i64, ptr } @"parser::fresh_compose_var"(ptr %0) #0 {
+define { i64, ptr } @"parser::fresh_compose_var"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %cat.ibuf = alloca [24 x i8], align 1
@@ -104234,7 +103986,7 @@ abort.dead11:                                     ; No predecessors!
   br label %concat.tot.len9
 }
 
-define { i1, i64 } @"parser::bp_cont_user"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, i64 %5, i64 %6) #0 {
+define { i1, i64 } @"parser::bp_cont_user"(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, i64 %5, i64 %6) #3 {
 entry:
   %var.node = alloca ptr, align 8
   %var.args = alloca ptr, align 8
@@ -104712,7 +104464,7 @@ abort.dead178:                                    ; No predecessors!
   br label %concat.tot.len176
 }
 
-define i64 @"parser::user_rhs_min"(i64 %0, i64 %1) #0 {
+define i64 @"parser::user_rhs_min"(i64 %0, i64 %1) #3 {
 entry:
   %var.rbp = alloca i64, align 8
   %var.lbp = alloca i64, align 8
@@ -104751,7 +104503,7 @@ choice.exit8:                                     ; preds = %choice.else7, %choi
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::range_cont"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::range_cont"(ptr %0, ptr %1) #3 {
 entry:
   %var.rr = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -104950,7 +104702,7 @@ choice.exit41:                                    ; preds = %choice.else40, %cho
   br label %choice.exit32
 }
 
-define ptr @"parser::mk_shallow_pb"(ptr %0) #0 {
+define ptr @"parser::mk_shallow_pb"(ptr %0) #3 {
 entry:
   %var.br = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -104983,7 +104735,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define i1 @"parser::guard_is_record_pattern"(ptr %0) #0 {
+define i1 @"parser::guard_is_record_pattern"(ptr %0) #3 {
 entry:
   %var.tok = alloca ptr, align 8
   %var.c = alloca ptr, align 8
@@ -105002,7 +104754,7 @@ entry:
   ret i1 %call.res5
 }
 
-define i1 @"parser::scan_record_pattern_comma"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"parser::scan_record_pattern_comma"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.depth = alloca i64, align 8
   %var.tok = alloca ptr, align 8
@@ -105116,7 +104868,7 @@ choice.next39:                                    ; preds = %choice.next23
   br label %choice.exit2
 }
 
-define ptr @"parser::choice_guard_record"(ptr %0) #0 {
+define ptr @"parser::choice_guard_record"(ptr %0) #3 {
 entry:
   %var.rpat = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -105154,7 +104906,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"parser::choice_guard_expr"(ptr %0) #0 {
+define ptr @"parser::choice_guard_expr"(ptr %0) #3 {
 entry:
   %var.vals = alloca ptr, align 8
   %var.gv_expr = alloca ptr, align 8
@@ -105304,7 +105056,7 @@ choice.next35:                                    ; preds = %choice.next
   br label %choice.exit4
 }
 
-define ptr @"parser::guard_branch_from"(ptr %0) #0 {
+define ptr @"parser::guard_branch_from"(ptr %0) #3 {
 entry:
   %var.vals = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -105521,7 +105273,7 @@ a.after58:                                        ; preds = %a.create57, %a.stor
   br label %choice.exit
 }
 
-define ptr @"parser::mk_branch"(ptr %0) #0 {
+define ptr @"parser::mk_branch"(ptr %0) #3 {
 entry:
   %var.ex = alloca i1, align 1
   %var.v = alloca ptr, align 8
@@ -105632,7 +105384,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %choice.exit
 }
 
-define ptr @"parser::empty_pbrs"() #0 {
+define ptr @"parser::empty_pbrs"() #3 {
 entry:
   %var.res = alloca ptr, align 8
   store ptr null, ptr %var.res, align 8
@@ -105660,7 +105412,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %a.load2
 }
 
-define { i1, i64 } @"parser::finish_parsed_choice"(ptr %0, ptr %1, ptr %2) #0 {
+define { i1, i64 } @"parser::finish_parsed_choice"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ex = alloca i1, align 1
   %var._ = alloca ptr, align 8
@@ -106192,7 +105944,7 @@ a.after210:                                       ; preds = %a.create209, %a.aft
   br label %choice.exit161
 }
 
-define ptr @"parser::group_variant_branches"(ptr %0, ptr %1) #0 {
+define ptr @"parser::group_variant_branches"(ptr %0, ptr %1) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.acc = alloca ptr, align 8
@@ -106565,7 +106317,7 @@ a.after142:                                       ; preds = %a.create141, %choic
   br label %choice.exit
 }
 
-define i1 @"parser::choice_branch_is_bare"(ptr %0) #0 {
+define i1 @"parser::choice_branch_is_bare"(ptr %0) #3 {
 entry:
   %var.br = alloca ptr, align 8
   store ptr %0, ptr %var.br, align 8
@@ -106588,7 +106340,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"parser::group_variant_branches_loop"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5) #0 {
+define ptr @"parser::group_variant_branches_loop"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5) #3 {
 entry:
   %var.is_deep_run = alloca i1, align 1
   %var.next_i = alloca i64, align 8
@@ -107174,7 +106926,7 @@ a.after277:                                       ; preds = %a.create276, %a.aft
   br label %choice.exit57
 }
 
-define i64 @"parser::find_variant_run_end"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i64 @"parser::find_variant_run_end"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.is_same = alloca i1, align 1
   %var.curr_pr = alloca ptr, align 8
@@ -107423,7 +107175,7 @@ a.after59:                                        ; preds = %a.create58, %choice
   br label %choice.exit54
 }
 
-define i1 @"parser::group_variant_run_deep"(ptr %0, i64 %1, i64 %2) #0 {
+define i1 @"parser::group_variant_run_deep"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.pb = alloca ptr, align 8
   %rec.salloc = alloca { ptr, i1, { ptr, ptr, ptr, ptr, ptr, i1, ptr } }, align 8
@@ -107577,7 +107329,7 @@ choice.exit24:                                    ; preds = %choice.else23, %cho
   br label %choice.exit
 }
 
-define ptr @"parser::build_grouped_variant"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5) #0 {
+define ptr @"parser::build_grouped_variant"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5) #3 {
 entry:
   %var.top_cb = alloca ptr, align 8
   %var.binds = alloca ptr, align 8
@@ -108274,7 +108026,7 @@ a.after300:                                       ; preds = %a.create299, %a.aft
   ret ptr %rec.alloc330
 }
 
-define ptr @"parser::desugar_inner_pattern_group"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"parser::desugar_inner_pattern_group"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.ch = alloca ptr, align 8
   %var.brs = alloca ptr, align 8
@@ -108754,7 +108506,7 @@ a.after189:                                       ; preds = %a.create188, %a.sto
   br label %choice.exit66
 }
 
-define ptr @"parser::expand_or_bind_pbrs"(ptr %0) #0 {
+define ptr @"parser::expand_or_bind_pbrs"(ptr %0) #3 {
 entry:
   %var._33 = alloca ptr, align 8
   %var._i32 = alloca i64, align 8
@@ -109052,7 +108804,7 @@ a.after91:                                        ; preds = %a.create90, %loop.e
   ret ptr %a.load299
 }
 
-define i1 @"parser::pat_has_binds"(ptr %0) #0 {
+define i1 @"parser::pat_has_binds"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -109145,7 +108897,7 @@ choice.exit17:                                    ; preds = %choice.then, %loop.
   br label %loop.latch.851
 }
 
-define i1 @"parser::pat_is_unconditional"(ptr %0) #0 {
+define i1 @"parser::pat_is_unconditional"(ptr %0) #3 {
 entry:
   %var._37 = alloca ptr, align 8
   %var._i36 = alloca i64, align 8
@@ -109299,7 +109051,7 @@ choice.exit41:                                    ; preds = %choice.then40, %loo
   br label %loop.latch.855
 }
 
-define ptr @"parser::pat_extract_bindings"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::pat_extract_bindings"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var._423 = alloca ptr, align 8
   %var._i422 = alloca i64, align 8
@@ -110281,7 +110033,7 @@ a.after474:                                       ; preds = %a.create473, %choic
   br label %choice.exit
 }
 
-define ptr @"parser::mk_extract_pay"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::mk_extract_pay"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.rhs = alloca ptr, align 8
   %var.brs = alloca ptr, align 8
@@ -110465,7 +110217,7 @@ a.after62:                                        ; preds = %a.create61, %a.stor
   ret ptr %call.res78
 }
 
-define ptr @"parser::tag_names_single"(ptr %0) #0 {
+define ptr @"parser::tag_names_single"(ptr %0) #3 {
 entry:
   %var.ns = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -110551,7 +110303,7 @@ a.after17:                                        ; preds = %a.create16, %a.stor
   ret ptr %a.load225
 }
 
-define ptr @"parser::mk_block"(ptr %0, ptr %1) #0 {
+define ptr @"parser::mk_block"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -110785,7 +110537,7 @@ a.after77:                                        ; preds = %a.create76, %a.stor
   br label %choice.exit
 }
 
-define ptr @"parser::pat_match_cond"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::pat_match_cond"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.cond_ref793 = alloca ptr, align 8
   %var.cond_var754 = alloca ptr, align 8
@@ -112369,7 +112121,7 @@ a.after821:                                       ; preds = %a.create820, %loop.
   br label %choice.exit567
 }
 
-define ptr @"parser::mk_choice_flag"(ptr %0, ptr %1) #0 {
+define ptr @"parser::mk_choice_flag"(ptr %0, ptr %1) #3 {
 entry:
   %var.brs = alloca ptr, align 8
   %var.br1 = alloca ptr, align 8
@@ -112629,7 +112381,7 @@ a.after117:                                       ; preds = %a.create116, %a.sto
   ret ptr %enum.alloc109
 }
 
-define i1 @"parser::parsed_branches_has_deep"(ptr %0) #0 {
+define i1 @"parser::parsed_branches_has_deep"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -112708,7 +112460,7 @@ choice.exit:                                      ; preds = %choice.then, %loop.
   br label %loop.latch.865
 }
 
-define ptr @"parser::desugar_deep_choice"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::desugar_deep_choice"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.exprs = alloca ptr, align 8
   %var.assign = alloca ptr, align 8
@@ -113776,7 +113528,7 @@ a.after550:                                       ; preds = %a.create549, %a.sto
   br label %choice.exit446
 }
 
-define i1 @"parser::choice_branches_has_middle_bare"(ptr %0, i64 %1) #0 {
+define i1 @"parser::choice_branches_has_middle_bare"(ptr %0, i64 %1) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var._40 = alloca ptr, align 8
@@ -114029,9 +113781,9 @@ a.after85:                                        ; preds = %a.create84, %choice
   br label %choice.exit80
 }
 
-declare { i64, ptr } @"diag::E2024_bare_bar_position"() #0
+declare { i64, ptr } @"diag::E2024_bare_bar_position"() #3
 
-define i1 @"parser::choice_branches_first_bare_mix"(ptr %0) #0 {
+define i1 @"parser::choice_branches_first_bare_mix"(ptr %0) #3 {
 entry:
   %var.fb = alloca ptr, align 8
   %var._21 = alloca ptr, align 8
@@ -114242,7 +113994,7 @@ a.after63:                                        ; preds = %a.create62, %and.87
   br label %and.870.exit
 }
 
-define i1 @"parser::choice_branches_first_bare_has_non_bare"(ptr %0, i64 %1) #0 {
+define i1 @"parser::choice_branches_first_bare_has_non_bare"(ptr %0, i64 %1) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var._40 = alloca ptr, align 8
@@ -114495,7 +114247,7 @@ a.after85:                                        ; preds = %a.create84, %choice
   br label %choice.exit80
 }
 
-define i1 @"parser::choice_branches_exhaustive"(ptr %0) #0 {
+define i1 @"parser::choice_branches_exhaustive"(ptr %0) #3 {
 entry:
   %var.bs = alloca ptr, align 8
   store ptr %0, ptr %var.bs, align 8
@@ -114558,7 +114310,7 @@ a.after8:                                         ; preds = %a.create7, %choice.
   br label %choice.exit
 }
 
-define i1 @"parser::choice_branches_nonempty_exhaustive"(ptr %0) #0 {
+define i1 @"parser::choice_branches_nonempty_exhaustive"(ptr %0) #3 {
 entry:
   %var.last = alloca ptr, align 8
   %var._35 = alloca ptr, align 8
@@ -114794,7 +114546,7 @@ a.after80:                                        ; preds = %a.create79, %choice
   br label %choice.exit75
 }
 
-define i1 @"parser::choice_branches_all_variant"(ptr %0, i64 %1) #0 {
+define i1 @"parser::choice_branches_all_variant"(ptr %0, i64 %1) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.bs = alloca ptr, align 8
@@ -114861,7 +114613,7 @@ a.after9:                                         ; preds = %a.create8, %choice.
   br label %choice.exit
 }
 
-define i1 @"parser::choice_branches_all_variant_step"(ptr %0, i64 %1) #0 {
+define i1 @"parser::choice_branches_all_variant_step"(ptr %0, i64 %1) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var._22 = alloca ptr, align 8
@@ -115078,7 +114830,7 @@ a.after67:                                        ; preds = %a.create66, %choice
   br label %choice.exit62
 }
 
-define i1 @"parser::choice_branch_is_variant"(ptr %0) #0 {
+define i1 @"parser::choice_branch_is_variant"(ptr %0) #3 {
 entry:
   %var.br = alloca ptr, align 8
   store ptr %0, ptr %var.br, align 8
@@ -115101,7 +114853,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::choice_cont_loop"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define { i1, i64 } @"parser::choice_cont_loop"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.is_dedent = alloca i1, align 1
   %var.pi = alloca i64, align 8
@@ -115315,7 +115067,7 @@ a.after71:                                        ; preds = %a.create70, %choice
   br label %choice.exit50
 }
 
-define { i1, i64 } @"parser::choice_cont_step"(ptr %0, ptr %1, i64 %2, i64 %3, { i1, i64 } %4) #0 {
+define { i1, i64 } @"parser::choice_cont_step"(ptr %0, ptr %1, i64 %2, i64 %3, { i1, i64 } %4) #3 {
 entry:
   %var.nest = alloca i1, align 1
   %var.is_sep = alloca i1, align 1
@@ -115519,7 +115271,7 @@ a.after49:                                        ; preds = %a.create48, %choice
   br label %choice.exit26
 }
 
-define void @"parser::choice_skip_layout"(ptr %0, i64 %1) #0 {
+define void @"parser::choice_skip_layout"(ptr %0, i64 %1) #3 {
 entry:
   %var.entry_indent = alloca i64, align 8
   %var.p = alloca ptr, align 8
@@ -115542,7 +115294,7 @@ choice.exit:                                      ; preds = %choice.then, %entry
   ret void
 }
 
-define i1 @"parser::choice_can_skip"(ptr %0, i64 %1) #0 {
+define i1 @"parser::choice_can_skip"(ptr %0, i64 %1) #3 {
 entry:
   %var.entry_indent = alloca i64, align 8
   %var.p = alloca ptr, align 8
@@ -115595,7 +115347,7 @@ and.876.exit:                                     ; preds = %and.876.else, %and.
   br label %or.875.exit
 }
 
-define { i1, i64 } @"parser::choice_cont_nest"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define { i1, i64 } @"parser::choice_cont_nest"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.nb = alloca ptr, align 8
   %var._95 = alloca ptr, align 8
@@ -115991,7 +115743,7 @@ a.after137:                                       ; preds = %a.create136, %a.sto
   br label %choice.exit92
 }
 
-define { i1, i64 } @"parser::choice_cont_next"(ptr %0, ptr %1, i64 %2, i64 %3, i1 %4) #0 {
+define { i1, i64 } @"parser::choice_cont_next"(ptr %0, ptr %1, i64 %2, i64 %3, i1 %4) #3 {
 entry:
   %var.sbrs = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -116110,7 +115862,7 @@ a.after23:                                        ; preds = %a.create22, %choice
   br label %choice.exit13
 }
 
-define { i1, i64 } @"parser::choice_step"(ptr %0, ptr %1, i1 %2) #0 {
+define { i1, i64 } @"parser::choice_step"(ptr %0, ptr %1, i1 %2) #3 {
 entry:
   %var.bd511 = alloca ptr, align 8
   %var.v0 = alloca ptr, align 8
@@ -117105,7 +116857,7 @@ a.after553:                                       ; preds = %a.create552, %a.sto
   br label %choice.exit189
 }
 
-define i1 @"parser::choice_guard_is_empty"(ptr %0) #0 {
+define i1 @"parser::choice_guard_is_empty"(ptr %0) #3 {
 entry:
   %var.tstop = alloca i1, align 1
   %var.kstop = alloca i1, align 1
@@ -117196,7 +116948,7 @@ or.885.exit:                                      ; preds = %or.885.else, %or.88
   br label %choice.exit
 }
 
-define i1 @"parser::is_binary_cont"(ptr %0) #0 {
+define i1 @"parser::is_binary_cont"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var.uo = alloca ptr, align 8
@@ -117370,7 +117122,7 @@ choice.exit61:                                    ; preds = %choice.else60, %cho
   br label %and.887.exit
 }
 
-define { i1, i64 } @"parser::choice_body"(ptr %0) #0 {
+define { i1, i64 } @"parser::choice_body"(ptr %0) #3 {
 entry:
   %var.r = alloca { i1, i64 }, align 8
   %var.p = alloca ptr, align 8
@@ -117413,7 +117165,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::choice_body_indented"(ptr %0) #0 {
+define { i1, i64 } @"parser::choice_body_indented"(ptr %0) #3 {
 entry:
   %var.r = alloca { i1, i64 }, align 8
   %var.body = alloca { i1, i64 }, align 8
@@ -117520,7 +117272,7 @@ choice.next28:                                    ; preds = %choice.case
   br label %choice.exit26
 }
 
-define { i1, i64 } @"parser::choice_body_inner"(ptr %0) #0 {
+define { i1, i64 } @"parser::choice_body_inner"(ptr %0) #3 {
 entry:
   %var.e = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -117615,9 +117367,9 @@ choice.exit19:                                    ; preds = %choice.else18, %cho
   br label %choice.exit12
 }
 
-declare { i64, ptr } @"diag::E2096_bar_before_guard"() #0
+declare { i64, ptr } @"diag::E2096_bar_before_guard"() #3
 
-define { i1, i64 } @"parser::choice_pipe_body"(ptr %0, i1 %1) #0 {
+define { i1, i64 } @"parser::choice_pipe_body"(ptr %0, i1 %1) #3 {
 entry:
   %var.rs = alloca { i1, i64 }, align 8
   %var.rf = alloca { i1, i64 }, align 8
@@ -117709,7 +117461,7 @@ choice.exit30:                                    ; preds = %choice.else29, %cho
   br label %choice.exit8
 }
 
-define { i1, i64 } @"parser::choice_same_line_seq"(ptr %0) #0 {
+define { i1, i64 } @"parser::choice_same_line_seq"(ptr %0) #3 {
 entry:
   %var.be = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -117741,7 +117493,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::choice_same_line"(ptr %0) #0 {
+define { i1, i64 } @"parser::choice_same_line"(ptr %0) #3 {
 entry:
   %var.ce = alloca ptr, align 8
   %var._42 = alloca ptr, align 8
@@ -117858,7 +117610,7 @@ choice.exit39:                                    ; preds = %choice.else38, %cho
   br label %choice.exit27
 }
 
-define { i1, i64 } @"parser::choice_same_line_loop"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::choice_same_line_loop"(ptr %0, ptr %1) #3 {
 entry:
   %var.sbrs = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -117971,7 +117723,7 @@ a.after31:                                        ; preds = %a.create30, %choice
   br label %choice.exit22
 }
 
-define i1 @"parser::choice_same_line_stop"(ptr %0) #0 {
+define i1 @"parser::choice_same_line_stop"(ptr %0) #3 {
 entry:
   %var.is_eof = alloca i1, align 1
   %var.p = alloca ptr, align 8
@@ -118037,7 +117789,7 @@ or.891.exit:                                      ; preds = %or.891.else, %or.89
   ret i1 %or.891.phi
 }
 
-define { i1, i64 } @"parser::choice_same_line_step"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::choice_same_line_step"(ptr %0, ptr %1) #3 {
 entry:
   %var.bd534 = alloca ptr, align 8
   %var.v0 = alloca ptr, align 8
@@ -119073,7 +118825,7 @@ a.after576:                                       ; preds = %a.create575, %a.sto
   br label %choice.exit189
 }
 
-define i1 @"parser::check_redundant_flag_pb"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"parser::check_redundant_flag_pb"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.is_pos = alloca i1, align 1
   %var.last = alloca ptr, align 8
@@ -119301,7 +119053,7 @@ choice.exit70:                                    ; preds = %choice.else69, %cho
   br label %choice.exit7
 }
 
-define i1 @"parser::expr_is_neg_flag"(ptr %0) #0 {
+define i1 @"parser::expr_is_neg_flag"(ptr %0) #3 {
 entry:
   %var.is_neg = alloca i1, align 1
   %var.v = alloca ptr, align 8
@@ -119363,7 +119115,7 @@ and.892.exit:                                     ; preds = %and.892.else, %and.
   br label %choice.exit
 }
 
-define i1 @"parser::expr_is_pos_flag"(ptr %0) #0 {
+define i1 @"parser::expr_is_pos_flag"(ptr %0) #3 {
 entry:
   %var.is_pos = alloca i1, align 1
   %var.v = alloca ptr, align 8
@@ -119425,9 +119177,9 @@ and.893.exit:                                     ; preds = %and.893.else, %and.
   br label %choice.exit
 }
 
-declare { i64, ptr } @"diag::E2105_redundant_choice_tail"() #0
+declare { i64, ptr } @"diag::E2105_redundant_choice_tail"() #3
 
-define ptr @"parser::mk_ram_return"(ptr %0, ptr %1) #0 {
+define ptr @"parser::mk_ram_return"(ptr %0, ptr %1) #3 {
 entry:
   %var.val = alloca ptr, align 8
   %var.tag = alloca ptr, align 8
@@ -119604,7 +119356,7 @@ str.eq.merge42:                                   ; preds = %str.eq.else41, %str
   br i1 %str.eq.result48, label %choice.case32, label %choice.next33
 }
 
-define { i1, i64 } @"parser::cycle_cont"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::cycle_cont"(ptr %0, ptr %1) #3 {
 entry:
   %var.entry_indent = alloca i64, align 8
   %var.base_ind = alloca i64, align 8
@@ -119641,7 +119393,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::cycle_cont_at"(ptr %0, ptr %1, i64 %2) #0 {
+define { i1, i64 } @"parser::cycle_cont_at"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.next_lhs = alloca ptr, align 8
   %var._116 = alloca ptr, align 8
@@ -119979,7 +119731,7 @@ choice.exit113:                                   ; preds = %choice.else112, %ch
   br label %choice.exit105
 }
 
-define i1 @"parser::cycle_peek_op"(ptr %0, i64 %1) #0 {
+define i1 @"parser::cycle_peek_op"(ptr %0, i64 %1) #3 {
 entry:
   %var.init_indent = alloca i64, align 8
   %var.tok = alloca ptr, align 8
@@ -120047,7 +119799,7 @@ choice.exit16:                                    ; preds = %choice.else15, %cho
   br label %choice.exit
 }
 
-define i1 @"parser::cycle_scan_op"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i1 @"parser::cycle_scan_op"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.min_indent = alloca i64, align 8
   %var.cur_indent = alloca i64, align 8
@@ -120143,7 +119895,7 @@ and.896.exit:                                     ; preds = %and.896.else, %and.
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_cycle_expr_body"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_cycle_expr_body"(ptr %0) #3 {
 entry:
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -120208,7 +119960,7 @@ choice.exit6:                                     ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res13
 }
 
-define { i1, i64 } @"parser::choice_same_line_seq_loop"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::choice_same_line_seq_loop"(ptr %0, ptr %1) #3 {
 entry:
   %var.n = alloca ptr, align 8
   %var.r = alloca ptr, align 8
@@ -120285,7 +120037,7 @@ choice.exit4:                                     ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define void @"parser::choice_unwind"(ptr %0, i64 %1) #0 {
+define void @"parser::choice_unwind"(ptr %0, i64 %1) #3 {
 entry:
   %var.is_lay = alloca i1, align 1
   %var.entry_indent = alloca i64, align 8
@@ -120339,7 +120091,7 @@ choice.exit:                                      ; preds = %choice.then, %and.9
   ret void
 }
 
-define { i1, i64 } @"parser::choice_resume"(ptr %0, ptr %1, i64 %2) #0 {
+define { i1, i64 } @"parser::choice_resume"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.rr = alloca ptr, align 8
   %var._22 = alloca ptr, align 8
@@ -120428,7 +120180,7 @@ choice.exit19:                                    ; preds = %choice.else18, %cho
   br label %choice.exit11
 }
 
-define { i1, i64 } @"parser::choice_cont_at"(ptr %0, ptr %1, i64 %2) #0 {
+define { i1, i64 } @"parser::choice_cont_at"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.entry_indent = alloca i64, align 8
   %var.lhs = alloca ptr, align 8
@@ -120443,7 +120195,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::wrap_headless_choice"(ptr %0, { i1, i64 } %1) #0 {
+define { i1, i64 } @"parser::wrap_headless_choice"(ptr %0, { i1, i64 } %1) #3 {
 entry:
   %var.params = alloca ptr, align 8
   %var.ce = alloca ptr, align 8
@@ -120621,7 +120373,7 @@ a.after28:                                        ; preds = %a.create27, %a.stor
   br label %choice.exit8
 }
 
-define { i1, i64 } @"parser::seq_sequence"(ptr %0) #0 {
+define { i1, i64 } @"parser::seq_sequence"(ptr %0) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -120650,7 +120402,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::seq_loop"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::seq_loop"(ptr %0, ptr %1) #3 {
 entry:
   %var.n = alloca ptr, align 8
   %var.r = alloca ptr, align 8
@@ -120733,7 +120485,7 @@ choice.exit6:                                     ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_range_with_lhs"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_range_with_lhs"(ptr %0, ptr %1) #3 {
 entry:
   %var.rr = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -120932,7 +120684,7 @@ choice.exit41:                                    ; preds = %choice.else40, %cho
   br label %choice.exit32
 }
 
-define { i1, i64 } @"parser::parse_bp_lhs"(ptr %0, i64 %1, ptr %2) #0 {
+define { i1, i64 } @"parser::parse_bp_lhs"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %var.entry_indent = alloca i64, align 8
   %var.base_ind = alloca i64, align 8
@@ -120972,7 +120724,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::atom_var"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::atom_var"(ptr %0, ptr %1) #3 {
 entry:
   %var.text = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -120992,7 +120744,7 @@ entry:
   ret { i1, i64 } %ram.pay
 }
 
-define ptr @"parser::read_expr"(ptr %0, i64 %1) #0 {
+define ptr @"parser::read_expr"(ptr %0, i64 %1) #3 {
 entry:
   %var._22 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -121113,7 +120865,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define { i64, ptr } @"parser::read_str"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"parser::read_str"(ptr %0, i64 %1) #3 {
 entry:
   %var._22 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -121229,7 +120981,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define ptr @"parser::read_field"(ptr %0, i64 %1) #0 {
+define ptr @"parser::read_field"(ptr %0, i64 %1) #3 {
 entry:
   %var._22 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -121358,7 +121110,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define i1 @"parser::ti_refs_type"(ptr %0, ptr %1) #0 {
+define i1 @"parser::ti_refs_type"(ptr %0, ptr %1) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var._174 = alloca ptr, align 8
@@ -121794,7 +121546,7 @@ choice.next168:                                   ; preds = %choice.next155
   br label %choice.exit
 }
 
-define i1 @"parser::expr_refs_type"(ptr %0, ptr %1) #0 {
+define i1 @"parser::expr_refs_type"(ptr %0, ptr %1) #3 {
 entry:
   %var._501 = alloca ptr, align 8
   %var._i500 = alloca i64, align 8
@@ -122879,7 +122631,7 @@ ret.dead519:                                      ; No predecessors!
   br label %choice.exit518
 }
 
-define i1 @"parser::exprs_ref_type"(ptr %0, ptr %1) #0 {
+define i1 @"parser::exprs_ref_type"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -122959,7 +122711,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_program"(ptr %0) #0 {
+define { i1, i64 } @"parser::parse_program"(ptr %0) #3 {
 entry:
   %var.pruned = alloca ptr, align 8
   %var.stmts = alloca ptr, align 8
@@ -123089,7 +122841,7 @@ a.after28:                                        ; preds = %a.create27, %choice
   br label %choice.exit22
 }
 
-define { i1, i64 } @"parser::prog_loop"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::prog_loop"(ptr %0, ptr %1) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -123638,7 +123390,7 @@ a.after250:                                       ; preds = %a.create249, %choic
   br label %choice.exit235
 }
 
-define void @"parser::parser_skip_to_sync_point"(ptr %0, i64 %1) #0 {
+define void @"parser::parser_skip_to_sync_point"(ptr %0, i64 %1) #3 {
 entry:
   %var.d_ded = alloca i64, align 8
   %var.d_ind = alloca i64, align 8
@@ -123760,9 +123512,9 @@ choice.exit23:                                    ; preds = %choice.else22, %cho
   br label %choice.exit
 }
 
-declare i1 @"lexer::lex_failed"() #0
+declare i1 @"lexer::lex_failed"() #3
 
-define i1 @"parser::resolve_refs"(ptr %0, ptr %1) #0 {
+define i1 @"parser::resolve_refs"(ptr %0, ptr %1) #3 {
 entry:
   %cat.ibuf321 = alloca [24 x i8], align 1
   %cat.ibuf314 = alloca [24 x i8], align 1
@@ -124603,7 +124355,7 @@ abort.dead381:                                    ; No predecessors!
   br label %concat.tot.len379
 }
 
-define ptr @"parser::rec_elem_type"(ptr %0) #0 {
+define ptr @"parser::rec_elem_type"(ptr %0) #3 {
 entry:
   %var.r = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -124640,7 +124392,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"parser::rec_first_field_type"(ptr %0) #0 {
+define ptr @"parser::rec_first_field_type"(ptr %0) #3 {
 entry:
   %var.f = alloca ptr, align 8
   %rec.salloc = alloca { ptr, ptr, ptr, i1, ptr }, align 8
@@ -124795,7 +124547,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %fld.load
 }
 
-define { i1, i64 } @"parser::parse_indent_decl"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_indent_decl"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -124807,7 +124559,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define i1 @"parser::looks_like_mod_param"(ptr %0) #0 {
+define i1 @"parser::looks_like_mod_param"(ptr %0) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var._ = alloca i64, align 8
@@ -125008,7 +124760,7 @@ choice.next58:                                    ; preds = %choice.next22
   br label %choice.exit56
 }
 
-define { i1, i64 } @"parser::choice_cont_init"(ptr %0, ptr %1, i64 %2) #0 {
+define { i1, i64 } @"parser::choice_cont_init"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.init_bi = alloca i64, align 8
   %var.lhs = alloca ptr, align 8
@@ -125026,7 +124778,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define i1 @"parser::check_redundant_flag"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"parser::check_redundant_flag"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.is_pos = alloca i1, align 1
   %var.last = alloca ptr, align 8
@@ -125296,7 +125048,7 @@ choice.exit72:                                    ; preds = %choice.else71, %cho
   br label %choice.exit
 }
 
-define { i1, i64 } @"parser::parse_colon_type"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_colon_type"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -125308,7 +125060,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::parse_colon_type_vt"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_colon_type_vt"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -125320,7 +125072,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::parse_zero_sig"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_zero_sig"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -125332,7 +125084,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::parse_colon_type_vt_rest"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_colon_type_vt_rest"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -125344,7 +125096,7 @@ entry:
   ret { i1, i64 } %call.res
 }
 
-define { i64, ptr } @"parser::fwd_fields_str"(ptr %0) #0 {
+define { i64, ptr } @"parser::fwd_fields_str"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca ptr, align 8
@@ -125611,7 +125363,7 @@ abort.dead61:                                     ; No predecessors!
   br label %b.new.buf.len259
 }
 
-define { i1, i64 } @"parser::sig_params"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define { i1, i64 } @"parser::sig_params"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.first_tn = alloca ptr, align 8
   %var.infos = alloca ptr, align 8
@@ -125672,7 +125424,7 @@ a.after9:                                         ; preds = %a.create8, %a.after
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::ct_signature"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define { i1, i64 } @"parser::ct_signature"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.cps = alloca ptr, align 8
   %var.prior_names = alloca ptr, align 8
@@ -125710,7 +125462,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::ct_params_tail"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define { i1, i64 } @"parser::ct_params_tail"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.cps = alloca ptr, align 8
   %var.ct_names = alloca ptr, align 8
@@ -125748,7 +125500,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::ct_runtime_params"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define { i1, i64 } @"parser::ct_runtime_params"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.infos = alloca ptr, align 8
   %var.params = alloca ptr, align 8
@@ -125832,7 +125584,7 @@ a.after23:                                        ; preds = %a.create22, %a.afte
   ret { i1, i64 } %call.res
 }
 
-define { i1, i64 } @"parser::ct_signature_arrow"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define { i1, i64 } @"parser::ct_signature_arrow"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.infos = alloca ptr, align 8
   %var.params = alloca ptr, align 8
@@ -125916,7 +125668,7 @@ a.after23:                                        ; preds = %a.create22, %a.afte
   ret { i1, i64 } %call.res
 }
 
-define ptr @"parser::acc_add_cp"(ptr %0, ptr %1) #0 {
+define ptr @"parser::acc_add_cp"(ptr %0, ptr %1) #3 {
 entry:
   %var.out = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -126041,7 +125793,7 @@ a.after36:                                        ; preds = %a.create35, %a.stor
   ret ptr %a.load244
 }
 
-define ptr @"parser::cparams_of_names"(ptr %0, i64 %1, ptr %2, ptr %3) #0 {
+define ptr @"parser::cparams_of_names"(ptr %0, i64 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.next_acc = alloca ptr, align 8
   %var.c = alloca i64, align 8
@@ -126385,7 +126137,7 @@ a.after135:                                       ; preds = %a.create134, %conca
   br label %choice.exit38
 }
 
-define { i1, i64 } @"parser::sig_arrow"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define { i1, i64 } @"parser::sig_arrow"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.first_tn = alloca ptr, align 8
   %var.infos = alloca ptr, align 8
@@ -126446,7 +126198,7 @@ a.after9:                                         ; preds = %a.create8, %a.after
   ret { i1, i64 } %call.res
 }
 
-define i64 @"parser::decl_mod_prefix_at"(ptr %0, i64 %1, i64 %2) #0 {
+define i64 @"parser::decl_mod_prefix_at"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.next = alloca i64, align 8
   %var.last = alloca i64, align 8
@@ -126549,7 +126301,7 @@ choice.exit28:                                    ; preds = %choice.else27, %cho
   br label %choice.exit
 }
 
-define { i64, ptr } @"parser::decl_mod_prefix"(ptr %0) #0 {
+define { i64, ptr } @"parser::decl_mod_prefix"(ptr %0) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.pos = alloca i64, align 8
@@ -126602,7 +126354,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define { i1, i64 } @"parser::lookup_const_entry_mod"(ptr %0, ptr %1, ptr %2) #0 {
+define { i1, i64 } @"parser::lookup_const_entry_mod"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %concat.str93 = alloca { i64, ptr }, align 8
   %var.r1 = alloca { i1, i64 }, align 8
@@ -126878,7 +126630,7 @@ a.after101:                                       ; preds = %a.create100, %choic
   br label %choice.exit
 }
 
-define ptr @"parser::fold_const_expr_mod"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"parser::fold_const_expr_mod"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var._240 = alloca ptr, align 8
   %var.pr = alloca ptr, align 8
@@ -127379,7 +127131,7 @@ a.after246:                                       ; preds = %a.create245, %choic
   br label %choice.exit232
 }
 
-define i1 @"parser::is_fwd_marker_expr"(ptr %0) #0 {
+define i1 @"parser::is_fwd_marker_expr"(ptr %0) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -127428,7 +127180,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %choice.exit
 }
 
-define ptr @"parser::fold_program_consts"(ptr %0) #0 {
+define ptr @"parser::fold_program_consts"(ptr %0) #3 {
 entry:
   %var.eff_re = alloca ptr, align 8
   %var.folded_re = alloca ptr, align 8
@@ -128230,7 +127982,7 @@ a.after366:                                       ; preds = %a.create365, %loop.
   ret ptr %a.load2374
 }
 
-define { i1, i64 } @"parser::parse_cycle_with_lhs"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_cycle_with_lhs"(ptr %0, ptr %1) #3 {
 entry:
   %var.ce = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -128265,7 +128017,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define { i1, i64 } @"parser::parse_choice_with_lhs"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"parser::parse_choice_with_lhs"(ptr %0, ptr %1) #3 {
 entry:
   %var.re = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -128300,10 +128052,10 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { cold noinline "nounwind" }
 attributes #6 = { cold noinline noreturn "nounwind" }

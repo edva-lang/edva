@@ -3,54 +3,8 @@ source_filename = "dva_module"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-@fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
-@str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@"var.ast::cell_var_names" = external global ptr
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
 @str.0 = internal unnamed_addr constant [1 x i8] zeroinitializer
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 0, ptr @str.0 }
 @"var.layout::target_triple" = global ptr null
@@ -91,21 +45,8 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.layout::compute_layout" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_layout, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
-; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
-
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #0 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -139,30 +80,12 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
-
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #1
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
+declare i1 @dva_arena_validate_tag(ptr, i64) #1
 
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_layout() #0 {
+define internal void @__dva_global_init_layout() #2 {
 entry:
   store ptr @str.0.struct, ptr @"var.layout::target_triple", align 8
   store ptr @clo.const, ptr @"var.layout::set_target_triple", align 8
@@ -176,7 +99,7 @@ entry:
   ret void
 }
 
-define void @"layout::set_target_triple"(ptr %0) #0 {
+define void @"layout::set_target_triple"(ptr %0) #2 {
 entry:
   %var.t = alloca ptr, align 8
   store ptr %0, ptr %var.t, align 8
@@ -185,7 +108,7 @@ entry:
   ret void
 }
 
-define i1 @"layout::is_32bit_triple"(ptr %0) #0 {
+define i1 @"layout::is_32bit_triple"(ptr %0) #2 {
 entry:
   %var.triple = alloca ptr, align 8
   store ptr %0, ptr %var.triple, align 8
@@ -394,10 +317,10 @@ str.eq.merge108:                                  ; preds = %str.eq.else107, %st
   br i1 %case.or115, label %choice.case, label %choice.next
 }
 
-declare { i64, ptr } @"ast::triple_arch"(ptr) #0
+declare { i64, ptr } @"ast::triple_arch"(ptr) #2
 
 ; Function Attrs: cold noinline
-define internal void @dva_validate_tag_or_abort_stale_str_msg(i64 %0) #4 {
+define internal void @dva_validate_tag_or_abort_stale_str_msg(i64 %0) #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %0)
@@ -415,7 +338,7 @@ abort.dead:                                       ; No predecessors!
 }
 
 ; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_stale_str_msg() #5 {
+define internal void @dva_abort_stale_str_msg() #4 {
 entry:
   %0 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
@@ -428,18 +351,18 @@ abort.dead:                                       ; No predecessors!
 declare i64 @write(i32, ptr, i64)
 
 ; Function Attrs: cold noreturn
-declare void @exit(i32) #6
+declare void @exit(i32) #5
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #2
 
-define i1 @"layout::is_32bit_target"() #0 {
+define i1 @"layout::is_32bit_target"() #2 {
 entry:
   %var.load = load ptr, ptr @"var.layout::target_triple", align 8
   %call.res = call i1 @"layout::is_32bit_triple"(ptr %var.load)
   ret i1 %call.res
 }
 
-define i64 @"layout::align_up"(i64 %0, i64 %1) #0 {
+define i64 @"layout::align_up"(i64 %0, i64 %1) #2 {
 entry:
   %var.align = alloca i64, align 8
   %var.offset = alloca i64, align 8
@@ -494,7 +417,7 @@ abort.dead5:                                      ; No predecessors!
 }
 
 ; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_div_zero_msg() #5 {
+define internal void @dva_abort_div_zero_msg() #4 {
 entry:
   %0 = call i64 @write(i32 2, ptr @div_zero_msg, i64 32)
   call void @exit(i32 1)
@@ -505,7 +428,7 @@ abort.dead:                                       ; No predecessors!
 }
 
 ; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_div_ovf_msg() #5 {
+define internal void @dva_abort_div_ovf_msg() #4 {
 entry:
   %0 = call i64 @write(i32 2, ptr @div_ovf_msg, i64 55)
   call void @exit(i32 1)
@@ -515,7 +438,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define ptr @"layout::compute_prim_layout"(ptr %0) #0 {
+define ptr @"layout::compute_prim_layout"(ptr %0) #2 {
 entry:
   %var.ptr_align = alloca i64, align 8
   %var.ptr_sz = alloca i64, align 8
@@ -756,13 +679,13 @@ choice.exit119:                                   ; preds = %choice.else118, %ch
   br label %choice.exit6
 }
 
-declare ptr @"tast::layout_scalar"(i64, i64) #0
+declare ptr @"tast::layout_scalar"(i64, i64) #2
 
-declare ptr @"tast::layout_void"() #0
+declare ptr @"tast::layout_void"() #2
 
-declare ptr @"tast::layout_aggregate"(i64, i64) #0
+declare ptr @"tast::layout_aggregate"(i64, i64) #2
 
-define i1 @"layout::is_niche_utype"(ptr %0, ptr %1) #0 {
+define i1 @"layout::is_niche_utype"(ptr %0, ptr %1) #2 {
 entry:
   %var.r = alloca ptr, align 8
   %var._18 = alloca ptr, align 8
@@ -851,9 +774,9 @@ a.after:                                          ; preds = %a.create, %choice.c
   br label %choice.exit
 }
 
-declare ptr @"unify::canon"(ptr, ptr) #0
+declare ptr @"unify::canon"(ptr, ptr) #2
 
-define ptr @"layout::classify_ram_layout"(i1 %0, i1 %1, i1 %2, i1 %3) #0 {
+define ptr @"layout::classify_ram_layout"(i1 %0, i1 %1, i1 %2, i1 %3) #2 {
 entry:
   %var.ptr_align = alloca i64, align 8
   %var.ptr_sz = alloca i64, align 8
@@ -1001,15 +924,15 @@ choice.exit43:                                    ; preds = %choice.else42, %cho
   br label %choice.exit26
 }
 
-declare ptr @"tast::layout_ram_niche_pos"(i64, i64) #0
+declare ptr @"tast::layout_ram_niche_pos"(i64, i64) #2
 
-declare ptr @"tast::layout_ram_unboxed"(i64, i64) #0
+declare ptr @"tast::layout_ram_unboxed"(i64, i64) #2
 
-declare ptr @"tast::layout_ram_niche_neg"(i64, i64) #0
+declare ptr @"tast::layout_ram_niche_neg"(i64, i64) #2
 
-declare ptr @"tast::layout_ram_flag"() #0
+declare ptr @"tast::layout_ram_flag"() #2
 
-define ptr @"layout::compute_layout"(ptr %0, ptr %1) #0 {
+define ptr @"layout::compute_layout"(ptr %0, ptr %1) #2 {
 entry:
   %var._148 = alloca ptr, align 8
   %var._128 = alloca ptr, align 8
@@ -1362,14 +1285,14 @@ choice.next142:                                   ; preds = %choice.next122
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare i64 @llvm.smax.i64(i64, i64) #1
+declare i64 @llvm.smax.i64(i64, i64) #6
 
-declare ptr @"tast::layout_record"(i64, i64) #0
+declare ptr @"tast::layout_record"(i64, i64) #2
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
-attributes #4 = { cold noinline "nounwind" }
-attributes #5 = { cold noinline noreturn "nounwind" }
-attributes #6 = { cold noreturn "nounwind" }
+attributes #0 = { alwaysinline "nounwind" }
+attributes #1 = { noinline "nounwind" }
+attributes #2 = { "nounwind" }
+attributes #3 = { cold noinline "nounwind" }
+attributes #4 = { cold noinline noreturn "nounwind" }
+attributes #5 = { cold noreturn "nounwind" }
+attributes #6 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }

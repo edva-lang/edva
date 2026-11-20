@@ -4,110 +4,17 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@sys_argc_global = external global i64
-@sys_argv_global = external global ptr
-@"var.annotate::cur_expected_ut" = external global { i1, i64 }
-@"var.main::empty_fndef" = external global ptr
-@"var.stmt::empty_fndef" = external global ptr
 @"var.stmt::lambda_expected_ti" = external global ptr
-@"var.match::empty_fndef" = external global ptr
-@"var.runtime::empty_fndef" = external global ptr
-@"var.types::codegen_layout" = external global ptr
 @"var.expr::empty_fndef" = global ptr null
-@"var.ast::cell_var_names" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
 @"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
 @"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
 @"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
 @"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
-@"var.layout::target_triple" = external global ptr
-@"var.sys::STDIN" = external global i64
-@"var.sys::STDOUT" = external global i64
-@"var.sys::STDERR" = external global i64
 @"var.sys::addr_null" = external global ptr
-@"var.time::CLOCK_REALTIME" = external global i64
-@"var.time::CLOCK_MONOTONIC" = external global i64
-@"var.time::NS_PER_US" = external global i64
-@"var.time::NS_PER_MS" = external global i64
-@"var.time::NS_PER_SEC" = external global i64
-@"var.time::SEC_PER_MIN" = external global i64
-@"var.time::SEC_PER_HOUR" = external global i64
-@"var.time::SEC_PER_DAY" = external global i64
-@"var.log::#owned_fd" = external global i64
-@"var.log::#O_LOG_APPEND" = external global i64
-@"var.annotate::cur_source_file" = external global ptr
-@"var.annotate::cur_target_triple" = external global ptr
-@"var.annotate::cur_stmt_files" = external global ptr
-@"var.annotate::cur_stmt_lines" = external global ptr
-@"var.annotate::cur_stmt_cols" = external global ptr
-@"var.annotate::cur_stmt_mods" = external global ptr
-@"var.annotate::cur_is_call_arg" = external global i1
-@"var.annotate::in_ct_expr" = external global i1
-@"var.annotate::cur_fn_name" = external global ptr
-@"var.annotate::unroll_seq" = external global i64
-@"var.annotate::cur_program_exprs" = external global ptr
-@"var.annotate::invalid_scc_fns" = external global ptr
-@"var.annotate::cur_ct_types" = external global ptr
-@"var.annotate::cur_ct_vals" = external global ptr
-@"var.annotate::cur_ct_cursors" = external global ptr
-@"var.annotate::cur_ct_ints" = external global ptr
-@"var.annotate::view_vars" = external global ptr
-@"var.annotate::declared_fns" = external global ptr
-@"var.annotate::called_fns" = external global ptr
-@"var.annotate::user_fns" = external global ptr
-@"var.annotate::value_used_fns" = external global ptr
-@"var.annotate::fn_alias_vars" = external global ptr
-@"var.annotate::fn_alias_tgts" = external global ptr
-@"var.path::SEP" = external global i32
-@"var.path::SEP_STR" = external global ptr
-@"var.path::LIST_SEP" = external global i32
-@"var.path::LIST_SEP_STR" = external global ptr
-@"var.path::IS_WIN" = external global i1
-@"var.types::empty_fndef" = external global ptr
 @"var.types::g" = external global ptr
-@"var.types::fneff" = external global ptr
-@"var.types::cg_timings" = external global ptr
 @"var.types::vra" = external global ptr
 @clo.const = internal constant { ptr, ptr } { ptr @"expr::c_str", ptr null }
 @"var.expr::c_str" = global ptr null
@@ -2567,21 +2474,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.expr::codegen_typed_eval_cast_other" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_expr, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -2615,30 +2512,12 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
-
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_expr() #0 {
+define internal void @__dva_global_init_expr() #3 {
 entry:
   store ptr @clo.const, ptr @"var.expr::c_str", align 8
   store ptr @clo.const.1, ptr @"var.expr::dbg", align 8
@@ -3034,27 +2913,11 @@ entry:
   ret void
 }
 
-declare ptr @LLVMModuleCreateWithName(ptr)
-
-declare void @LLVMDisposeModule(ptr)
-
-declare i64 @LLVMPrintModuleToFile(ptr, ptr, ptr)
-
-declare void @LLVMDisposeMessage(ptr)
-
-declare i64 @LLVMVerifyModule(ptr, i64, ptr)
-
-declare ptr @LLVMCreateBuilder()
-
-declare void @LLVMDisposeBuilder(ptr)
-
 declare ptr @LLVMVoidType()
 
 declare ptr @LLVMInt64Type()
 
 declare ptr @LLVMInt32Type()
-
-declare ptr @LLVMInt16Type()
 
 declare ptr @LLVMInt8Type()
 
@@ -3067,8 +2930,6 @@ declare ptr @LLVMFloatType()
 declare ptr @LLVMPointerType(ptr, i64)
 
 declare ptr @LLVMArrayType(ptr, i64)
-
-declare ptr @LLVMStructType(ptr, i64, i64)
 
 declare ptr @LLVMStructGetTypeAtIndex(ptr, i64)
 
@@ -3100,19 +2961,9 @@ declare i64 @LLVMConstIntGetZExtValue(ptr)
 
 declare ptr @LLVMConstReal(ptr, double)
 
-declare ptr @LLVMConstString(ptr, i64, i64)
-
-declare ptr @LLVMConstGEP2(ptr, ptr, ptr, i64)
-
 declare ptr @LLVMConstStruct(ptr, i64, i64)
 
-declare ptr @LLVMConstArray2(ptr, ptr, i64)
-
-declare ptr @LLVMConstPtrToInt(ptr, ptr)
-
 declare ptr @LLVMConstPointerCast(ptr, ptr)
-
-declare ptr @LLVMConstAdd(ptr, ptr)
 
 declare ptr @LLVMAddGlobal(ptr, ptr, ptr)
 
@@ -3122,13 +2973,7 @@ declare void @LLVMSetInitializer(ptr, ptr)
 
 declare void @LLVMSetGlobalConstant(ptr, i64)
 
-declare void @LLVMSetUnnamedAddr(ptr, i64)
-
 declare void @LLVMSetLinkage(ptr, i64)
-
-declare void @LLVMSetSection(ptr, ptr)
-
-declare void @LLVMSetThreadLocal(ptr, i64)
 
 declare ptr @LLVMBuildAlloca(ptr, ptr, ptr)
 
@@ -3145,8 +2990,6 @@ declare ptr @LLVMBuildExtractElement(ptr, ptr, ptr, ptr)
 declare ptr @LLVMBuildShuffleVector(ptr, ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildLoad2(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildGEP2(ptr, ptr, ptr, ptr, i64, ptr)
 
 declare ptr @LLVMBuildStructGEP2(ptr, ptr, ptr, i64, ptr)
 
@@ -3190,14 +3033,6 @@ declare ptr @LLVMBuildLShr(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildAShr(ptr, ptr, ptr, ptr)
 
-declare ptr @LLVMBuildFCmp(ptr, i64, ptr, ptr, ptr)
-
-declare i64 @LLVMCanValueUseFastMathFlags(ptr)
-
-declare i64 @LLVMGetFastMathFlags(ptr)
-
-declare void @LLVMSetFastMathFlags(ptr, i64)
-
 declare ptr @LLVMBuildSIToFP(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildUIToFP(ptr, ptr, ptr, ptr)
@@ -3218,17 +3053,9 @@ declare ptr @LLVMBuildCondBr(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildPhi(ptr, ptr, ptr)
 
-declare void @LLVMAddIncoming(ptr, ptr, ptr, i64)
-
-declare ptr @LLVMBuildSwitch(ptr, ptr, ptr, i64)
-
-declare void @LLVMAddCase(ptr, ptr, ptr)
-
 declare ptr @LLVMGetInsertBlock(ptr)
 
 declare ptr @LLVMGetBasicBlockParent(ptr)
-
-declare ptr @LLVMGetBasicBlockTerminator(ptr)
 
 declare ptr @LLVMBuildRet(ptr, ptr)
 
@@ -3262,8 +3089,6 @@ declare ptr @LLVMBuildInsertValue(ptr, ptr, ptr, i64, ptr)
 
 declare ptr @LLVMTypeOf(ptr)
 
-declare void @LLVMSetVolatile(ptr, i64)
-
 declare i64 @LLVMGetIntTypeWidth(ptr)
 
 declare ptr @LLVMBuildNot(ptr, ptr, ptr)
@@ -3274,394 +3099,12 @@ declare ptr @LLVMBuildFNeg(ptr, ptr, ptr)
 
 declare i64 @LLVMGetTypeKind(ptr)
 
-declare ptr @LLVMGetEntryBasicBlock(ptr)
-
-declare ptr @LLVMGetFirstInstruction(ptr)
-
-declare void @LLVMPositionBuilderBefore(ptr, ptr)
-
-declare void @LLVMDisposeTargetData(ptr)
-
-declare i64 @LLVMABISizeOfType(ptr, ptr)
-
-declare i64 @LLVMABIAlignmentOfType(ptr, ptr)
-
-declare void @LLVMSetDataLayout(ptr, ptr)
-
-declare void @LLVMSetTarget(ptr, ptr)
-
-declare ptr @LLVMGetDefaultTargetTriple()
-
-declare i64 @LLVMGetTargetFromTriple(ptr, ptr, ptr)
-
-declare ptr @LLVMCreateTargetMachine(ptr, ptr, ptr, ptr, i64, i64, i64)
-
-declare void @LLVMDisposeTargetMachine(ptr)
-
-declare ptr @LLVMCreateTargetDataLayout(ptr)
-
-declare ptr @LLVMCopyStringRepOfTargetData(ptr)
-
-declare void @LLVMInitializeAArch64Target()
-
-declare void @LLVMInitializeAArch64TargetInfo()
-
-declare void @LLVMInitializeAArch64TargetMC()
-
-declare void @LLVMInitializeAMDGPUTarget()
-
-declare void @LLVMInitializeAMDGPUTargetInfo()
-
-declare void @LLVMInitializeAMDGPUTargetMC()
-
-declare void @LLVMInitializeARMTarget()
-
-declare void @LLVMInitializeARMTargetInfo()
-
-declare void @LLVMInitializeARMTargetMC()
-
-declare void @LLVMInitializeAVRTarget()
-
-declare void @LLVMInitializeAVRTargetInfo()
-
-declare void @LLVMInitializeAVRTargetMC()
-
-declare void @LLVMInitializeBPFTarget()
-
-declare void @LLVMInitializeBPFTargetInfo()
-
-declare void @LLVMInitializeBPFTargetMC()
-
-declare void @LLVMInitializeHexagonTarget()
-
-declare void @LLVMInitializeHexagonTargetInfo()
-
-declare void @LLVMInitializeHexagonTargetMC()
-
-declare void @LLVMInitializeLanaiTarget()
-
-declare void @LLVMInitializeLanaiTargetInfo()
-
-declare void @LLVMInitializeLanaiTargetMC()
-
-declare void @LLVMInitializeLoongArchTarget()
-
-declare void @LLVMInitializeLoongArchTargetInfo()
-
-declare void @LLVMInitializeLoongArchTargetMC()
-
-declare void @LLVMInitializeMipsTarget()
-
-declare void @LLVMInitializeMipsTargetInfo()
-
-declare void @LLVMInitializeMipsTargetMC()
-
-declare void @LLVMInitializeMSP430Target()
-
-declare void @LLVMInitializeMSP430TargetInfo()
-
-declare void @LLVMInitializeMSP430TargetMC()
-
-declare void @LLVMInitializeNVPTXTarget()
-
-declare void @LLVMInitializeNVPTXTargetInfo()
-
-declare void @LLVMInitializeNVPTXTargetMC()
-
-declare void @LLVMInitializePowerPCTarget()
-
-declare void @LLVMInitializePowerPCTargetInfo()
-
-declare void @LLVMInitializePowerPCTargetMC()
-
-declare void @LLVMInitializeRISCVTarget()
-
-declare void @LLVMInitializeRISCVTargetInfo()
-
-declare void @LLVMInitializeRISCVTargetMC()
-
-declare void @LLVMInitializeSparcTarget()
-
-declare void @LLVMInitializeSparcTargetInfo()
-
-declare void @LLVMInitializeSparcTargetMC()
-
-declare void @LLVMInitializeSystemZTarget()
-
-declare void @LLVMInitializeSystemZTargetInfo()
-
-declare void @LLVMInitializeSystemZTargetMC()
-
-declare void @LLVMInitializeVETarget()
-
-declare void @LLVMInitializeVETargetInfo()
-
-declare void @LLVMInitializeVETargetMC()
-
-declare void @LLVMInitializeWebAssemblyTarget()
-
-declare void @LLVMInitializeWebAssemblyTargetInfo()
-
-declare void @LLVMInitializeWebAssemblyTargetMC()
-
-declare void @LLVMInitializeX86Target()
-
-declare void @LLVMInitializeX86TargetInfo()
-
-declare void @LLVMInitializeX86TargetMC()
-
-declare void @LLVMInitializeXCoreTarget()
-
-declare void @LLVMInitializeXCoreTargetInfo()
-
-declare void @LLVMInitializeXCoreTargetMC()
-
-declare void @LLVMInitializeAArch64AsmPrinter()
-
-declare void @LLVMInitializeAMDGPUAsmPrinter()
-
-declare void @LLVMInitializeARMAsmPrinter()
-
-declare void @LLVMInitializeAVRAsmPrinter()
-
-declare void @LLVMInitializeBPFAsmPrinter()
-
-declare void @LLVMInitializeHexagonAsmPrinter()
-
-declare void @LLVMInitializeLanaiAsmPrinter()
-
-declare void @LLVMInitializeLoongArchAsmPrinter()
-
-declare void @LLVMInitializeMipsAsmPrinter()
-
-declare void @LLVMInitializeMSP430AsmPrinter()
-
-declare void @LLVMInitializeNVPTXAsmPrinter()
-
-declare void @LLVMInitializePowerPCAsmPrinter()
-
-declare void @LLVMInitializeRISCVAsmPrinter()
-
-declare void @LLVMInitializeSparcAsmPrinter()
-
-declare void @LLVMInitializeSystemZAsmPrinter()
-
-declare void @LLVMInitializeVEAsmPrinter()
-
-declare void @LLVMInitializeWebAssemblyAsmPrinter()
-
-declare void @LLVMInitializeX86AsmPrinter()
-
-declare void @LLVMInitializeXCoreAsmPrinter()
-
-declare ptr @LLVMOrcCreateLLJITBuilder()
-
-declare void @LLVMOrcDisposeLLJITBuilder(ptr)
-
-declare ptr @LLVMOrcCreateLLJIT(ptr, ptr)
-
-declare ptr @LLVMOrcDisposeLLJIT(ptr)
-
-declare ptr @LLVMOrcLLJITGetMainJITDylib(ptr)
-
-declare ptr @LLVMOrcLLJITAddLLVMIRModule(ptr, ptr, ptr)
-
-declare ptr @LLVMOrcLLJITLookup(ptr, ptr, ptr)
-
-declare ptr @LLVMOrcCreateNewThreadSafeContext()
-
-declare void @LLVMOrcDisposeThreadSafeContext(ptr)
-
-declare ptr @LLVMOrcCreateNewThreadSafeModule(ptr, ptr)
-
-declare void @LLVMOrcDisposeThreadSafeModule(ptr)
-
-declare ptr @LLVMOrcCreateDynamicLibrarySearchGeneratorForProcess(ptr, i64, ptr, ptr)
-
-declare void @LLVMOrcJITDylibAddGenerator(ptr, ptr)
-
-declare ptr @LLVMGetErrorMessage(ptr)
-
-declare void @LLVMDisposeErrorMessage(ptr)
-
-declare void @LLVMConsumeError(ptr)
-
-declare ptr @LLVMGetGlobalContext()
-
-declare ptr @LLVMCreateStringAttribute(ptr, ptr, i64, ptr, i64)
-
-declare i64 @LLVMGetEnumAttributeKindForName(ptr, i64)
-
-declare ptr @LLVMCreateEnumAttribute(ptr, i64, i64)
-
-declare void @LLVMAddAttributeAtIndex(ptr, i64, ptr)
-
-declare i64 @LLVMGetMDKindIDInContext(ptr, ptr, i64)
-
-declare ptr @LLVMValueAsMetadata(ptr)
-
-declare ptr @LLVMMDNodeInContext2(ptr, ptr, i64)
-
-declare ptr @LLVMMetadataAsValue(ptr, ptr)
-
-declare void @LLVMSetMetadata(ptr, i64, ptr)
-
-declare i32 @open(ptr, i32)
-
-declare i64 @creat(ptr, i64)
-
-declare i32 @close(i32)
-
-declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @posix_spawnp(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @waitpid(i64, ptr, i64)
-
-declare i64 @read(i32, ptr, i64)
-
-declare i64 @lseek(i32, i64, i64)
-
 declare i64 @write(i32, ptr, i64)
-
-declare i64 @writev(i32, ptr, i64)
-
-declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
 
-declare i64 @htons(i64)
-
-declare i64 @htonl(i64)
-
-declare i64 @ntohs(i64)
-
-declare i64 @ntohl(i64)
-
-declare i64 @inet_addr(ptr)
-
-declare i64 @socket(i64, i64, i64)
-
-declare i64 @connect(i64, ptr, i64)
-
-declare i64 @bind(i64, ptr, i64)
-
-declare i64 @listen(i64, i64)
-
-declare i64 @accept(i64, ptr, ptr)
-
-declare i64 @send(i64, ptr, i64, i32)
-
-declare i64 @recv(i64, ptr, i64, i32)
-
-declare i64 @sendto(i64, ptr, i64, i32, ptr, i64)
-
-declare i64 @recvfrom(i64, ptr, i64, i32, ptr, ptr)
-
-declare i64 @setsockopt(i64, i64, i64, ptr, i64)
-
-declare i64 @getsockopt(i64, i64, i64, ptr, ptr)
-
-declare i64 @getpeername(i64, ptr, ptr)
-
-declare i64 @getsockname(i64, ptr, ptr)
-
-declare i64 @shutdown(i64, i64)
-
-declare i64 @fcntl(i32, i64, i64)
-
-declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
-
-declare void @freeaddrinfo(ptr)
-
-declare i64 @getifaddrs(ptr)
-
-declare void @freeifaddrs(ptr)
-
-declare ptr @memset(ptr, i64, i64)
-
-declare i64 @atoi(ptr)
-
-declare ptr @opendir(ptr)
-
-declare ptr @readdir(ptr)
-
-declare i64 @closedir(ptr)
-
-declare i64 @strlen(ptr) #0
-
-declare i64 @strcmp(ptr, ptr)
-
-declare ptr @memcpy(ptr, ptr, i64)
-
-declare ptr @memmove(ptr, ptr, i64)
-
-declare i64 @stat(ptr, ptr)
-
-declare i64 @fstat(i32, ptr)
-
-declare i64 @rename(ptr, ptr)
-
-declare i64 @unlink(ptr)
-
-declare i64 @pipe(ptr)
-
-declare ptr @__errno_location()
-
-declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
-
-declare i64 @munmap(ptr, i64)
-
-declare i64 @syscall(i64, ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @dlopen(ptr, i32)
-
-declare ptr @dlsym(ptr, ptr)
-
-declare i64 @dlclose(ptr)
-
-declare ptr @dlerror()
-
-declare i64 @system(ptr)
-
-declare ptr @realpath(ptr, ptr)
-
-declare i64 @isatty(i32)
-
-declare i64 @tcgetattr(i32, ptr)
-
-declare i64 @tcsetattr(i32, i64, ptr)
-
-declare void @cfmakeraw(ptr)
-
-declare i64 @poll(ptr, i64, i64)
-
-declare i64 @epoll_create1(i32)
-
-declare i64 @epoll_ctl(i64, i64, i32, ptr)
-
-declare i64 @epoll_wait(i64, ptr, i64, i64)
-
-declare i64 @time(ptr)
-
-declare ptr @signal(i64, ptr)
-
-declare i64 @raise(i64)
-
-declare i64 @getrlimit(i64, ptr)
-
-declare i64 @setrlimit(i64, ptr)
-
-declare i64 @uname(ptr)
-
-declare i32 @nanosleep(ptr, ptr)
-
-declare ptr @localtime_r(ptr, ptr)
-
-declare ptr @strptime(ptr, ptr, ptr)
-
-define { i64, ptr } @"expr::c_str"(ptr %0) #0 {
+define { i64, ptr } @"expr::c_str"(ptr %0) #3 {
 entry:
   %var.raw = alloca ptr, align 8
   store ptr %0, ptr %var.raw, align 8
@@ -3674,9 +3117,9 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-declare { i64, ptr } @"types::c_str"(ptr) #0
+declare { i64, ptr } @"types::c_str"(ptr) #3
 
-define i64 @"expr::dbg"(ptr %0) #0 {
+define i64 @"expr::dbg"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -3685,9 +3128,9 @@ entry:
   ret i64 %call.res
 }
 
-declare i64 @"types::dbg"(ptr) #0
+declare i64 @"types::dbg"(ptr) #3
 
-define internal i64 @"expr::#print"(ptr %0) #0 {
+define internal i64 @"expr::#print"(ptr %0) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -3957,7 +3400,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define ptr @"expr::codegen_arena_current"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_arena_current"(ptr %0, ptr %1) #3 {
 entry:
   %var.active = alloca ptr, align 8
   %var.atp = alloca ptr, align 8
@@ -4081,9 +3524,9 @@ abort.dead43:                                     ; No predecessors!
   br label %nulcopy.len41
 }
 
-declare ptr @"runtime::arena_type"(ptr) #0
+declare ptr @"runtime::arena_type"(ptr) #3
 
-define ptr @"expr::codegen_call_arena_alloc"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_call_arena_alloc"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.size = alloca ptr, align 8
@@ -4177,9 +3620,9 @@ abort.dead23:                                     ; No predecessors!
   unreachable
 }
 
-declare { i64, ptr } @"diag::E3140_no_runtime_arena"() #0
+declare { i64, ptr } @"diag::E3140_no_runtime_arena"() #3
 
-declare void @"types::init_error"(ptr, ptr, ptr, i64, i64) #0
+declare void @"types::init_error"(ptr, ptr, ptr, i64, i64) #3
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_unwrap_abort_msg() #6 {
@@ -4192,9 +3635,9 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare ptr @"types::call1"(ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"types::call1"(ptr, ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_call_arena_alloc_live"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_call_arena_alloc_live"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.fn = alloca ptr, align 8
   %var.args = alloca ptr, align 8
@@ -4354,9 +3797,9 @@ abort.dead62:                                     ; No predecessors!
   br label %nulcopy.len60
 }
 
-declare ptr @"types::fn_type2"(ptr, ptr, ptr, ptr) #0
+declare ptr @"types::fn_type2"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_call_arena_alloc_in"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_call_arena_alloc_in"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.fn = alloca ptr, align 8
   %var.args = alloca ptr, align 8
@@ -4517,7 +3960,7 @@ abort.dead61:                                     ; No predecessors!
   br label %nulcopy.len59
 }
 
-define ptr @"expr::codegen_call_arena_save"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_call_arena_save"(ptr %0, ptr %1) #3 {
 entry:
   %var.fn = alloca ptr, align 8
   %var.cur = alloca ptr, align 8
@@ -4593,9 +4036,9 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len15
 }
 
-declare ptr @"types::fn_type1"(ptr, ptr) #0
+declare ptr @"types::fn_type1"(ptr, ptr) #3
 
-define ptr @"expr::codegen_call_arena_restore"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_call_arena_restore"(ptr %0, ptr %1) #3 {
 entry:
   %var.fn = alloca ptr, align 8
   %var.args = alloca ptr, align 8
@@ -4731,7 +4174,7 @@ abort.dead54:                                     ; No predecessors!
   br label %nulcopy.len52
 }
 
-define ptr @"expr::codegen_arena_generation"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_arena_generation"(ptr %0, ptr %1) #3 {
 entry:
   %var.gt = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -4871,9 +4314,9 @@ abort.dead39:                                     ; No predecessors!
   br label %nulcopy.len37
 }
 
-declare { i1, i64 } @"types::llvm_val_opt"(ptr) #0
+declare { i1, i64 } @"types::llvm_val_opt"(ptr) #3
 
-define ptr @"expr::codegen_call_arena_validate_tag"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_call_arena_validate_tag"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.args = alloca ptr, align 8
   %var.fn_t = alloca ptr, align 8
@@ -5130,7 +4573,7 @@ abort.dead106:                                    ; No predecessors!
   br label %nulcopy.len104
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -5178,7 +4621,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #6 {
@@ -5191,9 +4634,9 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare ptr @"stmt::fn_type_n"(ptr, ptr, ptr, i64) #0
+declare ptr @"stmt::fn_type_n"(ptr, ptr, ptr, i64) #3
 
-define ptr @"expr::arena_tag_slow_helper"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::arena_tag_slow_helper"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.valid = alloca ptr, align 8
   %var.cur = alloca ptr, align 8
@@ -5652,13 +5095,13 @@ abort.dead163:                                    ; No predecessors!
   br label %nulcopy.len161
 }
 
-declare void @"runtime::mark_fn_enum_attr"(ptr, ptr, ptr) #0
+declare void @"runtime::mark_fn_enum_attr"(ptr, ptr, ptr) #3
 
-declare void @"runtime::mark_nounwind"(ptr, ptr) #0
+declare void @"runtime::mark_nounwind"(ptr, ptr) #3
 
-declare void @"runtime::emit_abort_msg"(ptr, ptr, ptr) #0
+declare void @"runtime::emit_abort_msg"(ptr, ptr, ptr) #3
 
-define void @"expr::emit_validate_arena_tag"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define void @"expr::emit_validate_arena_tag"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.slow = alloca ptr, align 8
   %var.slow_bb = alloca ptr, align 8
@@ -5940,7 +5383,7 @@ abort.dead113:                                    ; No predecessors!
   br label %nulcopy.len111
 }
 
-define ptr @"expr::codegen_string_len_fast"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_string_len_fast"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.mask = alloca ptr, align 8
   %var.raw = alloca ptr, align 8
@@ -6120,7 +5563,7 @@ abort.dead92:                                     ; No predecessors!
   br label %nulcopy.len90
 }
 
-define i1 @"expr::has_addr"(ptr %0, ptr %1) #0 {
+define i1 @"expr::has_addr"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -6202,7 +5645,7 @@ ret.dead:                                         ; No predecessors!
   br label %choice.exit
 }
 
-define ptr @"expr::codegen_string_len"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_string_len"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ok_bb = alloca ptr, align 8
   %var.parent = alloca ptr, align 8
@@ -6785,9 +6228,9 @@ abort.dead250:                                    ; No predecessors!
   br label %nulcopy.len248
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define ptr @"expr::tag_addr_with_arena_gen"(ptr %0, ptr %1) #0 {
+define ptr @"expr::tag_addr_with_arena_gen"(ptr %0, ptr %1) #3 {
 entry:
   %var.tagged_int = alloca ptr, align 8
   %var.shift = alloca ptr, align 8
@@ -7101,9 +6544,9 @@ abort.dead155:                                    ; No predecessors!
   br label %nulcopy.len153
 }
 
-declare ptr @"stmt::coerce_int"(ptr, ptr, ptr) #0
+declare ptr @"stmt::coerce_int"(ptr, ptr, ptr) #3
 
-define ptr @"expr::validate_and_strip_addr_tag"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::validate_and_strip_addr_tag"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ok_bb = alloca ptr, align 8
   %var.parent = alloca ptr, align 8
@@ -7569,7 +7012,7 @@ abort.dead212:                                    ; No predecessors!
   br label %nulcopy.len210
 }
 
-define ptr @"expr::clean_untagged_addr"(ptr %0, ptr %1) #0 {
+define ptr @"expr::clean_untagged_addr"(ptr %0, ptr %1) #3 {
 entry:
   %var.masked = alloca ptr, align 8
   %var.mask = alloca ptr, align 8
@@ -7812,7 +7255,7 @@ abort.dead111:                                    ; No predecessors!
   br label %nulcopy.len109
 }
 
-define ptr @"expr::codegen_string_data"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_string_data"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.gp = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -7935,7 +7378,7 @@ abort.dead54:                                     ; No predecessors!
   br label %nulcopy.len52
 }
 
-define ptr @"expr::codegen_ensure_nul_terminated"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_ensure_nul_terminated"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.phi = alloca ptr, align 8
   %var.copy_ok_bb = alloca ptr, align 8
@@ -8456,13 +7899,13 @@ abort.dead323:                                    ; No predecessors!
   br label %nulcopy.len321
 }
 
-declare ptr @"types::gep1"(ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"types::gep1"(ptr, ptr, ptr, ptr, ptr) #3
 
-declare ptr @"stmt::codegen_add_checked_u64"(ptr, ptr, ptr, ptr) #0
+declare ptr @"stmt::codegen_add_checked_u64"(ptr, ptr, ptr, ptr) #3
 
-declare void @"stmt::llvm_add_incoming1"(ptr, ptr, ptr, ptr) #0
+declare void @"stmt::llvm_add_incoming1"(ptr, ptr, ptr, ptr) #3
 
-define { ptr, ptr } @"expr::codegen_string_len_data"(ptr %0, ptr %1, ptr %2) #0 {
+define { ptr, ptr } @"expr::codegen_string_len_data"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.data_v = alloca ptr, align 8
   %var.dgep = alloca ptr, align 8
@@ -8626,7 +8069,7 @@ abort.dead65:                                     ; No predecessors!
   br label %nulcopy.len63
 }
 
-define ptr @"expr::codegen_string_build"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_string_build"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.dgep = alloca ptr, align 8
   %var.store_len = alloca ptr, align 8
@@ -8987,9 +8430,9 @@ abort.dead171:                                    ; No predecessors!
   br label %nulcopy.len169
 }
 
-declare ptr @"types::hoisted_alloca"(ptr, ptr, ptr) #0
+declare ptr @"types::hoisted_alloca"(ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_string_copy"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_string_copy"(ptr %0, ptr %1) #3 {
 entry:
   %var.dgep = alloca ptr, align 8
   %var.lgep = alloca ptr, align 8
@@ -9271,7 +8714,7 @@ abort.dead166:                                    ; No predecessors!
   br label %nulcopy.len164
 }
 
-define ptr @"expr::codegen_named_fn_value"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_named_fn_value"(ptr %0, ptr %1) #3 {
 entry:
   %var.meta = alloca ptr, align 8
   %var.target = alloca ptr, align 8
@@ -9490,7 +8933,7 @@ choice.exit87:                                    ; preds = %choice.else86, %cho
   br label %choice.exit77
 }
 
-define { i64, ptr } @"expr::fn_alias"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"expr::fn_alias"(ptr %0, ptr %1) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.name = alloca ptr, align 8
@@ -9505,7 +8948,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"expr::fn_alias_at"(ptr %0, ptr %1, i64 %2) #0 {
+define { i64, ptr } @"expr::fn_alias_at"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.n = alloca i64, align 8
@@ -9812,17 +9255,13 @@ err.normal115:                                    ; preds = %unwrap.abort.1459
   unreachable
 }
 
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
-
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-declare { i64, ptr } @"stmt::sig_ct0_name"(ptr, ptr, i64) #0
+declare { i64, ptr } @"stmt::sig_ct0_name"(ptr, ptr, i64) #3
 
-define ptr @"expr::codegen_generic_fn_value_error"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_generic_fn_value_error"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -9963,15 +9402,15 @@ abort.dead44:                                     ; No predecessors!
   br label %concat.tot.len42
 }
 
-declare i1 @"types::has_fn_name"(ptr, ptr) #0
+declare i1 @"types::has_fn_name"(ptr, ptr) #3
 
-declare i1 @"types::is_fn_name"(ptr, ptr) #0
+declare i1 @"types::is_fn_name"(ptr, ptr) #3
 
-declare i1 @"stmt::compile_typed_fn_lazy"(ptr, ptr) #0
+declare i1 @"stmt::compile_typed_fn_lazy"(ptr, ptr) #3
 
-declare i1 @"stmt::compile_fn_lazy"(ptr, ptr, ptr) #0
+declare i1 @"stmt::compile_fn_lazy"(ptr, ptr, ptr) #3
 
-define ptr @"expr::fn_value_meta"(ptr %0, ptr %1) #0 {
+define ptr @"expr::fn_value_meta"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -9989,7 +9428,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"expr::fn_value_meta_rev"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"expr::fn_value_meta_rev"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.fi = alloca ptr, align 8
   %var.i = alloca i64, align 8
@@ -10202,7 +9641,7 @@ choice.exit43:                                    ; preds = %choice.else42, %cho
   br label %choice.exit
 }
 
-define ptr @"expr::codegen_untyped_fn_value_error"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_untyped_fn_value_error"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -10363,9 +9802,9 @@ abort.dead55:                                     ; No predecessors!
   br label %concat.tot.len53
 }
 
-declare { i64, ptr } @"diag::E3128_function_value_signature_suffix"() #0
+declare { i64, ptr } @"diag::E3128_function_value_signature_suffix"() #3
 
-define ptr @"expr::codegen_named_fn_value_valid"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_named_fn_value_valid"(ptr %0, ptr %1) #3 {
 entry:
   %var.gv = alloca ptr, align 8
   %var.fn_ptr = alloca ptr, align 8
@@ -10435,9 +9874,9 @@ choice.exit5:                                     ; preds = %choice.else4, %choi
   br label %choice.exit
 }
 
-declare ptr @"stmt::fninfo_of"(ptr, ptr) #0
+declare ptr @"stmt::fninfo_of"(ptr, ptr) #3
 
-define ptr @"expr::noncap_closure"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::noncap_closure"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.vals = alloca ptr, align 8
   %var.i8p = alloca ptr, align 8
@@ -10778,7 +10217,7 @@ a.store108:                                       ; preds = %a.grow107, %a.check
   br label %choice.exit
 }
 
-define { i1, i64 } @"expr::noncap_at"(ptr %0, ptr %1, i64 %2) #0 {
+define { i1, i64 } @"expr::noncap_at"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.name = alloca ptr, align 8
@@ -10964,9 +10403,9 @@ choice.exit40:                                    ; preds = %choice.else39, %cho
   br label %choice.exit
 }
 
-declare ptr @"stmt::closure_struct_type"(ptr) #0
+declare ptr @"stmt::closure_struct_type"(ptr) #3
 
-define ptr @"expr::fn_body_of"(ptr %0, ptr %1) #0 {
+define ptr @"expr::fn_body_of"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -10984,7 +10423,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"expr::fn_body_of_rev"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"expr::fn_body_of_rev"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.fd = alloca ptr, align 8
   %var.i = alloca i64, align 8
@@ -11177,7 +10616,7 @@ choice.exit40:                                    ; preds = %choice.else39, %cho
   br label %choice.exit
 }
 
-define i1 @"expr::fn_has_arena_alloc"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"expr::fn_has_arena_alloc"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var.body = alloca ptr, align 8
@@ -11284,9 +10723,9 @@ choice.next:                                      ; preds = %choice.exit10
   br label %choice.exit17
 }
 
-declare { i64, ptr } @"types::resolve_fn_name"(ptr, ptr) #0
+declare { i64, ptr } @"types::resolve_fn_name"(ptr, ptr) #3
 
-define i1 @"expr::expr_has_arena_alloc_d"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"expr::expr_has_arena_alloc_d"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.x = alloca ptr, align 8
   %var._303 = alloca ptr, align 8
@@ -11873,7 +11312,7 @@ choice.next297:                                   ; preds = %choice.next285
   br label %choice.exit
 }
 
-define i1 @"expr::expr_has_arena_alloc_bin_d"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"expr::expr_has_arena_alloc_bin_d"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.string_concat = alloca i1, align 1
   %var.pure_builder = alloca i1, align 1
@@ -12002,15 +11441,15 @@ or.1471.exit:                                     ; preds = %or.1471.else, %or.1
   ret i1 %or.1471.phi
 }
 
-declare ptr @"types::static_expr_vt"(ptr, ptr) #0
+declare ptr @"types::static_expr_vt"(ptr, ptr) #3
 
-declare i1 @"types::is_builder_vt"(ptr) #0
+declare i1 @"types::is_builder_vt"(ptr) #3
 
-declare i1 @"types::is_str_vt"(ptr) #0
+declare i1 @"types::is_str_vt"(ptr) #3
 
-declare i1 @"types::is_user_type"(ptr, ptr) #0
+declare i1 @"types::is_user_type"(ptr, ptr) #3
 
-define i1 @"expr::exprs_has_arena_alloc_d"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i1 @"expr::exprs_has_arena_alloc_d"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.depth = alloca i64, align 8
   %var.at = alloca i64, align 8
@@ -12256,7 +11695,7 @@ a.after58:                                        ; preds = %a.create57, %or.147
   br label %or.1477.exit
 }
 
-define i1 @"expr::branches_has_arena_alloc_d"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i1 @"expr::branches_has_arena_alloc_d"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.br = alloca ptr, align 8
   %var.depth = alloca i64, align 8
@@ -12539,7 +11978,7 @@ a.after71:                                        ; preds = %a.create70, %or.148
   br label %or.1483.exit
 }
 
-define i1 @"expr::fn_writes_outer"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i1 @"expr::fn_writes_outer"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.fd = alloca ptr, align 8
   %var.target = alloca ptr, align 8
@@ -12721,9 +12160,9 @@ and.1492.exit:                                    ; preds = %and.1492.else, %and
   ret i1 %and.1492.phi
 }
 
-declare ptr @"stmt::lookup_fn_effect_summary"(ptr, ptr) #0
+declare ptr @"stmt::lookup_fn_effect_summary"(ptr, ptr) #3
 
-define ptr @"expr::fn_def_of_rev"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"expr::fn_def_of_rev"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.fd = alloca ptr, align 8
   %var.i = alloca i64, align 8
@@ -12932,7 +12371,7 @@ choice.exit45:                                    ; preds = %choice.else44, %cho
   br label %choice.exit
 }
 
-define i1 @"expr::expr_writes_outer_d"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4) #0 {
+define i1 @"expr::expr_writes_outer_d"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._447 = alloca ptr, align 8
@@ -13885,9 +13324,9 @@ a.after476:                                       ; preds = %a.create475, %or.15
   br label %or.1513.exit
 }
 
-declare { i64, ptr } @"stmt::name_before_dot"(ptr) #0
+declare { i64, ptr } @"stmt::name_before_dot"(ptr) #3
 
-define { i64, ptr } @"expr::ast_root_var"(ptr %0) #0 {
+define { i64, ptr } @"expr::ast_root_var"(ptr %0) #3 {
 entry:
   %var.v59 = alloca ptr, align 8
   %var._58 = alloca ptr, align 8
@@ -14079,11 +13518,11 @@ choice.exit65:                                    ; preds = %choice.else, %choic
   br label %choice.exit50
 }
 
-declare { i64, ptr } @"stmt::dotted_root"(ptr) #0
+declare { i64, ptr } @"stmt::dotted_root"(ptr) #3
 
-declare ptr @"types::var_type"(ptr, ptr) #0
+declare ptr @"types::var_type"(ptr, ptr) #3
 
-define i1 @"expr::vt_is_plain_scalar"(ptr %0) #0 {
+define i1 @"expr::vt_is_plain_scalar"(ptr %0) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   store ptr %0, ptr %var.vt, align 8
@@ -14130,11 +13569,11 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-declare i1 @"types::has_str"(ptr, ptr) #0
+declare i1 @"types::has_str"(ptr, ptr) #3
 
-declare i1 @"stmt::tast_is_outer_var"(ptr, ptr, i64) #0
+declare i1 @"stmt::tast_is_outer_var"(ptr, ptr, i64) #3
 
-define i1 @"expr::exprs_write_outer_d"(ptr %0, ptr %1, i64 %2, ptr %3, i64 %4, i64 %5) #0 {
+define i1 @"expr::exprs_write_outer_d"(ptr %0, ptr %1, i64 %2, ptr %3, i64 %4, i64 %5) #3 {
 entry:
   %var.depth = alloca i64, align 8
   %var.threshold = alloca i64, align 8
@@ -14428,7 +13867,7 @@ a.after86:                                        ; preds = %a.create85, %a.afte
   br label %or.1504.exit
 }
 
-define i1 @"expr::branches_write_outer_d"(ptr %0, ptr %1, i64 %2, ptr %3, i64 %4, i64 %5) #0 {
+define i1 @"expr::branches_write_outer_d"(ptr %0, ptr %1, i64 %2, ptr %3, i64 %4, i64 %5) #3 {
 entry:
   %var.br = alloca ptr, align 8
   %var.depth = alloca i64, align 8
@@ -14803,7 +14242,7 @@ a.after127:                                       ; preds = %a.create126, %a.aft
   br label %or.1509.exit
 }
 
-define i1 @"expr::expr_has_arena_alloc"(ptr %0, ptr %1) #0 {
+define i1 @"expr::expr_has_arena_alloc"(ptr %0, ptr %1) #3 {
 entry:
   %var.e = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -14815,7 +14254,7 @@ entry:
   ret i1 %call.res
 }
 
-define i1 @"expr::expr_has_arena_alloc_bin"(ptr %0, ptr %1) #0 {
+define i1 @"expr::expr_has_arena_alloc_bin"(ptr %0, ptr %1) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -14827,7 +14266,7 @@ entry:
   ret i1 %call.res
 }
 
-define i1 @"expr::exprs_has_arena_alloc"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"expr::exprs_has_arena_alloc"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.at = alloca i64, align 8
   %var.es = alloca ptr, align 8
@@ -14862,7 +14301,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret i1 %call.res
 }
 
-define i1 @"expr::branches_has_arena_alloc"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"expr::branches_has_arena_alloc"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.at = alloca i64, align 8
   %var.bs = alloca ptr, align 8
@@ -14897,7 +14336,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret i1 %call.res
 }
 
-define ptr @"expr::truncate_ints"(ptr %0, i64 %1) #0 {
+define ptr @"expr::truncate_ints"(ptr %0, i64 %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -15149,7 +14588,7 @@ a.after56:                                        ; preds = %a.create55, %loop.e
   ret ptr %a.load264
 }
 
-define void @"expr::codegen_restore_scope_enter"(ptr %0, i1 %1) #0 {
+define void @"expr::codegen_restore_scope_enter"(ptr %0, i1 %1) #3 {
 entry:
   %var.has_alloc = alloca i1, align 1
   %var.cg = alloca ptr, align 8
@@ -15213,7 +14652,7 @@ a.store:                                          ; preds = %a.grow, %a.check
   br label %choice.exit
 }
 
-define void @"expr::codegen_restore_scope_leave"(ptr %0, { i1, i64 } %1) #0 {
+define void @"expr::codegen_restore_scope_leave"(ptr %0, { i1, i64 } %1) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -15248,7 +14687,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret void
 }
 
-define void @"expr::codegen_restore_scope_leave_yes"(ptr %0, ptr %1) #0 {
+define void @"expr::codegen_restore_scope_leave_yes"(ptr %0, ptr %1) #3 {
 entry:
   %var.mark = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -15314,9 +14753,9 @@ choice.exit15:                                    ; preds = %choice.then14, %cho
   ret void
 }
 
-declare i1 @"stmt::block_is_terminated"(ptr) #0
+declare i1 @"stmt::block_is_terminated"(ptr) #3
 
-define i64 @"expr::find_var_idx_rev"(ptr %0, ptr %1, i64 %2) #0 {
+define i64 @"expr::find_var_idx_rev"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var.i = alloca i64, align 8
@@ -15501,7 +14940,7 @@ choice.exit39:                                    ; preds = %choice.else38, %cho
   br label %choice.exit
 }
 
-define i64 @"expr::var_index"(ptr %0, ptr %1) #0 {
+define i64 @"expr::var_index"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -15524,9 +14963,9 @@ entry:
   ret i64 %call.res5
 }
 
-declare { i64, ptr } @"types::resolve_var_name"(ptr, ptr) #0
+declare { i64, ptr } @"types::resolve_var_name"(ptr, ptr) #3
 
-define i1 @"expr::is_addr_arg_scoped"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"expr::is_addr_arg_scoped"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var._14 = alloca i64, align 8
   %var._ = alloca i64, align 8
@@ -15596,7 +15035,7 @@ pay.int.merge11:                                  ; preds = %pay.int.nullbb10, %
   br label %choice.exit
 }
 
-define i1 @"expr::is_block_scoped_addr"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"expr::is_block_scoped_addr"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var._112 = alloca ptr, align 8
@@ -16017,7 +15456,7 @@ err.normal:                                       ; preds = %str_ok164
   unreachable
 }
 
-define i1 @"expr::record_fields_has_block_scoped_addr"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i1 @"expr::record_fields_has_block_scoped_addr"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.fld = alloca ptr, align 8
   %var.threshold = alloca i64, align 8
@@ -16268,7 +15707,7 @@ a.after59:                                        ; preds = %a.create58, %or.152
   br label %or.1520.exit
 }
 
-define i1 @"expr::exprs_has_block_scoped_addr"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i1 @"expr::exprs_has_block_scoped_addr"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.threshold = alloca i64, align 8
   %var.at = alloca i64, align 8
@@ -16514,7 +15953,7 @@ a.after58:                                        ; preds = %a.create57, %or.152
   br label %or.1522.exit
 }
 
-define void @"expr::codegen_check_addr_escape"(ptr %0, ptr %1) #0 {
+define void @"expr::codegen_check_addr_escape"(ptr %0, ptr %1) #3 {
 entry:
   %var.is_addr = alloca i1, align 1
   %var.is_outer = alloca i1, align 1
@@ -16854,13 +16293,13 @@ choice.exit100:                                   ; preds = %choice.then99, %and
   br label %choice.exit65
 }
 
-declare i1 @"types::is_marked_global_name"(ptr, ptr) #0
+declare i1 @"types::is_marked_global_name"(ptr, ptr) #3
 
-declare i1 @"types::is_ptr_vt"(ptr) #0
+declare i1 @"types::is_ptr_vt"(ptr) #3
 
-declare { i64, ptr } @"diag::E3134_addr_escape_lifecycle"() #0
+declare { i64, ptr } @"diag::E3134_addr_escape_lifecycle"() #3
 
-define { i1, i64 } @"expr::codegen_block_arena_mark"(ptr %0, i1 %1) #0 {
+define { i1, i64 } @"expr::codegen_block_arena_mark"(ptr %0, i1 %1) #3 {
 entry:
   %var.has_alloc = alloca i1, align 1
   %var.cg = alloca ptr, align 8
@@ -16884,7 +16323,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i1, i64 } %choice.res
 }
 
-define i1 @"expr::block_is_binding"(ptr %0) #0 {
+define i1 @"expr::block_is_binding"(ptr %0) #3 {
 entry:
   %var.f1 = alloca ptr, align 8
   %var._302 = alloca ptr, align 8
@@ -17598,7 +17037,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define i1 @"expr::block_has_arena_alloc"(ptr %0, ptr %1) #0 {
+define i1 @"expr::block_has_arena_alloc"(ptr %0, ptr %1) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -17630,7 +17069,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret i1 %call.res
 }
 
-define ptr @"expr::codegen_eval_call_addr"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_call_addr"(ptr %0, ptr %1) #3 {
 entry:
   %"var.res'134" = alloca ptr, align 8
   %var.clean_p = alloca ptr, align 8
@@ -18000,9 +17439,9 @@ abort.dead128:                                    ; No predecessors!
   br label %nulcopy.len126
 }
 
-declare { i1, i64 } @"types::var_slot"(ptr, ptr) #0
+declare { i1, i64 } @"types::var_slot"(ptr, ptr) #3
 
-define ptr @"expr::codegen_eval"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval"(ptr %0, ptr %1) #3 {
 entry:
   %var.r1374 = alloca ptr, align 8
   %var._1373 = alloca ptr, align 8
@@ -20445,23 +19884,23 @@ choice.next1367:                                  ; preds = %choice.next1356
   br label %choice.exit
 }
 
-declare ptr @"stmt::codegen_string_literal"(ptr, ptr) #0
+declare ptr @"stmt::codegen_string_literal"(ptr, ptr) #3
 
-declare { i64, ptr } @"ast::triple_os"(ptr) #0
+declare { i64, ptr } @"ast::triple_os"(ptr) #3
 
-declare { i64, ptr } @"ast::triple_arch"(ptr) #0
+declare { i64, ptr } @"ast::triple_arch"(ptr) #3
 
-declare i1 @"types::var_has_storage"(ptr, ptr) #0
+declare i1 @"types::var_has_storage"(ptr, ptr) #3
 
-declare ptr @"types::codegen_load"(ptr, ptr) #0
+declare ptr @"types::codegen_load"(ptr, ptr) #3
 
-declare i64 @"types::enum_label_owner_count"(ptr, ptr, i64) #0
+declare i64 @"types::enum_label_owner_count"(ptr, ptr, i64) #3
 
-declare ptr @"types::codegen_eval_enum_label_val"(ptr, ptr, i64) #0
+declare ptr @"types::codegen_eval_enum_label_val"(ptr, ptr, i64) #3
 
-declare ptr @"types::ct_bind_find"(ptr) #0
+declare ptr @"types::ct_bind_find"(ptr) #3
 
-define ptr @"expr::codegen_materialize_cttr"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_materialize_cttr"(ptr %0, ptr %1) #3 {
 entry:
   %var.resolved = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -20483,7 +19922,7 @@ entry:
   ret ptr %call.res7
 }
 
-define ptr @"expr::ct_ti_resolve"(ptr %0, ptr %1) #0 {
+define ptr @"expr::ct_ti_resolve"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -20535,11 +19974,11 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-declare ptr @"types::typedef_ti"(ptr, ptr) #0
+declare ptr @"types::typedef_ti"(ptr, ptr) #3
 
-declare { i64, ptr } @"types::ensure_ti_dtype"(ptr, ptr) #0
+declare { i64, ptr } @"types::ensure_ti_dtype"(ptr, ptr) #3
 
-define ptr @"expr::codegen_materialize_ti"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_materialize_ti"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.p = alloca ptr, align 8
   %var._73 = alloca ptr, align 8
@@ -20730,11 +20169,11 @@ choice.next67:                                    ; preds = %choice.next18
   br label %choice.exit
 }
 
-declare ptr @"main::codegen_array_create_cap"(ptr, i64, ptr) #0
+declare ptr @"main::codegen_array_create_cap"(ptr, i64, ptr) #3
 
-declare ptr @"runtime::codegen_map_create"(ptr, ptr) #0
+declare ptr @"runtime::codegen_map_create"(ptr, ptr) #3
 
-define ptr @"expr::codegen_materialize_prim"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_materialize_prim"(ptr %0, ptr %1) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -20935,25 +20374,25 @@ choice.exit94:                                    ; preds = %choice.else93, %cho
   br label %choice.exit79
 }
 
-declare i1 @"types::is_int_vt"(ptr) #0
+declare i1 @"types::is_int_vt"(ptr) #3
 
-declare ptr @"types::llvm_type_of_vt"(ptr) #0
+declare ptr @"types::llvm_type_of_vt"(ptr) #3
 
-declare i1 @"types::is_float_vt"(ptr) #0
+declare i1 @"types::is_float_vt"(ptr) #3
 
-declare i1 @"types::is_flag_vt"(ptr) #0
+declare i1 @"types::is_flag_vt"(ptr) #3
 
-declare { i64, ptr } @"types::resolve_type_name"(ptr, ptr) #0
+declare { i64, ptr } @"types::resolve_type_name"(ptr, ptr) #3
 
-declare ptr @"types::codegen_eval_type_value"(ptr, ptr) #0
+declare ptr @"types::codegen_eval_type_value"(ptr, ptr) #3
 
-declare ptr @"types::type_name_to_vt"(ptr) #0
+declare ptr @"types::type_name_to_vt"(ptr) #3
 
-declare i64 @"types::prim_type_tag"(ptr) #0
+declare i64 @"types::prim_type_tag"(ptr) #3
 
-declare void @"runtime::codegen_emit_assign"(ptr, ptr) #0
+declare void @"runtime::codegen_emit_assign"(ptr, ptr) #3
 
-define ptr @"expr::codegen_eval_bin"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_bin"(ptr %0, ptr %1) #3 {
 entry:
   %var.r = alloca ptr, align 8
   %"var.saved_discard'22" = alloca i1, align 1
@@ -21024,7 +20463,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"expr::codegen_eval_bin_op"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_eval_bin_op"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var._232 = alloca ptr, align 8
   %var._231 = alloca ptr, align 8
@@ -21526,9 +20965,9 @@ choice.exit230:                                   ; preds = %choice.else229, %ch
   br label %choice.exit
 }
 
-declare ptr @"match::codegen_emit_logical"(ptr, i1, ptr) #0
+declare ptr @"match::codegen_emit_logical"(ptr, i1, ptr) #3
 
-define ptr @"expr::codegen_emit_arith"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_emit_arith"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.is_bad = alloca i1, align 1
   %var.r_un = alloca i1, align 1
@@ -21685,7 +21124,7 @@ a.after51:                                        ; preds = %a.create50, %a.afte
   br label %choice.exit35
 }
 
-define ptr @"expr::codegen_emit_unassignable_binop_error"(ptr %0) #0 {
+define ptr @"expr::codegen_emit_unassignable_binop_error"(ptr %0) #3 {
 entry:
   %var.msg = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -21714,7 +21153,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"expr::codegen_emit_arith_operands"(ptr %0, ptr %1, ptr %2, { i1, i64 } %3, ptr %4, ptr %5, { i1, i64 } %6, ptr %7) #0 {
+define ptr @"expr::codegen_emit_arith_operands"(ptr %0, ptr %1, ptr %2, { i1, i64 } %3, ptr %4, ptr %5, { i1, i64 } %6, ptr %7) #3 {
 entry:
   %var.bad_int_op = alloca i1, align 1
   %var.bad_int = alloca i1, align 1
@@ -22105,7 +21544,7 @@ choice.exit171:                                   ; preds = %choice.else170, %ch
   br label %choice.exit90
 }
 
-define i1 @"expr::is_numeric_fixed_record"(ptr %0, { i1, i64 } %1, ptr %2) #0 {
+define i1 @"expr::is_numeric_fixed_record"(ptr %0, { i1, i64 } %1, ptr %2) #3 {
 entry:
   %var._59 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -22344,7 +21783,7 @@ choice.exit55:                                    ; preds = %choice.else, %choic
   br label %and.1546.exit
 }
 
-define i1 @"expr::record_type_is_homogeneous"({ i1, i64 } %0, ptr %1) #0 {
+define i1 @"expr::record_type_is_homogeneous"({ i1, i64 } %0, ptr %1) #3 {
 entry:
   %var.elem_t = alloca ptr, align 8
   %var.first = alloca ptr, align 8
@@ -22564,7 +22003,7 @@ and.1544.exit:                                    ; preds = %and.1544.else, %and
   br label %choice.exit8
 }
 
-define i1 @"expr::fixed_record_is_homogeneous"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"expr::fixed_record_is_homogeneous"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var._40 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -22763,7 +22202,7 @@ a.after47:                                        ; preds = %a.create46, %and.15
   br label %and.1543.exit
 }
 
-define i1 @"expr::struct_fields_same_type_at"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i1 @"expr::struct_fields_same_type_at"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.n = alloca i64, align 8
   %var.i = alloca i64, align 8
@@ -22815,7 +22254,7 @@ and.1545.exit:                                    ; preds = %and.1545.else, %and
   br label %choice.exit
 }
 
-define i1 @"expr::is_numeric_vt"(ptr %0) #0 {
+define i1 @"expr::is_numeric_vt"(ptr %0) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   store ptr %0, ptr %var.vt, align 8
@@ -22836,7 +22275,7 @@ or.1547.exit:                                     ; preds = %or.1547.else, %or.1
   ret i1 %or.1547.phi
 }
 
-define ptr @"expr::codegen_emit_array_arith"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_emit_array_arith"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.meta = alloca ptr, align 8
   %var.r_op = alloca ptr, align 8
@@ -24483,7 +23922,7 @@ choice.exit812:                                   ; preds = %choice.else811, %ch
   br label %choice.exit643
 }
 
-define ptr @"expr::codegen_emit_bitwise_error"(ptr %0) #0 {
+define ptr @"expr::codegen_emit_bitwise_error"(ptr %0) #3 {
 entry:
   %var.cg = alloca ptr, align 8
   store ptr %0, ptr %var.cg, align 8
@@ -24509,7 +23948,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -24573,9 +24012,9 @@ done:                                             ; preds = %copyloop
   ret i64 %fmt.tot
 }
 
-declare { i64, ptr } @"types::value_type_name"(ptr) #0
+declare { i64, ptr } @"types::value_type_name"(ptr) #3
 
-define i64 @"expr::elem_byte_size"(ptr %0) #0 {
+define i64 @"expr::elem_byte_size"(ptr %0) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   store ptr %0, ptr %var.vt, align 8
@@ -24656,7 +24095,7 @@ choice.next23:                                    ; preds = %choice.next14
   br label %choice.exit21
 }
 
-define ptr @"expr::codegen_scalar_to_elem"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_scalar_to_elem"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.is_f32 = alloca i1, align 1
   %var.elem_vt = alloca ptr, align 8
@@ -24970,9 +24409,9 @@ abort.dead155:                                    ; No predecessors!
   br label %nulcopy.len153
 }
 
-declare i1 @"types::is_unsigned_vt"(ptr) #0
+declare i1 @"types::is_unsigned_vt"(ptr) #3
 
-define ptr @"expr::codegen_array_vector_op"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4, i1 %5, ptr %6) #0 {
+define ptr @"expr::codegen_array_vector_op"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4, i1 %5, ptr %6) #3 {
 entry:
   %var.st = alloca ptr, align 8
   %var.bc_res = alloca ptr, align 8
@@ -25442,7 +24881,7 @@ a.after:                                          ; preds = %a.create, %nulmerge
   ret ptr %rec.alloc
 }
 
-define ptr @"expr::codegen_vector_type"(ptr %0, i64 %1) #0 {
+define ptr @"expr::codegen_vector_type"(ptr %0, i64 %1) #3 {
 entry:
   %var.vec = alloca ptr, align 8
   %var._ = alloca i64, align 8
@@ -25584,9 +25023,9 @@ a.after18:                                        ; preds = %a.create17, %loop.e
   ret ptr %call.res38
 }
 
-declare ptr @"types::addrs_buf"(ptr) #0
+declare ptr @"types::addrs_buf"(ptr) #3
 
-define ptr @"expr::codegen_build_splat"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"expr::codegen_build_splat"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.mask = alloca ptr, align 8
   %var._199 = alloca i64, align 8
@@ -26186,7 +25625,7 @@ abort.dead289:                                    ; No predecessors!
   br label %nulcopy.len287
 }
 
-define ptr @"expr::codegen_array_vec_apply"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6) #0 {
+define ptr @"expr::codegen_array_vec_apply"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6) #3 {
 entry:
   %var.r_safe = alloca ptr, align 8
   %var.mask_vec = alloca ptr, align 8
@@ -27518,7 +26957,7 @@ abort.dead808:                                    ; No predecessors!
   br label %nulcopy.len806
 }
 
-define void @"expr::codegen_emit_div_guard"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define void @"expr::codegen_emit_div_guard"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %var.ovf_abort_bb = alloca ptr, align 8
   %var.ok_bb = alloca ptr, align 8
@@ -28272,7 +27711,7 @@ abort.dead374:                                    ; No predecessors!
   br label %nulcopy.len372
 }
 
-define ptr @"expr::codegen_array_loop_op"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4, i1 %5, ptr %6) #0 {
+define ptr @"expr::codegen_array_loop_op"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4, i1 %5, ptr %6) #3 {
 entry:
   %var.next_c = alloca ptr, align 8
   %var.res_ptr = alloca ptr, align 8
@@ -29487,11 +28926,11 @@ a.after:                                          ; preds = %a.create, %nulmerge
   ret ptr %rec.alloc
 }
 
-declare { i64, ptr } @"str::from_int"(i64) #0
+declare { i64, ptr } @"str::from_int"(i64) #3
 
-declare void @"stmt::branch_to"(ptr, ptr) #0
+declare void @"stmt::branch_to"(ptr, ptr) #3
 
-define ptr @"expr::codegen_array_scalar_apply"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"expr::codegen_array_scalar_apply"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %"var.r_safe'" = alloca ptr, align 8
   %"var.mask_elem'" = alloca ptr, align 8
@@ -30662,9 +30101,9 @@ abort.dead722:                                    ; No predecessors!
   br label %nulcopy.len720
 }
 
-declare ptr @"stmt::coerce_int_ext"(ptr, ptr, ptr, i1) #0
+declare ptr @"stmt::coerce_int_ext"(ptr, ptr, ptr, i1) #3
 
-define ptr @"expr::codegen_emit_bitwise_valid"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"expr::codegen_emit_bitwise_valid"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.rv_safe = alloca ptr, align 8
   %var.mask = alloca ptr, align 8
@@ -31153,7 +30592,7 @@ abort.dead259:                                    ; No predecessors!
   br label %nulcopy.len257
 }
 
-define ptr @"expr::codegen_emit_integer_arith_error"(ptr %0) #0 {
+define ptr @"expr::codegen_emit_integer_arith_error"(ptr %0) #3 {
 entry:
   %var.cg = alloca ptr, align 8
   store ptr %0, ptr %var.cg, align 8
@@ -31179,7 +30618,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"expr::codegen_emit_arith_valid"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_emit_arith_valid"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.rr = alloca ptr, align 8
   %var.lr = alloca ptr, align 8
@@ -31392,17 +30831,17 @@ choice.exit90:                                    ; preds = %choice.else89, %cho
   br label %choice.exit20
 }
 
-declare ptr @"stmt::codegen_string_concat"(ptr, ptr, ptr) #0
+declare ptr @"stmt::codegen_string_concat"(ptr, ptr, ptr) #3
 
-declare i1 @"types::is_rune_vt"(ptr) #0
+declare i1 @"types::is_rune_vt"(ptr) #3
 
-declare ptr @"stmt::codegen_string_append_rune"(ptr, ptr, ptr) #0
+declare ptr @"stmt::codegen_string_append_rune"(ptr, ptr, ptr) #3
 
-declare ptr @"stmt::codegen_string_append_byte"(ptr, ptr, ptr) #0
+declare ptr @"stmt::codegen_string_append_byte"(ptr, ptr, ptr) #3
 
-declare ptr @"main::codegen_builder_pure_append"(ptr, ptr, ptr, ptr) #0
+declare ptr @"main::codegen_builder_pure_append"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_emit_arith_fallback"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_emit_arith_fallback"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.is_u = alloca i1, align 1
   %var.rv = alloca ptr, align 8
@@ -31682,7 +31121,7 @@ or.1584.exit:                                     ; preds = %or.1584.else, %or.1
   br label %choice.exit87
 }
 
-define ptr @"expr::coerce_float"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::coerce_float"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   %var.v = alloca ptr, align 8
@@ -31816,7 +31255,7 @@ abort.dead49:                                     ; No predecessors!
   br label %nulcopy.len47
 }
 
-define ptr @"expr::codegen_eval_float_arith"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_eval_float_arith"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.r = alloca ptr, align 8
   %var.l = alloca ptr, align 8
@@ -32129,7 +31568,7 @@ abort.dead165:                                    ; No predecessors!
   br label %nulcopy.len163
 }
 
-define ptr @"expr::codegen_eval_ptr_arith"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4, i1 %5) #0 {
+define ptr @"expr::codegen_eval_ptr_arith"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4, i1 %5) #3 {
 entry:
   %"var.res_ptr'246" = alloca ptr, align 8
   %var.diff = alloca ptr, align 8
@@ -32611,7 +32050,7 @@ abort.dead240:                                    ; No predecessors!
   br label %nulcopy.len238
 }
 
-define ptr @"expr::codegen_eval_int_arith"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #0 {
+define ptr @"expr::codegen_eval_int_arith"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #3 {
 entry:
   %var.is_div = alloca i1, align 1
   %var.is_u = alloca i1, align 1
@@ -33077,9 +32516,9 @@ abort.dead255:                                    ; No predecessors!
   br label %nulcopy.len253
 }
 
-declare ptr @"match::codegen_emit_cmp"(ptr, ptr, ptr) #0
+declare ptr @"match::codegen_emit_cmp"(ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_emit_apply_feed"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_emit_apply_feed"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %"var.call'395" = alloca ptr, align 8
   %"var.args'343" = alloca ptr, align 8
@@ -33969,7 +33408,7 @@ a.after379:                                       ; preds = %a.create378, %a.sto
   br label %choice.exit186
 }
 
-define ptr @"expr::subst_compose_var"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::subst_compose_var"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var._19 = alloca ptr, align 8
@@ -34082,7 +33521,7 @@ choice.next13:                                    ; preds = %choice.next
   br label %choice.exit
 }
 
-define i1 @"expr::is_match_function_expr"(ptr %0, ptr %1) #0 {
+define i1 @"expr::is_match_function_expr"(ptr %0, ptr %1) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._9 = alloca ptr, align 8
@@ -34131,7 +33570,7 @@ choice.next3:                                     ; preds = %choice.next
   br label %choice.exit
 }
 
-define i1 @"expr::fn_body_is_choice"(ptr %0) #0 {
+define i1 @"expr::fn_body_is_choice"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var.f = alloca ptr, align 8
@@ -34158,7 +33597,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"expr::is_match_function_name"(ptr %0, ptr %1) #0 {
+define i1 @"expr::is_match_function_name"(ptr %0, ptr %1) #3 {
 entry:
   %var.fd = alloca ptr, align 8
   %var.v = alloca ptr, align 8
@@ -34255,9 +33694,9 @@ and.1589.exit:                                    ; preds = %and.1589.else, %and
   ret i1 %and.1589.phi
 }
 
-declare ptr @"stmt::fndef_of"(ptr, ptr, i64) #0
+declare ptr @"stmt::fndef_of"(ptr, ptr, i64) #3
 
-define ptr @"expr::codegen_emit_match_feed"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_emit_match_feed"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ret_vt = alloca ptr, align 8
   %var.call2 = alloca ptr, align 8
@@ -34736,9 +34175,9 @@ a.after195:                                       ; preds = %a.create194, %a.sto
   br label %choice.exit152
 }
 
-declare ptr @"types::create_slot"(ptr, ptr, ptr, i1) #0
+declare ptr @"types::create_slot"(ptr, ptr, ptr, i1) #3
 
-define { i64, ptr } @"expr::apply_callee_name"(ptr %0) #0 {
+define { i64, ptr } @"expr::apply_callee_name"(ptr %0) #3 {
 entry:
   %var.tgt = alloca ptr, align 8
   %var.tv = alloca ptr, align 8
@@ -34987,9 +34426,9 @@ abort.dead87:                                     ; No predecessors!
   br label %concat.tot.len85
 }
 
-declare { i64, ptr } @"match::module_member_name"(ptr) #0
+declare { i64, ptr } @"match::module_member_name"(ptr) #3
 
-define ptr @"expr::codegen_eval_call"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_call"(ptr %0, ptr %1) #3 {
 entry:
   %var.i1t = alloca ptr, align 8
   %var.flag_val = alloca i64, align 8
@@ -36219,19 +35658,19 @@ choice.exit626:                                   ; preds = %choice.else625, %ch
   br label %choice.exit616
 }
 
-declare { i64, i1 } @"types::ctfe_eval_type_flag"(ptr, ptr) #0
+declare { i64, i1 } @"types::ctfe_eval_type_flag"(ptr, ptr) #3
 
-declare ptr @"types::resolve_type_value"(ptr, ptr) #0
+declare ptr @"types::resolve_type_value"(ptr, ptr) #3
 
-declare ptr @"types::ctfe_canonical_ti"(ptr, ptr) #0
+declare ptr @"types::ctfe_canonical_ti"(ptr, ptr) #3
 
-declare ptr @"types::codegen_eval_ctor_ex"(ptr, ptr, ptr, i1) #0
+declare ptr @"types::codegen_eval_ctor_ex"(ptr, ptr, ptr, i1) #3
 
-declare { i64, ptr } @"types::call_type_pred_name"(ptr) #0
+declare { i64, ptr } @"types::call_type_pred_name"(ptr) #3
 
-declare i1 @"types::eval_type_predicate"(ptr, ptr, ptr) #0
+declare i1 @"types::eval_type_predicate"(ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_eval_call_default"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_call_default"(ptr %0, ptr %1) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -36307,7 +35746,7 @@ choice.exit11:                                    ; preds = %choice.else10, %cho
   br label %choice.exit
 }
 
-define i1 @"expr::call_has_target"(ptr %0) #0 {
+define i1 @"expr::call_has_target"(ptr %0) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -36393,7 +35832,7 @@ str.eq.merge18:                                   ; preds = %str.eq.else17, %str
   br label %choice.exit8
 }
 
-define ptr @"expr::codegen_eval_call_target"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_call_target"(ptr %0, ptr %1) #3 {
 entry:
   %var.bv = alloca ptr, align 8
   %var.elem_is_fn = alloca i1, align 1
@@ -36645,7 +36084,7 @@ choice.next100:                                   ; preds = %choice.next89
   br label %choice.exit54
 }
 
-define ptr @"expr::desugar_array_lit_call_ast"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define ptr @"expr::desugar_array_lit_call_ast"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -36993,7 +36432,7 @@ a.after130:                                       ; preds = %a.create129, %a.sto
   ret ptr %call.res139
 }
 
-define ptr @"expr::desugar_array_lit_item_ast"(ptr %0, i1 %1, ptr %2) #0 {
+define ptr @"expr::desugar_array_lit_item_ast"(ptr %0, i1 %1, ptr %2) #3 {
 entry:
   %var.new_blk = alloca ptr, align 8
   %var._488 = alloca ptr, align 8
@@ -38197,7 +37636,7 @@ a.after564:                                       ; preds = %a.create563, %loop.
   br label %choice.exit104
 }
 
-define { i1, i64 } @"expr::is_splat_ast"(ptr %0) #0 {
+define { i1, i64 } @"expr::is_splat_ast"(ptr %0) #3 {
 entry:
   %var.r = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -38256,17 +37695,17 @@ choice.exit5:                                     ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-declare ptr @"main::codegen_eval_evaluated_rec_access"(ptr, ptr, ptr) #0
+declare ptr @"main::codegen_eval_evaluated_rec_access"(ptr, ptr, ptr) #3
 
-declare ptr @"main::codegen_eval_evaluated_slice_access"(ptr, ptr, ptr) #0
+declare ptr @"main::codegen_eval_evaluated_slice_access"(ptr, ptr, ptr) #3
 
-declare ptr @"main::codegen_eval_evaluated_array_access"(ptr, ptr, ptr) #0
+declare ptr @"main::codegen_eval_evaluated_array_access"(ptr, ptr, ptr) #3
 
-declare ptr @"main::codegen_eval_base_str_access"(ptr, ptr, ptr) #0
+declare ptr @"main::codegen_eval_base_str_access"(ptr, ptr, ptr) #3
 
-declare ptr @"main::codegen_eval_base_builder_access"(ptr, ptr, ptr) #0
+declare ptr @"main::codegen_eval_base_builder_access"(ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_eval_indirect_target_call"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_eval_indirect_target_call"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.ret2 = alloca ptr, align 8
   %var.target_ret = alloca ptr, align 8
@@ -39098,7 +38537,7 @@ choice.exit407:                                   ; preds = %choice.else406, %ch
   ret ptr %choice.res416
 }
 
-define ptr @"expr::fn_ret_vt_of"(ptr %0, ptr %1) #0 {
+define ptr @"expr::fn_ret_vt_of"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -39116,7 +38555,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"expr::fn_ret_vt_of_rev"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"expr::fn_ret_vt_of_rev"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.fi = alloca ptr, align 8
   %var.i = alloca i64, align 8
@@ -39309,9 +38748,9 @@ choice.exit40:                                    ; preds = %choice.else39, %cho
   br label %choice.exit
 }
 
-declare ptr @"stmt::fn_signature_return"(ptr, ptr, ptr, i64) #0
+declare ptr @"stmt::fn_signature_return"(ptr, ptr, ptr, i64) #3
 
-define ptr @"expr::codegen_indirect_fn_return_unknown"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_indirect_fn_return_unknown"(ptr %0, ptr %1) #3 {
 entry:
   %var.call = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -39442,7 +38881,7 @@ abort.dead25:                                     ; No predecessors!
   br label %concat.tot.len23
 }
 
-define ptr @"expr::codegen_closure_call_indirect_val"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_closure_call_indirect_val"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.phi = alloca ptr, align 8
@@ -41844,7 +41283,7 @@ abort.dead1348:                                   ; No predecessors!
   br label %nulcopy.len1346
 }
 
-define ptr @"expr::var_ti"(ptr %0, ptr %1) #0 {
+define ptr @"expr::var_ti"(ptr %0, ptr %1) #3 {
 entry:
   %var.dt89 = alloca ptr, align 8
   %var.vt = alloca ptr, align 8
@@ -42145,9 +41584,9 @@ choice.exit119:                                   ; preds = %choice.else118, %ch
   br label %choice.exit78
 }
 
-declare i64 @"types::find_dot"(ptr, i64) #0
+declare i64 @"types::find_dot"(ptr, i64) #3
 
-define ptr @"expr::field_path_ti"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::field_path_ti"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.next = alloca ptr, align 8
   %var.dot = alloca i64, align 8
@@ -42254,13 +41693,13 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-declare ptr @"types::record_field_ti_by_name"(ptr, ptr, ptr) #0
+declare ptr @"types::record_field_ti_by_name"(ptr, ptr, ptr) #3
 
-declare i1 @"types::has_local_var"(ptr, ptr) #0
+declare i1 @"types::has_local_var"(ptr, ptr) #3
 
-declare { i64, ptr } @"types::var_dtype"(ptr, ptr) #0
+declare { i64, ptr } @"types::var_dtype"(ptr, ptr) #3
 
-define ptr @"expr::var_forward_ti"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::var_forward_ti"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.stmts = alloca ptr, align 8
@@ -42319,7 +41758,7 @@ a.after9:                                         ; preds = %a.create8, %a.after
   ret ptr %call.res
 }
 
-define ptr @"expr::var_forward_ti_rev"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"expr::var_forward_ti_rev"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -42618,25 +42057,25 @@ a.after78:                                        ; preds = %a.create77, %choice
   br label %choice.exit37
 }
 
-declare ptr @"types::member_target_ti"(ptr, ptr) #0
+declare ptr @"types::member_target_ti"(ptr, ptr) #3
 
-declare { i64, ptr } @"types::fn_ret_sig_with_ti"(ptr, ptr) #0
+declare { i64, ptr } @"types::fn_ret_sig_with_ti"(ptr, ptr) #3
 
-declare ptr @"stmt::fn_signature_return_ti"(ptr, ptr, ptr, i64) #0
+declare ptr @"stmt::fn_signature_return_ti"(ptr, ptr, ptr, i64) #3
 
-declare ptr @"stmt::resolve_ti"(ptr, ptr) #0
+declare ptr @"stmt::resolve_ti"(ptr, ptr) #3
 
-declare void @"stmt::set_lambda_expected_type"(ptr) #0
+declare void @"stmt::set_lambda_expected_type"(ptr) #3
 
-declare ptr @"match::coerce_ram_repr"(ptr, ptr, ptr) #0
+declare ptr @"match::coerce_ram_repr"(ptr, ptr, ptr) #3
 
-declare i1 @"types::is_unboxed_ram_ti"(ptr, ptr) #0
+declare i1 @"types::is_unboxed_ram_ti"(ptr, ptr) #3
 
-declare ptr @"match::unboxed_ram_struct_t"(ptr) #0
+declare ptr @"match::unboxed_ram_struct_t"(ptr) #3
 
-declare void @"stmt::apply_call_ret_meta"(ptr, ptr) #0
+declare void @"stmt::apply_call_ret_meta"(ptr, ptr) #3
 
-define ptr @"expr::coerce_untyped_call_ret"(ptr %0, ptr %1) #0 {
+define ptr @"expr::coerce_untyped_call_ret"(ptr %0, ptr %1) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.res = alloca ptr, align 8
@@ -42741,9 +42180,9 @@ choice.exit8:                                     ; preds = %choice.else, %choic
   ret ptr %choice.res24
 }
 
-declare ptr @"match::convert_abi_ram_to_heap_union"(ptr, ptr, ptr) #0
+declare ptr @"match::convert_abi_ram_to_heap_union"(ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_eval_call_non_addr"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_call_non_addr"(ptr %0, ptr %1) #3 {
 entry:
   %var.p = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -43501,7 +42940,7 @@ err.normal353:                                    ; preds = %str_ok341
   unreachable
 }
 
-define i1 @"expr::is_intrinsic_name"(ptr %0) #0 {
+define i1 @"expr::is_intrinsic_name"(ptr %0) #3 {
 entry:
   %var.name = alloca ptr, align 8
   store ptr %0, ptr %var.name, align 8
@@ -43544,7 +42983,7 @@ abort.dead:                                       ; No predecessors!
   br label %idx_ok
 }
 
-define ptr @"expr::codegen_eval_legacy_intrinsic"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_legacy_intrinsic"(ptr %0, ptr %1) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.fn = alloca ptr, align 8
@@ -44796,7 +44235,7 @@ choice.exit680:                                   ; preds = %choice.else679, %ch
   br label %choice.exit270
 }
 
-define ptr @"expr::codegen_eval_bitcast"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_eval_bitcast"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.res_val = alloca ptr, align 8
   %var.dst_ll = alloca ptr, align 8
@@ -45371,13 +44810,13 @@ abort.dead271:                                    ; No predecessors!
   br label %nulcopy.len269
 }
 
-declare ptr @"types::vt_from_ti_cg"(ptr, ptr) #0
+declare ptr @"types::vt_from_ti_cg"(ptr, ptr) #3
 
-declare i1 @"types::is_record_vt"(ptr) #0
+declare i1 @"types::is_record_vt"(ptr) #3
 
-declare ptr @"types::field_vts"(ptr, ptr) #0
+declare ptr @"types::field_vts"(ptr, ptr) #3
 
-define ptr @"expr::rec_elem_vt"(ptr %0) #0 {
+define ptr @"expr::rec_elem_vt"(ptr %0) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   %var._39 = alloca ptr, align 8
@@ -45537,7 +44976,7 @@ choice.exit35:                                    ; preds = %choice.else34, %cho
   br label %choice.exit
 }
 
-define ptr @"expr::load_rec_vec"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #0 {
+define ptr @"expr::load_rec_vec"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #3 {
 entry:
   %var.ld = alloca ptr, align 8
   %var.bc = alloca ptr, align 8
@@ -45693,7 +45132,7 @@ abort.dead58:                                     ; No predecessors!
   br label %nulcopy.len56
 }
 
-define ptr @"expr::load_flag_vector"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"expr::load_flag_vector"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.base_vec = alloca ptr, align 8
   %var._ = alloca i64, align 8
@@ -45840,7 +45279,7 @@ a.after19:                                        ; preds = %a.create18, %loop.e
   ret ptr %call.res39
 }
 
-define ptr @"expr::load_flag_vector_step"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4) #0 {
+define ptr @"expr::load_flag_vector_step"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4) #3 {
 entry:
   %var.next_vec = alloca ptr, align 8
   %var.idx32 = alloca ptr, align 8
@@ -46019,7 +45458,7 @@ abort.dead73:                                     ; No predecessors!
   br label %nulcopy.len71
 }
 
-define ptr @"expr::store_rec_vec"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5) #0 {
+define ptr @"expr::store_rec_vec"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -46285,7 +45724,7 @@ choice.exit95:                                    ; preds = %choice.else94, %cho
   br label %choice.exit
 }
 
-define ptr @"expr::make_flag_record_type"(ptr %0, i64 %1) #0 {
+define ptr @"expr::make_flag_record_type"(ptr %0, i64 %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -46409,9 +45848,9 @@ a.after19:                                        ; preds = %a.create18, %loop.e
   ret ptr %call.res29
 }
 
-declare ptr @"types::struct_type_n"(ptr, ptr, i64) #0
+declare ptr @"types::struct_type_n"(ptr, ptr, i64) #3
 
-define void @"expr::store_flag_vector"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define void @"expr::store_flag_vector"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.gep = alloca ptr, align 8
   %var.idx64 = alloca ptr, align 8
@@ -46554,7 +45993,7 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len21
 }
 
-define ptr @"expr::make_flag_fvts"(i64 %0) #0 {
+define ptr @"expr::make_flag_fvts"(i64 %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -46675,9 +46114,9 @@ a.after18:                                        ; preds = %a.create17, %loop.e
   ret ptr %a.load226
 }
 
-declare ptr @"runtime::record_meta_from_ti"(ptr, ptr) #0
+declare ptr @"runtime::record_meta_from_ti"(ptr, ptr) #3
 
-define ptr @"expr::intrin_ptr_val"(ptr %0, ptr %1) #0 {
+define ptr @"expr::intrin_ptr_val"(ptr %0, ptr %1) #3 {
 entry:
   %var.raw_p = alloca ptr, align 8
   %var.is_p = alloca i1, align 1
@@ -46801,7 +46240,7 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len35
 }
 
-define ptr @"expr::intrin_size_val"(ptr %0, ptr %1) #0 {
+define ptr @"expr::intrin_size_val"(ptr %0, ptr %1) #3 {
 entry:
   %var.ev0 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -46840,7 +46279,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"expr::intrin_val8"(ptr %0, ptr %1) #0 {
+define ptr @"expr::intrin_val8"(ptr %0, ptr %1) #3 {
 entry:
   %var.ev0 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -46879,9 +46318,9 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-declare i1 @"types::is_32bit_target"(ptr) #0
+declare i1 @"types::is_32bit_target"(ptr) #3
 
-define ptr @"expr::intrin_fn_type2"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::intrin_fn_type2"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.parr = alloca ptr, align 8
   %var.p1 = alloca ptr, align 8
@@ -46911,7 +46350,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"expr::get_or_add_intrinsic"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::get_or_add_intrinsic"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.fn = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -47005,9 +46444,9 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len12
 }
 
-declare { i1, i64 } @"types::llvm_find_function"(ptr, ptr) #0
+declare { i1, i64 } @"types::llvm_find_function"(ptr, ptr) #3
 
-define ptr @"expr::call_fn2"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"expr::call_fn2"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.args = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -47090,7 +46529,7 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len22
 }
 
-define ptr @"expr::codegen_eval_scalar_math"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"expr::codegen_eval_scalar_math"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.fn2719 = alloca ptr, align 8
   %var.a12672 = alloca ptr, align 8
@@ -51407,7 +50846,7 @@ abort.dead2701:                                   ; No predecessors!
   br label %concat.tot.len2699
 }
 
-define { i64, ptr } @"expr::vec_elem_type_str"(ptr %0) #0 {
+define { i64, ptr } @"expr::vec_elem_type_str"(ptr %0) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   store ptr %0, ptr %var.vt, align 8
@@ -51473,13 +50912,13 @@ choice.next20:                                    ; preds = %choice.next13
   br label %choice.exit
 }
 
-declare ptr @"stmt::codegen_rune_to_str"(ptr, ptr) #0
+declare ptr @"stmt::codegen_rune_to_str"(ptr, ptr) #3
 
-declare ptr @"stmt::codegen_float_to_str"(ptr, ptr) #0
+declare ptr @"stmt::codegen_float_to_str"(ptr, ptr) #3
 
-declare ptr @"stmt::codegen_int_to_str"(ptr, ptr, i1) #0
+declare ptr @"stmt::codegen_int_to_str"(ptr, ptr, i1) #3
 
-define ptr @"expr::coerce_math_arg"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define ptr @"expr::coerce_math_arg"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %var.is_fp_from_int = alloca i1, align 1
   %var.vty = alloca ptr, align 8
@@ -51869,7 +51308,7 @@ abort.dead188:                                    ; No predecessors!
   br label %nulcopy.len186
 }
 
-define ptr @"expr::call_fn1"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"expr::call_fn1"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.a0 = alloca ptr, align 8
@@ -51890,9 +51329,9 @@ entry:
   ret ptr %call.res
 }
 
-declare ptr @"types::fn_type3"(ptr, ptr, ptr, ptr) #0
+declare ptr @"types::fn_type3"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::call_fn3"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #0 {
+define ptr @"expr::call_fn3"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #3 {
 entry:
   %var.args = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -51980,13 +51419,13 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len24
 }
 
-declare i1 @"types::is_wasm_target"(ptr) #0
+declare i1 @"types::is_wasm_target"(ptr) #3
 
-declare ptr @"main::codegen_eval_error_construct"(ptr, ptr) #0
+declare ptr @"main::codegen_eval_error_construct"(ptr, ptr) #3
 
-declare { i1, i64 } @"stmt::param_clo_ty"(ptr, ptr) #0
+declare { i1, i64 } @"stmt::param_clo_ty"(ptr, ptr) #3
 
-define i1 @"expr::is_cast_type_name"(ptr %0) #0 {
+define i1 @"expr::is_cast_type_name"(ptr %0) #3 {
 entry:
   %var.name = alloca ptr, align 8
   store ptr %0, ptr %var.name, align 8
@@ -52399,7 +51838,7 @@ str.eq.merge268:                                  ; preds = %str.eq.else267, %st
   br i1 %case.or275, label %choice.case, label %choice.next
 }
 
-define ptr @"expr::codegen_eval_coerce"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_eval_coerce"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.arg_ti = alloca ptr, align 8
   %var.is_flag = alloca i1, align 1
@@ -52477,9 +51916,9 @@ choice.exit4:                                     ; preds = %choice.else, %choic
   ret ptr %choice.res27
 }
 
-declare ptr @"types::codegen_cond_value_with_ti"(ptr, ptr, ptr, ptr) #0
+declare ptr @"types::codegen_cond_value_with_ti"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::coerce_val"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::coerce_val"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.t_ll = alloca ptr, align 8
   %var.is_f64 = alloca i1, align 1
@@ -53463,11 +52902,11 @@ abort.dead569:                                    ; No predecessors!
   br label %nulcopy.len567
 }
 
-declare ptr @"stmt::codegen_cond_value"(ptr, ptr, ptr) #0
+declare ptr @"stmt::codegen_cond_value"(ptr, ptr, ptr) #3
 
-declare { i64, ptr } @"diag::E3065_rawptr_to_string"() #0
+declare { i64, ptr } @"diag::E3065_rawptr_to_string"() #3
 
-define ptr @"expr::codegen_eval_fn_call"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_fn_call"(ptr %0, ptr %1) #3 {
 entry:
   %var.foreign_bad = alloca i64, align 8
   %var.t = alloca ptr, align 8
@@ -53500,7 +52939,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define i64 @"expr::known_foreign_call_mismatch"(ptr %0, ptr %1, i64 %2) #0 {
+define i64 @"expr::known_foreign_call_mismatch"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.actual = alloca ptr, align 8
   %var.expected = alloca ptr, align 8
@@ -53742,7 +53181,7 @@ choice.exit61:                                    ; preds = %choice.else60, %cho
   br label %choice.exit
 }
 
-define ptr @"expr::known_foreign_param_type"(ptr %0, i64 %1) #0 {
+define ptr @"expr::known_foreign_param_type"(ptr %0, i64 %1) #3 {
 entry:
   %var.at = alloca i64, align 8
   %var.name = alloca ptr, align 8
@@ -53819,7 +53258,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"expr::codegen_known_foreign_arg_error"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"expr::codegen_known_foreign_arg_error"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %cat.ibuf = alloca [24 x i8], align 1
   %var.at = alloca i64, align 8
@@ -54153,7 +53592,7 @@ abort.dead96:                                     ; No predecessors!
   br label %concat.tot.len94
 }
 
-define ptr @"expr::codegen_eval_fn_call_no_foreign"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_fn_call_no_foreign"(ptr %0, ptr %1) #3 {
 entry:
   %var.is_direct_top_fn = alloca i1, align 1
   %var.cfn = alloca ptr, align 8
@@ -54471,7 +53910,7 @@ choice.exit134:                                   ; preds = %choice.else133, %ch
   br label %choice.exit19
 }
 
-define ptr @"expr::codegen_eval_param_call"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_eval_param_call"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ret_vt = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -54659,9 +54098,9 @@ choice.next:                                      ; preds = %concat.tot.len40
   br label %choice.exit
 }
 
-declare ptr @"stmt::param_clo_ret"(ptr, ptr) #0
+declare ptr @"stmt::param_clo_ret"(ptr, ptr) #3
 
-define { i64, ptr } @"expr::closure_fn_of"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"expr::closure_fn_of"(ptr %0, ptr %1) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.name = alloca ptr, align 8
@@ -54682,7 +54121,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"expr::closure_fn_of_rev"(ptr %0, ptr %1, i64 %2) #0 {
+define { i64, ptr } @"expr::closure_fn_of_rev"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.i = alloca i64, align 8
@@ -54981,7 +54420,7 @@ err.normal110:                                    ; preds = %unwrap.abort.1666
   unreachable
 }
 
-define ptr @"expr::codegen_eval_unaliased_call"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_unaliased_call"(ptr %0, ptr %1) #3 {
 entry:
   %var._273 = alloca ptr, align 8
   %var._272 = alloca ptr, align 8
@@ -55534,7 +54973,7 @@ choice.exit271:                                   ; preds = %choice.else270, %ch
   br label %choice.exit258
 }
 
-define ptr @"expr::codegen_eval_named_call"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_named_call"(ptr %0, ptr %1) #3 {
 entry:
   %"var.aev'2847" = alloca ptr, align 8
   %var._2835 = alloca ptr, align 8
@@ -60777,7 +60216,7 @@ a.after2935:                                      ; preds = %a.create2934, %a.af
   br label %choice.exit2798
 }
 
-define ptr @"expr::split_comma_names"(ptr %0) #0 {
+define ptr @"expr::split_comma_names"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -60821,7 +60260,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"expr::split_comma_names_step"(ptr %0, i64 %1, i64 %2, ptr %3) #0 {
+define ptr @"expr::split_comma_names_step"(ptr %0, i64 %1, i64 %2, ptr %3) #3 {
 entry:
   %var.acc = alloca ptr, align 8
   %var.i = alloca i64, align 8
@@ -61119,15 +60558,15 @@ a.after129:                                       ; preds = %a.create128, %choic
   br label %choice.exit45
 }
 
-declare ptr @"stmt::fn_signature_cparams"(ptr, ptr) #0
+declare ptr @"stmt::fn_signature_cparams"(ptr, ptr) #3
 
-declare ptr @"stmt::fn_signature_param_tis"(ptr, ptr) #0
+declare ptr @"stmt::fn_signature_param_tis"(ptr, ptr) #3
 
-declare ptr @"stmt::find_cparam"(ptr, ptr) #0
+declare ptr @"stmt::find_cparam"(ptr, ptr) #3
 
-declare ptr @"match::ctfe_eval"(ptr, ptr, ptr, i64) #0
+declare ptr @"match::ctfe_eval"(ptr, ptr, ptr, i64) #3
 
-define ptr @"expr::resolve_explicit_type_info"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::resolve_explicit_type_info"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.dt290 = alloca ptr, align 8
   %var.dt0255 = alloca ptr, align 8
@@ -61684,15 +61123,15 @@ choice.exit282:                                   ; preds = %choice.else281, %ch
   br label %choice.exit59
 }
 
-declare { i64, ptr } @"types::ct_bind_find_dname"(ptr) #0
+declare { i64, ptr } @"types::ct_bind_find_dname"(ptr) #3
 
-declare { i64, ptr } @"types::find_typedef_name_for_ti"(ptr, ptr) #0
+declare { i64, ptr } @"types::find_typedef_name_for_ti"(ptr, ptr) #3
 
-declare ptr @"stmt::lambda_call_arg_types"(ptr, ptr) #0
+declare ptr @"stmt::lambda_call_arg_types"(ptr, ptr) #3
 
-declare void @"types::init_check_escape"(ptr, ptr, i64, i64) #0
+declare void @"types::init_check_escape"(ptr, ptr, i64, i64) #3
 
-define ptr @"expr::slice_exprs_from"(ptr %0, i64 %1) #0 {
+define ptr @"expr::slice_exprs_from"(ptr %0, i64 %1) #3 {
 entry:
   %var.start = alloca i64, align 8
   %var.es = alloca ptr, align 8
@@ -61757,7 +61196,7 @@ a.after8:                                         ; preds = %a.create7, %a.after
   ret ptr %call.res
 }
 
-define ptr @"expr::slice_exprs_from_at"(ptr %0, i64 %1, i64 %2, ptr %3) #0 {
+define ptr @"expr::slice_exprs_from_at"(ptr %0, i64 %1, i64 %2, ptr %3) #3 {
 entry:
   %var.next = alloca ptr, align 8
   %var.e = alloca ptr, align 8
@@ -62056,9 +61495,9 @@ a.after93:                                        ; preds = %a.create92, %a.afte
   br label %choice.exit
 }
 
-declare i64 @"stmt::cparam_val_index"(ptr, ptr) #0
+declare i64 @"stmt::cparam_val_index"(ptr, ptr) #3
 
-define { i64, ptr } @"expr::sanitize_mono_str"(ptr %0, i64 %1, ptr %2) #0 {
+define { i64, ptr } @"expr::sanitize_mono_str"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.lo = alloca i64, align 8
@@ -62353,9 +61792,9 @@ abort.dead55:                                     ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #7
 
-declare i1 @"ascii::is_alnum"(i64) #0
+declare i1 @"ascii::is_alnum"(i64) #3
 
-define i64 @"expr::hex_char"(i64 %0) #0 {
+define i64 @"expr::hex_char"(i64 %0) #3 {
 entry:
   %var.n = alloca i64, align 8
   store i64 %0, ptr %var.n, align 8
@@ -62364,15 +61803,15 @@ entry:
   ret i64 %call.res
 }
 
-declare i64 @"ascii::hex_char_lower"(i64) #0
+declare i64 @"ascii::hex_char_lower"(i64) #3
 
-declare { i64, ptr } @"str::from_float"(double) #0
+declare { i64, ptr } @"str::from_float"(double) #3
 
-declare { i64, ptr } @"diag::compile_time_parameter_suffix"() #0
+declare { i64, ptr } @"diag::compile_time_parameter_suffix"() #3
 
-declare i64 @"types::member_index"(ptr, ptr) #0
+declare i64 @"types::member_index"(ptr, ptr) #3
 
-define ptr @"expr::infer_ct_param"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"expr::infer_ct_param"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %"var.ti'1344" = alloca ptr, align 8
   %"var.dt'1338" = alloca ptr, align 8
@@ -64694,7 +64133,7 @@ choice.exit1330:                                  ; preds = %choice.else1329, %c
   br label %choice.exit1136
 }
 
-define i64 @"expr::find_ct_param_index"(ptr %0, ptr %1) #0 {
+define i64 @"expr::find_ct_param_index"(ptr %0, ptr %1) #3 {
 entry:
   %var.ct_name = alloca ptr, align 8
   %var.tis = alloca ptr, align 8
@@ -64749,7 +64188,7 @@ a.after8:                                         ; preds = %a.create7, %a.after
   ret i64 %call.res
 }
 
-define i64 @"expr::find_ct_param_index_at"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define i64 @"expr::find_ct_param_index_at"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.is_match = alloca i1, align 1
   %var.ti = alloca ptr, align 8
@@ -64938,7 +64377,7 @@ a.after44:                                        ; preds = %a.create43, %choice
   br label %choice.exit38
 }
 
-define i1 @"expr::ti_has_ct_name"(ptr %0, ptr %1) #0 {
+define i1 @"expr::ti_has_ct_name"(ptr %0, ptr %1) #3 {
 entry:
   %var.f = alloca ptr, align 8
   %var._69 = alloca ptr, align 8
@@ -65126,7 +64565,7 @@ or.1695.exit:                                     ; preds = %or.1695.else, %or.1
   br label %choice.exit
 }
 
-define i1 @"expr::ram_slot_has_ct"(ptr %0, ptr %1) #0 {
+define i1 @"expr::ram_slot_has_ct"(ptr %0, ptr %1) #3 {
 entry:
   %var.n = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -65195,7 +64634,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %choice.exit
 }
 
-define i1 @"expr::rec_has_ct_name"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"expr::rec_has_ct_name"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.ft = alloca ptr, align 8
   %rec.salloc = alloca { ptr, ptr, ptr, i1, ptr }, align 8
@@ -65428,7 +64867,7 @@ a.after68:                                        ; preds = %a.create67, %choice
   br label %choice.exit63
 }
 
-define ptr @"expr::infer_ct_from_ram_arg"(ptr %0, ptr %1) #0 {
+define ptr @"expr::infer_ct_from_ram_arg"(ptr %0, ptr %1) #3 {
 entry:
   %var.pti = alloca ptr, align 8
   %var.pdt = alloca ptr, align 8
@@ -65733,9 +65172,9 @@ choice.exit59:                                    ; preds = %choice.else58, %cho
   br label %choice.exit3
 }
 
-declare ptr @"stmt::infer_expr_type"(ptr, ptr) #0
+declare ptr @"stmt::infer_expr_type"(ptr, ptr) #3
 
-define ptr @"expr::infer_arg_ti"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::infer_arg_ti"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.is_flag = alloca i1, align 1
   %var.v = alloca ptr, align 8
@@ -65915,7 +65354,7 @@ choice.next41:                                    ; preds = %choice.next
   br label %choice.exit39
 }
 
-define ptr @"expr::synth_variant_ram_ti"(ptr %0, ptr %1) #0 {
+define ptr @"expr::synth_variant_ram_ti"(ptr %0, ptr %1) #3 {
 entry:
   %var.slot_info = alloca ptr, align 8
   %var.pti = alloca ptr, align 8
@@ -66385,7 +65824,7 @@ choice.next193:                                   ; preds = %choice.next178
   br label %choice.exit176
 }
 
-define ptr @"expr::synth_rec_ti"(ptr %0, ptr %1) #0 {
+define ptr @"expr::synth_rec_ti"(ptr %0, ptr %1) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._10 = alloca ptr, align 8
@@ -66471,7 +65910,7 @@ choice.exit16:                                    ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define ptr @"expr::synth_rec_ti_from_record_expr"(ptr %0, ptr %1) #0 {
+define ptr @"expr::synth_rec_ti_from_record_expr"(ptr %0, ptr %1) #3 {
 entry:
   %var.finf = alloca ptr, align 8
   %var.fname = alloca ptr, align 8
@@ -66684,7 +66123,7 @@ a.after47:                                        ; preds = %a.create46, %loop.e
   ret ptr %enum.alloc40
 }
 
-define ptr @"expr::infer_expr_type_and_info"(ptr %0, ptr %1) #0 {
+define ptr @"expr::infer_expr_type_and_info"(ptr %0, ptr %1) #3 {
 entry:
   %"var.vt'240" = alloca ptr, align 8
   %var.m = alloca ptr, align 8
@@ -67197,7 +66636,7 @@ choice.next227:                                   ; preds = %choice.next216
   br label %choice.exit
 }
 
-define ptr @"expr::synth_rec_ti_from_var"(ptr %0, ptr %1) #0 {
+define ptr @"expr::synth_rec_ti_from_var"(ptr %0, ptr %1) #3 {
 entry:
   %var.fnames = alloca ptr, align 8
   %var.fvts = alloca ptr, align 8
@@ -67329,11 +66768,11 @@ a.after28:                                        ; preds = %a.create27, %a.afte
   br label %choice.exit
 }
 
-declare ptr @"match::var_fvts"(ptr, ptr) #0
+declare ptr @"match::var_fvts"(ptr, ptr) #3
 
-declare ptr @"types::var_fnames"(ptr, ptr) #0
+declare ptr @"types::var_fnames"(ptr, ptr) #3
 
-define ptr @"expr::synth_rec_ti_from_fvts"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::synth_rec_ti_from_fvts"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.fvt = alloca ptr, align 8
   %var._139 = alloca ptr, align 8
@@ -67818,11 +67257,11 @@ a.after186:                                       ; preds = %a.create185, %loop.
   br label %choice.exit
 }
 
-declare ptr @"stmt::infer_call_expr_type"(ptr, ptr) #0
+declare ptr @"stmt::infer_call_expr_type"(ptr, ptr) #3
 
-declare ptr @"stmt::infer_member_type"(ptr, ptr) #0
+declare ptr @"stmt::infer_member_type"(ptr, ptr) #3
 
-define ptr @"expr::infer_slice_arg_elem"(ptr %0, ptr %1) #0 {
+define ptr @"expr::infer_slice_arg_elem"(ptr %0, ptr %1) #3 {
 entry:
   %"var.vt'380" = alloca ptr, align 8
   %"var.vt'355" = alloca ptr, align 8
@@ -68660,9 +68099,9 @@ choice.next373:                                   ; preds = %choice.next255
   br label %choice.exit253
 }
 
-declare ptr @"main::array_elem_vt"(ptr, ptr) #0
+declare ptr @"main::array_elem_vt"(ptr, ptr) #3
 
-define ptr @"expr::infer_ct_fn_ret"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #0 {
+define ptr @"expr::infer_ct_fn_ret"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var.arg = alloca ptr, align 8
@@ -69052,7 +68491,7 @@ a.after162:                                       ; preds = %a.create161, %a.aft
   br label %choice.exit142
 }
 
-define ptr @"expr::infer_ct_fn_match"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::infer_ct_fn_match"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.p0_vt = alloca ptr, align 8
   %var._444 = alloca ptr, align 8
@@ -70091,7 +69530,7 @@ choice.exit438:                                   ; preds = %choice.else437, %ch
   br label %choice.exit191
 }
 
-define { i64, ptr } @"expr::arg_to_fn_name"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"expr::arg_to_fn_name"(ptr %0, ptr %1) #3 {
 entry:
   %var.mod_name = alloca ptr, align 8
   %var._24 = alloca ptr, align 8
@@ -70276,7 +69715,7 @@ abort.dead56:                                     ; No predecessors!
   br label %concat.tot.len54
 }
 
-define ptr @"expr::fn_p0_vt"(ptr %0, ptr %1) #0 {
+define ptr @"expr::fn_p0_vt"(ptr %0, ptr %1) #3 {
 entry:
   %var._24 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -70403,9 +69842,9 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-declare ptr @"stmt::fn_signature_param_types"(ptr, ptr, ptr, i64) #0
+declare ptr @"stmt::fn_signature_param_types"(ptr, ptr, ptr, i64) #3
 
-define ptr @"expr::fn_p0_ti"(ptr %0) #0 {
+define ptr @"expr::fn_p0_ti"(ptr %0) #3 {
 entry:
   %var._23 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -70535,11 +69974,11 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-declare ptr @"stmt::lambda_captures"(ptr, ptr) #0
+declare ptr @"stmt::lambda_captures"(ptr, ptr) #3
 
-declare ptr @"stmt::infer_param_types_env"(ptr, ptr, ptr, ptr) #0
+declare ptr @"stmt::infer_param_types_env"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::infer_ct_from_any_container"(ptr %0, ptr %1, i64 %2) #0 {
+define ptr @"expr::infer_ct_from_any_container"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.sl = alloca ptr, align 8
   %var.arg = alloca ptr, align 8
@@ -70781,7 +70220,7 @@ a.after73:                                        ; preds = %a.create72, %choice
   br label %choice.exit66
 }
 
-define { i64, ptr } @"expr::ti_to_type_key"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define { i64, ptr } @"expr::ti_to_type_key"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.found_td = alloca ptr, align 8
   %var._676 = alloca ptr, align 8
@@ -72360,7 +71799,7 @@ choice.exit769:                                   ; preds = %choice.else768, %ch
   br label %choice.exit21
 }
 
-define { i64, ptr } @"expr::vt_to_type_key"(ptr %0, ptr %1, ptr %2) #0 {
+define { i64, ptr } @"expr::vt_to_type_key"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.dtype = alloca ptr, align 8
   %var.vt = alloca ptr, align 8
@@ -72643,7 +72082,7 @@ choice.next116:                                   ; preds = %choice.next111
   br label %choice.exit9
 }
 
-define { i64, ptr } @"expr::rec_ti_to_type_key"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4) #0 {
+define { i64, ptr } @"expr::rec_ti_to_type_key"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4) #3 {
 entry:
   %var.rf = alloca ptr, align 8
   %var.b = alloca ptr, align 8
@@ -73260,9 +72699,9 @@ a.after183:                                       ; preds = %a.create182, %b.gro
   br label %choice.exit
 }
 
-declare { i1, i64 } @"types::fninfo_index"(ptr, ptr) #0
+declare { i1, i64 } @"types::fninfo_index"(ptr, ptr) #3
 
-define i1 @"expr::compile_mono_fn"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6, ptr %7) #0 {
+define i1 @"expr::compile_mono_fn"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6, ptr %7) #3 {
 entry:
   %var.has_ret_meta = alloca i1, align 1
   %var.ret_dtype = alloca ptr, align 8
@@ -75328,11 +74767,11 @@ a.after1103:                                      ; preds = %a.create1102, %a.af
   br label %choice.exit14
 }
 
-declare { i64, ptr } @"types::decl_module"(ptr, i64) #0
+declare { i64, ptr } @"types::decl_module"(ptr, i64) #3
 
-declare ptr @"stmt::fn_signature_param_dtypes"(ptr, ptr) #0
+declare ptr @"stmt::fn_signature_param_dtypes"(ptr, ptr) #3
 
-define ptr @"expr::slice_names_from_at"(ptr %0, i64 %1, i64 %2, ptr %3) #0 {
+define ptr @"expr::slice_names_from_at"(ptr %0, i64 %1, i64 %2, ptr %3) #3 {
 entry:
   %var.next = alloca ptr, align 8
   %var.acc = alloca ptr, align 8
@@ -75628,9 +75067,9 @@ a.after92:                                        ; preds = %a.create91, %a.afte
   br label %choice.exit
 }
 
-declare void @"types::add_fn_def"(ptr, ptr) #0
+declare void @"types::add_fn_def"(ptr, ptr) #3
 
-define ptr @"expr::subst_mono_vts"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, ptr %5) #0 {
+define ptr @"expr::subst_mono_vts"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, ptr %5) #3 {
 entry:
   %var._142 = alloca ptr, align 8
   %var._139 = alloca ptr, align 8
@@ -76107,7 +75546,7 @@ a.after198:                                       ; preds = %a.create197, %a.aft
   br label %choice.exit
 }
 
-define ptr @"expr::subst_mono_dtypes"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, ptr %5) #0 {
+define ptr @"expr::subst_mono_dtypes"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, ptr %5) #3 {
 entry:
   %var.is_ct = alloca i1, align 1
   %var.name = alloca ptr, align 8
@@ -76616,7 +76055,7 @@ a.after214:                                       ; preds = %a.create213, %a.aft
   br label %choice.exit
 }
 
-define ptr @"expr::subst_mono_tis"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, ptr %5) #0 {
+define ptr @"expr::subst_mono_tis"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, ptr %5) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var._53 = alloca ptr, align 8
@@ -76907,7 +76346,7 @@ a.after100:                                       ; preds = %a.create99, %a.afte
   br label %choice.exit
 }
 
-define ptr @"expr::subst_mono_ti"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::subst_mono_ti"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.nf3 = alloca ptr, align 8
   %var.nf2 = alloca ptr, align 8
@@ -77422,7 +76861,7 @@ a.after272:                                       ; preds = %a.create271, %a.aft
   br label %choice.exit
 }
 
-define ptr @"expr::subst_mono_ram_slot"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::subst_mono_ram_slot"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.sub_vt = alloca ptr, align 8
   %var.is_match = alloca i1, align 1
@@ -77534,7 +76973,7 @@ choice.exit22:                                    ; preds = %choice.else21, %cho
   br label %choice.exit
 }
 
-define ptr @"expr::subst_mono_fields"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, ptr %5) #0 {
+define ptr @"expr::subst_mono_fields"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, ptr %5) #3 {
 entry:
   %var.new_ti = alloca ptr, align 8
   %var.new_vt = alloca ptr, align 8
@@ -77945,7 +77384,7 @@ a.after155:                                       ; preds = %a.create154, %a.aft
   br label %choice.exit
 }
 
-define ptr @"expr::subst_mono_ret_vt"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::subst_mono_ret_vt"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.is_ct = alloca i1, align 1
   %var.name = alloca ptr, align 8
@@ -78018,31 +77457,31 @@ choice.exit10:                                    ; preds = %choice.else, %choic
   ret ptr %choice.res13
 }
 
-declare void @"types::ct_bind_push"(ptr, ptr) #0
+declare void @"types::ct_bind_push"(ptr, ptr) #3
 
-declare void @"types::ct_bind_set_last_dname"(ptr) #0
+declare void @"types::ct_bind_set_last_dname"(ptr) #3
 
-declare void @"types::ct_val_bind_push"(ptr, ptr) #0
+declare void @"types::ct_val_bind_push"(ptr, ptr) #3
 
-declare ptr @"match::ctfe_lower_record"(ptr, ptr) #0
+declare ptr @"match::ctfe_lower_record"(ptr, ptr) #3
 
-declare ptr @"match::ctfe_lower_map"(ptr, ptr) #0
+declare ptr @"match::ctfe_lower_map"(ptr, ptr) #3
 
-declare i1 @"types::has_type_name"(ptr, ptr) #0
+declare i1 @"types::has_type_name"(ptr, ptr) #3
 
-declare void @"runtime::add_type_rec"(ptr, ptr, ptr, { i1, i64 }, ptr) #0
+declare void @"runtime::add_type_rec"(ptr, ptr, ptr, { i1, i64 }, ptr) #3
 
-declare void @"stmt::fn_ret_rec_add"(ptr, ptr, { i1, i64 }, ptr, ptr, ptr) #0
+declare void @"stmt::fn_ret_rec_add"(ptr, ptr, { i1, i64 }, ptr, ptr, ptr) #3
 
-declare void @"stmt::compile_typed_mono_fn"(ptr, ptr, ptr, ptr, ptr) #0
+declare void @"stmt::compile_typed_mono_fn"(ptr, ptr, ptr, ptr, ptr) #3
 
-declare ptr @"stmt::truncate_vars"(ptr, i64) #0
+declare ptr @"stmt::truncate_vars"(ptr, i64) #3
 
-declare void @"types::ct_bind_pop_to"(i64) #0
+declare void @"types::ct_bind_pop_to"(i64) #3
 
-declare void @"types::ct_val_bind_pop_to"(i64) #0
+declare void @"types::ct_val_bind_pop_to"(i64) #3
 
-define ptr @"expr::named_call_emit_pre"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #0 {
+define ptr @"expr::named_call_emit_pre"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #3 {
 entry:
   %var.arg_vts = alloca ptr, align 8
   %var.args = alloca ptr, align 8
@@ -78109,7 +77548,7 @@ a.after12:                                        ; preds = %a.create11, %a.afte
   ret ptr %call.res
 }
 
-define ptr @"expr::named_call_emit_pre_opt"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6, i1 %7) #0 {
+define ptr @"expr::named_call_emit_pre_opt"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6, i1 %7) #3 {
 entry:
   %var.out = alloca ptr, align 8
   %var.res_u = alloca ptr, align 8
@@ -79602,7 +79041,7 @@ abort.dead749:                                    ; No predecessors!
   br label %nulcopy.len747
 }
 
-define ptr @"expr::coerce_arg_ptr_int"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define ptr @"expr::coerce_arg_ptr_int"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %var.dt_ti197 = alloca ptr, align 8
   %var.dt_ti = alloca ptr, align 8
@@ -80116,15 +79555,15 @@ choice.exit182:                                   ; preds = %choice.else181, %ch
   br label %choice.exit148
 }
 
-declare ptr @"match::convert_heap_ram_to_unboxed"(ptr, ptr, ptr) #0
+declare ptr @"match::convert_heap_ram_to_unboxed"(ptr, ptr, ptr) #3
 
-declare ptr @"match::convert_unboxed_ram_to_heap"(ptr, ptr, ptr) #0
+declare ptr @"match::convert_unboxed_ram_to_heap"(ptr, ptr, ptr) #3
 
-declare i1 @"stmt::is_module_dynamic"(ptr, ptr) #0
+declare i1 @"stmt::is_module_dynamic"(ptr, ptr) #3
 
-declare ptr @"stmt::get_or_create_dyn_fn_ptr"(ptr, ptr, { i1, i64 }) #0
+declare ptr @"stmt::get_or_create_dyn_fn_ptr"(ptr, ptr, { i1, i64 }) #3
 
-define ptr @"expr::unpack_unboxed_call_ret"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define ptr @"expr::unpack_unboxed_call_ret"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %var.slot578 = alloca ptr, align 8
   %var.raw539 = alloca ptr, align 8
@@ -81079,11 +80518,11 @@ abort.dead572:                                    ; No predecessors!
   br label %nulcopy.len570
 }
 
-declare i1 @"types::name_is_qualified"(ptr, i64) #0
+declare i1 @"types::name_is_qualified"(ptr, i64) #3
 
-declare i1 @"stmt::declare_external_fn"(ptr, ptr) #0
+declare i1 @"stmt::declare_external_fn"(ptr, ptr) #3
 
-define ptr @"expr::codegen_eval_named_call_checked"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #0 {
+define ptr @"expr::codegen_eval_named_call_checked"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #3 {
 entry:
   %var.mismatch = alloca i64, align 8
   %var.ok_arity = alloca i1, align 1
@@ -81236,7 +80675,7 @@ a.after56:                                        ; preds = %a.create55, %choice
   br label %choice.exit28
 }
 
-define i1 @"expr::codegen_check_call_arity"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define i1 @"expr::codegen_check_call_arity"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %cat.ibuf99 = alloca [24 x i8], align 1
   %cat.ibuf91 = alloca [24 x i8], align 1
@@ -81575,7 +81014,7 @@ abort.dead136:                                    ; No predecessors!
   br label %concat.tot.len134
 }
 
-define i64 @"expr::codegen_call_mismatch_at"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #0 {
+define i64 @"expr::codegen_call_mismatch_at"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #3 {
 entry:
   %var.mismatch = alloca i1, align 1
   %var.compat = alloca i1, align 1
@@ -82551,7 +81990,7 @@ a.after446:                                       ; preds = %a.create445, %choic
   br label %choice.exit437
 }
 
-define i1 @"expr::is_ram_arg_mismatch"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"expr::is_ram_arg_mismatch"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var._12 = alloca ptr, align 8
   %var.arg_ti = alloca ptr, align 8
@@ -82608,7 +82047,7 @@ choice.next6:                                     ; preds = %choice.case
   br label %choice.exit4
 }
 
-define ptr @"expr::codegen_ram_type_of_expr"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_ram_type_of_expr"(ptr %0, ptr %1) #3 {
 entry:
   %var.f857 = alloca ptr, align 8
   %var._856 = alloca ptr, align 8
@@ -84136,7 +83575,7 @@ choice.next850:                                   ; preds = %choice.next708
   br label %choice.exit
 }
 
-define ptr @"expr::ram_result_ti"(ptr %0, ptr %1) #0 {
+define ptr @"expr::ram_result_ti"(ptr %0, ptr %1) #3 {
 entry:
   %var.negative = alloca ptr, align 8
   %var.positive = alloca ptr, align 8
@@ -84199,11 +83638,11 @@ entry:
   ret ptr %enum.alloc19
 }
 
-declare { i64, i1 } @"types::ctfe_eval_type_choice"(ptr, ptr) #0
+declare { i64, i1 } @"types::ctfe_eval_type_choice"(ptr, ptr) #3
 
-declare void @"types::ctfe_push_branch_type_binds"(ptr, ptr, ptr) #0
+declare void @"types::ctfe_push_branch_type_binds"(ptr, ptr, ptr) #3
 
-define i1 @"expr::ram_shape_compatible"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"expr::ram_shape_compatible"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.as = alloca ptr, align 8
   %var._19 = alloca ptr, align 8
@@ -84290,7 +83729,7 @@ choice.next13:                                    ; preds = %choice.next
   br label %choice.exit
 }
 
-define i1 @"expr::ram_b_flag_compatible"(ptr %0) #0 {
+define i1 @"expr::ram_b_flag_compatible"(ptr %0) #3 {
 entry:
   %var.vt_b = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -84329,7 +83768,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"expr::ram_b_slots_compatible"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define i1 @"expr::ram_b_slots_compatible"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.bs = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -84382,7 +83821,7 @@ and.1770.exit:                                    ; preds = %and.1770.else, %and
   br label %choice.exit
 }
 
-define i1 @"expr::ram_slot_compatible"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"expr::ram_slot_compatible"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.b_vt = alloca ptr, align 8
   %var.a_vt = alloca ptr, align 8
@@ -84493,9 +83932,9 @@ choice.exit35:                                    ; preds = %choice.else34, %cho
   br label %choice.exit
 }
 
-declare ptr @"types::slot_payload_type"(ptr, ptr) #0
+declare ptr @"types::slot_payload_type"(ptr, ptr) #3
 
-define { i64, ptr } @"expr::fi_param_name"(ptr %0, ptr %1, i64 %2) #0 {
+define { i64, ptr } @"expr::fi_param_name"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.i = alloca i64, align 8
@@ -84513,7 +83952,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"expr::fi_param_name_at"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define { i64, ptr } @"expr::fi_param_name_at"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var._98 = alloca ptr, align 8
@@ -84799,9 +84238,9 @@ choice.exit93:                                    ; preds = %choice.else92, %cho
   br label %choice.exit44
 }
 
-declare i1 @"types::is_ram_vt"(ptr) #0
+declare i1 @"types::is_ram_vt"(ptr) #3
 
-define ptr @"expr::codegen_eval_named_call_emit"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #0 {
+define ptr @"expr::codegen_eval_named_call_emit"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #3 {
 entry:
   %var.out = alloca ptr, align 8
   %var.sres = alloca ptr, align 8
@@ -85226,9 +84665,9 @@ abort.dead179:                                    ; No predecessors!
   br label %nulcopy.len177
 }
 
-declare i1 @"stmt::is_foreign_fn"(ptr) #0
+declare i1 @"stmt::is_foreign_fn"(ptr) #3
 
-define ptr @"expr::eval_named_args_step"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4, ptr %5, i64 %6, ptr %7) #0 {
+define ptr @"expr::eval_named_args_step"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4, ptr %5, i64 %6, ptr %7) #3 {
 entry:
   %var.a3 = alloca ptr, align 8
   %var.pty_raw = alloca ptr, align 8
@@ -86363,7 +85802,7 @@ a.after552:                                       ; preds = %a.create551, %choic
   br label %choice.exit
 }
 
-define ptr @"expr::codegen_named_call_arg_error"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #0 {
+define ptr @"expr::codegen_named_call_arg_error"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) #3 {
 entry:
   %cat.ibuf694 = alloca [24 x i8], align 1
   %cat.ibuf553 = alloca [24 x i8], align 1
@@ -87859,7 +87298,7 @@ abort.dead791:                                    ; No predecessors!
   br label %concat.tot.len789
 }
 
-define { i64, ptr } @"expr::ram_shape_str"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"expr::ram_shape_str"(ptr %0, ptr %1) #3 {
 entry:
   %var.slots = alloca ptr, align 8
   %var._24 = alloca ptr, align 8
@@ -87941,7 +87380,7 @@ choice.next18:                                    ; preds = %choice.next3
   br label %choice.exit
 }
 
-define { i64, ptr } @"expr::prim_ram_str"(ptr %0) #0 {
+define { i64, ptr } @"expr::prim_ram_str"(ptr %0) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   store ptr %0, ptr %var.vt, align 8
@@ -87968,7 +87407,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i64, ptr } @"expr::ram_shape_slots_str"(ptr %0, ptr %1, ptr %2) #0 {
+define { i64, ptr } @"expr::ram_shape_slots_str"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.s1_vt = alloca ptr, align 8
   %var.s0_vt = alloca ptr, align 8
@@ -88086,7 +87525,7 @@ choice.exit25:                                    ; preds = %choice.else24, %cho
   br label %choice.exit17
 }
 
-define { i64, ptr } @"expr::ram_pn_str"(ptr %0) #0 {
+define { i64, ptr } @"expr::ram_pn_str"(ptr %0) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   store ptr %0, ptr %var.vt, align 8
@@ -88199,7 +87638,7 @@ abort.dead19:                                     ; No predecessors!
   br label %concat.tot.len17
 }
 
-define { i64, ptr } @"expr::ram_np_str"(ptr %0) #0 {
+define { i64, ptr } @"expr::ram_np_str"(ptr %0) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   store ptr %0, ptr %var.vt, align 8
@@ -88312,7 +87751,7 @@ abort.dead19:                                     ; No predecessors!
   br label %concat.tot.len17
 }
 
-define { i64, ptr } @"expr::ram_pp_str"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"expr::ram_pp_str"(ptr %0, ptr %1) #3 {
 entry:
   %var.r_str = alloca ptr, align 8
   %var.l_str = alloca ptr, align 8
@@ -88510,7 +87949,7 @@ abort.dead64:                                     ; No predecessors!
   br label %concat.tot.len62
 }
 
-define ptr @"expr::codegen_eval_named_call_lazy"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"expr::codegen_eval_named_call_lazy"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.mismatch = alloca i64, align 8
   %var.ok_arity = alloca i1, align 1
@@ -88882,7 +88321,7 @@ a.after122:                                       ; preds = %a.create121, %a.aft
   br label %choice.exit85
 }
 
-define ptr @"expr::codegen_unknown_open_call"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_unknown_open_call"(ptr %0, ptr %1) #3 {
 entry:
   %var.call = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -88974,9 +88413,9 @@ abort.dead18:                                     ; No predecessors!
   br label %concat.tot.len16
 }
 
-declare i1 @"main::is_fn_vt"(ptr) #0
+declare i1 @"main::is_fn_vt"(ptr) #3
 
-define ptr @"expr::codegen_closure_call_indirect"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_closure_call_indirect"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.cv = alloca ptr, align 8
   %var.ret = alloca ptr, align 8
@@ -89007,7 +88446,7 @@ entry:
   ret ptr %call.res8
 }
 
-define ptr @"expr::codegen_non_function_call_error"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_non_function_call_error"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   %var.call = alloca ptr, align 8
@@ -89179,7 +88618,7 @@ abort.dead44:                                     ; No predecessors!
   br label %concat.tot.len42
 }
 
-define ptr @"expr::codegen_eval_closure_call"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_eval_closure_call"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.fi = alloca ptr, align 8
   %var.idx = alloca i64, align 8
@@ -89411,7 +88850,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define ptr @"expr::codegen_closure_call_plain"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"expr::codegen_closure_call_plain"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.out = alloca ptr, align 8
   %var.res = alloca ptr, align 8
@@ -89983,9 +89422,9 @@ abort.dead268:                                    ; No predecessors!
   br label %nulcopy.len266
 }
 
-declare ptr @"types::codegen_eval_ctor"(ptr, ptr, ptr) #0
+declare ptr @"types::codegen_eval_ctor"(ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_materialize_zero"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_materialize_zero"(ptr %0, ptr %1) #3 {
 entry:
   %"var.u'1355" = alloca ptr, align 8
   %var.tag = alloca i64, align 8
@@ -92357,17 +91796,17 @@ choice.exit1381:                                  ; preds = %choice.then1380, %s
   br label %choice.exit1317
 }
 
-declare ptr @"types::field_type_info"(ptr) #0
+declare ptr @"types::field_type_info"(ptr) #3
 
-declare ptr @"types::record_field_gep"(ptr, ptr, ptr, ptr, i64) #0
+declare ptr @"types::record_field_gep"(ptr, ptr, ptr, ptr, i64) #3
 
-declare ptr @"types::norm_slot_ti"(ptr, ptr) #0
+declare ptr @"types::norm_slot_ti"(ptr, ptr) #3
 
-declare i1 @"types::is_ptrish_vt"(ptr) #0
+declare i1 @"types::is_ptrish_vt"(ptr) #3
 
-declare ptr @"types::codegen_build_union"(ptr, i64, ptr, ptr) #0
+declare ptr @"types::codegen_build_union"(ptr, i64, ptr, ptr) #3
 
-define ptr @"expr::codegen_eval_call_var_dispatch"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_call_var_dispatch"(ptr %0, ptr %1) #3 {
 entry:
   %var.rf_c = alloca ptr, align 8
   %var.is_loc = alloca i1, align 1
@@ -93047,31 +92486,31 @@ choice.exit298:                                   ; preds = %choice.else297, %ch
   br label %choice.exit246
 }
 
-declare i1 @"types::call_has_splat_or_named"(ptr, i64, i64) #0
+declare i1 @"types::call_has_splat_or_named"(ptr, i64, i64) #3
 
-declare { i1, i64 } @"types::var_rt"(ptr, ptr) #0
+declare { i1, i64 } @"types::var_rt"(ptr, ptr) #3
 
-declare ptr @"types::typedef_ti_of_rt"(ptr, ptr) #0
+declare ptr @"types::typedef_ti_of_rt"(ptr, ptr) #3
 
-declare ptr @"types::codegen_eval_record_ctor"(ptr, ptr, ptr) #0
+declare ptr @"types::codegen_eval_record_ctor"(ptr, ptr, ptr) #3
 
-declare ptr @"stmt::codegen_dynamic_record_index_error"(ptr) #0
+declare ptr @"stmt::codegen_dynamic_record_index_error"(ptr) #3
 
-declare ptr @"main::codegen_eval_record_index"(ptr, ptr) #0
+declare ptr @"main::codegen_eval_record_index"(ptr, ptr) #3
 
-declare ptr @"main::codegen_eval_str_index"(ptr, ptr) #0
+declare ptr @"main::codegen_eval_str_index"(ptr, ptr) #3
 
-declare ptr @"main::codegen_eval_builder_index"(ptr, ptr) #0
+declare ptr @"main::codegen_eval_builder_index"(ptr, ptr) #3
 
-declare ptr @"main::slice_or_range"(ptr, ptr) #0
+declare ptr @"main::slice_or_range"(ptr, ptr) #3
 
-declare ptr @"main::codegen_eval_array_index"(ptr, ptr) #0
+declare ptr @"main::codegen_eval_array_index"(ptr, ptr) #3
 
-declare ptr @"types::dotted_var_val"(ptr, ptr) #0
+declare ptr @"types::dotted_var_val"(ptr, ptr) #3
 
-declare ptr @"types::dotted_fn_ret_vt"(ptr, ptr) #0
+declare ptr @"types::dotted_fn_ret_vt"(ptr, ptr) #3
 
-define ptr @"expr::match_feed_return_type"(ptr %0, ptr %1) #0 {
+define ptr @"expr::match_feed_return_type"(ptr %0, ptr %1) #3 {
 entry:
   %var.c43 = alloca ptr, align 8
   %var._42 = alloca ptr, align 8
@@ -93195,7 +92634,7 @@ choice.next36:                                    ; preds = %choice.case15
   br label %choice.exit34
 }
 
-define ptr @"expr::match_feed_choice_ret_vt"(ptr %0, ptr %1) #0 {
+define ptr @"expr::match_feed_choice_ret_vt"(ptr %0, ptr %1) #3 {
 entry:
   %var.ret = alloca ptr, align 8
   %var.rf = alloca ptr, align 8
@@ -93470,9 +92909,9 @@ choice.exit70:                                    ; preds = %choice.else69, %cho
   br label %choice.exit54
 }
 
-declare { i64, ptr } @"stmt::expr_var_name"(ptr) #0
+declare { i64, ptr } @"stmt::expr_var_name"(ptr) #3
 
-define ptr @"expr::apply_split"(ptr %0) #0 {
+define ptr @"expr::apply_split"(ptr %0) #3 {
 entry:
   %"var.tgt'399" = alloca ptr, align 8
   %"var.args'333" = alloca ptr, align 8
@@ -94334,7 +93773,7 @@ a.after406:                                       ; preds = %a.create405, %choic
   br label %choice.exit206
 }
 
-define ptr @"expr::codegen_emit_bind"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_emit_bind"(ptr %0, ptr %1) #3 {
 entry:
   %var.slots = alloca ptr, align 8
   %var.dtype = alloca ptr, align 8
@@ -94377,11 +93816,11 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-declare { i64, ptr } @"match::ram_expr_dtype"(ptr, ptr) #0
+declare { i64, ptr } @"match::ram_expr_dtype"(ptr, ptr) #3
 
-declare ptr @"match::ram_slots_of"(ptr, ptr) #0
+declare ptr @"match::ram_slots_of"(ptr, ptr) #3
 
-define i1 @"expr::ram_slot_has_payload"(ptr %0) #0 {
+define i1 @"expr::ram_slot_has_payload"(ptr %0) #3 {
 entry:
   %var.slot = alloca ptr, align 8
   store ptr %0, ptr %var.slot, align 8
@@ -94391,7 +93830,7 @@ entry:
   ret i1 %fld.load
 }
 
-define ptr @"expr::codegen_emit_bind_valid"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_emit_bind_valid"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.dtype = alloca ptr, align 8
@@ -94456,7 +93895,7 @@ choice.exit:                                      ; preds = %choice.then, %str.e
   ret ptr %var.load12
 }
 
-define ptr @"expr::bind_choice"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::bind_choice"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.slots = alloca ptr, align 8
   %var.branches = alloca ptr, align 8
@@ -94615,7 +94054,7 @@ a.after56:                                        ; preds = %a.create55, %a.stor
   ret ptr %rec.alloc
 }
 
-define ptr @"expr::bind_positive_body"(ptr %0) #0 {
+define ptr @"expr::bind_positive_body"(ptr %0) #3 {
 entry:
   %var.args = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -94768,7 +94207,7 @@ a.after38:                                        ; preds = %a.create37, %a.stor
   br label %choice.exit
 }
 
-define ptr @"expr::bind_choice_branch"(ptr %0) #0 {
+define ptr @"expr::bind_choice_branch"(ptr %0) #3 {
 entry:
   %var.body = alloca ptr, align 8
   store ptr %0, ptr %var.body, align 8
@@ -94834,7 +94273,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"expr::bind_negative_body"(ptr %0) #0 {
+define ptr @"expr::bind_negative_body"(ptr %0) #3 {
 entry:
   %var.tag = alloca ptr, align 8
   %var.args = alloca ptr, align 8
@@ -94974,9 +94413,9 @@ a.after36:                                        ; preds = %a.create35, %choice
   ret ptr %enum.alloc28
 }
 
-declare ptr @"match::codegen_eval_choice"(ptr, ptr) #0
+declare ptr @"match::codegen_eval_choice"(ptr, ptr) #3
 
-define ptr @"expr::codegen_emit_bind_slot_error"(ptr %0) #0 {
+define ptr @"expr::codegen_emit_bind_slot_error"(ptr %0) #3 {
 entry:
   %var.cg = alloca ptr, align 8
   store ptr %0, ptr %var.cg, align 8
@@ -95046,7 +94485,7 @@ abort.dead14:                                     ; No predecessors!
   br label %concat.tot.len12
 }
 
-define ptr @"expr::codegen_emit_map_pos"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_emit_map_pos"(ptr %0, ptr %1) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.branches = alloca ptr, align 8
@@ -95249,7 +94688,7 @@ a.after73:                                        ; preds = %a.create72, %a.stor
   ret ptr %var.load86
 }
 
-define ptr @"expr::wrap_functor_rhs_cg"(ptr %0, ptr %1) #0 {
+define ptr @"expr::wrap_functor_rhs_cg"(ptr %0, ptr %1) #3 {
 entry:
   %var.v_args76 = alloca ptr, align 8
   %var.fed = alloca ptr, align 8
@@ -95520,7 +94959,7 @@ a.after115:                                       ; preds = %a.create114, %a.sto
   br label %choice.exit
 }
 
-define ptr @"expr::codegen_emit_map_neg"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_emit_map_neg"(ptr %0, ptr %1) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.branches = alloca ptr, align 8
@@ -95852,7 +95291,7 @@ a.after146:                                       ; preds = %a.create145, %a.sto
   ret ptr %var.load161
 }
 
-define ptr @"expr::codegen_eval_unary"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_unary"(ptr %0, ptr %1) #3 {
 entry:
   %var.raw_p = alloca ptr, align 8
   %var.i8p = alloca ptr, align 8
@@ -96809,7 +96248,7 @@ choice.next545:                                   ; preds = %choice.next529
   br label %choice.exit
 }
 
-define ptr @"expr::codegen_not_invalid"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_not_invalid"(ptr %0, ptr %1) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -96876,11 +96315,11 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-declare { i64, ptr } @"diag::E3008_not_integer"() #0
+declare { i64, ptr } @"diag::E3008_not_integer"() #3
 
-declare { i64, ptr } @"diag::E3008_not_invalid_type"() #0
+declare { i64, ptr } @"diag::E3008_not_invalid_type"() #3
 
-define ptr @"expr::codegen_eval_unary_len"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_eval_unary_len"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.w1 = alloca ptr, align 8
   %var.w2 = alloca ptr, align 8
@@ -97518,13 +96957,13 @@ abort.dead386:                                    ; No predecessors!
   br label %nulcopy.len384
 }
 
-declare ptr @"main::builder_len"(ptr, ptr, ptr) #0
+declare ptr @"main::builder_len"(ptr, ptr, ptr) #3
 
-declare ptr @"runtime::map_struct_type"(ptr) #0
+declare ptr @"runtime::map_struct_type"(ptr) #3
 
-declare ptr @"main::slice_len"(ptr, ptr, ptr) #0
+declare ptr @"main::slice_len"(ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_length_error"(ptr %0) #0 {
+define ptr @"expr::codegen_length_error"(ptr %0) #3 {
 entry:
   %var.cg = alloca ptr, align 8
   store ptr %0, ptr %var.cg, align 8
@@ -97550,11 +96989,11 @@ entry:
   ret ptr %rec.alloc
 }
 
-declare ptr @"main::codegen_builder_freeze"(ptr, ptr, ptr) #0
+declare ptr @"main::codegen_builder_freeze"(ptr, ptr, ptr) #3
 
-declare ptr @"main::builder_data"(ptr, ptr, ptr) #0
+declare ptr @"main::builder_data"(ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_static_ram_unary"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_static_ram_unary"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.return_vt = alloca ptr, align 8
   %var.signature = alloca ptr, align 8
@@ -98061,9 +97500,9 @@ choice.next238:                                   ; preds = %choice.next38
   br label %choice.exit236
 }
 
-declare ptr @"tast::mk_lit_unit"(i64, i64) #0
+declare ptr @"tast::mk_lit_unit"(i64, i64) #3
 
-define ptr @"expr::codegen_typed_unary_ready"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i1 %6) #0 {
+define ptr @"expr::codegen_typed_unary_ready"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i1 %6) #3 {
 entry:
   %"var.res_val'2218" = alloca ptr, align 8
   %"var.is_unit'" = alloca i1, align 1
@@ -101637,21 +101076,21 @@ abort.dead2199:                                   ; No predecessors!
   br label %nulcopy.len2197
 }
 
-declare ptr @"stmt::codegen_eval_string_rune_count"(ptr, ptr) #0
+declare ptr @"stmt::codegen_eval_string_rune_count"(ptr, ptr) #3
 
-declare ptr @"main::codegen_builder_freeze_fast"(ptr, ptr, ptr) #0
+declare ptr @"main::codegen_builder_freeze_fast"(ptr, ptr, ptr) #3
 
-declare ptr @"types::is_niche_ram_ti"(ptr, ptr) #0
+declare ptr @"types::is_niche_ram_ti"(ptr, ptr) #3
 
-declare { i64, ptr } @"diag::E4007_unwrap_empty_or_error"() #0
+declare { i64, ptr } @"diag::E4007_unwrap_empty_or_error"() #3
 
-declare void @"main::codegen_emit_error_panic"(ptr, ptr) #0
+declare void @"main::codegen_emit_error_panic"(ptr, ptr) #3
 
-declare ptr @"match::union_pay_ptr"(ptr, ptr) #0
+declare ptr @"match::union_pay_ptr"(ptr, ptr) #3
 
-declare ptr @"match::convert_unboxed_pay"(ptr, ptr, ptr) #0
+declare ptr @"match::convert_unboxed_pay"(ptr, ptr, ptr) #3
 
-define ptr @"expr::unwrap_pay_value"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::unwrap_pay_value"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.pay_type = alloca ptr, align 8
   %var.pay_ptr = alloca ptr, align 8
@@ -101803,13 +101242,13 @@ choice.exit62:                                    ; preds = %choice.else61, %cho
   br label %choice.exit21
 }
 
-declare i1 @"match::is_flag_pay_vt"(ptr, ptr) #0
+declare i1 @"match::is_flag_pay_vt"(ptr, ptr) #3
 
-declare ptr @"match::load_flag_pay"(ptr, ptr) #0
+declare ptr @"match::load_flag_pay"(ptr, ptr) #3
 
-declare ptr @"types::unboxed_ret_struct_ti"(ptr, ptr) #0
+declare ptr @"types::unboxed_ret_struct_ti"(ptr, ptr) #3
 
-define ptr @"expr::match_unboxed_ret_opt"(ptr %0, ptr %1) #0 {
+define ptr @"expr::match_unboxed_ret_opt"(ptr %0, ptr %1) #3 {
 entry:
   %var.u = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -101867,7 +101306,7 @@ choice.exit9:                                     ; preds = %choice.else8, %choi
   br label %choice.exit3
 }
 
-define ptr @"expr::pack_unboxed_ret_val"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define ptr @"expr::pack_unboxed_ret_val"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.p_st469 = alloca ptr, align 8
   %var.stp = alloca ptr, align 8
@@ -102675,9 +102114,9 @@ abort.dead498:                                    ; No predecessors!
   br label %nulcopy.len496
 }
 
-declare ptr @"types::ti_fn_ret_vt"(ptr, ptr) #0
+declare ptr @"types::ti_fn_ret_vt"(ptr, ptr) #3
 
-define ptr @"expr::codegen_eval_unary_unwrap"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_eval_unary_unwrap"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.pdt2 = alloca ptr, align 8
   %var.p_ret_vt = alloca ptr, align 8
@@ -104225,7 +103664,7 @@ choice.exit840:                                   ; preds = %choice.then839, %st
   br label %choice.exit753
 }
 
-define ptr @"expr::codegen_eval_unary_propagate"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_eval_unary_propagate"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.pdt2 = alloca ptr, align 8
   %var.p_ret_vt = alloca ptr, align 8
@@ -106357,9 +105796,9 @@ choice.exit1204:                                  ; preds = %choice.then1203, %s
   br label %choice.exit1117
 }
 
-declare { i64, ptr } @"diag::E3173_propagate_outside_fn"() #0
+declare { i64, ptr } @"diag::E3173_propagate_outside_fn"() #3
 
-define ptr @"expr::codegen_eval_cast"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_cast"(ptr %0, ptr %1) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -106376,43 +105815,43 @@ entry:
   ret ptr %call.res
 }
 
-declare ptr @"main::codegen_array_copy"(ptr, ptr, ptr) #0
+declare ptr @"main::codegen_array_copy"(ptr, ptr, ptr) #3
 
-declare { ptr, ptr } @"stmt::compile_lambda"(ptr, ptr) #0
+declare { ptr, ptr } @"stmt::compile_lambda"(ptr, ptr) #3
 
-declare ptr @"types::codegen_eval_variant"(ptr, ptr) #0
+declare ptr @"types::codegen_eval_variant"(ptr, ptr) #3
 
-declare ptr @"types::codegen_eval_record"(ptr, ptr) #0
+declare ptr @"types::codegen_eval_record"(ptr, ptr) #3
 
-declare ptr @"types::codegen_eval_map_literal"(ptr, ptr) #0
+declare ptr @"types::codegen_eval_map_literal"(ptr, ptr) #3
 
-declare ptr @"types::codegen_eval_raw_memory"(ptr, ptr) #0
+declare ptr @"types::codegen_eval_raw_memory"(ptr, ptr) #3
 
-declare ptr @"match::codegen_eval_member"(ptr, ptr) #0
+declare ptr @"match::codegen_eval_member"(ptr, ptr) #3
 
-declare ptr @"runtime::codegen_eval_key_access"(ptr, ptr) #0
+declare ptr @"runtime::codegen_eval_key_access"(ptr, ptr) #3
 
-declare ptr @"match::ctfe_lower"(ptr, ptr, ptr) #0
+declare ptr @"match::ctfe_lower"(ptr, ptr, ptr) #3
 
-declare ptr @"stmt::codegen_eval_cycle"(ptr, ptr) #0
+declare ptr @"stmt::codegen_eval_cycle"(ptr, ptr) #3
 
-declare ptr @"stmt::codegen_eval_cycle_jump"(ptr, ptr) #0
+declare ptr @"stmt::codegen_eval_cycle_jump"(ptr, ptr) #3
 
-declare ptr @"stmt::codegen_eval_cycle_escape"(ptr, ptr) #0
+declare ptr @"stmt::codegen_eval_cycle_escape"(ptr, ptr) #3
 
-declare ptr @"main::codegen_eval_spawn"(ptr, ptr) #0
+declare ptr @"main::codegen_eval_spawn"(ptr, ptr) #3
 
-declare ptr @"main::codegen_eval_join"(ptr, ptr) #0
+declare ptr @"main::codegen_eval_join"(ptr, ptr) #3
 
-declare i64 @"types::codegen_sizeof_bytes"(ptr, ptr) #0
+declare i64 @"types::codegen_sizeof_bytes"(ptr, ptr) #3
 
-declare i64 @"types::codegen_alignof_bytes"(ptr, ptr) #0
+declare i64 @"types::codegen_alignof_bytes"(ptr, ptr) #3
 
-declare ptr @"main::codegen_builder_create"(ptr, ptr, ptr) #0
+declare ptr @"main::codegen_builder_create"(ptr, ptr, ptr) #3
 
-declare void @"runtime::codegen_emit_exit"(ptr, ptr) #0
+declare void @"runtime::codegen_emit_exit"(ptr, ptr) #3
 
-define ptr @"expr::codegen_eval_return"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_eval_return"(ptr %0, ptr %1) #3 {
 entry:
   %var.dead717 = alloca ptr, align 8
   %var.ret_v = alloca ptr, align 8
@@ -107690,9 +107129,9 @@ abort.dead711:                                    ; No predecessors!
   br label %nulcopy.len709
 }
 
-declare { i64, ptr } @"diag::E3173_return_outside_fn"() #0
+declare { i64, ptr } @"diag::E3173_return_outside_fn"() #3
 
-define ptr @"expr::codegen_eval_block_step"(ptr %0, ptr %1, i64 %2, i64 %3, i1 %4) #0 {
+define ptr @"expr::codegen_eval_block_step"(ptr %0, ptr %1, i64 %2, i64 %3, i1 %4) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var.is_disc = alloca i1, align 1
@@ -107966,11 +107405,11 @@ a.after65:                                        ; preds = %a.create64, %choice
   br label %choice.exit58
 }
 
-declare { i64, ptr } @"diag::E3133_addr_escape_restore"() #0
+declare { i64, ptr } @"diag::E3133_addr_escape_restore"() #3
 
-declare ptr @"match::codegen_eval_user_diag"(ptr, ptr) #0
+declare ptr @"match::codegen_eval_user_diag"(ptr, ptr) #3
 
-define ptr @"expr::call_lambda"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::call_lambda"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.res_name = alloca ptr, align 8
@@ -108575,11 +108014,11 @@ abort.dead216:                                    ; No predecessors!
   br label %nulcopy.len214
 }
 
-declare ptr @"stmt::closure_env_ptr"(ptr, ptr, ptr) #0
+declare ptr @"stmt::closure_env_ptr"(ptr, ptr, ptr) #3
 
-declare ptr @"stmt::closure_fn_ptr"(ptr, ptr, ptr) #0
+declare ptr @"stmt::closure_fn_ptr"(ptr, ptr, ptr) #3
 
-define ptr @"expr::call_named"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::call_named"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.fn_to_call = alloca ptr, align 8
   %var.res = alloca ptr, align 8
@@ -109188,7 +108627,7 @@ choice.exit224:                                   ; preds = %choice.else223, %ch
   br label %choice.exit103
 }
 
-define ptr @"expr::coerce_float_to"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::coerce_float_to"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.v_ty = alloca ptr, align 8
   %var.dst_ty = alloca ptr, align 8
@@ -109489,7 +108928,7 @@ abort.dead145:                                    ; No predecessors!
   br label %nulcopy.len143
 }
 
-define i1 @"expr::is_cmp_fixed_record"(ptr %0, { i1, i64 } %1, ptr %2) #0 {
+define i1 @"expr::is_cmp_fixed_record"(ptr %0, { i1, i64 } %1, ptr %2) #3 {
 entry:
   %var._126 = alloca ptr, align 8
   %var._123 = alloca ptr, align 8
@@ -109849,7 +109288,7 @@ choice.exit120:                                   ; preds = %choice.else119, %ch
   br label %or.1874.exit
 }
 
-define i1 @"expr::is_flag_fixed_record"(ptr %0, { i1, i64 } %1, ptr %2) #0 {
+define i1 @"expr::is_flag_fixed_record"(ptr %0, { i1, i64 } %1, ptr %2) #3 {
 entry:
   %var._59 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -110088,7 +109527,7 @@ choice.exit55:                                    ; preds = %choice.else, %choic
   br label %and.1878.exit
 }
 
-define ptr @"expr::codegen_array_vector_cmp"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4, i1 %5, ptr %6) #0 {
+define ptr @"expr::codegen_array_vector_cmp"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4, i1 %5, ptr %6) #3 {
 entry:
   %var.result_ptr = alloca ptr, align 8
   %var.alloc_sz = alloca ptr, align 8
@@ -110564,11 +110003,11 @@ choice.exit215:                                   ; preds = %choice.else214, %ch
   ret ptr %rec.alloc
 }
 
-declare ptr @"match::codegen_emit_fcmp"(ptr, ptr, ptr, ptr) #0
+declare ptr @"match::codegen_emit_fcmp"(ptr, ptr, ptr, ptr) #3
 
-declare ptr @"match::codegen_emit_icmp"(ptr, ptr, ptr, ptr, i1) #0
+declare ptr @"match::codegen_emit_icmp"(ptr, ptr, ptr, ptr, i1) #3
 
-define ptr @"expr::codegen_array_loop_cmp"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4, i1 %5, ptr %6) #0 {
+define ptr @"expr::codegen_array_loop_cmp"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4, i1 %5, ptr %6) #3 {
 entry:
   %var.next_c = alloca ptr, align 8
   %var.res_ptr = alloca ptr, align 8
@@ -111721,7 +111160,7 @@ abort.dead653:                                    ; No predecessors!
   br label %nulcopy.len651
 }
 
-define ptr @"expr::codegen_emit_array_cmp"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_emit_array_cmp"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.meta = alloca ptr, align 8
   %var.r_op = alloca ptr, align 8
@@ -113535,11 +112974,11 @@ choice.exit899:                                   ; preds = %choice.else898, %ch
   br label %choice.exit725
 }
 
-declare i1 @"match::cmp_order_op"(ptr) #0
+declare i1 @"match::cmp_order_op"(ptr) #3
 
-declare ptr @"match::codegen_emit_cmp_flag_ram_error"(ptr, ptr) #0
+declare ptr @"match::codegen_emit_cmp_flag_ram_error"(ptr, ptr) #3
 
-define ptr @"expr::codegen_array_vector_logical"(ptr %0, i1 %1, ptr %2, i1 %3, ptr %4, i1 %5, i64 %6) #0 {
+define ptr @"expr::codegen_array_vector_logical"(ptr %0, i1 %1, ptr %2, i1 %3, ptr %4, i1 %5, i64 %6) #3 {
 entry:
   %var.result_ptr = alloca ptr, align 8
   %var.alloc_sz = alloca ptr, align 8
@@ -113775,7 +113214,7 @@ abort.dead71:                                     ; No predecessors!
   br label %nulcopy.len69
 }
 
-define ptr @"expr::codegen_array_loop_logical"(ptr %0, i1 %1, ptr %2, i1 %3, ptr %4, i1 %5, i64 %6) #0 {
+define ptr @"expr::codegen_array_loop_logical"(ptr %0, i1 %1, ptr %2, i1 %3, ptr %4, i1 %5, i64 %6) #3 {
 entry:
   %var.next_c = alloca ptr, align 8
   %var.res_ptr = alloca ptr, align 8
@@ -114882,7 +114321,7 @@ abort.dead621:                                    ; No predecessors!
   br label %nulcopy.len619
 }
 
-define ptr @"expr::codegen_emit_array_logical"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_emit_array_logical"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.r_op = alloca ptr, align 8
   %var.l_op = alloca ptr, align 8
@@ -115592,7 +115031,7 @@ choice.exit325:                                   ; preds = %choice.else324, %ch
   br label %choice.exit228
 }
 
-define i1 @"expr::record_expr_all_flags"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"expr::record_expr_all_flags"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   %var.f = alloca ptr, align 8
@@ -115843,7 +115282,7 @@ a.after60:                                        ; preds = %a.create59, %and.18
   br label %and.1896.exit
 }
 
-define i1 @"expr::is_vector_cmp_op"(ptr %0) #0 {
+define i1 @"expr::is_vector_cmp_op"(ptr %0) #3 {
 entry:
   %var.op = alloca ptr, align 8
   store ptr %0, ptr %var.op, align 8
@@ -115874,7 +115313,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"expr::is_vector_logical_op"(ptr %0) #0 {
+define i1 @"expr::is_vector_logical_op"(ptr %0) #3 {
 entry:
   %var.op = alloca ptr, align 8
   store ptr %0, ptr %var.op, align 8
@@ -115897,7 +115336,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"expr::is_any_vector_expr"(ptr %0, ptr %1) #0 {
+define i1 @"expr::is_any_vector_expr"(ptr %0, ptr %1) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var._21 = alloca ptr, align 8
@@ -115986,7 +115425,7 @@ or.1897.exit:                                     ; preds = %or.1897.else, %or.1
   br label %choice.exit
 }
 
-define i1 @"expr::is_flag_vector_var"(ptr %0, ptr %1) #0 {
+define i1 @"expr::is_flag_vector_var"(ptr %0, ptr %1) #3 {
 entry:
   %var._42 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -116162,7 +115601,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   br label %and.1899.exit
 }
 
-define i1 @"expr::is_flag_vector_expr"(ptr %0, ptr %1) #0 {
+define i1 @"expr::is_flag_vector_expr"(ptr %0, ptr %1) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var._25 = alloca ptr, align 8
@@ -116323,7 +115762,7 @@ or.1905.exit:                                     ; preds = %or.1905.else, %or.1
   br label %and.1904.exit
 }
 
-define ptr @"expr::codegen_emit_bitwise"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_emit_bitwise"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.lv = alloca ptr, align 8
   %var.tgt_ty = alloca ptr, align 8
@@ -116418,7 +115857,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define i64 @"expr::ti_rec_or_enum_len"(ptr %0) #0 {
+define i64 @"expr::ti_rec_or_enum_len"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %var._27 = alloca ptr, align 8
@@ -116525,9 +115964,9 @@ a.after:                                          ; preds = %a.create, %choice.c
   br label %choice.exit
 }
 
-declare ptr @"types::ctfe_canonical_ti_simple"(ptr) #0
+declare ptr @"types::ctfe_canonical_ti_simple"(ptr) #3
 
-define ptr @"expr::coerce_phi_incoming"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"expr::coerce_phi_incoming"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.phi_kind = alloca i64, align 8
   %var.v_kind = alloca i64, align 8
@@ -116851,7 +116290,7 @@ abort.dead149:                                    ; No predecessors!
   br label %nulcopy.len147
 }
 
-define i1 @"expr::e_str_lit"(ptr %0) #0 {
+define i1 @"expr::e_str_lit"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var.e = alloca ptr, align 8
@@ -116876,7 +116315,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"expr::e_flt_lit"(ptr %0) #0 {
+define i1 @"expr::e_flt_lit"(ptr %0) #3 {
 entry:
   %var._ = alloca double, align 8
   %var.e = alloca ptr, align 8
@@ -116913,7 +116352,7 @@ pay.float.merge:                                  ; preds = %pay.float.nullbb, %
   br label %choice.exit
 }
 
-define i64 @"expr::str_index_of_comma"(ptr %0, i64 %1) #0 {
+define i64 @"expr::str_index_of_comma"(ptr %0, i64 %1) #3 {
 entry:
   %var.i = alloca i64, align 8
   %var.s = alloca ptr, align 8
@@ -116975,7 +116414,7 @@ choice.exit12:                                    ; preds = %choice.else11, %cho
   br label %choice.exit
 }
 
-define ptr @"expr::unwrap_user_ti"(ptr %0, ptr %1) #0 {
+define ptr @"expr::unwrap_user_ti"(ptr %0, ptr %1) #3 {
 entry:
   %var.tv = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -117022,7 +116461,7 @@ choice.exit3:                                     ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-define ptr @"expr::extract_ct_from_arr"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::extract_ct_from_arr"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.a_arr = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -117079,7 +116518,7 @@ choice.next:                                      ; preds = %choice.then
   br label %choice.exit6
 }
 
-define ptr @"expr::extract_ct_binding"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::extract_ct_binding"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var._184 = alloca ptr, align 8
   %var._171 = alloca ptr, align 8
@@ -117468,9 +116907,9 @@ choice.next178:                                   ; preds = %choice.next165
   br label %choice.exit
 }
 
-declare ptr @"types::vt_from_ti"(ptr) #0
+declare ptr @"types::vt_from_ti"(ptr) #3
 
-define ptr @"expr::extract_ct_from_fn"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::extract_ct_from_fn"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var._96 = alloca ptr, align 8
   %var.b = alloca ptr, align 8
@@ -117865,7 +117304,7 @@ choice.exit105:                                   ; preds = %choice.then104, %an
   br label %choice.exit4
 }
 
-define ptr @"expr::extract_ct_from_ram"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::extract_ct_from_ram"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.c1 = alloca i1, align 1
   %var.c0 = alloca i1, align 1
@@ -118041,7 +117480,7 @@ choice.exit53:                                    ; preds = %choice.then52, %and
   br label %choice.exit38
 }
 
-define ptr @"expr::extract_ct_from_rec"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::extract_ct_from_rec"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var._102 = alloca ptr, align 8
   %var.b = alloca ptr, align 8
@@ -118406,7 +117845,7 @@ choice.exit101:                                   ; preds = %unwrap.pos.1922
   br label %choice.exit43
 }
 
-define ptr @"expr::extract_ct_from_tis"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::extract_ct_from_tis"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var._76 = alloca ptr, align 8
   %var.b = alloca ptr, align 8
@@ -118710,7 +118149,7 @@ choice.exit75:                                    ; preds = %unwrap.pos.1925
   br label %choice.exit
 }
 
-define ptr @"expr::typed_expr_to_ast"(ptr %0) #0 {
+define ptr @"expr::typed_expr_to_ast"(ptr %0) #3 {
 entry:
   %var.u = alloca ptr, align 8
   %var._99 = alloca ptr, align 8
@@ -118961,7 +118400,7 @@ choice.next93:                                    ; preds = %choice.next70
   br label %choice.exit
 }
 
-define ptr @"expr::typed_expr_to_ct_val"(ptr %0, ptr %1) #0 {
+define ptr @"expr::typed_expr_to_ct_val"(ptr %0, ptr %1) #3 {
 entry:
   %"var.res'95" = alloca ptr, align 8
   %"var.ast_e'84" = alloca ptr, align 8
@@ -119194,9 +118633,9 @@ choice.exit68:                                    ; preds = %choice.else, %choic
   br label %choice.exit
 }
 
-declare ptr @"types::ct_val_bind_find"(ptr) #0
+declare ptr @"types::ct_val_bind_find"(ptr) #3
 
-define ptr @"expr::coerce_ret_ptr_int"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::coerce_ret_ptr_int"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.ret_c = alloca ptr, align 8
   %var.bv_k = alloca i64, align 8
@@ -119407,7 +118846,7 @@ abort.dead80:                                     ; No predecessors!
   br label %nulcopy.len78
 }
 
-define i1 @"expr::is_temp_stack_call"(ptr %0, ptr %1) #0 {
+define i1 @"expr::is_temp_stack_call"(ptr %0, ptr %1) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -119501,9 +118940,9 @@ choice.next:                                      ; preds = %choice.exit13
   br label %choice.exit18
 }
 
-declare i1 @"types::fn_uses_c_ret_abi"(ptr, ptr) #0
+declare i1 @"types::fn_uses_c_ret_abi"(ptr, ptr) #3
 
-define ptr @"expr::codegen_closure_call_env"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_closure_call_env"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.cfn = alloca ptr, align 8
   %var.res = alloca ptr, align 8
@@ -120013,7 +119452,7 @@ choice.exit218:                                   ; preds = %choice.then, %str.e
   ret ptr %call.res226
 }
 
-define i1 @"expr::is_fnv_t"(ptr %0) #0 {
+define i1 @"expr::is_fnv_t"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var.e = alloca ptr, align 8
@@ -120038,7 +119477,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define void @"expr::fn_alias_add"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"expr::fn_alias_add"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.target = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -120107,7 +119546,7 @@ a.store12:                                        ; preds = %a.grow11, %a.check1
   ret void
 }
 
-define ptr @"expr::codegen_typed_eval_logical_evaled"(ptr %0, i1 %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"expr::codegen_typed_eval_logical_evaled"(ptr %0, i1 %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.phi = alloca ptr, align 8
   %var.e_term = alloca i1, align 1
@@ -121125,9 +120564,9 @@ choice.exit568:                                   ; preds = %choice.then567, %ch
   br label %choice.exit
 }
 
-declare ptr @"main::codegen_typed_eval"(ptr, ptr) #0
+declare ptr @"main::codegen_typed_eval"(ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_eval_logical"(ptr %0, i1 %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"expr::codegen_typed_eval_logical"(ptr %0, i1 %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.rhs = alloca ptr, align 8
@@ -121153,7 +120592,7 @@ entry:
   ret ptr %call.res7
 }
 
-define ptr @"expr::resolve_typed_type_value"(ptr %0, ptr %1) #0 {
+define ptr @"expr::resolve_typed_type_value"(ptr %0, ptr %1) #3 {
 entry:
   %var.fld = alloca ptr, align 8
   %var.idx = alloca i64, align 8
@@ -122570,9 +122009,9 @@ err.normal690:                                    ; preds = %str_ok678
   unreachable
 }
 
-declare ptr @"types::ct_cursor_find"(ptr) #0
+declare ptr @"types::ct_cursor_find"(ptr) #3
 
-define ptr @"expr::codegen_str_tuple_cmp"(ptr %0, i1 %1, ptr %2, ptr %3, ptr %4, { i1, i64 } %5, ptr %6) #0 {
+define ptr @"expr::codegen_str_tuple_cmp"(ptr %0, i1 %1, ptr %2, ptr %3, ptr %4, { i1, i64 } %5, ptr %6) #3 {
 entry:
   %var.val_fail = alloca ptr, align 8
   %var.val_succ = alloca ptr, align 8
@@ -124863,11 +124302,11 @@ choice.exit1242:                                  ; preds = %choice.else1241, %c
   ret ptr %rec.alloc
 }
 
-declare { ptr, ptr } @"types::ensure_memcmp_fn"(ptr) #0
+declare { ptr, ptr } @"types::ensure_memcmp_fn"(ptr) #3
 
-declare ptr @"types::call3"(ptr, ptr, ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"types::call3"(ptr, ptr, ptr, ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::is_typed_int_fmt_call"(ptr %0, ptr %1) #0 {
+define ptr @"expr::is_typed_int_fmt_call"(ptr %0, ptr %1) #3 {
 entry:
   %var.is_u = alloca i1, align 1
   %var.match_fn = alloca i1, align 1
@@ -125306,7 +124745,7 @@ or.1954.exit:                                     ; preds = %or.1954.else, %or.1
   br label %choice.exit8
 }
 
-define ptr @"expr::is_typed_str_to_str_call"(ptr %0, ptr %1) #0 {
+define ptr @"expr::is_typed_str_to_str_call"(ptr %0, ptr %1) #3 {
 entry:
   %var.arg0 = alloca ptr, align 8
   %var.c = alloca ptr, align 8
@@ -125582,7 +125021,7 @@ err.normal:                                       ; preds = %str_ok50
   unreachable
 }
 
-define ptr @"expr::match_str_slice_parts"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::match_str_slice_parts"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.rb = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -125750,7 +125189,7 @@ choice.exit29:                                    ; preds = %choice.else28, %cho
   br label %choice.exit17
 }
 
-define ptr @"expr::is_str_slice_range"(ptr %0, ptr %1) #0 {
+define ptr @"expr::is_str_slice_range"(ptr %0, ptr %1) #3 {
 entry:
   %var.c = alloca ptr, align 8
   %var._14 = alloca ptr, align 8
@@ -126015,7 +125454,7 @@ err.normal:                                       ; preds = %str_ok56
   unreachable
 }
 
-define { ptr, ptr } @"expr::eval_str_range_span"(ptr %0, ptr %1, i1 %2, ptr %3, ptr %4) #0 {
+define { ptr, ptr } @"expr::eval_str_range_span"(ptr %0, ptr %1, i1 %2, ptr %3, ptr %4) #3 {
 entry:
   %var.view_data = alloca ptr, align 8
   %var.clamped = alloca ptr, align 8
@@ -126206,11 +125645,11 @@ choice.exit57:                                    ; preds = %choice.else56, %cho
   ret { ptr, ptr } %ret.pack
 }
 
-declare ptr @"main::codegen_widen_idx_to_i64"(ptr, ptr, ptr, ptr) #0
+declare ptr @"main::codegen_widen_idx_to_i64"(ptr, ptr, ptr, ptr) #3
 
-declare { ptr, ptr } @"main::codegen_clamp_slice_range"(ptr, ptr, ptr, i1, i1, ptr) #0
+declare { ptr, ptr } @"main::codegen_clamp_slice_range"(ptr, ptr, ptr, i1, i1, ptr) #3
 
-define i1 @"expr::has_flat_str_win"(ptr %0, ptr %1) #0 {
+define i1 @"expr::has_flat_str_win"(ptr %0, ptr %1) #3 {
 entry:
   %var._64 = alloca ptr, align 8
   %var._41 = alloca ptr, align 8
@@ -126389,7 +125828,7 @@ choice.next58:                                    ; preds = %choice.next35
   br label %choice.exit
 }
 
-define void @"expr::flatten_str_concat_parts"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"expr::flatten_str_concat_parts"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.is_str_add = alloca i1, align 1
   %var.b = alloca ptr, align 8
@@ -126751,7 +126190,7 @@ a.store146:                                       ; preds = %a.grow145, %a.check
   br label %choice.exit12
 }
 
-define void @"expr::eval_flat_str_parts"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5) #0 {
+define void @"expr::eval_flat_str_parts"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5) #3 {
 entry:
   %var.ld = alloca ptr, align 8
   %var.sv = alloca ptr, align 8
@@ -127979,9 +127418,9 @@ a.after652:                                       ; preds = %a.create651, %a.aft
   br label %choice.exit
 }
 
-declare { ptr, ptr } @"stmt::ensure_fmt_i64_buf"(ptr) #0
+declare { ptr, ptr } @"stmt::ensure_fmt_i64_buf"(ptr) #3
 
-define ptr @"expr::codegen_eval_flat_str_concat"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_eval_flat_str_concat"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.cat_str = alloca ptr, align 8
   %var.nul = alloca ptr, align 8
@@ -129312,7 +128751,7 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len676
 }
 
-define { ptr, ptr } @"expr::codegen_eval_str_span"(ptr %0, ptr %1) #0 {
+define { ptr, ptr } @"expr::codegen_eval_str_span"(ptr %0, ptr %1) #3 {
 entry:
   %var.sv = alloca ptr, align 8
   %var._93 = alloca ptr, align 8
@@ -129544,7 +128983,7 @@ choice.exit90:                                    ; preds = %choice.else89, %cho
   br label %choice.exit
 }
 
-define ptr @"expr::codegen_eval_str_slice_eq"(ptr %0, i1 %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_eval_str_slice_eq"(ptr %0, i1 %1, ptr %2, ptr %3) #3 {
 entry:
   %var.res_flag = alloca ptr, align 8
   %var.eq_flag = alloca ptr, align 8
@@ -129661,9 +129100,9 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len30
 }
 
-declare ptr @"stmt::codegen_str_span_eq"(ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"stmt::codegen_str_span_eq"(ptr, ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_eval_bin"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"expr::codegen_typed_eval_bin"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.nf_res = alloca ptr, align 8
   %var.is_str_slice_cmp = alloca i1, align 1
@@ -130383,9 +129822,9 @@ choice.next329:                                   ; preds = %choice.then322
   br label %choice.exit327
 }
 
-declare i1 @"types::type_info_equal"(ptr, ptr) #0
+declare i1 @"types::type_info_equal"(ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_eval_bin_nonflat"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"expr::codegen_typed_eval_bin_nonflat"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.ba_res = alloca ptr, align 8
   %var.use_vra_dm = alloca i1, align 1
@@ -131500,9 +130939,9 @@ choice.exit497:                                   ; preds = %choice.else496, %ch
   br label %choice.exit321
 }
 
-declare i1 @"types::vra_is_tracked_int_vt"(ptr) #0
+declare i1 @"types::vra_is_tracked_int_vt"(ptr) #3
 
-define ptr @"expr::codegen_eval_int_divmod_vra"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #0 {
+define ptr @"expr::codegen_eval_int_divmod_vra"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #3 {
 entry:
   %var.res_val = alloca ptr, align 8
   %var.biased = alloca ptr, align 8
@@ -133133,9 +132572,9 @@ abort.dead954:                                    ; No predecessors!
   br label %nulcopy.len952
 }
 
-declare { i64, i64, i64 } @"types::vra_eval"(ptr, ptr) #0
+declare { i64, i64, i64 } @"types::vra_eval"(ptr, ptr) #3
 
-define void @"expr::codegen_emit_div_guard_sel"(ptr %0, ptr %1, ptr %2, i1 %3, i1 %4) #0 {
+define void @"expr::codegen_emit_div_guard_sel"(ptr %0, ptr %1, ptr %2, i1 %3, i1 %4) #3 {
 entry:
   %var.ovf_abort_bb = alloca ptr, align 8
   %var.ok_bb = alloca ptr, align 8
@@ -133885,7 +133324,7 @@ abort.dead366:                                    ; No predecessors!
   br label %nulcopy.len364
 }
 
-define i64 @"expr::pow2_shift_at"(i64 %0, i64 %1) #0 {
+define i64 @"expr::pow2_shift_at"(i64 %0, i64 %1) #3 {
 entry:
   %var.k = alloca i64, align 8
   %var.d = alloca i64, align 8
@@ -133926,7 +133365,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i64 %choice.res
 }
 
-define ptr @"expr::codegen_typed_eval_bin_arith_evaled"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"expr::codegen_typed_eval_bin_arith_evaled"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.res_f = alloca ptr, align 8
   %var.flt_res_vt = alloca ptr, align 8
@@ -134466,9 +133905,9 @@ choice.exit266:                                   ; preds = %choice.else265, %ch
   br label %choice.exit195
 }
 
-declare ptr @"match::codegen_emit_cmp_nonmixed"(ptr, ptr, ptr, ptr) #0
+declare ptr @"match::codegen_emit_cmp_nonmixed"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_eval_bin_arith_default"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"expr::codegen_typed_eval_bin_arith_default"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.res_val = alloca ptr, align 8
   %"var.ext_r'" = alloca ptr, align 8
@@ -134845,7 +134284,7 @@ choice.exit163:                                   ; preds = %choice.else162, %ch
   br label %choice.exit95
 }
 
-define ptr @"expr::codegen_typed_eval_bin_arith"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"expr::codegen_typed_eval_bin_arith"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.use_vra_dm = alloca i1, align 1
   %var.r_is_ptr0 = alloca i1, align 1
@@ -135380,9 +134819,9 @@ choice.exit212:                                   ; preds = %choice.else211, %ch
   ret ptr %choice.res228
 }
 
-declare i1 @"types::is_enum_vt"(ptr) #0
+declare i1 @"types::is_enum_vt"(ptr) #3
 
-define ptr @"expr::codegen_typed_eval_unary"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"expr::codegen_typed_eval_unary"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.ut = alloca ptr, align 8
@@ -135403,7 +134842,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"expr::codegen_typed_eval_unary_val"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"expr::codegen_typed_eval_unary_val"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.ev = alloca ptr, align 8
@@ -135519,7 +134958,7 @@ choice.exit27:                                    ; preds = %choice.then, %choic
   ret ptr %var.load40
 }
 
-define ptr @"expr::codegen_typed_eval_member"(ptr %0, ptr %1, ptr %2, i64 %3, ptr %4) #0 {
+define ptr @"expr::codegen_typed_eval_member"(ptr %0, ptr %1, ptr %2, i64 %3, ptr %4) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.idx = alloca i64, align 8
@@ -135557,7 +134996,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"expr::codegen_eval_swizzle"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_eval_swizzle"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.res_vec = alloca ptr, align 8
   %var.mask_vec = alloca ptr, align 8
@@ -136340,9 +135779,9 @@ abort.dead380:                                    ; No predecessors!
   br label %nulcopy.len378
 }
 
-declare ptr @"types::typed_member_target_ti"(ptr, ptr) #0
+declare ptr @"types::typed_member_target_ti"(ptr, ptr) #3
 
-define i64 @"expr::swizzle_char_to_idx"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define i64 @"expr::swizzle_char_to_idx"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.idx_fld = alloca i64, align 8
   %var.fnames = alloca ptr, align 8
@@ -136617,7 +136056,7 @@ choice.exit79:                                    ; preds = %choice.else78, %cho
   br label %choice.exit72
 }
 
-define ptr @"expr::codegen_typed_eval_member_normal"(ptr %0, ptr %1, ptr %2, i64 %3, ptr %4) #0 {
+define ptr @"expr::codegen_typed_eval_member_normal"(ptr %0, ptr %1, ptr %2, i64 %3, ptr %4) #3 {
 entry:
   %var.t_ast = alloca ptr, align 8
   %var.rtv_prop = alloca ptr, align 8
@@ -137910,13 +137349,13 @@ choice.exit591:                                   ; preds = %choice.else590, %ch
   br label %choice.exit564
 }
 
-declare { i1, i64 } @"types::var_direct"(ptr, ptr) #0
+declare { i1, i64 } @"types::var_direct"(ptr, ptr) #3
 
-declare { i64, ptr } @"match::ti_enum_slot_label"(ptr, i64) #0
+declare { i64, ptr } @"match::ti_enum_slot_label"(ptr, i64) #3
 
-declare ptr @"match::codegen_eval_type_prop_ti"(ptr, ptr, ptr, ptr) #0
+declare ptr @"match::codegen_eval_type_prop_ti"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_eval_member_val"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, ptr %5) #0 {
+define ptr @"expr::codegen_typed_eval_member_val"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, ptr %5) #3 {
 entry:
   %var.fr = alloca ptr, align 8
   %var.val = alloca ptr, align 8
@@ -139858,21 +139297,21 @@ choice.exit1023:                                  ; preds = %choice.then1022, %c
   br label %choice.exit1011
 }
 
-declare i1 @"types::is_slice_vt"(ptr) #0
+declare i1 @"types::is_slice_vt"(ptr) #3
 
-declare ptr @"types::ti_get_bitfield"(ptr, ptr) #0
+declare ptr @"types::ti_get_bitfield"(ptr, ptr) #3
 
-declare ptr @"types::find_bitfield_field"(ptr, ptr) #0
+declare ptr @"types::find_bitfield_field"(ptr, ptr) #3
 
-declare { i64, ptr } @"types::typedef_name_of_rt"(ptr, ptr) #0
+declare { i64, ptr } @"types::typedef_name_of_rt"(ptr, ptr) #3
 
-declare ptr @"types::td_record_meta_by_name"(ptr, ptr) #0
+declare ptr @"types::td_record_meta_by_name"(ptr, ptr) #3
 
-declare { i64, i64, i64 } @"types::vra_lookup_field_for_load"(ptr, ptr, i64) #0
+declare { i64, i64, i64 } @"types::vra_lookup_field_for_load"(ptr, ptr, i64) #3
 
-declare void @"types::attach_i64_range_md"(ptr, ptr, i64, i64) #0
+declare void @"types::attach_i64_range_md"(ptr, ptr, i64, i64) #3
 
-define void @"expr::builder_append_rec_flds"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define void @"expr::builder_append_rec_flds"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.elem_val = alloca ptr, align 8
   %var.fgep = alloca ptr, align 8
@@ -140039,9 +139478,9 @@ abort.dead55:                                     ; No predecessors!
   br label %nulcopy.len53
 }
 
-declare void @"main::codegen_builder_append_byte"(ptr, ptr, ptr) #0
+declare void @"main::codegen_builder_append_byte"(ptr, ptr, ptr) #3
 
-define ptr @"expr::builder_typed_append_rec_lens"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5, ptr %6, ptr %7) #0 {
+define ptr @"expr::builder_typed_append_rec_lens"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5, ptr %6, ptr %7) #3 {
 entry:
   %var.next_add = alloca ptr, align 8
   %var.next_lens = alloca ptr, align 8
@@ -140659,9 +140098,9 @@ a.after283:                                       ; preds = %a.create282, %a.aft
   br label %choice.exit
 }
 
-declare ptr @"unify::prim_unit"() #0
+declare ptr @"unify::prim_unit"() #3
 
-define void @"expr::codegen_typed_builder_append_record"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"expr::codegen_typed_builder_append_record"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.zero_i8 = alloca ptr, align 8
   %var.bdata = alloca ptr, align 8
@@ -140907,13 +140346,13 @@ a.after97:                                        ; preds = %a.create96, %a.afte
   br label %choice.exit
 }
 
-declare void @"main::codegen_builder_ensure_cap"(ptr, ptr, ptr) #0
+declare void @"main::codegen_builder_ensure_cap"(ptr, ptr, ptr) #3
 
-declare void @"main::builder_append_rec_emit"(ptr, ptr, ptr, ptr, ptr, ptr, i64, i64) #0
+declare void @"main::builder_append_rec_emit"(ptr, ptr, ptr, ptr, ptr, ptr, i64, i64) #3
 
-declare ptr @"main::builder_set_len"(ptr, ptr, ptr) #0
+declare ptr @"main::builder_set_len"(ptr, ptr, ptr) #3
 
-define void @"expr::codegen_typed_builder_append_evaled"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"expr::codegen_typed_builder_append_evaled"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.vrt = alloca ptr, align 8
   %var._49 = alloca ptr, align 8
@@ -141123,11 +140562,11 @@ choice.exit68:                                    ; preds = %choice.else67, %cho
   br label %choice.exit23
 }
 
-declare void @"main::codegen_builder_append_str"(ptr, ptr, ptr) #0
+declare void @"main::codegen_builder_append_str"(ptr, ptr, ptr) #3
 
-declare void @"main::codegen_builder_append_rune"(ptr, ptr, ptr) #0
+declare void @"main::codegen_builder_append_rune"(ptr, ptr, ptr) #3
 
-define void @"expr::codegen_typed_builder_append"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"expr::codegen_typed_builder_append"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.span231 = alloca ptr, align 8
   %var.tev209 = alloca ptr, align 8
@@ -141600,11 +141039,11 @@ choice.next219:                                   ; preds = %choice.then202
   br label %choice.exit217
 }
 
-declare void @"main::codegen_builder_append_int"(ptr, ptr, ptr, i1) #0
+declare void @"main::codegen_builder_append_int"(ptr, ptr, ptr, i1) #3
 
-declare void @"main::codegen_builder_append_raw_slice"(ptr, ptr, ptr, ptr) #0
+declare void @"main::codegen_builder_append_raw_slice"(ptr, ptr, ptr, ptr) #3
 
-define i1 @"expr::is_sync_closure_call"(ptr %0) #0 {
+define i1 @"expr::is_sync_closure_call"(ptr %0) #3 {
 entry:
   %var.rname = alloca ptr, align 8
   store ptr %0, ptr %var.rname, align 8
@@ -141865,9 +141304,9 @@ or.2107.exit:                                     ; preds = %or.2107.else, %or.2
   ret i1 %or.2107.phi
 }
 
-declare i1 @"str::starts_with"(ptr, ptr) #0
+declare i1 @"str::starts_with"(ptr, ptr) #3
 
-define ptr @"expr::eval_call_arg_sync_clo"(ptr %0, ptr %1, i64 %2, ptr %3) #0 {
+define ptr @"expr::eval_call_arg_sync_clo"(ptr %0, ptr %1, i64 %2, ptr %3) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %var.saved_clo = alloca i1, align 1
@@ -142409,11 +141848,11 @@ or.2130.exit:                                     ; preds = %or.2130.else, %or.2
   ret ptr %var.load185
 }
 
-declare i1 @"stmt::callee_param_str_safe_d"(ptr, ptr, i64, i64) #0
+declare i1 @"stmt::callee_param_str_safe_d"(ptr, ptr, i64, i64) #3
 
-declare i1 @"stmt::callee_param_only_projects"(ptr, ptr, i64) #0
+declare i1 @"stmt::callee_param_only_projects"(ptr, ptr, i64) #3
 
-define i1 @"expr::rec_factory_exprs_pure"(ptr %0, i64 %1, i64 %2) #0 {
+define i1 @"expr::rec_factory_exprs_pure"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.n = alloca i64, align 8
   %var.i = alloca i64, align 8
@@ -142608,7 +142047,7 @@ a.after35:                                        ; preds = %a.create34, %and.21
   br label %and.2142.exit
 }
 
-define i1 @"expr::rec_factory_expr_pure"(ptr %0) #0 {
+define i1 @"expr::rec_factory_expr_pure"(ptr %0) #3 {
 entry:
   %var.ch = alloca ptr, align 8
   %var._208 = alloca ptr, align 8
@@ -143101,7 +142540,7 @@ and.2136.exit:                                    ; preds = %and.2136.else, %and
   br label %choice.exit
 }
 
-define i1 @"expr::rec_factory_branches_pure"(ptr %0, i64 %1, i64 %2) #0 {
+define i1 @"expr::rec_factory_branches_pure"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.pf = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -143349,7 +142788,7 @@ a.after51:                                        ; preds = %a.create50, %and.21
   br label %and.2141.exit
 }
 
-define i1 @"expr::niche_rec_exprs_inlinable"(ptr %0, i64 %1, i64 %2) #0 {
+define i1 @"expr::niche_rec_exprs_inlinable"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.n = alloca i64, align 8
   %var.i = alloca i64, align 8
@@ -143544,7 +142983,7 @@ a.after35:                                        ; preds = %a.create34, %and.21
   br label %and.2157.exit
 }
 
-define i1 @"expr::niche_rec_body_inlinable"(ptr %0) #0 {
+define i1 @"expr::niche_rec_body_inlinable"(ptr %0) #3 {
 entry:
   %var.ch = alloca ptr, align 8
   %var._253 = alloca ptr, align 8
@@ -144144,7 +143583,7 @@ and.2152.exit:                                    ; preds = %and.2152.else, %and
   br label %choice.exit
 }
 
-define i1 @"expr::niche_rec_branches_inlinable"(ptr %0, i64 %1, i64 %2) #0 {
+define i1 @"expr::niche_rec_branches_inlinable"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.pf = alloca ptr, align 8
   %var._51 = alloca ptr, align 8
@@ -144420,7 +143859,7 @@ a.after61:                                        ; preds = %a.create60, %and.21
   br label %and.2156.exit
 }
 
-define ptr @"expr::find_typed_rec_factory"(ptr %0, ptr %1, ptr %2, i64 %3, i1 %4) #0 {
+define ptr @"expr::find_typed_rec_factory"(ptr %0, ptr %1, ptr %2, i64 %3, i1 %4) #3 {
 entry:
   %var.body_ok = alloca i1, align 1
   %var._103 = alloca ptr, align 8
@@ -144882,13 +144321,13 @@ a.after143:                                       ; preds = %a.create142, %choic
   br label %choice.exit
 }
 
-declare ptr @"stmt::lookup_indexed_fn_body"(ptr, ptr) #0
+declare ptr @"stmt::lookup_indexed_fn_body"(ptr, ptr) #3
 
-declare i1 @"stmt::typed_refs_name"(ptr, ptr) #0
+declare i1 @"stmt::typed_refs_name"(ptr, ptr) #3
 
-declare i1 @"stmt::fn_body_has_arena_restore"(ptr, ptr) #0
+declare i1 @"stmt::fn_body_has_arena_restore"(ptr, ptr) #3
 
-define ptr @"expr::try_inline_rec_factory_call"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i1 %5, i1 %6) #0 {
+define ptr @"expr::try_inline_rec_factory_call"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i1 %5, i1 %6) #3 {
 entry:
   %var.res1284 = alloca ptr, align 8
   %var.out_val = alloca ptr, align 8
@@ -147351,13 +146790,13 @@ a.after1250:                                      ; preds = %a.create1249, %a.af
   br label %choice.exit898
 }
 
-declare ptr @"types::resolve_record_ti"(ptr, ptr) #0
+declare ptr @"types::resolve_record_ti"(ptr, ptr) #3
 
-declare ptr @"types::llvm_abi_type_of_ti"(ptr, ptr) #0
+declare ptr @"types::llvm_abi_type_of_ti"(ptr, ptr) #3
 
-declare ptr @"types::vra_collect_mut_vars"(ptr, ptr) #0
+declare ptr @"types::vra_collect_mut_vars"(ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_eval_fn_call"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_typed_eval_fn_call"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.fty = alloca ptr, align 8
   %var.fty0 = alloca ptr, align 8
@@ -152774,9 +152213,9 @@ abort.dead2992:                                   ; No predecessors!
   br label %concat.tot.len2990
 }
 
-declare ptr @"types::llvm_abi_ret_type_of_ti_for_fn"(ptr, ptr, ptr) #0
+declare ptr @"types::llvm_abi_ret_type_of_ti_for_fn"(ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_eval_indirect_call_opt"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #0 {
+define ptr @"expr::codegen_typed_eval_indirect_call_opt"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._1152 = alloca ptr, align 8
@@ -154849,9 +154288,9 @@ choice.exit1151:                                  ; preds = %choice.then1150, %c
   br label %choice.exit1145
 }
 
-declare ptr @"types::llvm_abi_ret_type_of_ti"(ptr, ptr) #0
+declare ptr @"types::llvm_abi_ret_type_of_ti"(ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_eval_indirect_call"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_typed_eval_indirect_call"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.ti = alloca ptr, align 8
   %var.args = alloca ptr, align 8
@@ -154889,7 +154328,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %call.res
 }
 
-define ptr @"expr::codegen_typed_eval_addr"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_typed_eval_addr"(ptr %0, ptr %1) #3 {
 entry:
   %var.p_val = alloca ptr, align 8
   %var._110 = alloca ptr, align 8
@@ -155227,9 +154666,9 @@ choice.exit107:                                   ; preds = %choice.else106, %ch
   br label %choice.exit78
 }
 
-declare { i1, i64 } @"types::raw_addr_value"(ptr, ptr, ptr, ptr) #0
+declare { i1, i64 } @"types::raw_addr_value"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_eval_exit"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_typed_eval_exit"(ptr %0, ptr %1) #3 {
 entry:
   %"var.dead'181" = alloca ptr, align 8
   %var.ef = alloca ptr, align 8
@@ -155587,13 +155026,13 @@ abort.dead175:                                    ; No predecessors!
   br label %nulcopy.len173
 }
 
-declare void @"runtime::emit_arena_destroy"(ptr) #0
+declare void @"runtime::emit_arena_destroy"(ptr) #3
 
-declare { ptr, ptr } @"types::ensure_exit_fn"(ptr) #0
+declare { ptr, ptr } @"types::ensure_exit_fn"(ptr) #3
 
-declare { i64, ptr } @"diag::E3172_exit_status_integerish"() #0
+declare { i64, ptr } @"diag::E3172_exit_status_integerish"() #3
 
-define ptr @"expr::codegen_typed_eval_return"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_typed_eval_return"(ptr %0, ptr %1) #3 {
 entry:
   %var.dead543 = alloca ptr, align 8
   %var.dead479 = alloca ptr, align 8
@@ -156562,7 +156001,7 @@ abort.dead537:                                    ; No predecessors!
   br label %nulcopy.len535
 }
 
-define ptr @"expr::codegen_typed_eval_error_construct"(ptr %0, ptr %1) #0 {
+define ptr @"expr::codegen_typed_eval_error_construct"(ptr %0, ptr %1) #3 {
 entry:
   %var.ctx1 = alloca ptr, align 8
   %var.g1 = alloca ptr, align 8
@@ -158253,15 +157692,15 @@ abort.dead1021:                                   ; No predecessors!
   br label %nulcopy.len1019
 }
 
-declare ptr @"main::error_struct_type"(ptr) #0
+declare ptr @"main::error_struct_type"(ptr) #3
 
-declare i64 @"types::codegen_error_size"(ptr) #0
+declare i64 @"types::codegen_error_size"(ptr) #3
 
-declare { i64, ptr } @"main::source_basename"(ptr) #0
+declare { i64, ptr } @"main::source_basename"(ptr) #3
 
-declare ptr @"types::struct_type2"(ptr, ptr) #0
+declare ptr @"types::struct_type2"(ptr, ptr) #3
 
-define i1 @"expr::is_known_type_predicate"(ptr %0) #0 {
+define i1 @"expr::is_known_type_predicate"(ptr %0) #3 {
 entry:
   %var.name = alloca ptr, align 8
   store ptr %0, ptr %var.name, align 8
@@ -158630,7 +158069,7 @@ str.eq.merge236:                                  ; preds = %str.eq.else235, %st
   br i1 %case.or243, label %choice.case, label %choice.next
 }
 
-define ptr @"expr::codegen_typed_eval_type_pred"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_typed_eval_type_pred"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.i1t = alloca ptr, align 8
   %var.flag_val = alloca i64, align 8
@@ -158814,7 +158253,7 @@ choice.exit43:                                    ; preds = %choice.else42, %cho
   ret ptr %rec.alloc
 }
 
-define ptr @"expr::eval_typed_fn_call_with_stack"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #0 {
+define ptr @"expr::eval_typed_fn_call_with_stack"(ptr %0, ptr %1, ptr %2, ptr %3, i1 %4) #3 {
 entry:
   %var.call_res = alloca ptr, align 8
   %var.want_stack = alloca i1, align 1
@@ -158907,9 +158346,9 @@ choice.exit:                                      ; preds = %choice.then, %a.aft
   ret ptr %var.load34
 }
 
-declare i1 @"stmt::callee_call_may_arena_effect"(ptr, ptr, ptr) #0
+declare i1 @"stmt::callee_call_may_arena_effect"(ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_eval_call"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"expr::codegen_typed_eval_call"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.idx_res1806 = alloca ptr, align 8
   %var.tgt_te = alloca ptr, align 8
@@ -162259,9 +161698,9 @@ a.after1830:                                      ; preds = %a.create1829, %choi
   br label %choice.exit1698
 }
 
-declare i1 @"types::ti_has_member_name"(ptr, ptr, ptr) #0
+declare i1 @"types::ti_has_member_name"(ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_eval_index"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_typed_eval_index"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %"var.u'2694" = alloca ptr, align 8
   %"var.col'2660" = alloca i64, align 8
@@ -166607,19 +166046,19 @@ choice.exit2664:                                  ; preds = %choice.else2663, %c
   br label %choice.exit2606
 }
 
-declare ptr @"main::slice_data"(ptr, ptr, ptr) #0
+declare ptr @"main::slice_data"(ptr, ptr, ptr) #3
 
-declare ptr @"main::slice_elem_gep"(ptr, ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"main::slice_elem_gep"(ptr, ptr, ptr, ptr, ptr, ptr) #3
 
-declare ptr @"main::slice_packed_bit"(ptr, ptr, ptr) #0
+declare ptr @"main::slice_packed_bit"(ptr, ptr, ptr) #3
 
-declare i1 @"types::vra_is_bounded_str_access"(ptr, ptr, ptr) #0
+declare i1 @"types::vra_is_bounded_str_access"(ptr, ptr, ptr) #3
 
-declare void @"main::codegen_emit_runtime_bounds_check"(ptr, ptr, ptr, ptr, ptr) #0
+declare void @"main::codegen_emit_runtime_bounds_check"(ptr, ptr, ptr, ptr, ptr) #3
 
-declare ptr @"main::slice_load_rec_elem"(ptr, ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"main::slice_load_rec_elem"(ptr, ptr, ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_array_index"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6) #0 {
+define ptr @"expr::codegen_typed_array_index"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6) #3 {
 entry:
   %var.u1 = alloca ptr, align 8
   %var.u0 = alloca ptr, align 8
@@ -167686,15 +167125,15 @@ abort.dead707:                                    ; No predecessors!
   br label %nulcopy.len705
 }
 
-declare ptr @"main::codegen_build_error"(ptr, ptr, ptr, i64, i64, ptr, ptr) #0
+declare ptr @"main::codegen_build_error"(ptr, ptr, ptr, i64, i64, ptr, ptr) #3
 
-declare ptr @"main::codegen_array_index"(ptr, ptr, ptr, ptr, ptr, i64, i64) #0
+declare ptr @"main::codegen_array_index"(ptr, ptr, ptr, ptr, ptr, i64, i64) #3
 
-declare { i64, i64, i64 } @"types::vra_top"() #0
+declare { i64, i64, i64 } @"types::vra_top"() #3
 
-declare void @"main::codegen_emit_index_bounds_check"(ptr, ptr, ptr, i64) #0
+declare void @"main::codegen_emit_index_bounds_check"(ptr, ptr, ptr, i64) #3
 
-define ptr @"expr::rec_elem_fnames"(ptr %0, ptr %1) #0 {
+define ptr @"expr::rec_elem_fnames"(ptr %0, ptr %1) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -167797,7 +167236,7 @@ choice.exit12:                                    ; preds = %choice.else11, %cho
   br label %choice.exit
 }
 
-define ptr @"expr::codegen_typed_map_lookup"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6) #0 {
+define ptr @"expr::codegen_typed_map_lookup"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6) #3 {
 entry:
   %var.u1 = alloca ptr, align 8
   %var.u0 = alloca ptr, align 8
@@ -169888,21 +169327,21 @@ abort.dead1400:                                   ; No predecessors!
   br label %nulcopy.len1398
 }
 
-declare ptr @"runtime::codegen_map_hash"(ptr, ptr, ptr) #0
+declare ptr @"runtime::codegen_map_hash"(ptr, ptr, ptr) #3
 
-declare ptr @"runtime::codegen_map_key_equal"(ptr, ptr, ptr, ptr) #0
+declare ptr @"runtime::codegen_map_key_equal"(ptr, ptr, ptr, ptr) #3
 
-declare ptr @"runtime::codegen_map_lookup"(ptr, ptr, ptr, ptr, ptr, i64, i64) #0
+declare ptr @"runtime::codegen_map_lookup"(ptr, ptr, ptr, ptr, ptr, i64, i64) #3
 
-declare { i64, ptr } @"types::decl_bare_name"(ptr, i64) #0
+declare { i64, ptr } @"types::decl_bare_name"(ptr, i64) #3
 
-declare { i1, i64 } @"types::enum_slot_index"(ptr, ptr) #0
+declare { i1, i64 } @"types::enum_slot_index"(ptr, ptr) #3
 
-declare ptr @"match::codegen_typed_build_union"(ptr, i64, ptr, ptr) #0
+declare ptr @"match::codegen_typed_build_union"(ptr, i64, ptr, ptr) #3
 
-declare ptr @"match::codegen_typed_coerce_ram"(ptr, ptr, ptr, ptr) #0
+declare ptr @"match::codegen_typed_coerce_ram"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_eval_cast"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_typed_eval_cast"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.is_flag_tgt = alloca i1, align 1
   %var.aev = alloca ptr, align 8
@@ -169972,7 +169411,7 @@ choice.exit4:                                     ; preds = %choice.else, %choic
   ret ptr %choice.res21
 }
 
-define ptr @"expr::codegen_typed_eval_cast_other"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_typed_eval_cast_other"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.is_str_tgt = alloca i1, align 1
   %var.t_ll = alloca ptr, align 8
@@ -171112,9 +170551,9 @@ choice.exit655:                                   ; preds = %choice.else654, %ch
   br label %choice.exit526
 }
 
-declare { i64, ptr } @"types::type_pred_name_from_str"(ptr) #0
+declare { i64, ptr } @"types::type_pred_name_from_str"(ptr) #3
 
-define ptr @"expr::codegen_typed_eval_intrinsic"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"expr::codegen_typed_eval_intrinsic"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.res2332 = alloca ptr, align 8
   %var.fn2325 = alloca ptr, align 8
@@ -175106,11 +174545,11 @@ a.after2369:                                      ; preds = %a.create2368, %choi
   br label %choice.exit656
 }
 
-declare ptr @"tast::mk_lit_int"(i64, i64, i64) #0
+declare ptr @"tast::mk_lit_int"(i64, i64, i64) #3
 
-declare ptr @"unify::prim_int"() #0
+declare ptr @"unify::prim_int"() #3
 
-define ptr @"expr::codegen_eval_math_intrinsic"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #0 {
+define ptr @"expr::codegen_eval_math_intrinsic"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #3 {
 entry:
   %var.is_vec = alloca i1, align 1
   %var.is_rec2 = alloca i1, align 1
@@ -175266,7 +174705,7 @@ a.after26:                                        ; preds = %a.create25, %choice
   br label %choice.exit
 }
 
-define ptr @"expr::codegen_eval_vec_math"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #0 {
+define ptr @"expr::codegen_eval_vec_math"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #3 {
 entry:
   %var.vec_res2885 = alloca ptr, align 8
   %var.fn2873 = alloca ptr, align 8
@@ -179903,13 +179342,13 @@ abort.dead2855:                                   ; No predecessors!
   br label %concat.tot.len2853
 }
 
-declare i1 @"stmt::fn_has_signature"(ptr, ptr, i64) #0
+declare i1 @"stmt::fn_has_signature"(ptr, ptr, i64) #3
 
-declare ptr @"tast::layout_void"() #0
+declare ptr @"tast::layout_void"() #3
 
-declare ptr @"tast::mk_typed_var"(ptr, i64, i1, ptr, ptr, ptr, i64, i64) #0
+declare ptr @"tast::mk_typed_var"(ptr, i64, i1, ptr, ptr, ptr, i64, i64) #3
 
-define ptr @"expr::codegen_typed_eval_index_write"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"expr::codegen_typed_eval_index_write"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %"var.val_st'1804" = alloca ptr, align 8
   %var.is_map = alloca i1, align 1
@@ -182828,19 +182267,19 @@ choice.exit1795:                                  ; preds = %choice.else1794, %c
   br label %choice.exit1311
 }
 
-declare { i64, ptr } @"stmt::tast_root_var"(ptr) #0
+declare { i64, ptr } @"stmt::tast_root_var"(ptr) #3
 
-declare void @"stmt::codegen_typed_check_addr_escape"(ptr, ptr, ptr, ptr) #0
+declare void @"stmt::codegen_typed_check_addr_escape"(ptr, ptr, ptr, ptr) #3
 
-declare void @"main::slice_store_rec_elem"(ptr, ptr, ptr, ptr, ptr, ptr, ptr) #0
+declare void @"main::slice_store_rec_elem"(ptr, ptr, ptr, ptr, ptr, ptr, ptr) #3
 
-declare ptr @"runtime::codegen_pack_slot"(ptr, ptr, ptr) #0
+declare ptr @"runtime::codegen_pack_slot"(ptr, ptr, ptr) #3
 
-declare ptr @"runtime::codegen_map_pack_val"(ptr, ptr, ptr) #0
+declare ptr @"runtime::codegen_map_pack_val"(ptr, ptr, ptr) #3
 
-declare void @"runtime::codegen_map_insert"(ptr, ptr, ptr, ptr, ptr) #0
+declare void @"runtime::codegen_map_insert"(ptr, ptr, ptr, ptr, ptr) #3
 
-define ptr @"expr::codegen_typed_eval_raw_write"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"expr::codegen_typed_eval_raw_write"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.cval = alloca ptr, align 8
   %var.ptr_val = alloca ptr, align 8
@@ -183003,12 +182442,12 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len46
 }
 
-declare ptr @"runtime::raw_store_elem_type"(ptr, ptr) #0
+declare ptr @"runtime::raw_store_elem_type"(ptr, ptr) #3
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { cold noinline "nounwind" }
 attributes #6 = { cold noinline noreturn "nounwind" }

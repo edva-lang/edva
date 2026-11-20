@@ -3,17 +3,8 @@ source_filename = "dva_module"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-@fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
-@dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
 @b_byte_msg = internal unnamed_addr constant [58 x i8] c"E4007: Builder append byte out of range (must be 0..255)\0A\00"
 @clo.const = internal constant { ptr, ptr } { ptr @"utf::append_rune", ptr null }
 @"var.utf::append_rune" = global ptr null
@@ -38,21 +29,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.utf::prev_start" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_utf, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -86,30 +67,9 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
-
-; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_utf() #0 {
+define internal void @__dva_global_init_utf() #3 {
 entry:
   store ptr @clo.const, ptr @"var.utf::append_rune", align 8
   store ptr @clo.const.1, ptr @"var.utf::append_codepoint", align 8
@@ -124,7 +84,7 @@ entry:
   ret void
 }
 
-define void @"utf::append_rune"(ptr %0, i32 %1) #0 {
+define void @"utf::append_rune"(ptr %0, i32 %1) #3 {
 entry:
   %var.cp = alloca i64, align 8
   %var.r = alloca i32, align 4
@@ -893,7 +853,7 @@ abort.dead:                                       ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #6
 
-define void @"utf::append_codepoint"(ptr %0, i64 %1) #0 {
+define void @"utf::append_codepoint"(ptr %0, i64 %1) #3 {
 entry:
   %var.cp = alloca i64, align 8
   %var.b = alloca ptr, align 8
@@ -906,7 +866,7 @@ entry:
   ret void
 }
 
-define { i64, ptr } @"utf::encode_rune"(i32 %0) #0 {
+define { i64, ptr } @"utf::encode_rune"(i32 %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.b = alloca ptr, align 8
@@ -998,7 +958,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #6
 
-define { i64, ptr } @"utf::encode_codepoint"(i64 %0) #0 {
+define { i64, ptr } @"utf::encode_codepoint"(i64 %0) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.cp = alloca i64, align 8
@@ -1011,7 +971,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define i64 @"utf::seq_len"(i64 %0) #0 {
+define i64 @"utf::seq_len"(i64 %0) #3 {
 entry:
   %var.b0 = alloca i64, align 8
   store i64 %0, ptr %var.b0, align 8
@@ -1044,7 +1004,7 @@ choice.next5:                                     ; preds = %choice.next2
   br label %choice.exit
 }
 
-define i32 @"utf::decode_rune_addr"(ptr %0, i64 %1) #0 {
+define i32 @"utf::decode_rune_addr"(ptr %0, i64 %1) #3 {
 entry:
   %var.c127 = alloca i64, align 8
   %var.b3 = alloca i64, align 8
@@ -1328,7 +1288,7 @@ choice.exit136:                                   ; preds = %choice.then135, %ch
   br label %choice.exit112
 }
 
-define i32 @"utf::decode_rune_builder"(ptr %0, i64 %1) #0 {
+define i32 @"utf::decode_rune_builder"(ptr %0, i64 %1) #3 {
 entry:
   %var.need = alloca i64, align 8
   %var.n = alloca i64, align 8
@@ -1429,7 +1389,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define { i64, i64 } @"utf::decode_str_at"(ptr %0, i64 %1) #0 {
+define { i64, i64 } @"utf::decode_str_at"(ptr %0, i64 %1) #3 {
 entry:
   %rec.salloc74 = alloca { i64, i64 }, align 8
   %rec.salloc69 = alloca { i64, i64 }, align 8
@@ -1654,7 +1614,7 @@ choice.exit68:                                    ; preds = %choice.else, %choic
   ret { i64, i64 } %ret.pack78
 }
 
-define i64 @"utf::next_start"(ptr %0, i64 %1) #0 {
+define i64 @"utf::next_start"(ptr %0, i64 %1) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, i64 }, align 8
   %var.n = alloca i64, align 8
@@ -1693,9 +1653,9 @@ ret.dead:                                         ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare i64 @llvm.smax.i64(i64, i64) #1
+declare i64 @llvm.smax.i64(i64, i64) #0
 
-define i64 @"utf::prev_start"(ptr %0, i64 %1) #0 {
+define i64 @"utf::prev_start"(ptr %0, i64 %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -1799,12 +1759,12 @@ choice.exit16:                                    ; preds = %choice.then15
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare i64 @llvm.smin.i64(i64, i64) #1
+declare i64 @llvm.smin.i64(i64, i64) #0
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noinline noreturn "nounwind" }
 attributes #5 = { cold noreturn "nounwind" }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

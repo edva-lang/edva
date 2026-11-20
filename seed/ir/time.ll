@@ -3,56 +3,8 @@ source_filename = "dva_module"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-@fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
-@dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@sys_argc_global = external global i64
-@sys_argv_global = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
-@"var.sys::STDIN" = external global i64
-@"var.sys::STDOUT" = external global i64
-@"var.sys::STDERR" = external global i64
 @"var.sys::addr_null" = external global ptr
 @"var.time::CLOCK_REALTIME" = global i64 0
 @"var.time::CLOCK_MONOTONIC" = global i64 1
@@ -209,7 +161,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.time::elapsed_ms" = global ptr null
 @clo.const.34 = internal constant { ptr, ptr } { ptr @"time::elapsed_f64", ptr null }
 @"var.time::elapsed_f64" = global ptr null
-@clo.const.35 = internal constant { ptr, ptr } { ptr @"time::sleep_ns_os$Rec(time::#TimeOsTarget:posix:Int,tag:Int)", ptr null }
 @clo.const.36 = internal constant { ptr, ptr } { ptr @"time::sleep_ns", ptr null }
 @"var.time::sleep_ns" = global ptr null
 @clo.const.37 = internal constant { ptr, ptr } { ptr @"time::sleep_ms", ptr null }
@@ -226,7 +177,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.time::epoch" = global ptr null
 @clo.const.43 = internal constant { ptr, ptr } { ptr @"time::datetime_utc", ptr null }
 @"var.time::datetime_utc" = global ptr null
-@clo.const.44 = internal constant { ptr, ptr } { ptr @"time::local_from_sec_os$Rec(time::#TimeOsTarget:posix:Int,tag:Int)", ptr null }
 @clo.const.45 = internal constant { ptr, ptr } { ptr @"time::local_from_sec", ptr null }
 @"var.time::local_from_sec" = global ptr null
 @clo.const.46 = internal constant { ptr, ptr } { ptr @"time::local_now_dt", ptr null }
@@ -246,26 +196,15 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.41.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.41 }
 @clo.const.48 = internal constant { ptr, ptr } { ptr @"time::format_dt_pattern", ptr null }
 @"var.time::format_dt_pattern" = global ptr null
-@clo.const.49 = internal constant { ptr, ptr } { ptr @"time::parse_tm_os$Rec(time::#TimeOsTarget:posix:Int,tag:Int)", ptr null }
 @clo.const.50 = internal constant { ptr, ptr } { ptr @"time::parse_tm", ptr null }
 @"var.time::parse_tm" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_time, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -299,30 +238,9 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
-
-; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_time() #0 {
+define internal void @__dva_global_init_time() #3 {
 entry:
   store i64 0, ptr @"var.time::CLOCK_REALTIME", align 8
   store i64 1, ptr @"var.time::CLOCK_MONOTONIC", align 8
@@ -383,154 +301,10 @@ entry:
   ret void
 }
 
-declare i32 @open(ptr, i32)
-
-declare i64 @creat(ptr, i64)
-
-declare i32 @close(i32)
-
-declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @posix_spawnp(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @waitpid(i64, ptr, i64)
-
-declare i64 @read(i32, ptr, i64)
-
-declare i64 @lseek(i32, i64, i64)
-
 declare i64 @write(i32, ptr, i64)
-
-declare i64 @writev(i32, ptr, i64)
-
-declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
-
-declare i64 @htons(i64)
-
-declare i64 @htonl(i64)
-
-declare i64 @ntohs(i64)
-
-declare i64 @ntohl(i64)
-
-declare i64 @inet_addr(ptr)
-
-declare i64 @socket(i64, i64, i64)
-
-declare i64 @connect(i64, ptr, i64)
-
-declare i64 @bind(i64, ptr, i64)
-
-declare i64 @listen(i64, i64)
-
-declare i64 @accept(i64, ptr, ptr)
-
-declare i64 @send(i64, ptr, i64, i32)
-
-declare i64 @recv(i64, ptr, i64, i32)
-
-declare i64 @sendto(i64, ptr, i64, i32, ptr, i64)
-
-declare i64 @recvfrom(i64, ptr, i64, i32, ptr, ptr)
-
-declare i64 @setsockopt(i64, i64, i64, ptr, i64)
-
-declare i64 @getsockopt(i64, i64, i64, ptr, ptr)
-
-declare i64 @getpeername(i64, ptr, ptr)
-
-declare i64 @getsockname(i64, ptr, ptr)
-
-declare i64 @shutdown(i64, i64)
-
-declare i64 @fcntl(i32, i64, i64)
-
-declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
-
-declare void @freeaddrinfo(ptr)
-
-declare i64 @getifaddrs(ptr)
-
-declare void @freeifaddrs(ptr)
-
-declare ptr @memset(ptr, i64, i64)
-
-declare i64 @atoi(ptr)
-
-declare ptr @opendir(ptr)
-
-declare ptr @readdir(ptr)
-
-declare i64 @closedir(ptr)
-
-declare i64 @strlen(ptr) #0
-
-declare i64 @strcmp(ptr, ptr)
-
-declare ptr @memcpy(ptr, ptr, i64)
-
-declare ptr @memmove(ptr, ptr, i64)
-
-declare i64 @stat(ptr, ptr)
-
-declare i64 @fstat(i32, ptr)
-
-declare i64 @rename(ptr, ptr)
-
-declare i64 @unlink(ptr)
-
-declare i64 @pipe(ptr)
-
-declare ptr @__errno_location()
-
-declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
-
-declare i64 @munmap(ptr, i64)
-
-declare i64 @syscall(i64, ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @dlopen(ptr, i32)
-
-declare ptr @dlsym(ptr, ptr)
-
-declare i64 @dlclose(ptr)
-
-declare ptr @dlerror()
-
-declare i64 @system(ptr)
-
-declare ptr @realpath(ptr, ptr)
-
-declare i64 @isatty(i32)
-
-declare i64 @tcgetattr(i32, ptr)
-
-declare i64 @tcsetattr(i32, i64, ptr)
-
-declare void @cfmakeraw(ptr)
-
-declare i64 @poll(ptr, i64, i64)
-
-declare i64 @epoll_create1(i32)
-
-declare i64 @epoll_ctl(i64, i64, i32, ptr)
-
-declare i64 @epoll_wait(i64, ptr, i64, i64)
-
-declare i64 @time(ptr)
-
-declare ptr @signal(i64, ptr)
-
-declare i64 @raise(i64)
-
-declare i64 @getrlimit(i64, ptr)
-
-declare i64 @setrlimit(i64, ptr)
-
-declare i64 @uname(ptr)
 
 declare i32 @clock_gettime(i32, ptr)
 
@@ -538,27 +312,21 @@ declare i32 @nanosleep(ptr, ptr)
 
 declare ptr @localtime_r(ptr, ptr)
 
-declare ptr @gmtime_r(ptr, ptr)
-
-declare i64 @mktime(ptr)
-
-declare i64 @strftime(ptr, i64, ptr, ptr)
-
 declare ptr @strptime(ptr, ptr, ptr)
 
-define i32 @"time::clock_realtime"() #0 {
+define i32 @"time::clock_realtime"() #3 {
 entry:
   ret i32 0
 }
 
-define i32 @"time::clock_monotonic"() #0 {
+define i32 @"time::clock_monotonic"() #3 {
 entry:
   %var.load = load i64, ptr @"var.time::CLOCK_MONOTONIC", align 8
   %coerce.trunc = trunc i64 %var.load to i32
   ret i32 %coerce.trunc
 }
 
-define internal i64 @"time::#floor_div"(i64 %0, i64 %1) #0 {
+define internal i64 @"time::#floor_div"(i64 %0, i64 %1) #3 {
 entry:
   %var.r = alloca i64, align 8
   %var.q = alloca i64, align 8
@@ -662,7 +430,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define internal i64 @"time::#floor_mod"(i64 %0, i64 %1) #0 {
+define internal i64 @"time::#floor_mod"(i64 %0, i64 %1) #3 {
 entry:
   %var.r = alloca i64, align 8
   %var.b = alloca i64, align 8
@@ -716,7 +484,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i64 %choice.res
 }
 
-define internal void @"time::#pad2"(ptr %0, i64 %1) #0 {
+define internal void @"time::#pad2"(ptr %0, i64 %1) #3 {
 entry:
   %var.v = alloca i64, align 8
   %var.n = alloca i64, align 8
@@ -908,7 +676,7 @@ abort.dead:                                       ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #6
 
-define internal void @"time::#pad3"(ptr %0, i64 %1) #0 {
+define internal void @"time::#pad3"(ptr %0, i64 %1) #3 {
 entry:
   %var.v = alloca i64, align 8
   %var.n = alloca i64, align 8
@@ -1146,7 +914,7 @@ abort.dead84:                                     ; No predecessors!
   br label %b.new.buf.len82
 }
 
-define internal void @"time::#pad4"(ptr %0, i64 %1) #0 {
+define internal void @"time::#pad4"(ptr %0, i64 %1) #3 {
 entry:
   %var.v = alloca i64, align 8
   %var.n = alloca i64, align 8
@@ -1455,7 +1223,7 @@ abort.dead128:                                    ; No predecessors!
   br label %b.new.buf.len126
 }
 
-define internal ptr @"time::#tm_to_datetime"(ptr %0, i64 %1) #0 {
+define internal ptr @"time::#tm_to_datetime"(ptr %0, i64 %1) #3 {
 entry:
   %var.nsec = alloca i64, align 8
   %var.tm = alloca ptr, align 8
@@ -1525,7 +1293,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define internal ptr @"time::#datetime_to_tm"(ptr %0) #0 {
+define internal ptr @"time::#datetime_to_tm"(ptr %0) #3 {
 entry:
   %var.dt = alloca ptr, align 8
   store ptr %0, ptr %var.dt, align 8
@@ -1597,7 +1365,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define internal i64 @"time::#days_from_civil"(i64 %0, i64 %1, i64 %2) #0 {
+define internal i64 @"time::#days_from_civil"(i64 %0, i64 %1, i64 %2) #3 {
 entry:
   %var.doe = alloca i64, align 8
   %var.doy = alloca i64, align 8
@@ -1693,7 +1461,7 @@ choice.exit19:                                    ; preds = %choice.else18, %cho
   ret i64 %subtmp45
 }
 
-define internal ptr @"time::#civil_from_days"(i64 %0) #0 {
+define internal ptr @"time::#civil_from_days"(i64 %0) #3 {
 entry:
   %var.yday = alloca i64, align 8
   %var.jan1 = alloca i64, align 8
@@ -1841,7 +1609,7 @@ choice.exit57:                                    ; preds = %choice.else56, %cho
   ret ptr %rec.alloc
 }
 
-define internal { i64, ptr } @"time::#short_weekday_name"(i64 %0) #0 {
+define internal { i64, ptr } @"time::#short_weekday_name"(i64 %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -1896,7 +1664,7 @@ choice.next14:                                    ; preds = %choice.next11
   br label %choice.exit
 }
 
-define internal { i64, ptr } @"time::#full_weekday_name"(i64 %0) #0 {
+define internal { i64, ptr } @"time::#full_weekday_name"(i64 %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -1951,7 +1719,7 @@ choice.next14:                                    ; preds = %choice.next11
   br label %choice.exit
 }
 
-define internal { i64, ptr } @"time::#short_month_name"(i64 %0) #0 {
+define internal { i64, ptr } @"time::#short_month_name"(i64 %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -2041,7 +1809,7 @@ choice.next29:                                    ; preds = %choice.next26
   br label %choice.exit
 }
 
-define internal { i64, ptr } @"time::#full_month_name"(i64 %0) #0 {
+define internal { i64, ptr } @"time::#full_month_name"(i64 %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -2131,7 +1899,7 @@ choice.next29:                                    ; preds = %choice.next26
   br label %choice.exit
 }
 
-define internal void @"time::#write_date_into"(ptr %0, ptr %1) #0 {
+define internal void @"time::#write_date_into"(ptr %0, ptr %1) #3 {
 entry:
   %var.dt = alloca ptr, align 8
   %var.b = alloca ptr, align 8
@@ -2474,7 +2242,7 @@ br.done.71:                                       ; preds = %br.b4.71, %br.b3.71
   ret void
 }
 
-define internal void @"time::#write_clock_into"(ptr %0, ptr %1) #0 {
+define internal void @"time::#write_clock_into"(ptr %0, ptr %1) #3 {
 entry:
   %var.dt = alloca ptr, align 8
   %var.b = alloca ptr, align 8
@@ -2704,7 +2472,7 @@ br.done.73:                                       ; preds = %br.b4.73, %br.b3.73
   ret void
 }
 
-define internal void @"time::#write_tz_iso_into"(ptr %0, i64 %1) #0 {
+define internal void @"time::#write_tz_iso_into"(ptr %0, i64 %1) #3 {
 entry:
   %var.abs_off = alloca i64, align 8
   %var.utc_off = alloca i64, align 8
@@ -3109,7 +2877,7 @@ br.done.76:                                       ; preds = %br.b4.76, %br.b3.76
   br label %choice.exit
 }
 
-define internal void @"time::#write_tz_compact_into"(ptr %0, i64 %1) #0 {
+define internal void @"time::#write_tz_compact_into"(ptr %0, i64 %1) #3 {
 entry:
   %var.abs_off = alloca i64, align 8
   %var.utc_off = alloca i64, align 8
@@ -3297,7 +3065,7 @@ choice.exit16:                                    ; preds = %choice.else15, %cho
   ret void
 }
 
-define internal void @"time::#write_date_basic_into"(ptr %0, ptr %1) #0 {
+define internal void @"time::#write_date_basic_into"(ptr %0, ptr %1) #3 {
 entry:
   %var.dt = alloca ptr, align 8
   %var.b = alloca ptr, align 8
@@ -3434,7 +3202,7 @@ br.done.78:                                       ; preds = %br.b4.78, %br.b3.78
   br label %choice.exit
 }
 
-define internal void @"time::#write_clock_basic_into"(ptr %0, ptr %1) #0 {
+define internal void @"time::#write_clock_basic_into"(ptr %0, ptr %1) #3 {
 entry:
   %var.dt = alloca ptr, align 8
   %var.b = alloca ptr, align 8
@@ -3458,7 +3226,7 @@ entry:
   ret void
 }
 
-define internal void @"time::#write_tz_basic_into"(ptr %0, i64 %1) #0 {
+define internal void @"time::#write_tz_basic_into"(ptr %0, i64 %1) #3 {
 entry:
   %var.utc_off = alloca i64, align 8
   %var.b = alloca ptr, align 8
@@ -3584,7 +3352,7 @@ br.done.79:                                       ; preds = %br.b4.79, %br.b3.79
   br label %choice.exit
 }
 
-define { i64, ptr } @"time::format_dt_iso"(ptr %0) #0 {
+define { i64, ptr } @"time::format_dt_iso"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.b = alloca ptr, align 8
@@ -3787,7 +3555,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #6
 
-define { i64, ptr } @"time::format_dt_iso_basic"(ptr %0) #0 {
+define { i64, ptr } @"time::format_dt_iso_basic"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.b = alloca ptr, align 8
@@ -3987,7 +3755,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"time::format_dt_date"(ptr %0) #0 {
+define { i64, ptr } @"time::format_dt_date"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.b = alloca ptr, align 8
@@ -4076,7 +3844,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"time::format_dt_clock"(ptr %0) #0 {
+define { i64, ptr } @"time::format_dt_clock"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.b = alloca ptr, align 8
@@ -4165,7 +3933,7 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   ret { i64, ptr } %ret.pack
 }
 
-define i64 @"time::now"() #0 {
+define i64 @"time::now"() #3 {
 entry:
   %"var.ts'" = alloca ptr, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
@@ -4187,7 +3955,7 @@ entry:
   ret i64 %fld.load
 }
 
-define i64 @"time::now_ms"() #0 {
+define i64 @"time::now_ms"() #3 {
 entry:
   %"var.ts'" = alloca ptr, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
@@ -4215,7 +3983,7 @@ entry:
   ret i64 %addtmp
 }
 
-define i64 @"time::now_ns"() #0 {
+define i64 @"time::now_ns"() #3 {
 entry:
   %"var.ts'" = alloca ptr, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
@@ -4242,7 +4010,7 @@ entry:
   ret i64 %addtmp
 }
 
-define double @"time::now_f64"() #0 {
+define double @"time::now_f64"() #3 {
 entry:
   %"var.ts'" = alloca ptr, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
@@ -4271,7 +4039,7 @@ entry:
   ret double %faddtmp
 }
 
-define i64 @"time::mono_ns"() #0 {
+define i64 @"time::mono_ns"() #3 {
 entry:
   %"var.ts'" = alloca ptr, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
@@ -4298,7 +4066,7 @@ entry:
   ret i64 %addtmp
 }
 
-define i64 @"time::mono_ms"() #0 {
+define i64 @"time::mono_ms"() #3 {
 entry:
   %"var.ts'" = alloca ptr, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
@@ -4326,7 +4094,7 @@ entry:
   ret i64 %addtmp
 }
 
-define double @"time::mono_f64"() #0 {
+define double @"time::mono_f64"() #3 {
 entry:
   %"var.ts'" = alloca ptr, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
@@ -4355,7 +4123,7 @@ entry:
   ret double %faddtmp
 }
 
-define i64 @"time::elapsed_ms"(i64 %0) #0 {
+define i64 @"time::elapsed_ms"(i64 %0) #3 {
 entry:
   %var.start_ns = alloca i64, align 8
   store i64 %0, ptr %var.start_ns, align 8
@@ -4366,7 +4134,7 @@ entry:
   ret i64 %divtmp
 }
 
-define double @"time::elapsed_f64"(i64 %0) #0 {
+define double @"time::elapsed_f64"(i64 %0) #3 {
 entry:
   %var.start_ns = alloca i64, align 8
   store i64 %0, ptr %var.start_ns, align 8
@@ -4378,7 +4146,7 @@ entry:
   ret double %fmultmp
 }
 
-define void @"time::sleep_ns"(i64 %0) #0 {
+define void @"time::sleep_ns"(i64 %0) #3 {
 entry:
   %var.ns = alloca i64, align 8
   store i64 %0, ptr %var.ns, align 8
@@ -4387,7 +4155,7 @@ entry:
   ret void
 }
 
-define internal void @"time::sleep_ns_os$Rec(time::#TimeOsTarget:posix:Int,tag:Int)"(i64 %0) #0 {
+define internal void @"time::sleep_ns_os$Rec(time::#TimeOsTarget:posix:Int,tag:Int)"(i64 %0) #3 {
 entry:
   %"var.rem'" = alloca ptr, align 8
   %"var.req'" = alloca ptr, align 8
@@ -4431,7 +4199,7 @@ choice.exit:                                      ; preds = %choice.then, %entry
   ret void
 }
 
-define void @"time::sleep_ms"(i64 %0) #0 {
+define void @"time::sleep_ms"(i64 %0) #3 {
 entry:
   %var.ms = alloca i64, align 8
   store i64 %0, ptr %var.ms, align 8
@@ -4441,7 +4209,7 @@ entry:
   ret void
 }
 
-define void @"time::sleep"(double %0) #0 {
+define void @"time::sleep"(double %0) #3 {
 entry:
   %var.sec = alloca double, align 8
   store double %0, ptr %var.sec, align 8
@@ -4460,7 +4228,7 @@ choice.exit:                                      ; preds = %choice.then, %entry
   ret void
 }
 
-define i1 @"time::is_leap_year"(i64 %0) #0 {
+define i1 @"time::is_leap_year"(i64 %0) #3 {
 entry:
   %var.year = alloca i64, align 8
   store i64 %0, ptr %var.year, align 8
@@ -4496,7 +4264,7 @@ or.83.exit:                                       ; preds = %or.83.else, %or.83.
   br label %and.82.exit
 }
 
-define i64 @"time::days_in_month"(i64 %0, i64 %1) #0 {
+define i64 @"time::days_in_month"(i64 %0, i64 %1) #3 {
 entry:
   %var.month = alloca i64, align 8
   %var.year = alloca i64, align 8
@@ -4542,7 +4310,7 @@ choice.next4:                                     ; preds = %choice.next
   br label %choice.exit
 }
 
-define ptr @"time::utc_from_epoch"(i64 %0, i64 %1) #0 {
+define ptr @"time::utc_from_epoch"(i64 %0, i64 %1) #3 {
 entry:
   %var.yday = alloca i64, align 8
   %var.wday = alloca i64, align 8
@@ -4632,7 +4400,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define i64 @"time::epoch"(ptr %0) #0 {
+define i64 @"time::epoch"(ptr %0) #3 {
 entry:
   %var.days = alloca i64, align 8
   %var.dt = alloca ptr, align 8
@@ -4671,7 +4439,7 @@ entry:
   ret i64 %subtmp
 }
 
-define ptr @"time::datetime_utc"(i64 %0, i64 %1, i64 %2, i64 %3, i64 %4, i64 %5) #0 {
+define ptr @"time::datetime_utc"(i64 %0, i64 %1, i64 %2, i64 %3, i64 %4, i64 %5) #3 {
 entry:
   %var.yday = alloca i64, align 8
   %var.wday = alloca i64, align 8
@@ -4753,7 +4521,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"time::local_from_sec"(i64 %0, i64 %1) #0 {
+define ptr @"time::local_from_sec"(i64 %0, i64 %1) #3 {
 entry:
   %var.nsec = alloca i64, align 8
   %var.sec = alloca i64, align 8
@@ -4765,7 +4533,7 @@ entry:
   ret ptr %call.res
 }
 
-define internal ptr @"time::local_from_sec_os$Rec(time::#TimeOsTarget:posix:Int,tag:Int)"(i64 %0, i64 %1) #0 {
+define internal ptr @"time::local_from_sec_os$Rec(time::#TimeOsTarget:posix:Int,tag:Int)"(i64 %0, i64 %1) #3 {
 entry:
   %var.res = alloca ptr, align 8
   %"var.tm'" = alloca ptr, align 8
@@ -4838,7 +4606,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"time::local_now_dt"() #0 {
+define ptr @"time::local_now_dt"() #3 {
 entry:
   %"var.ts'" = alloca ptr, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
@@ -4864,7 +4632,7 @@ entry:
   ret ptr %call.res7
 }
 
-define ptr @"time::utc_now_dt"() #0 {
+define ptr @"time::utc_now_dt"() #3 {
 entry:
   %"var.ts'" = alloca ptr, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
@@ -4890,7 +4658,7 @@ entry:
   ret ptr %call.res7
 }
 
-define { i64, ptr } @"time::format_dt_pattern"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"time::format_dt_pattern"(ptr %0, ptr %1) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.h12 = alloca i64, align 8
@@ -7037,7 +6805,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -7101,7 +6869,7 @@ done:                                             ; preds = %copyloop
   ret i64 %fmt.tot
 }
 
-define ptr @"time::parse_tm"(ptr %0, ptr %1) #0 {
+define ptr @"time::parse_tm"(ptr %0, ptr %1) #3 {
 entry:
   %var.fmt_pat = alloca ptr, align 8
   %var.value = alloca ptr, align 8
@@ -7113,7 +6881,7 @@ entry:
   ret ptr %call.res
 }
 
-define internal ptr @"time::parse_tm_os$Rec(time::#TimeOsTarget:posix:Int,tag:Int)"(ptr %0, ptr %1) #0 {
+define internal ptr @"time::parse_tm_os$Rec(time::#TimeOsTarget:posix:Int,tag:Int)"(ptr %0, ptr %1) #3 {
 entry:
   %var.end = alloca ptr, align 8
   %"var.tm'" = alloca ptr, align 8
@@ -7314,10 +7082,10 @@ ret.dead59:                                       ; No predecessors!
   br label %choice.exit58
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

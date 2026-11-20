@@ -4,53 +4,9 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
-@"var.ast::cell_var_names" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
 @clo.const = internal constant { ptr, ptr } { ptr @"unify::prim_int", ptr null }
 @"var.unify::prim_int" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"unify::prim_float", ptr null }
@@ -419,21 +375,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.unify::value_type_from_ti" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_unify, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -467,30 +413,12 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
-
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_unify() #0 {
+define internal void @__dva_global_init_unify() #3 {
 entry:
   store ptr @clo.const, ptr @"var.unify::prim_int", align 8
   store ptr @clo.const.1, ptr @"var.unify::prim_float", align 8
@@ -590,7 +518,7 @@ entry:
   ret void
 }
 
-define ptr @"unify::prim_int"() #0 {
+define ptr @"unify::prim_int"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -607,7 +535,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::prim_float"() #0 {
+define ptr @"unify::prim_float"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -624,7 +552,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::prim_str"() #0 {
+define ptr @"unify::prim_str"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -641,7 +569,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::prim_rune"() #0 {
+define ptr @"unify::prim_rune"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -658,7 +586,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::prim_flag"() #0 {
+define ptr @"unify::prim_flag"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -675,7 +603,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::prim_unit"() #0 {
+define ptr @"unify::prim_unit"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -692,7 +620,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::prim_rawptr"() #0 {
+define ptr @"unify::prim_rawptr"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -709,7 +637,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::prim_builder"() #0 {
+define ptr @"unify::prim_builder"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -726,7 +654,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::prim_error"() #0 {
+define ptr @"unify::prim_error"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -743,7 +671,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::prim_type"() #0 {
+define ptr @"unify::prim_type"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -760,7 +688,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::prim_unknown"() #0 {
+define ptr @"unify::prim_unknown"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -777,7 +705,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::poison_utype"() #0 {
+define ptr @"unify::poison_utype"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -788,7 +716,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define i1 @"unify::is_poison"(ptr %0, ptr %1) #0 {
+define i1 @"unify::is_poison"(ptr %0, ptr %1) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.ctx = alloca ptr, align 8
@@ -813,7 +741,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"unify::canon"(ptr %0, ptr %1) #0 {
+define ptr @"unify::canon"(ptr %0, ptr %1) #3 {
 entry:
   %var._181 = alloca ptr, align 8
   %var._180 = alloca ptr, align 8
@@ -1340,7 +1268,7 @@ err.abort211:                                     ; No predecessors!
   br label %choice.exit178
 }
 
-define i64 @"unify::root_var_id"(ptr %0, ptr %1) #0 {
+define i64 @"unify::root_var_id"(ptr %0, ptr %1) #3 {
 entry:
   %var.next_id = alloca i64, align 8
   %var._64 = alloca i64, align 8
@@ -1576,7 +1504,7 @@ pay.int.merge61:                                  ; preds = %pay.int.nullbb60, %
   br label %choice.exit50
 }
 
-define i1 @"unify::is_open_var"(ptr %0, i64 %1) #0 {
+define i1 @"unify::is_open_var"(ptr %0, i64 %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -1638,10 +1566,6 @@ choice.exit:                                      ; preds = %loop.body.123
   br label %loop.latch.123
 }
 
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
-
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
@@ -1649,7 +1573,7 @@ declare i32 @printf(ptr, ...)
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
 
-define ptr @"unify::error_ufields"() #0 {
+define ptr @"unify::error_ufields"() #3 {
 entry:
   %var.ctx_flds = alloca ptr, align 8
   %var.flds = alloca ptr, align 8
@@ -2157,7 +2081,7 @@ a.after277:                                       ; preds = %a.create276, %a.sto
   ret ptr %a.load2285
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -2205,7 +2129,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #5 {
@@ -2223,7 +2147,7 @@ declare i64 @write(i32, ptr, i64)
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #6
 
-define ptr @"unify::ram_nn"() #0 {
+define ptr @"unify::ram_nn"() #3 {
 entry:
   %var.slot1 = alloca ptr, align 8
   %var.slot0 = alloca ptr, align 8
@@ -2270,7 +2194,7 @@ entry:
   ret ptr %enum.alloc12
 }
 
-define ptr @"unify::ram_pn"(ptr %0) #0 {
+define ptr @"unify::ram_pn"(ptr %0) #3 {
 entry:
   %var.slot1 = alloca ptr, align 8
   %var.slot0 = alloca ptr, align 8
@@ -2314,7 +2238,7 @@ entry:
   ret ptr %enum.alloc8
 }
 
-define ptr @"unify::ram_np"(ptr %0) #0 {
+define ptr @"unify::ram_np"(ptr %0) #3 {
 entry:
   %var.slot1 = alloca ptr, align 8
   %var.slot0 = alloca ptr, align 8
@@ -2358,7 +2282,7 @@ entry:
   ret ptr %enum.alloc8
 }
 
-define ptr @"unify::ram_pp"(ptr %0, ptr %1) #0 {
+define ptr @"unify::ram_pp"(ptr %0, ptr %1) #3 {
 entry:
   %var.slot1 = alloca ptr, align 8
   %var.slot0 = alloca ptr, align 8
@@ -2399,7 +2323,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::mk_ram"(ptr %0, ptr %1) #0 {
+define ptr @"unify::mk_ram"(ptr %0, ptr %1) #3 {
 entry:
   %var.neg = alloca ptr, align 8
   %var.pos = alloca ptr, align 8
@@ -2422,7 +2346,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::mk_fn"(ptr %0, ptr %1) #0 {
+define ptr @"unify::mk_fn"(ptr %0, ptr %1) #3 {
 entry:
   %var.ret = alloca ptr, align 8
   %var.params = alloca ptr, align 8
@@ -2465,7 +2389,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::mk_rec"(ptr %0) #0 {
+define ptr @"unify::mk_rec"(ptr %0) #3 {
 entry:
   %var.flds = alloca ptr, align 8
   store ptr %0, ptr %var.flds, align 8
@@ -2499,7 +2423,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::mk_array"(ptr %0, i64 %1) #0 {
+define ptr @"unify::mk_array"(ptr %0, i64 %1) #3 {
 entry:
   %var.count = alloca i64, align 8
   %var.elem = alloca ptr, align 8
@@ -2522,7 +2446,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::mk_slice"(ptr %0) #0 {
+define ptr @"unify::mk_slice"(ptr %0) #3 {
 entry:
   %var.elem = alloca ptr, align 8
   store ptr %0, ptr %var.elem, align 8
@@ -2536,7 +2460,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::mk_map"(ptr %0, ptr %1) #0 {
+define ptr @"unify::mk_map"(ptr %0, ptr %1) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var.k = alloca ptr, align 8
@@ -2559,7 +2483,7 @@ entry:
   ret ptr %enum.alloc
 }
 
-define ptr @"unify::new_ctx"() #0 {
+define ptr @"unify::new_ctx"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %a.new = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
@@ -2634,7 +2558,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define void @"unify::set_location"(ptr %0, ptr %1, i64 %2, i64 %3) #0 {
+define void @"unify::set_location"(ptr %0, ptr %1, i64 %2, i64 %3) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -2704,9 +2628,9 @@ choice.exit16:                                    ; preds = %choice.then15, %cho
   ret void
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define void @"unify::set_pos"(ptr %0, i64 %1, i64 %2) #0 {
+define void @"unify::set_pos"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -2741,7 +2665,7 @@ choice.exit6:                                     ; preds = %choice.then5, %choi
   ret void
 }
 
-define void @"unify::set_file"(ptr %0, ptr %1) #0 {
+define void @"unify::set_file"(ptr %0, ptr %1) #3 {
 entry:
   %var.file = alloca ptr, align 8
   %var.ctx = alloca ptr, align 8
@@ -2754,7 +2678,7 @@ entry:
   ret void
 }
 
-define void @"unify::push_inst_frame"(ptr %0, ptr %1) #0 {
+define void @"unify::push_inst_frame"(ptr %0, ptr %1) #3 {
 entry:
   %var.stk = alloca ptr, align 8
   %var.frame = alloca ptr, align 8
@@ -2838,7 +2762,7 @@ a.after13:                                        ; preds = %a.create12, %a.stor
   ret void
 }
 
-define void @"unify::pop_inst_frame"(ptr %0) #0 {
+define void @"unify::pop_inst_frame"(ptr %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -3091,7 +3015,7 @@ a.after51:                                        ; preds = %a.create50, %loop.e
   br label %choice.exit
 }
 
-define { i64, ptr } @"unify::format_inst_loc"(ptr %0, i64 %1, i64 %2) #0 {
+define { i64, ptr } @"unify::format_inst_loc"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %cat.ibuf18 = alloca [24 x i8], align 1
@@ -3254,7 +3178,7 @@ abort.dead43:                                     ; No predecessors!
   br label %concat.tot.len41
 }
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -3329,7 +3253,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define { i64, ptr } @"unify::format_inst_trace"(ptr %0) #0 {
+define { i64, ptr } @"unify::format_inst_trace"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.fr = alloca ptr, align 8
@@ -4391,7 +4315,7 @@ abort.dead519:                                    ; No predecessors!
   br label %b.new.buf.len2517
 }
 
-define void @"unify::add_call_constraint"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define void @"unify::add_call_constraint"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.cs = alloca ptr, align 8
   %var.ret_ut = alloca ptr, align 8
@@ -4515,7 +4439,7 @@ a.after31:                                        ; preds = %a.create30, %a.stor
   ret void
 }
 
-define ptr @"unify::fresh_var"(ptr %0) #0 {
+define ptr @"unify::fresh_var"(ptr %0) #3 {
 entry:
   %var.bs = alloca ptr, align 8
   %var.id = alloca i64, align 8
@@ -4629,7 +4553,7 @@ a.after21:                                        ; preds = %a.create20, %a.stor
   ret ptr %enum.alloc32
 }
 
-define void @"unify::add_error_loc"(ptr %0, i64 %1, ptr %2, ptr %3, i64 %4, i64 %5) #0 {
+define void @"unify::add_error_loc"(ptr %0, i64 %1, ptr %2, ptr %3, i64 %4, i64 %5) #3 {
 entry:
   %var.errs = alloca ptr, align 8
   %var.rc = alloca i64, align 8
@@ -5216,7 +5140,7 @@ a.after259:                                       ; preds = %a.create258, %a.sto
   ret void
 }
 
-define void @"unify::add_error"(ptr %0, i64 %1, ptr %2) #0 {
+define void @"unify::add_error"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %var.msg = alloca ptr, align 8
   %var.code = alloca i64, align 8
@@ -5240,7 +5164,7 @@ entry:
   ret void
 }
 
-define void @"unify::add_error_at"(ptr %0, i64 %1, ptr %2, i64 %3, i64 %4) #0 {
+define void @"unify::add_error_at"(ptr %0, i64 %1, ptr %2, i64 %3, i64 %4) #3 {
 entry:
   %var.c = alloca i64, align 8
   %var.l = alloca i64, align 8
@@ -5300,7 +5224,7 @@ choice.exit7:                                     ; preds = %choice.else6, %choi
   ret void
 }
 
-define i1 @"unify::has_errors"(ptr %0) #0 {
+define i1 @"unify::has_errors"(ptr %0) #3 {
 entry:
   %var.ctx = alloca ptr, align 8
   store ptr %0, ptr %var.ctx, align 8
@@ -5313,7 +5237,7 @@ entry:
   ret i1 %cmptmp
 }
 
-define i64 @"unify::error_count"(ptr %0) #0 {
+define i64 @"unify::error_count"(ptr %0) #3 {
 entry:
   %var.ctx = alloca ptr, align 8
   store ptr %0, ptr %var.ctx, align 8
@@ -5325,7 +5249,7 @@ entry:
   ret i64 %a.len.query1
 }
 
-define ptr @"unify::first_error"(ptr %0) #0 {
+define ptr @"unify::first_error"(ptr %0) #3 {
 entry:
   %var._18 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -5436,7 +5360,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define i64 @"unify::error_code"(ptr %0) #0 {
+define i64 @"unify::error_code"(ptr %0) #3 {
 entry:
   %var.e = alloca ptr, align 8
   store ptr %0, ptr %var.e, align 8
@@ -5446,7 +5370,7 @@ entry:
   ret i64 %fld.load
 }
 
-define { i64, ptr } @"unify::error_msg"(ptr %0) #0 {
+define { i64, ptr } @"unify::error_msg"(ptr %0) #3 {
 entry:
   %var.e = alloca ptr, align 8
   store ptr %0, ptr %var.e, align 8
@@ -5457,7 +5381,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"unify::format_error"(ptr %0) #0 {
+define { i64, ptr } @"unify::format_error"(ptr %0) #3 {
 entry:
   %concat.str146 = alloca { i64, ptr }, align 8
   %cat.ibuf85 = alloca [24 x i8], align 1
@@ -5782,7 +5706,7 @@ abort.dead131:                                    ; No predecessors!
   br label %concat.tot.len129
 }
 
-define i1 @"unify::is_integerish_uprim"(ptr %0) #0 {
+define i1 @"unify::is_integerish_uprim"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -5821,7 +5745,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"unify::is_flag_uprim"(ptr %0) #0 {
+define i1 @"unify::is_flag_uprim"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -5842,7 +5766,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"unify::is_map_key_uprim"(ptr %0) #0 {
+define i1 @"unify::is_map_key_uprim"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -5885,7 +5809,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"unify::is_map_key_utype"(ptr %0, ptr %1) #0 {
+define i1 @"unify::is_map_key_utype"(ptr %0, ptr %1) #3 {
 entry:
   %var.p = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -5921,7 +5845,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"unify::ram_shape"(ptr %0) #0 {
+define ptr @"unify::ram_shape"(ptr %0) #3 {
 entry:
   %var.r = alloca ptr, align 8
   store ptr %0, ptr %var.r, align 8
@@ -5994,7 +5918,7 @@ choice.exit19:                                    ; preds = %choice.else18, %cho
   br label %choice.exit
 }
 
-define i1 @"unify::occurs"(ptr %0, i64 %1, ptr %2) #0 {
+define i1 @"unify::occurs"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %var.e = alloca ptr, align 8
   %var._95 = alloca ptr, align 8
@@ -6218,7 +6142,7 @@ choice.next89:                                    ; preds = %choice.next69
   br label %choice.exit
 }
 
-define i1 @"unify::fn_occurs"(ptr %0, i64 %1, ptr %2) #0 {
+define i1 @"unify::fn_occurs"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -6300,7 +6224,7 @@ choice.exit13:                                    ; preds = %loop.body.137
   br label %loop.latch.137
 }
 
-define i1 @"unify::rec_occurs"(ptr %0, i64 %1, ptr %2) #0 {
+define i1 @"unify::rec_occurs"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -6587,7 +6511,7 @@ choice.exit67:                                    ; preds = %loop.body.140
   br label %loop.latch.140
 }
 
-define i1 @"unify::ram_occurs"(ptr %0, i64 %1, ptr %2) #0 {
+define i1 @"unify::ram_occurs"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %var.neg_occ = alloca i1, align 1
   %var.pos_occ = alloca i1, align 1
@@ -6656,7 +6580,7 @@ or.143.exit:                                      ; preds = %or.143.else, %or.14
   ret i1 %or.143.phi
 }
 
-define i1 @"unify::enum_occurs"(ptr %0, i64 %1, ptr %2) #0 {
+define i1 @"unify::enum_occurs"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -6772,7 +6696,7 @@ choice.exit19:                                    ; preds = %and.147.exit
   br label %loop.latch.146
 }
 
-define i1 @"unify::do_bind"(ptr %0, i64 %1, ptr %2) #0 {
+define i1 @"unify::do_bind"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %var._18 = alloca ptr, align 8
   %var._17 = alloca ptr, align 8
@@ -6911,7 +6835,7 @@ err.abort:                                        ; No predecessors!
   br label %choice.exit
 }
 
-define i1 @"unify::bind_var"(ptr %0, i64 %1, ptr %2) #0 {
+define i1 @"unify::bind_var"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %cat.ibuf = alloca [24 x i8], align 1
@@ -7083,7 +7007,7 @@ abort.dead44:                                     ; No predecessors!
   br label %concat.tot.len42
 }
 
-define { i64, ptr } @"unify::show_utype"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"unify::show_utype"(ptr %0, ptr %1) #3 {
 entry:
   %var.e = alloca ptr, align 8
   %var._514 = alloca ptr, align 8
@@ -8101,7 +8025,7 @@ choice.next528:                                   ; preds = %choice.next508
   br label %choice.exit
 }
 
-define { i64, ptr } @"unify::show_uprim"(ptr %0) #0 {
+define { i64, ptr } @"unify::show_uprim"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -8285,7 +8209,7 @@ choice.next87:                                    ; preds = %choice.next82
   br label %choice.exit
 }
 
-define { i64, ptr } @"unify::show_utypes"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"unify::show_utypes"(ptr %0, ptr %1) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca ptr, align 8
@@ -8562,7 +8486,7 @@ abort.dead64:                                     ; No predecessors!
   br label %b.new.buf.len262
 }
 
-define { i64, ptr } @"unify::show_ufields"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"unify::show_ufields"(ptr %0, ptr %1) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca ptr, align 8
@@ -8984,7 +8908,7 @@ abort.dead153:                                    ; No predecessors!
   br label %b.new.buf.len2151
 }
 
-define i1 @"unify::unify"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"unify::unify"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.c2 = alloca ptr, align 8
   %var.c1 = alloca ptr, align 8
@@ -9021,7 +8945,7 @@ entry:
   ret i1 %call.res16
 }
 
-define i1 @"unify::unify_canon"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4) #0 {
+define i1 @"unify::unify_canon"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4) #3 {
 entry:
   %var.var2101 = alloca i64, align 8
   %var._100 = alloca i64, align 8
@@ -9325,7 +9249,7 @@ pay.int.merge97:                                  ; preds = %pay.int.nullbb96, %
   br label %choice.exit86
 }
 
-define i1 @"unify::bind_var_to_val"(ptr %0, i64 %1, ptr %2, i64 %3) #0 {
+define i1 @"unify::bind_var_to_val"(ptr %0, i64 %1, ptr %2, i64 %3) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %cat.ibuf = alloca [24 x i8], align 1
@@ -9497,7 +9421,7 @@ abort.dead40:                                     ; No predecessors!
   br label %concat.tot.len38
 }
 
-define i1 @"unify::unify_concrete"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4) #0 {
+define i1 @"unify::unify_concrete"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4) #3 {
 entry:
   %var.e2 = alloca ptr, align 8
   %var._319 = alloca ptr, align 8
@@ -10110,7 +10034,7 @@ choice.next313:                                   ; preds = %choice.case302
   br label %choice.exit311
 }
 
-define void @"unify::report_mismatch"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"unify::report_mismatch"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %ret.ub.salloc11 = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -10217,7 +10141,7 @@ abort.dead34:                                     ; No predecessors!
   br label %concat.tot.len32
 }
 
-define i1 @"unify::unify_rec_open"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4) #0 {
+define i1 @"unify::unify_rec_open"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4) #3 {
 entry:
   %var.ok_b2 = alloca i1, align 1
   %var.sub_ok2 = alloca i1, align 1
@@ -10693,7 +10617,7 @@ a.after218:                                       ; preds = %a.create217, %a.aft
   br label %choice.exit136
 }
 
-define { i1, i64 } @"unify::merge_open_records"(ptr %0, ptr %1, ptr %2) #0 {
+define { i1, i64 } @"unify::merge_open_records"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ok = alloca i1, align 1
   %var.idx = alloca i64, align 8
@@ -11179,7 +11103,7 @@ a.after164:                                       ; preds = %a.create163, %choic
   br label %choice.exit159
 }
 
-define i64 @"unify::find_field_idx"(ptr %0, ptr %1) #0 {
+define i64 @"unify::find_field_idx"(ptr %0, ptr %1) #3 {
 entry:
   %var.pos = alloca i64, align 8
   %var._ = alloca ptr, align 8
@@ -11386,7 +11310,7 @@ choice.exit58:                                    ; preds = %choice.else57, %cho
   br label %choice.exit35
 }
 
-define i64 @"unify::parse_field_digits"(ptr %0, i64 %1, i64 %2) #0 {
+define i64 @"unify::parse_field_digits"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.c = alloca i64, align 8
   %var.acc = alloca i64, align 8
@@ -11534,9 +11458,9 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare { i64, ptr } @"diag::E3084_open_record_fields"() #0
+declare { i64, ptr } @"diag::E3084_open_record_fields"() #3
 
-define i1 @"unify::is_sub_record"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"unify::is_sub_record"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ok = alloca i1, align 1
   %var.f2 = alloca ptr, align 8
@@ -11828,7 +11752,7 @@ choice.exit76:                                    ; preds = %unwrap.pos.168
   br label %choice.exit
 }
 
-define void @"unify::remove_open_var"(ptr %0, i64 %1) #0 {
+define void @"unify::remove_open_var"(ptr %0, i64 %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -11967,7 +11891,7 @@ a.after23:                                        ; preds = %a.create22, %loop.e
   ret void
 }
 
-define i1 @"unify::unify_rec"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"unify::unify_rec"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ok = alloca i1, align 1
   %var.f2 = alloca ptr, align 8
@@ -13359,7 +13283,7 @@ choice.exit709:                                   ; preds = %choice.else616
   br label %choice.exit617
 }
 
-define i1 @"unify::unify_fn"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"unify::unify_fn"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.rid = alloca i64, align 8
   %var._220 = alloca i64, align 8
@@ -13966,7 +13890,7 @@ choice.exit228:                                   ; preds = %choice.else227, %ch
   br label %choice.exit206
 }
 
-define i1 @"unify::is_ground"(ptr %0, ptr %1) #0 {
+define i1 @"unify::is_ground"(ptr %0, ptr %1) #3 {
 entry:
   %var._261 = alloca ptr, align 8
   %var._i260 = alloca i64, align 8
@@ -14683,7 +14607,7 @@ choice.exit272:                                   ; preds = %and.188.exit
   br label %loop.latch.187
 }
 
-define i1 @"unify::unify_ram"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"unify::unify_ram"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.pos_ok = alloca i1, align 1
   %var.s2 = alloca ptr, align 8
@@ -15066,9 +14990,9 @@ choice.exit175:                                   ; preds = %choice.else174, %ch
   br label %choice.exit168
 }
 
-declare { i64, ptr } @"diag::E3089_ram_shape_prefix"() #0
+declare { i64, ptr } @"diag::E3089_ram_shape_prefix"() #3
 
-define { i64, ptr } @"unify::show_ram_shape"(ptr %0) #0 {
+define { i64, ptr } @"unify::show_ram_shape"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -15117,7 +15041,7 @@ choice.next12:                                    ; preds = %choice.next7
   br label %choice.exit
 }
 
-define i1 @"unify::unify_array"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"unify::unify_array"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.a2 = alloca ptr, align 8
   %var.a1 = alloca ptr, align 8
@@ -15136,7 +15060,7 @@ entry:
   ret i1 %call.res
 }
 
-define i1 @"unify::unify_map"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"unify::unify_map"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.k_ok = alloca i1, align 1
   %var.m2 = alloca ptr, align 8
@@ -15176,7 +15100,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i1 %choice.res
 }
 
-define i1 @"unify::unify_enum"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"unify::unify_enum"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.v2 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -15903,7 +15827,7 @@ choice.exit319:                                   ; preds = %choice.then309
   br label %choice.exit310
 }
 
-define i1 @"unify::is_open_unit_ram"(ptr %0, ptr %1) #0 {
+define i1 @"unify::is_open_unit_ram"(ptr %0, ptr %1) #3 {
 entry:
   %var.s = alloca ptr, align 8
   %var.r = alloca ptr, align 8
@@ -15984,7 +15908,7 @@ choice.exit18:                                    ; preds = %choice.else17, %cho
   br label %choice.exit
 }
 
-define i1 @"unify::is_unbound_var"(ptr %0, ptr %1) #0 {
+define i1 @"unify::is_unbound_var"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var.c = alloca ptr, align 8
@@ -16028,7 +15952,7 @@ pay.int.merge:                                    ; preds = %pay.int.nullbb, %pa
   br label %choice.exit
 }
 
-define void @"unify::bind_open_unit_ram_int"(ptr %0, ptr %1) #0 {
+define void @"unify::bind_open_unit_ram_int"(ptr %0, ptr %1) #3 {
 entry:
   %var.vid48 = alloca i64, align 8
   %var._47 = alloca i64, align 8
@@ -16166,7 +16090,7 @@ pay.int.merge44:                                  ; preds = %pay.int.nullbb43, %
   br label %choice.exit33
 }
 
-define i1 @"unify::solve_constraint"(ptr %0, ptr %1) #0 {
+define i1 @"unify::solve_constraint"(ptr %0, ptr %1) #3 {
 entry:
   %var.cj = alloca ptr, align 8
   %var._227 = alloca ptr, align 8
@@ -16624,7 +16548,7 @@ choice.next221:                                   ; preds = %choice.next202
   br label %choice.exit
 }
 
-define i1 @"unify::solve_field"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define i1 @"unify::solve_field"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.f384 = alloca ptr, align 8
   %var._373 = alloca ptr, align 8
@@ -17841,7 +17765,7 @@ abort.dead609:                                    ; No predecessors!
   br label %concat.tot.len607
 }
 
-define i1 @"unify::solve_choice_join"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"unify::solve_choice_join"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ok = alloca i1, align 1
   %var._ = alloca ptr, align 8
@@ -17929,7 +17853,7 @@ choice.exit:                                      ; preds = %loop.body.196
   br label %loop.latch.196
 }
 
-define i1 @"unify::solve_constraints"(ptr %0, ptr %1) #0 {
+define i1 @"unify::solve_constraints"(ptr %0, ptr %1) #3 {
 entry:
   %var.ok = alloca i1, align 1
   %var._ = alloca ptr, align 8
@@ -18014,7 +17938,7 @@ choice.exit:                                      ; preds = %loop.body.197
   br label %loop.latch.197
 }
 
-define i1 @"unify::ensure_ground"(ptr %0, ptr %1, ptr %2) #0 {
+define i1 @"unify::ensure_ground"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.name = alloca ptr, align 8
@@ -18147,7 +18071,7 @@ abort.dead41:                                     ; No predecessors!
   br label %concat.tot.len39
 }
 
-define ptr @"unify::uprim_to_vt"(ptr %0) #0 {
+define ptr @"unify::uprim_to_vt"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -18465,7 +18389,7 @@ choice.next165:                                   ; preds = %choice.next156
   br label %choice.exit
 }
 
-define ptr @"unify::vt_to_uprim"(ptr %0) #0 {
+define ptr @"unify::vt_to_uprim"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -18783,7 +18707,7 @@ choice.next165:                                   ; preds = %choice.next156
   br label %choice.exit
 }
 
-define ptr @"unify::utype_from_type_info"(ptr %0) #0 {
+define ptr @"unify::utype_from_type_info"(ptr %0) #3 {
 entry:
   %var.v_ut = alloca ptr, align 8
   %var.v_raw = alloca ptr, align 8
@@ -20031,7 +19955,7 @@ choice.next621:                                   ; preds = %choice.case598
   br label %choice.exit619
 }
 
-define ptr @"unify::vt_from_utype"(ptr %0, ptr %1) #0 {
+define ptr @"unify::vt_from_utype"(ptr %0, ptr %1) #3 {
 entry:
   %var._94 = alloca ptr, align 8
   %var._82 = alloca ptr, align 8
@@ -20245,7 +20169,7 @@ choice.next88:                                    ; preds = %choice.next76
   br label %choice.exit
 }
 
-define ptr @"unify::type_info_from_utype"(ptr %0, ptr %1) #0 {
+define ptr @"unify::type_info_from_utype"(ptr %0, ptr %1) #3 {
 entry:
   %cat.ibuf = alloca [24 x i8], align 1
   %var.id = alloca i64, align 8
@@ -21590,7 +21514,7 @@ abort.dead714:                                    ; No predecessors!
   br label %concat.tot.len712
 }
 
-define ptr @"unify::value_type_from_ti"(ptr %0) #0 {
+define ptr @"unify::value_type_from_ti"(ptr %0) #3 {
 entry:
   %var._96 = alloca ptr, align 8
   %var._84 = alloca ptr, align 8
@@ -21797,10 +21721,10 @@ choice.next90:                                    ; preds = %choice.next78
   br label %choice.exit
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

@@ -1099,6 +1099,12 @@ codegen_emit_runtime_full = cg =>
    mark_nounwind(cg, dest_fn)
    mark_nounwind(cg, adopt_fn)
 
+   closed_runtime = !cg.opts.is_module && !cg.opts.is_shared &&
+      ?cg.opts.dynamic_modules == 0
+   closed_runtime |
+      LLVMSetLinkage(alloc_fn, 8)
+      LLVMSetLinkage(vt_fn, 8)
+      LLVMSetLinkage(adopt_fn, 8)
    is_wasm_rt = ast::triple_arch(cg.opts.target_triple) == "wasm32"
    is_wasm_rt |
       LLVMSetLinkage(cur_fn, 8)
@@ -2434,6 +2440,71 @@ codegen_register_global_ctor = cg, fn =>
    LLVMSetLinkage(gv, 7)
    LLVMSetInitializer(gv, ctor_array)
 
+// A store to an internal global with no other uses cannot be observed.
+// Keep atomic/volatile writes and globals whose address can escape.
+write_only_global: Addr => <>
+write_only_global = gv =>
+   LLVMGetLinkage(gv) != 8 | --| <->
+   use' = LLVMGetFirstUse(gv)
+   use' == sys::addr_null | --| <->
+   0.. @
+      use' == sys::addr_null | --| <+>
+      user = LLVMGetUser(use')
+      LLVMIsAStoreInst(user) == sys::addr_null | --| <->
+      LLVMGetOperand(user, 1) != gv || LLVMGetOperand(user, 0) == gv ||
+         LLVMGetVolatile(user) != 0 || LLVMGetOrdering(user) != 0 | --| <->
+      use' = LLVMGetNextUse(use')
+   <->
+
+prune_write_only_globals: types::Cg => ()
+prune_write_only_globals = cg =>
+   gv' = LLVMGetFirstGlobal(cg.module)
+   0.. @
+      gv' == sys::addr_null | -->
+      gv = gv'
+      gv' = LLVMGetNextGlobal(gv)
+      write_only_global(gv) |
+         0.. @
+            use = LLVMGetFirstUse(gv)
+            use == sys::addr_null | -->
+            LLVMInstructionEraseFromParent(LLVMGetUser(use))
+
+prune_unreachable_ir: types::Cg => ()
+prune_unreachable_ir = cg =>
+   prune_write_only_globals(cg)
+   options = LLVMCreatePassBuilderOptions!
+   err = LLVMRunPasses(cg.module, "globaldce", sys::addr_null, options)
+   LLVMDisposePassBuilderOptions(options)
+   err != sys::addr_null |
+      msg = LLVMGetErrorMessage(err)
+      detail = c_str(msg)
+      log::error $ "E5011: LLVM reachability pass failed: ${detail}"
+      LLVMDisposeErrorMessage(msg)
+      cg.error = <+>
+
+// Print only after LLVM has verified the original module and pruned dead IR.
+write_verified_ir: types::Cg, String => ()
+write_verified_ir = cg, out_path =>
+   err_out = (sys::addr_null, sys::addr_null)
+   tmp_out = "${out_path}.tmp"
+   p_res = LLVMPrintModuleToFile(cg.module, tmp_out, &err_out)
+   p_res != 0
+      |
+         err_msg_opt = types::llvm_val_opt(err_out.0)
+         err_msg_opt
+            | err_msg =>
+               detail = c_str(err_msg)
+               log::error $ "${diag::E5012_write_ir_prefix!}${out_path}': ${detail}"
+               LLVMDisposeMessage(err_msg)
+            | log::error $ "${diag::E5012_write_ir_prefix!}${out_path}'"
+         cg.error = <+>
+      |
+         rename(tmp_out, out_path) != 0
+            |
+               log::error $ "E5012: Failed to publish LLVM IR to '${out_path}'"
+               unlink(tmp_out)
+               cg.error = <+>
+
 // Finish: ret i32 0 or ret void in __dva_global_init, verify and print module.
 codegen_finish: types::Cg, String => ()
 codegen_finish = cg, out_path =>
@@ -2446,9 +2517,6 @@ codegen_finish = cg, out_path =>
          codegen_register_global_ctor(cg, mfn)
       |
          LLVMBuildRet(cg.builder, LLVMConstInt(LLVMInt32Type!, 0, 0))
-   err_out = (sys::addr_null, sys::addr_null)
-   tmp_out = out_path + ".tmp"
-   p_res = LLVMPrintModuleToFile(cg.module, tmp_out, &err_out)
    v_err_out = (sys::addr_null, sys::addr_null)
    v_res = LLVMVerifyModule(cg.module, 2, &v_err_out)
    v_res != 0
@@ -2463,25 +2531,8 @@ codegen_finish = cg, out_path =>
                log::error $ "E5011: LLVM module verification failed"
          cg.error = <+>
       |
-         p_res != 0
-            |
-               err_msg_opt = types::llvm_val_opt(err_out.0)
-               err_msg_opt
-                  | err_msg =>
-                     err_str = c_str(err_msg)
-                     log::error $ diag::E5012_write_ir_prefix! + out_path +
-                       "': " + err_str
-                     LLVMDisposeMessage(err_msg)
-                  |
-                     log::error $ diag::E5012_write_ir_prefix! + out_path + "'"
-               cg.error = <+>
-            |
-               r = rename(tmp_out, out_path)
-               r != 0
-                  |
-                     log::error $ "E5012: Failed to publish LLVM IR to '" + out_path + "'"
-                     unlink(tmp_out)
-                     cg.error = <+>
+         prune_unreachable_ir(cg)
+         !cg.error | write_verified_ir(cg, out_path)
 
 // call void @dva_arena_destroy(ptr @global_arena) before a function returns.
 emit_arena_destroy: types::Cg => ()

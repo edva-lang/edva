@@ -4,111 +4,14 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@sys_argc_global = external global i64
-@sys_argv_global = external global ptr
-@"var.annotate::cur_expected_ut" = external global { i1, i64 }
-@"var.stmt::empty_fndef" = external global ptr
-@"var.stmt::lambda_expected_ti" = external global ptr
-@"var.match::empty_fndef" = external global ptr
-@"var.expr::empty_fndef" = external global ptr
-@"var.runtime::empty_fndef" = external global ptr
-@"var.types::codegen_layout" = external global ptr
 @"var.main::empty_fndef" = global ptr null
-@"var.ast::cell_var_names" = external global ptr
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
 @"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
-@"var.path::SEP" = external global i32
-@"var.path::SEP_STR" = external global ptr
-@"var.path::LIST_SEP" = external global i32
-@"var.path::LIST_SEP_STR" = external global ptr
-@"var.path::IS_WIN" = external global i1
-@"var.sys::STDIN" = external global i64
-@"var.sys::STDOUT" = external global i64
-@"var.sys::STDERR" = external global i64
 @"var.sys::addr_null" = external global ptr
-@"var.time::CLOCK_REALTIME" = external global i64
-@"var.time::CLOCK_MONOTONIC" = external global i64
-@"var.time::NS_PER_US" = external global i64
-@"var.time::NS_PER_MS" = external global i64
-@"var.time::NS_PER_SEC" = external global i64
-@"var.time::SEC_PER_MIN" = external global i64
-@"var.time::SEC_PER_HOUR" = external global i64
-@"var.time::SEC_PER_DAY" = external global i64
-@"var.layout::target_triple" = external global ptr
-@"var.log::#owned_fd" = external global i64
-@"var.log::#O_LOG_APPEND" = external global i64
-@"var.annotate::cur_source_file" = external global ptr
-@"var.annotate::cur_target_triple" = external global ptr
-@"var.annotate::cur_stmt_files" = external global ptr
-@"var.annotate::cur_stmt_lines" = external global ptr
-@"var.annotate::cur_stmt_cols" = external global ptr
-@"var.annotate::cur_stmt_mods" = external global ptr
-@"var.annotate::cur_is_call_arg" = external global i1
-@"var.annotate::in_ct_expr" = external global i1
-@"var.annotate::cur_fn_name" = external global ptr
-@"var.annotate::unroll_seq" = external global i64
-@"var.annotate::cur_program_exprs" = external global ptr
-@"var.annotate::invalid_scc_fns" = external global ptr
-@"var.annotate::cur_ct_types" = external global ptr
-@"var.annotate::cur_ct_vals" = external global ptr
-@"var.annotate::cur_ct_cursors" = external global ptr
-@"var.annotate::cur_ct_ints" = external global ptr
-@"var.annotate::view_vars" = external global ptr
-@"var.annotate::declared_fns" = external global ptr
-@"var.annotate::called_fns" = external global ptr
-@"var.annotate::user_fns" = external global ptr
-@"var.annotate::value_used_fns" = external global ptr
-@"var.annotate::fn_alias_vars" = external global ptr
-@"var.annotate::fn_alias_tgts" = external global ptr
-@"var.types::empty_fndef" = external global ptr
 @"var.types::g" = external global ptr
-@"var.types::fneff" = external global ptr
 @"var.types::cg_timings" = external global ptr
-@"var.types::vra" = external global ptr
 @clo.const = internal constant { ptr, ptr } { ptr @"main::c_str", ptr null }
 @"var.main::c_str" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"main::dbg", ptr null }
@@ -1386,21 +1289,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.main::codegen_typed_program" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_main, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -1434,30 +1327,12 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
-
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_main() #0 {
+define internal void @__dva_global_init_main() #3 {
 entry:
   store ptr @clo.const, ptr @"var.main::c_str", align 8
   store ptr @clo.const.1, ptr @"var.main::dbg", align 8
@@ -1592,17 +1467,7 @@ entry:
   ret void
 }
 
-declare ptr @LLVMModuleCreateWithName(ptr)
-
 declare void @LLVMDisposeModule(ptr)
-
-declare i64 @LLVMPrintModuleToFile(ptr, ptr, ptr)
-
-declare void @LLVMDisposeMessage(ptr)
-
-declare i64 @LLVMVerifyModule(ptr, i64, ptr)
-
-declare ptr @LLVMCreateBuilder()
 
 declare void @LLVMDisposeBuilder(ptr)
 
@@ -1611,8 +1476,6 @@ declare ptr @LLVMVoidType()
 declare ptr @LLVMInt64Type()
 
 declare ptr @LLVMInt32Type()
-
-declare ptr @LLVMInt16Type()
 
 declare ptr @LLVMInt8Type()
 
@@ -1626,11 +1489,7 @@ declare ptr @LLVMPointerType(ptr, i64)
 
 declare ptr @LLVMArrayType(ptr, i64)
 
-declare ptr @LLVMStructType(ptr, i64, i64)
-
 declare ptr @LLVMStructGetTypeAtIndex(ptr, i64)
-
-declare i64 @LLVMCountStructElementTypes(ptr)
 
 declare ptr @LLVMSizeOf(ptr)
 
@@ -1639,8 +1498,6 @@ declare ptr @LLVMFunctionType(ptr, ptr, i64, i64)
 declare ptr @LLVMAddFunction(ptr, ptr, ptr)
 
 declare ptr @LLVMGetParam(ptr, i64)
-
-declare i64 @LLVMCountParams(ptr)
 
 declare ptr @LLVMGetNamedFunction(ptr, ptr)
 
@@ -1654,23 +1511,9 @@ declare ptr @LLVMConstInt(ptr, i64, i64)
 
 declare i64 @LLVMIsConstant(ptr)
 
-declare i64 @LLVMConstIntGetZExtValue(ptr)
-
 declare ptr @LLVMConstReal(ptr, double)
 
-declare ptr @LLVMConstString(ptr, i64, i64)
-
-declare ptr @LLVMConstGEP2(ptr, ptr, ptr, i64)
-
-declare ptr @LLVMConstStruct(ptr, i64, i64)
-
 declare ptr @LLVMConstArray2(ptr, ptr, i64)
-
-declare ptr @LLVMConstPtrToInt(ptr, ptr)
-
-declare ptr @LLVMConstPointerCast(ptr, ptr)
-
-declare ptr @LLVMConstAdd(ptr, ptr)
 
 declare ptr @LLVMAddGlobal(ptr, ptr, ptr)
 
@@ -1684,27 +1527,13 @@ declare void @LLVMSetUnnamedAddr(ptr, i64)
 
 declare void @LLVMSetLinkage(ptr, i64)
 
-declare void @LLVMSetSection(ptr, ptr)
-
 declare void @LLVMSetThreadLocal(ptr, i64)
 
 declare ptr @LLVMBuildAlloca(ptr, ptr, ptr)
 
 declare ptr @LLVMBuildStore(ptr, ptr, ptr)
 
-declare void @LLVMSetAlignment(ptr, i64)
-
-declare ptr @LLVMConstVector(ptr, i64)
-
-declare ptr @LLVMBuildInsertElement(ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildExtractElement(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildShuffleVector(ptr, ptr, ptr, ptr, ptr)
-
 declare ptr @LLVMBuildLoad2(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildGEP2(ptr, ptr, ptr, ptr, i64, ptr)
 
 declare ptr @LLVMBuildStructGEP2(ptr, ptr, ptr, i64, ptr)
 
@@ -1716,57 +1545,15 @@ declare ptr @LLVMBuildSub(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildMul(ptr, ptr, ptr, ptr)
 
-declare ptr @LLVMBuildSDiv(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildUDiv(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildSRem(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildURem(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFAdd(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFSub(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFMul(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFDiv(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFRem(ptr, ptr, ptr, ptr)
-
 declare ptr @LLVMBuildICmp(ptr, i64, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildAnd(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildOr(ptr, ptr, ptr, ptr)
 
-declare ptr @LLVMBuildXor(ptr, ptr, ptr, ptr)
-
 declare ptr @LLVMBuildShl(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildLShr(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildAShr(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFCmp(ptr, i64, ptr, ptr, ptr)
-
-declare i64 @LLVMCanValueUseFastMathFlags(ptr)
-
-declare i64 @LLVMGetFastMathFlags(ptr)
-
-declare void @LLVMSetFastMathFlags(ptr, i64)
-
-declare ptr @LLVMBuildSIToFP(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildUIToFP(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFPToSI(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFPToUI(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFPTrunc(ptr, ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFPExt(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildSelect(ptr, ptr, ptr, ptr, ptr)
 
@@ -1776,17 +1563,9 @@ declare ptr @LLVMBuildCondBr(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildPhi(ptr, ptr, ptr)
 
-declare void @LLVMAddIncoming(ptr, ptr, ptr, i64)
-
-declare ptr @LLVMBuildSwitch(ptr, ptr, ptr, i64)
-
-declare void @LLVMAddCase(ptr, ptr, ptr)
-
 declare ptr @LLVMGetInsertBlock(ptr)
 
 declare ptr @LLVMGetBasicBlockParent(ptr)
-
-declare ptr @LLVMGetBasicBlockTerminator(ptr)
 
 declare ptr @LLVMBuildRet(ptr, ptr)
 
@@ -1812,414 +1591,22 @@ declare ptr @LLVMBuildMemCpy(ptr, ptr, i64, ptr, i64, ptr, i64)
 
 declare ptr @LLVMBuildMemMove(ptr, ptr, i64, ptr, i64, ptr, i64)
 
-declare ptr @LLVMBuildMemSet(ptr, ptr, ptr, ptr, i64)
-
-declare ptr @LLVMBuildExtractValue(ptr, ptr, i64, ptr)
-
 declare ptr @LLVMBuildInsertValue(ptr, ptr, ptr, i64, ptr)
 
 declare ptr @LLVMTypeOf(ptr)
 
 declare void @LLVMSetVolatile(ptr, i64)
 
-declare i64 @LLVMGetIntTypeWidth(ptr)
-
-declare ptr @LLVMBuildNot(ptr, ptr, ptr)
-
-declare ptr @LLVMBuildNeg(ptr, ptr, ptr)
-
-declare ptr @LLVMBuildFNeg(ptr, ptr, ptr)
-
 declare i64 @LLVMGetTypeKind(ptr)
 
 declare ptr @LLVMGetEntryBasicBlock(ptr)
 
-declare ptr @LLVMGetFirstInstruction(ptr)
-
-declare void @LLVMPositionBuilderBefore(ptr, ptr)
-
-declare void @LLVMDisposeTargetData(ptr)
-
-declare i64 @LLVMABISizeOfType(ptr, ptr)
-
-declare i64 @LLVMABIAlignmentOfType(ptr, ptr)
-
-declare void @LLVMSetDataLayout(ptr, ptr)
-
-declare void @LLVMSetTarget(ptr, ptr)
-
-declare ptr @LLVMGetDefaultTargetTriple()
-
-declare i64 @LLVMGetTargetFromTriple(ptr, ptr, ptr)
-
-declare ptr @LLVMCreateTargetMachine(ptr, ptr, ptr, ptr, i64, i64, i64)
-
-declare void @LLVMDisposeTargetMachine(ptr)
-
-declare ptr @LLVMCreateTargetDataLayout(ptr)
-
-declare ptr @LLVMCopyStringRepOfTargetData(ptr)
-
-declare void @LLVMInitializeAArch64Target()
-
-declare void @LLVMInitializeAArch64TargetInfo()
-
-declare void @LLVMInitializeAArch64TargetMC()
-
-declare void @LLVMInitializeAMDGPUTarget()
-
-declare void @LLVMInitializeAMDGPUTargetInfo()
-
-declare void @LLVMInitializeAMDGPUTargetMC()
-
-declare void @LLVMInitializeARMTarget()
-
-declare void @LLVMInitializeARMTargetInfo()
-
-declare void @LLVMInitializeARMTargetMC()
-
-declare void @LLVMInitializeAVRTarget()
-
-declare void @LLVMInitializeAVRTargetInfo()
-
-declare void @LLVMInitializeAVRTargetMC()
-
-declare void @LLVMInitializeBPFTarget()
-
-declare void @LLVMInitializeBPFTargetInfo()
-
-declare void @LLVMInitializeBPFTargetMC()
-
-declare void @LLVMInitializeHexagonTarget()
-
-declare void @LLVMInitializeHexagonTargetInfo()
-
-declare void @LLVMInitializeHexagonTargetMC()
-
-declare void @LLVMInitializeLanaiTarget()
-
-declare void @LLVMInitializeLanaiTargetInfo()
-
-declare void @LLVMInitializeLanaiTargetMC()
-
-declare void @LLVMInitializeLoongArchTarget()
-
-declare void @LLVMInitializeLoongArchTargetInfo()
-
-declare void @LLVMInitializeLoongArchTargetMC()
-
-declare void @LLVMInitializeMipsTarget()
-
-declare void @LLVMInitializeMipsTargetInfo()
-
-declare void @LLVMInitializeMipsTargetMC()
-
-declare void @LLVMInitializeMSP430Target()
-
-declare void @LLVMInitializeMSP430TargetInfo()
-
-declare void @LLVMInitializeMSP430TargetMC()
-
-declare void @LLVMInitializeNVPTXTarget()
-
-declare void @LLVMInitializeNVPTXTargetInfo()
-
-declare void @LLVMInitializeNVPTXTargetMC()
-
-declare void @LLVMInitializePowerPCTarget()
-
-declare void @LLVMInitializePowerPCTargetInfo()
-
-declare void @LLVMInitializePowerPCTargetMC()
-
-declare void @LLVMInitializeRISCVTarget()
-
-declare void @LLVMInitializeRISCVTargetInfo()
-
-declare void @LLVMInitializeRISCVTargetMC()
-
-declare void @LLVMInitializeSparcTarget()
-
-declare void @LLVMInitializeSparcTargetInfo()
-
-declare void @LLVMInitializeSparcTargetMC()
-
-declare void @LLVMInitializeSystemZTarget()
-
-declare void @LLVMInitializeSystemZTargetInfo()
-
-declare void @LLVMInitializeSystemZTargetMC()
-
-declare void @LLVMInitializeVETarget()
-
-declare void @LLVMInitializeVETargetInfo()
-
-declare void @LLVMInitializeVETargetMC()
-
-declare void @LLVMInitializeWebAssemblyTarget()
-
-declare void @LLVMInitializeWebAssemblyTargetInfo()
-
-declare void @LLVMInitializeWebAssemblyTargetMC()
-
-declare void @LLVMInitializeX86Target()
-
-declare void @LLVMInitializeX86TargetInfo()
-
-declare void @LLVMInitializeX86TargetMC()
-
-declare void @LLVMInitializeXCoreTarget()
-
-declare void @LLVMInitializeXCoreTargetInfo()
-
-declare void @LLVMInitializeXCoreTargetMC()
-
-declare void @LLVMInitializeAArch64AsmPrinter()
-
-declare void @LLVMInitializeAMDGPUAsmPrinter()
-
-declare void @LLVMInitializeARMAsmPrinter()
-
-declare void @LLVMInitializeAVRAsmPrinter()
-
-declare void @LLVMInitializeBPFAsmPrinter()
-
-declare void @LLVMInitializeHexagonAsmPrinter()
-
-declare void @LLVMInitializeLanaiAsmPrinter()
-
-declare void @LLVMInitializeLoongArchAsmPrinter()
-
-declare void @LLVMInitializeMipsAsmPrinter()
-
-declare void @LLVMInitializeMSP430AsmPrinter()
-
-declare void @LLVMInitializeNVPTXAsmPrinter()
-
-declare void @LLVMInitializePowerPCAsmPrinter()
-
-declare void @LLVMInitializeRISCVAsmPrinter()
-
-declare void @LLVMInitializeSparcAsmPrinter()
-
-declare void @LLVMInitializeSystemZAsmPrinter()
-
-declare void @LLVMInitializeVEAsmPrinter()
-
-declare void @LLVMInitializeWebAssemblyAsmPrinter()
-
-declare void @LLVMInitializeX86AsmPrinter()
-
-declare void @LLVMInitializeXCoreAsmPrinter()
-
-declare ptr @LLVMOrcCreateLLJITBuilder()
-
-declare void @LLVMOrcDisposeLLJITBuilder(ptr)
-
-declare ptr @LLVMOrcCreateLLJIT(ptr, ptr)
-
-declare ptr @LLVMOrcDisposeLLJIT(ptr)
-
-declare ptr @LLVMOrcLLJITGetMainJITDylib(ptr)
-
-declare ptr @LLVMOrcLLJITAddLLVMIRModule(ptr, ptr, ptr)
-
-declare ptr @LLVMOrcLLJITLookup(ptr, ptr, ptr)
-
-declare ptr @LLVMOrcCreateNewThreadSafeContext()
-
-declare void @LLVMOrcDisposeThreadSafeContext(ptr)
-
-declare ptr @LLVMOrcCreateNewThreadSafeModule(ptr, ptr)
-
-declare void @LLVMOrcDisposeThreadSafeModule(ptr)
-
-declare ptr @LLVMOrcCreateDynamicLibrarySearchGeneratorForProcess(ptr, i64, ptr, ptr)
-
-declare void @LLVMOrcJITDylibAddGenerator(ptr, ptr)
-
-declare ptr @LLVMGetErrorMessage(ptr)
-
-declare void @LLVMDisposeErrorMessage(ptr)
-
-declare void @LLVMConsumeError(ptr)
-
-declare ptr @LLVMGetGlobalContext()
-
-declare ptr @LLVMCreateStringAttribute(ptr, ptr, i64, ptr, i64)
-
-declare i64 @LLVMGetEnumAttributeKindForName(ptr, i64)
-
-declare ptr @LLVMCreateEnumAttribute(ptr, i64, i64)
-
-declare void @LLVMAddAttributeAtIndex(ptr, i64, ptr)
-
-declare i64 @LLVMGetMDKindIDInContext(ptr, ptr, i64)
-
-declare ptr @LLVMValueAsMetadata(ptr)
-
-declare ptr @LLVMMDNodeInContext2(ptr, ptr, i64)
-
-declare ptr @LLVMMetadataAsValue(ptr, ptr)
-
-declare void @LLVMSetMetadata(ptr, i64, ptr)
-
-declare i32 @open(ptr, i32)
-
-declare i64 @creat(ptr, i64)
-
-declare i32 @close(i32)
-
-declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @posix_spawnp(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @waitpid(i64, ptr, i64)
-
-declare i64 @read(i32, ptr, i64)
-
-declare i64 @lseek(i32, i64, i64)
-
 declare i64 @write(i32, ptr, i64)
-
-declare i64 @writev(i32, ptr, i64)
-
-declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
 
-declare i64 @htons(i64)
-
-declare i64 @htonl(i64)
-
-declare i64 @ntohs(i64)
-
-declare i64 @ntohl(i64)
-
-declare i64 @inet_addr(ptr)
-
-declare i64 @socket(i64, i64, i64)
-
-declare i64 @connect(i64, ptr, i64)
-
-declare i64 @bind(i64, ptr, i64)
-
-declare i64 @listen(i64, i64)
-
-declare i64 @accept(i64, ptr, ptr)
-
-declare i64 @send(i64, ptr, i64, i32)
-
-declare i64 @recv(i64, ptr, i64, i32)
-
-declare i64 @sendto(i64, ptr, i64, i32, ptr, i64)
-
-declare i64 @recvfrom(i64, ptr, i64, i32, ptr, ptr)
-
-declare i64 @setsockopt(i64, i64, i64, ptr, i64)
-
-declare i64 @getsockopt(i64, i64, i64, ptr, ptr)
-
-declare i64 @getpeername(i64, ptr, ptr)
-
-declare i64 @getsockname(i64, ptr, ptr)
-
-declare i64 @shutdown(i64, i64)
-
-declare i64 @fcntl(i32, i64, i64)
-
-declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
-
-declare void @freeaddrinfo(ptr)
-
-declare i64 @getifaddrs(ptr)
-
-declare void @freeifaddrs(ptr)
-
-declare ptr @memset(ptr, i64, i64)
-
-declare i64 @atoi(ptr)
-
-declare ptr @opendir(ptr)
-
-declare ptr @readdir(ptr)
-
-declare i64 @closedir(ptr)
-
-declare i64 @strlen(ptr) #0
-
-declare i64 @strcmp(ptr, ptr)
-
-declare ptr @memcpy(ptr, ptr, i64)
-
-declare ptr @memmove(ptr, ptr, i64)
-
-declare i64 @stat(ptr, ptr)
-
-declare i64 @fstat(i32, ptr)
-
-declare i64 @rename(ptr, ptr)
-
-declare i64 @unlink(ptr)
-
-declare i64 @pipe(ptr)
-
-declare ptr @__errno_location()
-
-declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
-
-declare i64 @munmap(ptr, i64)
-
-declare i64 @syscall(i64, ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @dlopen(ptr, i32)
-
-declare ptr @dlsym(ptr, ptr)
-
-declare i64 @dlclose(ptr)
-
-declare ptr @dlerror()
-
-declare i64 @system(ptr)
-
-declare ptr @realpath(ptr, ptr)
-
-declare i64 @isatty(i32)
-
-declare i64 @tcgetattr(i32, ptr)
-
-declare i64 @tcsetattr(i32, i64, ptr)
-
-declare void @cfmakeraw(ptr)
-
-declare i64 @poll(ptr, i64, i64)
-
-declare i64 @epoll_create1(i32)
-
-declare i64 @epoll_ctl(i64, i64, i32, ptr)
-
-declare i64 @epoll_wait(i64, ptr, i64, i64)
-
-declare i64 @time(ptr)
-
-declare ptr @signal(i64, ptr)
-
-declare i64 @raise(i64)
-
-declare i64 @getrlimit(i64, ptr)
-
-declare i64 @setrlimit(i64, ptr)
-
-declare i64 @uname(ptr)
-
-declare i32 @nanosleep(ptr, ptr)
-
-declare ptr @localtime_r(ptr, ptr)
-
-declare ptr @strptime(ptr, ptr, ptr)
-
-define { i64, ptr } @"main::c_str"(ptr %0) #0 {
+define { i64, ptr } @"main::c_str"(ptr %0) #3 {
 entry:
   %var.raw = alloca ptr, align 8
   store ptr %0, ptr %var.raw, align 8
@@ -2232,9 +1619,9 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-declare { i64, ptr } @"types::c_str"(ptr) #0
+declare { i64, ptr } @"types::c_str"(ptr) #3
 
-define i64 @"main::dbg"(ptr %0) #0 {
+define i64 @"main::dbg"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -2243,9 +1630,9 @@ entry:
   ret i64 %call.res
 }
 
-declare i64 @"types::dbg"(ptr) #0
+declare i64 @"types::dbg"(ptr) #3
 
-define internal i64 @"main::#print"(ptr %0) #0 {
+define internal i64 @"main::#print"(ptr %0) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -2515,7 +1902,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define ptr @"main::builder_struct_type"(ptr %0) #0 {
+define ptr @"main::builder_struct_type"(ptr %0) #3 {
 entry:
   %var.st = alloca ptr, align 8
   %var.tarr = alloca ptr, align 8
@@ -2732,7 +2119,7 @@ a.after79:                                        ; preds = %a.create78, %a.stor
   br label %choice.exit
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -2780,7 +2167,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #6 {
@@ -2793,9 +2180,9 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare ptr @"types::struct_type_n"(ptr, ptr, i64) #0
+declare ptr @"types::struct_type_n"(ptr, ptr, i64) #3
 
-define ptr @"main::builder_len"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::builder_len"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.bv = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -2958,9 +2345,9 @@ abort.dead57:                                     ; No predecessors!
   br label %nulcopy.len55
 }
 
-declare { i1, i64 } @"types::llvm_val_opt"(ptr) #0
+declare { i1, i64 } @"types::llvm_val_opt"(ptr) #3
 
-define ptr @"main::builder_data"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::builder_data"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.bv = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -3130,7 +2517,7 @@ abort.dead62:                                     ; No predecessors!
   br label %nulcopy.len60
 }
 
-define ptr @"main::builder_set_len"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::builder_set_len"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.lv = alloca ptr, align 8
   %var._15 = alloca ptr, align 8
@@ -3279,7 +2666,7 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len44
 }
 
-define ptr @"main::builder_cap"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::builder_cap"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.bv = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -3442,7 +2829,7 @@ abort.dead57:                                     ; No predecessors!
   br label %nulcopy.len55
 }
 
-define ptr @"main::builder_set_len_checked"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"main::builder_set_len_checked"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.is_big = alloca ptr, align 8
   %var.oob_bb = alloca ptr, align 8
@@ -3948,11 +3335,11 @@ abort.dead230:                                    ; No predecessors!
   br label %nulcopy.len228
 }
 
-declare { i64, ptr } @"diag::E4008_builder_length_bounds"() #0
+declare { i64, ptr } @"diag::E4008_builder_length_bounds"() #3
 
-declare void @"runtime::emit_abort_msg"(ptr, ptr, ptr) #0
+declare void @"runtime::emit_abort_msg"(ptr, ptr, ptr) #3
 
-define ptr @"main::codegen_array_deep_copy"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_array_deep_copy"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.copy_len = alloca ptr, align 8
   %var.buf = alloca ptr, align 8
@@ -5357,9 +4744,9 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare ptr @"types::call1"(ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"types::call1"(ptr, ptr, ptr, ptr, ptr) #3
 
-define ptr @"main::codegen_thread_copy_string"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_thread_copy_string"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.sp = alloca ptr, align 8
   %var.i8t = alloca ptr, align 8
@@ -5588,17 +4975,17 @@ abort.dead141:                                    ; No predecessors!
   br label %nulcopy.len139
 }
 
-declare ptr @"expr::codegen_string_len"(ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_string_len"(ptr, ptr, ptr) #3
 
-declare ptr @"stmt::codegen_add_checked_u64"(ptr, ptr, ptr, ptr) #0
+declare ptr @"stmt::codegen_add_checked_u64"(ptr, ptr, ptr, ptr) #3
 
-declare ptr @"expr::codegen_call_arena_alloc_in"(ptr, ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_call_arena_alloc_in"(ptr, ptr, ptr, ptr) #3
 
-declare ptr @"expr::codegen_string_data"(ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_string_data"(ptr, ptr, ptr) #3
 
-declare ptr @"types::gep1"(ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"types::gep1"(ptr, ptr, ptr, ptr, ptr) #3
 
-define ptr @"main::codegen_thread_copy_array"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_thread_copy_array"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.out = alloca ptr, align 8
   %var.live_bytes = alloca ptr, align 8
@@ -5966,7 +5353,7 @@ abort.dead233:                                    ; No predecessors!
   br label %nulcopy.len231
 }
 
-define ptr @"main::codegen_thread_copy_slice"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_thread_copy_slice"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.out = alloca ptr, align 8
   %var.buf = alloca ptr, align 8
@@ -6312,7 +5699,7 @@ abort.dead215:                                    ; No predecessors!
   br label %nulcopy.len213
 }
 
-define ptr @"main::slice_len"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::slice_len"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.raw_len = alloca ptr, align 8
   %var.i64t = alloca ptr, align 8
@@ -6583,7 +5970,7 @@ abort.dead137:                                    ; No predecessors!
   br label %nulcopy.len135
 }
 
-define ptr @"main::slice_data"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::slice_data"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -6750,7 +6137,7 @@ abort.dead71:                                     ; No predecessors!
   br label %nulcopy.len69
 }
 
-define ptr @"main::codegen_deep_copy_error"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_deep_copy_error"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.v5_1 = alloca ptr, align 8
   %var.d5_1 = alloca ptr, align 8
@@ -7914,7 +7301,7 @@ abort.dead764:                                    ; No predecessors!
   br label %nulcopy.len762
 }
 
-define ptr @"main::error_struct_type"(ptr %0) #0 {
+define ptr @"main::error_struct_type"(ptr %0) #3 {
 entry:
   %var.tarr = alloca ptr, align 8
   %var.i8p = alloca ptr, align 8
@@ -8244,9 +7631,9 @@ a.after167:                                       ; preds = %a.create166, %a.sto
   ret ptr %call.res176
 }
 
-declare ptr @"types::struct_type2"(ptr, ptr) #0
+declare ptr @"types::struct_type2"(ptr, ptr) #3
 
-define ptr @"main::codegen_thread_copy_value"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"main::codegen_thread_copy_value"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.dst_arena = alloca ptr, align 8
   %var.vt = alloca ptr, align 8
@@ -8317,7 +7704,7 @@ choice.next23:                                    ; preds = %choice.next14
   br label %choice.exit
 }
 
-define ptr @"main::codegen_builder_create_opt"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define ptr @"main::codegen_builder_create_opt"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %var.buf = alloca ptr, align 8
   %var.buf_len = alloca ptr, align 8
@@ -8838,11 +8225,11 @@ abort.dead214:                                    ; No predecessors!
   br label %nulcopy.len212
 }
 
-declare ptr @"types::hoisted_alloca"(ptr, ptr, ptr) #0
+declare ptr @"types::hoisted_alloca"(ptr, ptr, ptr) #3
 
-declare ptr @"expr::codegen_call_arena_alloc"(ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_call_arena_alloc"(ptr, ptr, ptr) #3
 
-define ptr @"main::codegen_builder_create"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_builder_create"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cap_val = alloca ptr, align 8
@@ -8857,7 +8244,7 @@ entry:
   ret ptr %call.res
 }
 
-define void @"main::codegen_builder_grow"(ptr %0, ptr %1) #0 {
+define void @"main::codegen_builder_grow"(ptr %0, ptr %1) #3 {
 entry:
   %var.old_len = alloca ptr, align 8
   %var.new_data = alloca ptr, align 8
@@ -9301,7 +8688,7 @@ abort.dead269:                                    ; No predecessors!
   br label %nulcopy.len267
 }
 
-define void @"main::free1"(ptr %0, ptr %1) #0 {
+define void @"main::free1"(ptr %0, ptr %1) #3 {
 entry:
   %var.free_t = alloca ptr, align 8
   %var.p = alloca ptr, align 8
@@ -9364,9 +8751,9 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len12
 }
 
-declare ptr @"types::fn_type1"(ptr, ptr) #0
+declare ptr @"types::fn_type1"(ptr, ptr) #3
 
-define void @"main::codegen_builder_append_byte"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"main::codegen_builder_append_byte"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.next_len = alloca ptr, align 8
   %var.cur_len = alloca ptr, align 8
@@ -10629,7 +10016,7 @@ abort.dead826:                                    ; No predecessors!
   br label %nulcopy.len824
 }
 
-define void @"main::codegen_builder_ensure_cap"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"main::codegen_builder_ensure_cap"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.buf = alloca ptr, align 8
   %var.buf_len = alloca ptr, align 8
@@ -11417,7 +10804,7 @@ abort.dead475:                                    ; No predecessors!
   br label %nulcopy.len473
 }
 
-define void @"main::codegen_builder_append_raw_slice"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define void @"main::codegen_builder_append_raw_slice"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.dst = alloca ptr, align 8
   %var.bdata = alloca ptr, align 8
@@ -11503,7 +10890,7 @@ entry:
   ret void
 }
 
-define void @"main::codegen_builder_append_int"(ptr %0, ptr %1, ptr %2, i1 %3) #0 {
+define void @"main::codegen_builder_append_int"(ptr %0, ptr %1, ptr %2, i1 %3) #3 {
 entry:
   %var.new_len = alloca ptr, align 8
   %var.written = alloca ptr, align 8
@@ -11668,13 +11055,13 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len63
 }
 
-declare ptr @"stmt::coerce_int_ext"(ptr, ptr, ptr, i1) #0
+declare ptr @"stmt::coerce_int_ext"(ptr, ptr, ptr, i1) #3
 
-declare { ptr, ptr } @"stmt::ensure_fmt_i64_buf"(ptr) #0
+declare { ptr, ptr } @"stmt::ensure_fmt_i64_buf"(ptr) #3
 
-declare ptr @"types::call3"(ptr, ptr, ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"types::call3"(ptr, ptr, ptr, ptr, ptr, ptr, ptr) #3
 
-define void @"main::codegen_builder_append_str"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"main::codegen_builder_append_str"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.sdata = alloca ptr, align 8
   %var.slen = alloca ptr, align 8
@@ -11700,7 +11087,7 @@ entry:
   ret void
 }
 
-define void @"main::codegen_builder_append_rune"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"main::codegen_builder_append_rune"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.zero_i8 = alloca ptr, align 8
   %var.dst3_4 = alloca ptr, align 8
@@ -14988,13 +14375,13 @@ abort.dead2110:                                   ; No predecessors!
   br label %nulcopy.len2108
 }
 
-declare ptr @"stmt::coerce_int"(ptr, ptr, ptr) #0
+declare ptr @"stmt::coerce_int"(ptr, ptr, ptr) #3
 
-declare { i64, ptr } @"str::from_int"(i64) #0
+declare { i64, ptr } @"str::from_int"(i64) #3
 
-declare void @"stmt::branch_to"(ptr, ptr) #0
+declare void @"stmt::branch_to"(ptr, ptr) #3
 
-define ptr @"main::codegen_builder_pure_append"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"main::codegen_builder_pure_append"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.new_data = alloca ptr, align 8
   %var.cur_data = alloca ptr, align 8
@@ -15145,11 +14532,11 @@ choice.exit67:                                    ; preds = %choice.else66, %cho
   br label %choice.exit59
 }
 
-declare i1 @"types::is_str_vt"(ptr) #0
+declare i1 @"types::is_str_vt"(ptr) #3
 
-declare i1 @"types::is_rune_vt"(ptr) #0
+declare i1 @"types::is_rune_vt"(ptr) #3
 
-define ptr @"main::builder_append_rec_lens"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5, ptr %6, ptr %7) #0 {
+define ptr @"main::builder_append_rec_lens"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4, ptr %5, ptr %6, ptr %7) #3 {
 entry:
   %var.next_add = alloca ptr, align 8
   %var.next_lens = alloca ptr, align 8
@@ -15770,9 +15157,9 @@ a.after282:                                       ; preds = %a.create281, %a.aft
   br label %choice.exit
 }
 
-declare ptr @"expr::codegen_eval"(ptr, ptr) #0
+declare ptr @"expr::codegen_eval"(ptr, ptr) #3
 
-define void @"main::builder_append_rec_emit"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #0 {
+define void @"main::builder_append_rec_emit"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #3 {
 entry:
   %var.next_off = alloca ptr, align 8
   %var.byte_i8 = alloca ptr, align 8
@@ -16374,7 +15761,7 @@ a.after298:                                       ; preds = %a.create297, %a.aft
   br label %choice.exit
 }
 
-define void @"main::codegen_builder_append_record"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"main::codegen_builder_append_record"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.zero_i8 = alloca ptr, align 8
   %var.bdata = alloca ptr, align 8
@@ -16620,7 +16007,7 @@ a.after97:                                        ; preds = %a.create96, %a.afte
   br label %choice.exit
 }
 
-define void @"main::codegen_builder_append_evaled"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"main::codegen_builder_append_evaled"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.is_str = alloca i1, align 1
   %var.fvt = alloca ptr, align 8
@@ -17015,9 +16402,9 @@ choice.exit140:                                   ; preds = %choice.else139, %ch
   br label %choice.exit4
 }
 
-declare ptr @"types::record_field_gep"(ptr, ptr, ptr, ptr, i64) #0
+declare ptr @"types::record_field_gep"(ptr, ptr, ptr, ptr, i64) #3
 
-define void @"main::codegen_builder_append"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"main::codegen_builder_append"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.is_concat = alloca i1, align 1
   %var.bt = alloca ptr, align 8
@@ -17738,27 +17125,23 @@ choice.exit296:                                   ; preds = %choice.else295, %ch
   br label %choice.exit
 }
 
-declare ptr @"stmt::codegen_string_literal"(ptr, ptr) #0
+declare ptr @"stmt::codegen_string_literal"(ptr, ptr) #3
 
-declare { i64, ptr } @"types::resolve_fn_name"(ptr, ptr) #0
+declare { i64, ptr } @"types::resolve_fn_name"(ptr, ptr) #3
 
-declare i32 @memcmp(ptr, ptr, i64) #0
-
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
+declare i32 @memcmp(ptr, ptr, i64) #3
 
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-declare ptr @"types::static_expr_vt"(ptr, ptr) #0
+declare ptr @"types::static_expr_vt"(ptr, ptr) #3
 
-declare i1 @"types::is_int_vt"(ptr) #0
+declare i1 @"types::is_int_vt"(ptr) #3
 
-declare i1 @"types::is_unsigned_vt"(ptr) #0
+declare i1 @"types::is_unsigned_vt"(ptr) #3
 
-define void @"main::builder_reset_header"(ptr %0, ptr %1) #0 {
+define void @"main::builder_reset_header"(ptr %0, ptr %1) #3 {
 entry:
   %var.null_ptr = alloca ptr, align 8
   %var.bt = alloca ptr, align 8
@@ -17999,7 +17382,7 @@ abort.dead134:                                    ; No predecessors!
   br label %nulcopy.len132
 }
 
-define ptr @"main::codegen_builder_freeze_fast"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_builder_freeze_fast"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.res_str = alloca ptr, align 8
   %var.data = alloca ptr, align 8
@@ -18060,13 +17443,13 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-declare { i64, ptr } @"diag::E3140_no_runtime_arena"() #0
+declare { i64, ptr } @"diag::E3140_no_runtime_arena"() #3
 
-declare void @"types::init_error"(ptr, ptr, ptr, i64, i64) #0
+declare void @"types::init_error"(ptr, ptr, ptr, i64, i64) #3
 
-declare ptr @"expr::codegen_string_build"(ptr, ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_string_build"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"main::codegen_builder_freeze"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_builder_freeze"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.res_str = alloca ptr, align 8
   %var.data_phi = alloca ptr, align 8
@@ -19324,15 +18707,15 @@ abort.dead817:                                    ; No predecessors!
   br label %nulcopy.len815
 }
 
-declare ptr @"expr::codegen_arena_current"(ptr, ptr) #0
+declare ptr @"expr::codegen_arena_current"(ptr, ptr) #3
 
-declare ptr @"runtime::arena_type"(ptr) #0
+declare ptr @"runtime::arena_type"(ptr) #3
 
-declare ptr @"types::gep2"(ptr, ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"types::gep2"(ptr, ptr, ptr, ptr, ptr, ptr) #3
 
-declare void @"stmt::llvm_add_incoming1"(ptr, ptr, ptr, ptr) #0
+declare void @"stmt::llvm_add_incoming1"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"main::codegen_array_create_cap"(ptr %0, i64 %1, ptr %2) #0 {
+define ptr @"main::codegen_array_create_cap"(ptr %0, i64 %1, ptr %2) #3 {
 entry:
   %var.buf = alloca ptr, align 8
   %var.buf_bytes = alloca i64, align 8
@@ -19594,7 +18977,7 @@ abort.dead147:                                    ; No predecessors!
   br label %nulcopy.len145
 }
 
-define ptr @"main::codegen_array_create"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_array_create"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -19606,7 +18989,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"main::codegen_array_copy"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_array_copy"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.copy_len = alloca ptr, align 8
   %var.buf = alloca ptr, align 8
@@ -20742,7 +20125,7 @@ abort.dead694:                                    ; No predecessors!
   br label %nulcopy.len692
 }
 
-define ptr @"main::codegen_array_var_value"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_array_var_value"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var.lname = alloca ptr, align 8
@@ -20775,9 +20158,9 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-declare { i1, i64 } @"types::var_direct"(ptr, ptr) #0
+declare { i1, i64 } @"types::var_direct"(ptr, ptr) #3
 
-define ptr @"main::codegen_array_var_value_local"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_array_var_value_local"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.made = alloca ptr, align 8
   %var.cap_val = alloca i64, align 8
@@ -21243,13 +20626,13 @@ abort.dead247:                                    ; No predecessors!
   br label %nulcopy.len245
 }
 
-declare { i1, i64 } @"types::var_slot"(ptr, ptr) #0
+declare { i1, i64 } @"types::var_slot"(ptr, ptr) #3
 
-declare { i64, ptr } @"types::var_dtype"(ptr, ptr) #0
+declare { i64, ptr } @"types::var_dtype"(ptr, ptr) #3
 
-declare ptr @"types::typedef_ti"(ptr, ptr) #0
+declare ptr @"types::typedef_ti"(ptr, ptr) #3
 
-define i1 @"main::is_array_var"(ptr %0, ptr %1) #0 {
+define i1 @"main::is_array_var"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -21274,9 +20657,9 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-declare ptr @"types::var_type"(ptr, ptr) #0
+declare ptr @"types::var_type"(ptr, ptr) #3
 
-define i1 @"main::is_slice_var"(ptr %0, ptr %1) #0 {
+define i1 @"main::is_slice_var"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -21301,7 +20684,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"main::is_str_var"(ptr %0, ptr %1) #0 {
+define i1 @"main::is_str_var"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -21326,7 +20709,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"main::codegen_widen_idx_to_i64"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"main::codegen_widen_idx_to_i64"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.iv = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -21650,7 +21033,7 @@ abort.dead136:                                    ; No predecessors!
   br label %nulcopy.len134
 }
 
-define void @"main::codegen_emit_runtime_bounds_check"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define void @"main::codegen_emit_runtime_bounds_check"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.oob_bb = alloca ptr, align 8
   %var.ok_bb = alloca ptr, align 8
@@ -21908,7 +21291,7 @@ abort.dead83:                                     ; No predecessors!
   br label %nulcopy.len81
 }
 
-define void @"main::codegen_emit_index_bounds_check"(ptr %0, ptr %1, ptr %2, i64 %3) #0 {
+define void @"main::codegen_emit_index_bounds_check"(ptr %0, ptr %1, ptr %2, i64 %3) #3 {
 entry:
   %var.oob_bb = alloca ptr, align 8
   %var.ok_bb = alloca ptr, align 8
@@ -22156,7 +21539,7 @@ abort.dead81:                                     ; No predecessors!
   br label %nulcopy.len79
 }
 
-define { ptr, ptr } @"main::codegen_clamp_slice_range"(ptr %0, ptr %1, ptr %2, i1 %3, i1 %4, ptr %5) #0 {
+define { ptr, ptr } @"main::codegen_clamp_slice_range"(ptr %0, ptr %1, ptr %2, i1 %3, i1 %4, ptr %5) #3 {
 entry:
   %rec.salloc = alloca { ptr, ptr }, align 8
   %var.view_len = alloca ptr, align 8
@@ -23113,7 +22496,7 @@ abort.dead595:                                    ; No predecessors!
   br label %nulcopy.len593
 }
 
-define ptr @"main::codegen_eval_array_index"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_eval_array_index"(ptr %0, ptr %1) #3 {
 entry:
   %var.ram_res = alloca ptr, align 8
   %var.elem_vt = alloca ptr, align 8
@@ -23354,7 +22737,7 @@ choice.next:                                      ; preds = %unwrap.pos.1457
   br label %choice.exit
 }
 
-define ptr @"main::codegen_eval_array_range"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_eval_array_range"(ptr %0, ptr %1) #3 {
 entry:
   %var.t = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -23384,7 +22767,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"main::codegen_eval_slice_range"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_eval_slice_range"(ptr %0, ptr %1) #3 {
 entry:
   %var.sl_fvs = alloca ptr, align 8
   %var.slice = alloca ptr, align 8
@@ -23871,7 +23254,7 @@ a.after265:                                       ; preds = %a.create264, %a.sto
   ret ptr %rec.alloc
 }
 
-define ptr @"main::range_arg_of"(ptr %0) #0 {
+define ptr @"main::range_arg_of"(ptr %0) #3 {
 entry:
   %var.r = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -24077,15 +23460,15 @@ choice.next:                                      ; preds = %unwrap.pos.1459
   br label %choice.exit39
 }
 
-declare ptr @"types::ptr_var_value_plain"(ptr, ptr, ptr) #0
+declare ptr @"types::ptr_var_value_plain"(ptr, ptr, ptr) #3
 
-declare ptr @"runtime::slice_elem_vt"(ptr, ptr) #0
+declare ptr @"runtime::slice_elem_vt"(ptr, ptr) #3
 
-declare i1 @"types::is_ptrish_vt"(ptr) #0
+declare i1 @"types::is_ptrish_vt"(ptr) #3
 
-declare ptr @"types::llvm_type_of_vt"(ptr) #0
+declare ptr @"types::llvm_type_of_vt"(ptr) #3
 
-define ptr @"main::slice_elem_gep"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"main::slice_elem_gep"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.n_gep = alloca ptr, align 8
   %var.typed_data = alloca ptr, align 8
@@ -24645,7 +24028,7 @@ abort.dead305:                                    ; No predecessors!
   br label %nulcopy.len303
 }
 
-define ptr @"main::slice_is_packed"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::slice_is_packed"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.pbit = alloca ptr, align 8
   %var.i64t = alloca ptr, align 8
@@ -24768,7 +24151,7 @@ abort.dead40:                                     ; No predecessors!
   br label %nulcopy.len38
 }
 
-define ptr @"main::slice_packed_bit"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::slice_packed_bit"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.raw_len = alloca ptr, align 8
   %var.i64t = alloca ptr, align 8
@@ -25039,7 +24422,7 @@ abort.dead137:                                    ; No predecessors!
   br label %nulcopy.len135
 }
 
-define ptr @"main::codegen_eval_array_view"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_eval_array_view"(ptr %0, ptr %1) #3 {
 entry:
   %var.aval = alloca ptr, align 8
   %var.t = alloca ptr, align 8
@@ -25059,7 +24442,7 @@ entry:
   ret ptr %call.res5
 }
 
-define ptr @"main::codegen_eval_array_view_base"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_eval_array_view_base"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.arr_fvs = alloca ptr, align 8
   %var.arr_elem_vt = alloca ptr, align 8
@@ -25578,7 +24961,7 @@ a.after268:                                       ; preds = %a.create267, %a.sto
   ret ptr %rec.alloc
 }
 
-define ptr @"main::array_elem_vt"(ptr %0, ptr %1) #0 {
+define ptr @"main::array_elem_vt"(ptr %0, ptr %1) #3 {
 entry:
   %var.resolved_vt = alloca ptr, align 8
   %var.resolved_ti = alloca ptr, align 8
@@ -25736,9 +25119,9 @@ choice.exit39:                                    ; preds = %choice.else38, %cho
   br label %choice.exit13
 }
 
-declare ptr @"types::vt_from_ti"(ptr) #0
+declare ptr @"types::vt_from_ti"(ptr) #3
 
-define { i64, ptr } @"main::array_read_typedef"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"main::array_read_typedef"(ptr %0, ptr %1) #3 {
 entry:
   %var.neg = alloca ptr, align 8
   %var.pos = alloca ptr, align 8
@@ -26114,13 +25497,13 @@ choice.exit130:                                   ; preds = %choice.then129, %ch
   ret { i64, ptr } %ret.pack
 }
 
-declare { i64, ptr } @"types::resolve_type_name"(ptr, ptr) #0
+declare { i64, ptr } @"types::resolve_type_name"(ptr, ptr) #3
 
-declare i1 @"types::has_type_name"(ptr, ptr) #0
+declare i1 @"types::has_type_name"(ptr, ptr) #3
 
-declare void @"runtime::add_type"(ptr, ptr, ptr) #0
+declare void @"runtime::add_type"(ptr, ptr, ptr) #3
 
-define ptr @"main::codegen_array_index"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6) #0 {
+define ptr @"main::codegen_array_index"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6) #3 {
 entry:
   %var.err1 = alloca ptr, align 8
   %var.err0 = alloca ptr, align 8
@@ -27178,9 +26561,9 @@ abort.dead531:                                    ; No predecessors!
   br label %nulcopy.len529
 }
 
-declare ptr @"runtime::codegen_unpack_slot"(ptr, ptr, ptr) #0
+declare ptr @"runtime::codegen_unpack_slot"(ptr, ptr, ptr) #3
 
-define ptr @"main::codegen_build_error"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4, ptr %5, ptr %6) #0 {
+define ptr @"main::codegen_build_error"(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4, ptr %5, ptr %6) #3 {
 entry:
   %var.ctx_t = alloca ptr, align 8
   %var.ctx = alloca ptr, align 8
@@ -27741,9 +27124,9 @@ abort.dead375:                                    ; No predecessors!
   br label %nulcopy.len373
 }
 
-declare i64 @"types::codegen_error_size"(ptr) #0
+declare i64 @"types::codegen_error_size"(ptr) #3
 
-define { i64, ptr } @"main::source_basename"(ptr %0) #0 {
+define { i64, ptr } @"main::source_basename"(ptr %0) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.p = alloca ptr, align 8
@@ -27755,9 +27138,9 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-declare { i64, ptr } @"path::basename"(ptr) #0
+declare { i64, ptr } @"path::basename"(ptr) #3
 
-define ptr @"main::codegen_eval_evaluated_array_access"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_eval_evaluated_array_access"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ram_res = alloca ptr, align 8
   %var.elem_vt = alloca ptr, align 8
@@ -27995,7 +27378,7 @@ choice.next:                                      ; preds = %unwrap.pos.1460
   br label %choice.exit
 }
 
-define ptr @"main::slice_load_rec_elem"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define ptr @"main::slice_load_rec_elem"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.phi = alloca ptr, align 8
   %var.n_val = alloca ptr, align 8
@@ -29132,7 +28515,7 @@ abort.dead678:                                    ; No predecessors!
   br label %nulcopy.len676
 }
 
-define void @"main::slice_store_rec_elem"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #0 {
+define void @"main::slice_store_rec_elem"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) #3 {
 entry:
   %var.inner_sz = alloca ptr, align 8
   %var.n_gep = alloca ptr, align 8
@@ -29976,7 +29359,7 @@ abort.dead456:                                    ; No predecessors!
   br label %concat.tot.len454
 }
 
-define ptr @"main::slice_or_range"(ptr %0, ptr %1) #0 {
+define ptr @"main::slice_or_range"(ptr %0, ptr %1) #3 {
 entry:
   %var.arg_is_range = alloca i1, align 1
   %var._ = alloca ptr, align 8
@@ -30160,7 +29543,7 @@ choice.exit33:                                    ; preds = %choice.else, %choic
   ret ptr %choice.res39
 }
 
-define ptr @"main::codegen_eval_slice_index"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_eval_slice_index"(ptr %0, ptr %1) #3 {
 entry:
   %var.ev = alloca ptr, align 8
   %var.slot2 = alloca ptr, align 8
@@ -30432,7 +29815,7 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len84
 }
 
-define ptr @"main::codegen_eval_base_rec_access"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"main::codegen_eval_base_rec_access"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.v_val = alloca ptr, align 8
   %var.td_fns = alloca ptr, align 8
@@ -31843,13 +31226,13 @@ abort.dead781:                                    ; No predecessors!
   br label %nulcopy.len779
 }
 
-declare ptr @"match::struct_sub_fvts"(ptr) #0
+declare ptr @"match::struct_sub_fvts"(ptr) #3
 
-declare { i64, ptr } @"types::typedef_name_of_rt"(ptr, ptr) #0
+declare { i64, ptr } @"types::typedef_name_of_rt"(ptr, ptr) #3
 
-declare ptr @"types::td_record_meta_by_name"(ptr, ptr) #0
+declare ptr @"types::td_record_meta_by_name"(ptr, ptr) #3
 
-define ptr @"main::codegen_eval_evaluated_rec_access"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_eval_evaluated_rec_access"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.rt = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -31905,7 +31288,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
-define ptr @"main::codegen_eval_record_index"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_eval_record_index"(ptr %0, ptr %1) #3 {
 entry:
   %var.rt = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -31997,13 +31380,13 @@ a.after:                                          ; preds = %a.create, %choice.t
   br label %choice.exit
 }
 
-declare { i64, ptr } @"types::resolve_var_name"(ptr, ptr) #0
+declare { i64, ptr } @"types::resolve_var_name"(ptr, ptr) #3
 
-declare ptr @"match::var_fvts"(ptr, ptr) #0
+declare ptr @"match::var_fvts"(ptr, ptr) #3
 
-declare { i1, i64 } @"types::var_rt"(ptr, ptr) #0
+declare { i1, i64 } @"types::var_rt"(ptr, ptr) #3
 
-define ptr @"main::codegen_eval_record_range"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_eval_record_range"(ptr %0, ptr %1) #3 {
 entry:
   %var.rt = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -32095,7 +31478,7 @@ a.after:                                          ; preds = %a.create, %choice.t
   br label %choice.exit
 }
 
-define ptr @"main::codegen_eval_evaluated_slice_access"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_eval_evaluated_slice_access"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.ev = alloca ptr, align 8
   %var.slot2 = alloca ptr, align 8
@@ -33162,7 +32545,7 @@ abort.dead590:                                    ; No predecessors!
   br label %nulcopy.len588
 }
 
-define ptr @"main::codegen_eval_base_str_access"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_eval_base_str_access"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.byte_val = alloca ptr, align 8
   %var.byte_ptr = alloca ptr, align 8
@@ -33660,9 +33043,9 @@ abort.dead186:                                    ; No predecessors!
   br label %nulcopy.len184
 }
 
-declare ptr @"expr::codegen_string_len_fast"(ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_string_len_fast"(ptr, ptr, ptr) #3
 
-define ptr @"main::codegen_eval_str_index"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_eval_str_index"(ptr %0, ptr %1) #3 {
 entry:
   %var.ev = alloca ptr, align 8
   %var.t = alloca ptr, align 8
@@ -33690,7 +33073,7 @@ entry:
   ret ptr %call.res7
 }
 
-define ptr @"main::codegen_eval_base_builder_access"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_eval_base_builder_access"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.byte_val = alloca ptr, align 8
   %var.byte_ptr = alloca ptr, align 8
@@ -34188,7 +33571,7 @@ abort.dead186:                                    ; No predecessors!
   br label %nulcopy.len184
 }
 
-define ptr @"main::codegen_eval_builder_index"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_eval_builder_index"(ptr %0, ptr %1) #3 {
 entry:
   %var.ev = alloca ptr, align 8
   %var.t = alloca ptr, align 8
@@ -34216,7 +33599,7 @@ entry:
   ret ptr %call.res7
 }
 
-define { i64, ptr } @"main::map_read_typedef"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"main::map_read_typedef"(ptr %0, ptr %1) #3 {
 entry:
   %var.neg = alloca ptr, align 8
   %var.pos = alloca ptr, align 8
@@ -34487,7 +33870,7 @@ choice.exit67:                                    ; preds = %choice.then66, %cho
   ret { i64, ptr } %ret.pack
 }
 
-define ptr @"main::get_or_emit_array_grow"(ptr %0) #0 {
+define ptr @"main::get_or_emit_array_grow"(ptr %0) #3 {
 entry:
   %var.saved_bb = alloca ptr, align 8
   %var._393 = alloca ptr, align 8
@@ -35142,13 +34525,13 @@ choice.exit390:                                   ; preds = %choice.then389, %nu
   br label %choice.exit8
 }
 
-declare { i1, i64 } @"types::llvm_find_function"(ptr, ptr) #0
+declare { i1, i64 } @"types::llvm_find_function"(ptr, ptr) #3
 
-declare void @"runtime::mark_nounwind"(ptr, ptr) #0
+declare void @"runtime::mark_nounwind"(ptr, ptr) #3
 
-declare ptr @"stmt::codegen_mul_checked_u64"(ptr, ptr, ptr, ptr) #0
+declare ptr @"stmt::codegen_mul_checked_u64"(ptr, ptr, ptr, ptr) #3
 
-define ptr @"main::codegen_array_append"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define ptr @"main::codegen_array_append"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.next_len = alloca ptr, align 8
   %var.el = alloca ptr, align 8
@@ -35577,9 +34960,9 @@ abort.dead259:                                    ; No predecessors!
   br label %nulcopy.len257
 }
 
-declare ptr @"runtime::codegen_pack_slot"(ptr, ptr, ptr) #0
+declare ptr @"runtime::codegen_pack_slot"(ptr, ptr, ptr) #3
 
-define ptr @"main::codegen_eval_error_construct"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_eval_error_construct"(ptr %0, ptr %1) #3 {
 entry:
   %var.ctx1 = alloca ptr, align 8
   %var.g1 = alloca ptr, align 8
@@ -37125,7 +36508,7 @@ abort.dead957:                                    ; No predecessors!
   br label %nulcopy.len955
 }
 
-define void @"main::codegen_emit_error_panic"(ptr %0, ptr %1) #0 {
+define void @"main::codegen_emit_error_panic"(ptr %0, ptr %1) #3 {
 entry:
   %var.ef = alloca ptr, align 8
   %var.pf = alloca ptr, align 8
@@ -38477,11 +37860,11 @@ abort.dead866:                                    ; No predecessors!
   br label %nulcopy.len864
 }
 
-declare i1 @"types::is_wasm_target"(ptr) #0
+declare i1 @"types::is_wasm_target"(ptr) #3
 
-declare ptr @"types::emit_wasm_trap"(ptr) #0
+declare ptr @"types::emit_wasm_trap"(ptr) #3
 
-define ptr @"main::thread_tls_global"(ptr %0) #0 {
+define ptr @"main::thread_tls_global"(ptr %0) #3 {
 entry:
   %var._11 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -38535,7 +37918,7 @@ choice.exit8:                                     ; preds = %choice.else7, %choi
   br label %choice.exit
 }
 
-define ptr @"main::codegen_ensure_pthread"(ptr %0) #0 {
+define ptr @"main::codegen_ensure_pthread"(ptr %0) #3 {
 entry:
   %var.tls_rec = alloca ptr, align 8
   %var.i64p = alloca ptr, align 8
@@ -39232,7 +38615,7 @@ choice.exit378:                                   ; preds = %choice.then377, %nu
   br label %choice.exit
 }
 
-define ptr @"main::fn_type4"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define ptr @"main::fn_type4"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.parr = alloca ptr, align 8
   %var.p3 = alloca ptr, align 8
@@ -39272,13 +38655,13 @@ entry:
   ret ptr %call.res
 }
 
-declare ptr @"types::fn_type2"(ptr, ptr, ptr, ptr) #0
+declare ptr @"types::fn_type2"(ptr, ptr, ptr, ptr) #3
 
-declare { ptr, ptr } @"types::ensure_printf_fn"(ptr) #0
+declare { ptr, ptr } @"types::ensure_printf_fn"(ptr) #3
 
-declare { ptr, ptr } @"types::ensure_exit_fn"(ptr) #0
+declare { ptr, ptr } @"types::ensure_exit_fn"(ptr) #3
 
-define { i64, ptr } @"main::thread_ret_typedef"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define { i64, ptr } @"main::thread_ret_typedef"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.neg = alloca ptr, align 8
   %var.pos = alloca ptr, align 8
@@ -40263,7 +39646,7 @@ choice.exit472:                                   ; preds = %choice.else471, %ch
   br label %choice.exit438
 }
 
-define ptr @"main::codegen_value_to_ptr_word"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_value_to_ptr_word"(ptr %0, ptr %1) #3 {
 entry:
   %"var.bits'272" = alloca ptr, align 8
   %"var.bits'" = alloca ptr, align 8
@@ -40783,7 +40166,7 @@ abort.dead301:                                    ; No predecessors!
   br label %nulcopy.len299
 }
 
-define ptr @"main::codegen_ptr_word_to_value"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_ptr_word_to_value"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.tr = alloca ptr, align 8
   %"var.bits'108" = alloca ptr, align 8
@@ -41151,7 +40534,7 @@ abort.dead205:                                    ; No predecessors!
   br label %nulcopy.len203
 }
 
-define void @"main::codegen_array_box_payload"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define void @"main::codegen_array_box_payload"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.pay_ptr = alloca ptr, align 8
   %var.pay_llvm = alloca ptr, align 8
@@ -41366,7 +40749,7 @@ abort.dead95:                                     ; No predecessors!
   br label %nulcopy.len93
 }
 
-define ptr @"main::codegen_emit_thread_wrapper"(ptr %0, ptr %1, ptr %2, i64 %3, ptr %4, ptr %5, i1 %6) #0 {
+define ptr @"main::codegen_emit_thread_wrapper"(ptr %0, ptr %1, ptr %2, i64 %3, ptr %4, ptr %5, i1 %6) #3 {
 entry:
   %var.hasgep = alloca ptr, align 8
   %var.res_box = alloca ptr, align 8
@@ -43377,7 +42760,7 @@ abort.dead1156:                                   ; No predecessors!
   br label %nulcopy.len1154
 }
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -43441,11 +42824,11 @@ done:                                             ; preds = %copyloop
   ret i64 %fmt.tot
 }
 
-declare ptr @"types::addrs_buf"(ptr) #0
+declare ptr @"types::addrs_buf"(ptr) #3
 
-declare ptr @"expr::unpack_unboxed_call_ret"(ptr, ptr, ptr, i1) #0
+declare ptr @"expr::unpack_unboxed_call_ret"(ptr, ptr, ptr, i1) #3
 
-define i1 @"main::var_partial"(ptr %0, ptr %1) #0 {
+define i1 @"main::var_partial"(ptr %0, ptr %1) #3 {
 entry:
   %var.name = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
@@ -43521,11 +42904,11 @@ choice.exit10:                                    ; preds = %choice.else9, %choi
   br label %choice.exit4
 }
 
-declare i64 @"types::find_dot"(ptr, i64) #0
+declare i64 @"types::find_dot"(ptr, i64) #3
 
-declare i1 @"types::has_local_var"(ptr, ptr) #0
+declare i1 @"types::has_local_var"(ptr, ptr) #3
 
-define i1 @"main::var_partial_at"(ptr %0, ptr %1, i64 %2) #0 {
+define i1 @"main::var_partial_at"(ptr %0, ptr %1, i64 %2) #3 {
 entry:
   %var.cv = alloca ptr, align 8
   %var.i = alloca i64, align 8
@@ -43762,7 +43145,7 @@ choice.exit59:                                    ; preds = %choice.else58, %cho
   br label %choice.exit50
 }
 
-define ptr @"main::codegen_deep_copy_env"(ptr %0, ptr %1, ptr %2, i64 %3, ptr %4, ptr %5) #0 {
+define ptr @"main::codegen_deep_copy_env"(ptr %0, ptr %1, ptr %2, i64 %3, ptr %4, ptr %5) #3 {
 entry:
   %var.cval_st = alloca ptr, align 8
   %var.cval_needs_i = alloca i1, align 1
@@ -44439,7 +43822,7 @@ abort.dead319:                                    ; No predecessors!
   br label %nulcopy.len317
 }
 
-define ptr @"main::codegen_eval_spawn"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_eval_spawn"(ptr %0, ptr %1) #3 {
 entry:
   %var.sig_ti = alloca ptr, align 8
   %var.pfn = alloca ptr, align 8
@@ -47728,39 +47111,39 @@ abort.dead1925:                                   ; No predecessors!
   br label %nulcopy.len1923
 }
 
-declare i1 @"types::is_view_expr"(ptr, ptr) #0
+declare i1 @"types::is_view_expr"(ptr, ptr) #3
 
-declare { i64, ptr } @"diag::E3150_view_escape_frame"() #0
+declare { i64, ptr } @"diag::E3150_view_escape_frame"() #3
 
-declare i1 @"types::has_var_name"(ptr, ptr) #0
+declare i1 @"types::has_var_name"(ptr, ptr) #3
 
-declare i1 @"types::has_fn_name"(ptr, ptr) #0
+declare i1 @"types::has_fn_name"(ptr, ptr) #3
 
-declare i1 @"types::is_fn_name"(ptr, ptr) #0
+declare i1 @"types::is_fn_name"(ptr, ptr) #3
 
-declare i1 @"stmt::compile_typed_fn_lazy"(ptr, ptr) #0
+declare i1 @"stmt::compile_typed_fn_lazy"(ptr, ptr) #3
 
-declare i1 @"stmt::compile_fn_lazy"(ptr, ptr, ptr) #0
+declare i1 @"stmt::compile_fn_lazy"(ptr, ptr, ptr) #3
 
-declare { i64, ptr } @"expr::closure_fn_of"(ptr, ptr) #0
+declare { i64, ptr } @"expr::closure_fn_of"(ptr, ptr) #3
 
-declare { i64, ptr } @"expr::fn_alias"(ptr, ptr) #0
+declare { i64, ptr } @"expr::fn_alias"(ptr, ptr) #3
 
-declare { i1, i64 } @"types::fninfo_index"(ptr, ptr) #0
+declare { i1, i64 } @"types::fninfo_index"(ptr, ptr) #3
 
-declare ptr @"stmt::closure_fn_ptr"(ptr, ptr, ptr) #0
+declare ptr @"stmt::closure_fn_ptr"(ptr, ptr, ptr) #3
 
-declare ptr @"stmt::closure_env_ptr"(ptr, ptr, ptr) #0
+declare ptr @"stmt::closure_env_ptr"(ptr, ptr, ptr) #3
 
-declare ptr @"stmt::fn_signature_param_tis"(ptr, ptr) #0
+declare ptr @"stmt::fn_signature_param_tis"(ptr, ptr) #3
 
-declare ptr @"match::convert_heap_ram_to_unboxed"(ptr, ptr, ptr) #0
+declare ptr @"match::convert_heap_ram_to_unboxed"(ptr, ptr, ptr) #3
 
-declare i64 @"stmt::lambda_env_index"(ptr) #0
+declare i64 @"stmt::lambda_env_index"(ptr) #3
 
-declare ptr @"stmt::fn_signature_return_ti"(ptr, ptr, ptr, i64) #0
+declare ptr @"stmt::fn_signature_return_ti"(ptr, ptr, ptr, i64) #3
 
-define ptr @"main::codegen_eval_join"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_eval_join"(ptr %0, ptr %1) #3 {
 entry:
   %var.args_raw = alloca ptr, align 8
   %var.args_gep = alloca ptr, align 8
@@ -49403,7 +48786,7 @@ abort.dead1040:                                   ; No predecessors!
   br label %nulcopy.len1038
 }
 
-define ptr @"main::codegen_typed_eval_join"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"main::codegen_typed_eval_join"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.u2 = alloca ptr, align 8
   %var.u1 = alloca ptr, align 8
@@ -51040,11 +50423,11 @@ abort.dead1050:                                   ; No predecessors!
   br label %nulcopy.len1048
 }
 
-declare ptr @"match::coerce_pay_to_i64"(ptr, ptr, ptr) #0
+declare ptr @"match::coerce_pay_to_i64"(ptr, ptr, ptr) #3
 
-declare ptr @"match::unboxed_ram_struct_t"(ptr) #0
+declare ptr @"match::unboxed_ram_struct_t"(ptr) #3
 
-define void @"main::codegen_compile_uncalled_signed_fns"(ptr %0, ptr %1) #0 {
+define void @"main::codegen_compile_uncalled_signed_fns"(ptr %0, ptr %1) #3 {
 entry:
   %var.generic = alloca i1, align 1
   %var.has_sig = alloca i1, align 1
@@ -51238,11 +50621,11 @@ choice.exit49:                                    ; preds = %choice.then48, %str
   br label %choice.exit23
 }
 
-declare i1 @"stmt::fn_has_signature"(ptr, ptr, i64) #0
+declare i1 @"stmt::fn_has_signature"(ptr, ptr, i64) #3
 
-declare { i64, ptr } @"stmt::sig_ct0_name"(ptr, ptr, i64) #0
+declare { i64, ptr } @"stmt::sig_ct0_name"(ptr, ptr, i64) #3
 
-define i64 @"main::codegen_program_opts"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define i64 @"main::codegen_program_opts"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.opts = alloca ptr, align 8
   %var.source_file = alloca ptr, align 8
@@ -51258,7 +50641,7 @@ entry:
   ret i64 0
 }
 
-define i64 @"main::codegen_program"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define i64 @"main::codegen_program"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.source_file = alloca ptr, align 8
   %var.exports = alloca ptr, align 8
@@ -51297,9 +50680,9 @@ a.after:                                          ; preds = %a.create, %entry
   ret i64 %call.res6
 }
 
-declare ptr @"types::default_codegen_opts"() #0
+declare ptr @"types::default_codegen_opts"() #3
 
-define void @"main::codegen_destroy"(ptr %0) #0 {
+define void @"main::codegen_destroy"(ptr %0) #3 {
 entry:
   %var.m = alloca ptr, align 8
   %var._11 = alloca ptr, align 8
@@ -51350,7 +50733,7 @@ choice.exit8:                                     ; preds = %choice.then7, %choi
   ret void
 }
 
-define i1 @"main::is_fn_vt"(ptr %0) #0 {
+define i1 @"main::is_fn_vt"(ptr %0) #3 {
 entry:
   %var.vt = alloca ptr, align 8
   store ptr %0, ptr %var.vt, align 8
@@ -51371,7 +50754,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define ptr @"main::codegen_typed_eval"(ptr %0, ptr %1) #0 {
+define ptr @"main::codegen_typed_eval"(ptr %0, ptr %1) #3 {
 entry:
   %var.ct_res = alloca ptr, align 8
   %var.ct5878 = alloca ptr, align 8
@@ -61346,151 +60729,151 @@ choice.next5871:                                  ; preds = %choice.next5859
   br label %choice.exit115
 }
 
-declare ptr @"types::vt_from_ti_cg"(ptr, ptr) #0
+declare ptr @"types::vt_from_ti_cg"(ptr, ptr) #3
 
-declare { i64, ptr } @"ast::triple_os"(ptr) #0
+declare { i64, ptr } @"ast::triple_os"(ptr) #3
 
-declare { i64, ptr } @"ast::triple_arch"(ptr) #0
+declare { i64, ptr } @"ast::triple_arch"(ptr) #3
 
-declare ptr @"types::var_fnames"(ptr, ptr) #0
+declare ptr @"types::var_fnames"(ptr, ptr) #3
 
-declare ptr @"expr::var_ti"(ptr, ptr) #0
+declare ptr @"expr::var_ti"(ptr, ptr) #3
 
-declare ptr @"types::ti_get_bitfield"(ptr, ptr) #0
+declare ptr @"types::ti_get_bitfield"(ptr, ptr) #3
 
-declare ptr @"types::llvm_abi_type_of_ti"(ptr, ptr) #0
+declare ptr @"types::llvm_abi_type_of_ti"(ptr, ptr) #3
 
-declare i64 @"types::bare_name_start"(ptr, i64, i64) #0
+declare i64 @"types::bare_name_start"(ptr, i64, i64) #3
 
-declare { i1, i64 } @"types::enum_slot_index"(ptr, ptr) #0
+declare { i1, i64 } @"types::enum_slot_index"(ptr, ptr) #3
 
-declare ptr @"match::codegen_typed_build_union"(ptr, i64, ptr, ptr) #0
+declare ptr @"match::codegen_typed_build_union"(ptr, i64, ptr, ptr) #3
 
-declare ptr @"types::type_name_to_vt"(ptr) #0
+declare ptr @"types::type_name_to_vt"(ptr) #3
 
-declare i64 @"types::prim_type_tag"(ptr) #0
+declare i64 @"types::prim_type_tag"(ptr) #3
 
-declare i64 @"types::enum_label_owner_count"(ptr, ptr, i64) #0
+declare i64 @"types::enum_label_owner_count"(ptr, ptr, i64) #3
 
-declare ptr @"types::codegen_eval_enum_label_val"(ptr, ptr, i64) #0
+declare ptr @"types::codegen_eval_enum_label_val"(ptr, ptr, i64) #3
 
-declare ptr @"expr::codegen_named_fn_value"(ptr, ptr) #0
+declare ptr @"expr::codegen_named_fn_value"(ptr, ptr) #3
 
-declare ptr @"types::ct_bind_find"(ptr) #0
+declare ptr @"types::ct_bind_find"(ptr) #3
 
-declare ptr @"expr::codegen_materialize_cttr"(ptr, ptr) #0
+declare ptr @"expr::codegen_materialize_cttr"(ptr, ptr) #3
 
-declare i1 @"types::is_user_type"(ptr, ptr) #0
+declare i1 @"types::is_user_type"(ptr, ptr) #3
 
-declare ptr @"types::codegen_eval_type_value"(ptr, ptr) #0
+declare ptr @"types::codegen_eval_type_value"(ptr, ptr) #3
 
-declare ptr @"expr::codegen_typed_eval_bin"(ptr, ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_typed_eval_bin"(ptr, ptr, ptr, ptr, ptr, ptr) #3
 
-declare ptr @"expr::codegen_typed_eval_unary"(ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_typed_eval_unary"(ptr, ptr, ptr, ptr, ptr) #3
 
-declare ptr @"expr::codegen_typed_eval_member"(ptr, ptr, ptr, i64, ptr) #0
+declare ptr @"expr::codegen_typed_eval_member"(ptr, ptr, ptr, i64, ptr) #3
 
-declare { i64, ptr } @"stmt::tast_root_var"(ptr) #0
+declare { i64, ptr } @"stmt::tast_root_var"(ptr) #3
 
-declare void @"stmt::codegen_typed_check_addr_escape"(ptr, ptr, ptr, ptr) #0
+declare void @"stmt::codegen_typed_check_addr_escape"(ptr, ptr, ptr, ptr) #3
 
-declare { i64, ptr } @"stmt::typed_member_root_name"(ptr) #0
+declare { i64, ptr } @"stmt::typed_member_root_name"(ptr) #3
 
-declare i1 @"types::alloc_rec_has"(ptr) #0
+declare i1 @"types::alloc_rec_has"(ptr) #3
 
-declare void @"types::alloc_rec_add"(ptr) #0
+declare void @"types::alloc_rec_add"(ptr) #3
 
-declare ptr @"types::typed_member_target_ti"(ptr, ptr) #0
+declare ptr @"types::typed_member_target_ti"(ptr, ptr) #3
 
-declare ptr @"types::find_bitfield_field"(ptr, ptr) #0
+declare ptr @"types::find_bitfield_field"(ptr, ptr) #3
 
-declare ptr @"runtime::record_meta_from_ti"(ptr, ptr) #0
+declare ptr @"runtime::record_meta_from_ti"(ptr, ptr) #3
 
-declare i64 @"types::member_index"(ptr, ptr) #0
+declare i64 @"types::member_index"(ptr, ptr) #3
 
-declare ptr @"types::field_vts"(ptr, ptr) #0
+declare ptr @"types::field_vts"(ptr, ptr) #3
 
-declare ptr @"tast::mk_lit_unit"(i64, i64) #0
+declare ptr @"tast::mk_lit_unit"(i64, i64) #3
 
-declare ptr @"unify::prim_unit"() #0
+declare ptr @"unify::prim_unit"() #3
 
-declare i1 @"types::is_record_vt"(ptr) #0
+declare i1 @"types::is_record_vt"(ptr) #3
 
-declare ptr @"runtime::rec_field_vt"(ptr, ptr) #0
+declare ptr @"runtime::rec_field_vt"(ptr, ptr) #3
 
-declare ptr @"runtime::rec_field_llvm_type"(ptr, ptr) #0
+declare ptr @"runtime::rec_field_llvm_type"(ptr, ptr) #3
 
-declare i1 @"types::is_float_vt"(ptr) #0
+declare i1 @"types::is_float_vt"(ptr) #3
 
-declare ptr @"types::struct_type_packed_n"(ptr, ptr, i64, i1) #0
+declare ptr @"types::struct_type_packed_n"(ptr, ptr, i64, i1) #3
 
-declare { ptr, ptr } @"stmt::codegen_typed_compile_fn"(ptr, ptr, ptr, ptr, ptr, ptr) #0
+declare { ptr, ptr } @"stmt::codegen_typed_compile_fn"(ptr, ptr, ptr, ptr, ptr, ptr) #3
 
-declare ptr @"stmt::codegen_typed_eval_block_tail"(ptr, ptr, i64) #0
+declare ptr @"stmt::codegen_typed_eval_block_tail"(ptr, ptr, i64) #3
 
-declare ptr @"stmt::codegen_typed_eval_block"(ptr, ptr) #0
+declare ptr @"stmt::codegen_typed_eval_block"(ptr, ptr) #3
 
-declare i1 @"types::name_is_in_current_module"(ptr, ptr) #0
+declare i1 @"types::name_is_in_current_module"(ptr, ptr) #3
 
-declare i1 @"types::is_external_module_name"(ptr, ptr) #0
+declare i1 @"types::is_external_module_name"(ptr, ptr) #3
 
-declare i1 @"stmt::declare_external_var"(ptr, ptr, ptr) #0
+declare i1 @"stmt::declare_external_var"(ptr, ptr, ptr) #3
 
-declare ptr @"stmt::codegen_typed_eval_assign"(ptr, ptr, i1, i1, i1, i1, ptr, ptr) #0
+declare ptr @"stmt::codegen_typed_eval_assign"(ptr, ptr, i1, i1, i1, i1, ptr, ptr) #3
 
-declare ptr @"expr::codegen_typed_eval_call"(ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_typed_eval_call"(ptr, ptr, ptr, ptr, ptr) #3
 
-declare ptr @"types::is_niche_ram_ti"(ptr, ptr) #0
+declare ptr @"types::is_niche_ram_ti"(ptr, ptr) #3
 
-declare ptr @"match::codegen_typed_eval_choice_tail"(ptr, ptr, ptr, ptr, i64) #0
+declare ptr @"match::codegen_typed_eval_choice_tail"(ptr, ptr, ptr, ptr, i64) #3
 
-declare ptr @"stmt::codegen_typed_eval_cycle"(ptr, ptr, ptr, ptr, i1, ptr) #0
+declare ptr @"stmt::codegen_typed_eval_cycle"(ptr, ptr, ptr, ptr, i1, ptr) #3
 
-declare ptr @"stmt::codegen_typed_eval_cycle_jump"(ptr, i1, i64) #0
+declare ptr @"stmt::codegen_typed_eval_cycle_jump"(ptr, i1, i64) #3
 
-declare ptr @"expr::codegen_typed_eval_index"(ptr, ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_typed_eval_index"(ptr, ptr, ptr, ptr) #3
 
-declare ptr @"expr::codegen_typed_eval_index_write"(ptr, ptr, ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_typed_eval_index_write"(ptr, ptr, ptr, ptr, ptr) #3
 
-declare ptr @"stmt::codegen_typed_eval_key_access"(ptr, ptr, ptr, i1, i1, ptr) #0
+declare ptr @"stmt::codegen_typed_eval_key_access"(ptr, ptr, ptr, i1, i1, ptr) #3
 
-declare ptr @"match::codegen_niche_ram_construct"(ptr, i1, i1, ptr) #0
+declare ptr @"match::codegen_niche_ram_construct"(ptr, i1, i1, ptr) #3
 
-declare i1 @"types::is_unboxed_ram_ti"(ptr, ptr) #0
+declare i1 @"types::is_unboxed_ram_ti"(ptr, ptr) #3
 
-declare ptr @"match::codegen_unboxed_ram_construct"(ptr, i1, ptr, ptr) #0
+declare ptr @"match::codegen_unboxed_ram_construct"(ptr, i1, ptr, ptr) #3
 
-declare { i64, ptr } @"types::decl_bare_name"(ptr, i64) #0
+declare { i64, ptr } @"types::decl_bare_name"(ptr, i64) #3
 
-declare { i64, ptr } @"types::decl_module"(ptr, i64) #0
+declare { i64, ptr } @"types::decl_module"(ptr, i64) #3
 
-declare ptr @"match::enum_slots_for_label"(ptr, ptr) #0
+declare ptr @"match::enum_slots_for_label"(ptr, ptr) #3
 
-declare ptr @"expr::codegen_string_copy"(ptr, ptr) #0
+declare ptr @"expr::codegen_string_copy"(ptr, ptr) #3
 
-declare ptr @"expr::coerce_val"(ptr, ptr, ptr, ptr) #0
+declare ptr @"expr::coerce_val"(ptr, ptr, ptr, ptr) #3
 
-declare { i1, i64 } @"types::raw_addr_value"(ptr, ptr, ptr, ptr) #0
+declare { i1, i64 } @"types::raw_addr_value"(ptr, ptr, ptr, ptr) #3
 
-declare ptr @"match::field_vts_from_ti"(ptr, ptr) #0
+declare ptr @"match::field_vts_from_ti"(ptr, ptr) #3
 
-declare ptr @"expr::codegen_typed_eval_raw_write"(ptr, ptr, ptr) #0
+declare ptr @"expr::codegen_typed_eval_raw_write"(ptr, ptr, ptr) #3
 
-declare ptr @"stmt::codegen_typed_eval_map_literal"(ptr, ptr, ptr) #0
+declare ptr @"stmt::codegen_typed_eval_map_literal"(ptr, ptr, ptr) #3
 
-declare ptr @"expr::codegen_typed_eval_exit"(ptr, ptr) #0
+declare ptr @"expr::codegen_typed_eval_exit"(ptr, ptr) #3
 
-declare ptr @"expr::codegen_typed_eval_return"(ptr, ptr) #0
+declare ptr @"expr::codegen_typed_eval_return"(ptr, ptr) #3
 
-declare ptr @"match::codegen_eval_user_diag"(ptr, ptr) #0
+declare ptr @"match::codegen_eval_user_diag"(ptr, ptr) #3
 
-declare ptr @"stmt::codegen_eval_cycle"(ptr, ptr) #0
+declare ptr @"stmt::codegen_eval_cycle"(ptr, ptr) #3
 
-declare ptr @"match::ctfe_eval"(ptr, ptr, ptr, i64) #0
+declare ptr @"match::ctfe_eval"(ptr, ptr, ptr, i64) #3
 
-declare ptr @"match::ctfe_lower"(ptr, ptr, ptr) #0
+declare ptr @"match::ctfe_lower"(ptr, ptr, ptr) #3
 
-define void @"main::codegen_typed_emit_stmts"(ptr %0, ptr %1) #0 {
+define void @"main::codegen_typed_emit_stmts"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -61571,9 +60954,9 @@ choice.exit:                                      ; preds = %choice.then, %loop.
   br label %loop.latch.1565
 }
 
-declare void @"stmt::codegen_typed_emit_stmt"(ptr, ptr) #0
+declare void @"stmt::codegen_typed_emit_stmt"(ptr, ptr) #3
 
-define i64 @"main::codegen_typed_program_opts"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
+define i64 @"main::codegen_typed_program_opts"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #3 {
 entry:
   %var.ir_dt = alloca i64, align 8
   %var.ana_dt = alloca i64, align 8
@@ -62775,41 +62158,41 @@ choice.exit636:                                   ; preds = %choice.else635, %ch
   ret i64 %var.load640
 }
 
-declare ptr @"types::codegen_init"(ptr) #0
+declare ptr @"types::codegen_init"(ptr) #3
 
-declare i64 @"time::mono_ns"() #0
+declare i64 @"time::mono_ns"() #3
 
-declare ptr @"typedopt::run"(ptr) #0
+declare ptr @"typedopt::run"(ptr) #3
 
-declare i1 @"types::has_str"(ptr, ptr) #0
+declare i1 @"types::has_str"(ptr, ptr) #3
 
-declare ptr @"runtime::codegen_emit_runtime"(ptr) #0
+declare ptr @"runtime::codegen_emit_runtime"(ptr) #3
 
-declare ptr @"types::codegen_build_main"(ptr) #0
+declare ptr @"types::codegen_build_main"(ptr) #3
 
-declare void @"stmt::codegen_collect_fns"(ptr, ptr) #0
+declare void @"stmt::codegen_collect_fns"(ptr, ptr) #3
 
-declare void @"runtime::codegen_register_types"(ptr, ptr) #0
+declare void @"runtime::codegen_register_types"(ptr, ptr) #3
 
-declare void @"runtime::codegen_register_forwards"(ptr, ptr) #0
+declare void @"runtime::codegen_register_forwards"(ptr, ptr) #3
 
-declare void @"types::codegen_scan_partial_escapes"(ptr, ptr) #0
+declare void @"types::codegen_scan_partial_escapes"(ptr, ptr) #3
 
-declare void @"stmt::codegen_scan_closure_args"(ptr, ptr) #0
+declare void @"stmt::codegen_scan_closure_args"(ptr, ptr) #3
 
-declare void @"stmt::codegen_scan_record_args"(ptr, ptr) #0
+declare void @"stmt::codegen_scan_record_args"(ptr, ptr) #3
 
-declare void @"stmt::codegen_scan_array_args"(ptr, ptr) #0
+declare void @"stmt::codegen_scan_array_args"(ptr, ptr) #3
 
-declare void @"stmt::codegen_scan_enum_variant_indices"(ptr, ptr) #0
+declare void @"stmt::codegen_scan_enum_variant_indices"(ptr, ptr) #3
 
-declare void @"stmt::run_typed_fn_summaries"(ptr, ptr) #0
+declare void @"stmt::run_typed_fn_summaries"(ptr, ptr) #3
 
-declare void @"types::run_typed_vra"(ptr, ptr) #0
+declare void @"types::run_typed_vra"(ptr, ptr) #3
 
-declare void @"runtime::codegen_finish"(ptr, ptr) #0
+declare void @"runtime::codegen_finish"(ptr, ptr) #3
 
-define i64 @"main::codegen_typed_program"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #0 {
+define i64 @"main::codegen_typed_program"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) #3 {
 entry:
   %var.source_file = alloca ptr, align 8
   %var.exports = alloca ptr, align 8
@@ -62871,10 +62254,10 @@ a.after9:                                         ; preds = %a.create8, %a.after
   ret i64 %call.res19
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { cold noinline "nounwind" }
 attributes #6 = { cold noinline noreturn "nounwind" }

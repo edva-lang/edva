@@ -3,65 +3,9 @@ source_filename = "dva_module"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-@fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
-@dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@sys_argc_global = external global i64
-@sys_argv_global = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
-@"var.sys::STDIN" = external global i64
-@"var.sys::STDOUT" = external global i64
-@"var.sys::STDERR" = external global i64
 @"var.sys::addr_null" = external global ptr
-@"var.time::CLOCK_REALTIME" = external global i64
-@"var.time::CLOCK_MONOTONIC" = external global i64
-@"var.time::NS_PER_US" = external global i64
-@"var.time::NS_PER_MS" = external global i64
-@"var.time::NS_PER_SEC" = external global i64
-@"var.time::SEC_PER_MIN" = external global i64
-@"var.time::SEC_PER_HOUR" = external global i64
-@"var.time::SEC_PER_DAY" = external global i64
 @"var.log::#min_level" = global i64 1
 @"var.log::#out_fd" = global i64 2
 @"var.log::#owned_fd" = global i64 -1
@@ -108,7 +52,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.13.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.13 }
 @str.14 = internal unnamed_addr constant [5 x i8] c"dumb\00"
 @str.14.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.14 }
-@clo.const.3 = internal constant { ptr, ptr } { ptr @"log::#auto_color_enabled_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)", ptr null }
 @clo.const.4 = internal constant { ptr, ptr } { ptr @"log::#auto_color_enabled", ptr null }
 @"var.log::#auto_color_enabled" = global ptr null
 @clo.const.5 = internal constant { ptr, ptr } { ptr @"log::#should_color", ptr null }
@@ -184,23 +127,14 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.log::set_prefix" = global ptr null
 @clo.const.23 = internal constant { ptr, ptr } { ptr @"log::get_prefix", ptr null }
 @"var.log::get_prefix" = global ptr null
-@clo.const.24 = internal constant { ptr, ptr } { ptr @"log::set_fd_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)", ptr null }
 @clo.const.25 = internal constant { ptr, ptr } { ptr @"log::set_fd", ptr null }
 @"var.log::set_fd" = global ptr null
 @clo.const.26 = internal constant { ptr, ptr } { ptr @"log::get_fd", ptr null }
 @"var.log::get_fd" = global ptr null
-@clo.const.27 = internal constant { ptr, ptr } { ptr @"log::set_file_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)", ptr null }
 @clo.const.28 = internal constant { ptr, ptr } { ptr @"log::set_file", ptr null }
 @"var.log::set_file" = global ptr null
-@clo.const.29 = internal constant { ptr, ptr } { ptr @"log::close_file_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)", ptr null }
 @clo.const.30 = internal constant { ptr, ptr } { ptr @"log::close_file", ptr null }
 @"var.log::close_file" = global ptr null
-@clo.const.31 = internal constant { ptr, ptr } { ptr @"time::resolve_utc_dt$Unit", ptr null }
-@clo.const.32 = internal constant { ptr, ptr } { ptr @"time::utc_iso_basic$Unit", ptr null }
-@clo.const.33 = internal constant { ptr, ptr } { ptr @"time::utc_iso$Unit", ptr null }
-@clo.const.34 = internal constant { ptr, ptr } { ptr @"time::resolve_local_dt$Unit", ptr null }
-@clo.const.35 = internal constant { ptr, ptr } { ptr @"time::iso_basic$Unit", ptr null }
-@clo.const.36 = internal constant { ptr, ptr } { ptr @"time::iso$Unit", ptr null }
 @str.32 = internal unnamed_addr constant [2 x i8] c" \00"
 @str.32.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.32 }
 @str.33 = internal unnamed_addr constant [3 x i8] c" [\00"
@@ -233,21 +167,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.log::error_kv" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_log, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -281,30 +205,9 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
-
-; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_log() #0 {
+define internal void @__dva_global_init_log() #3 {
 entry:
   store i64 1, ptr @"var.log::#min_level", align 8
   store i64 2, ptr @"var.log::#out_fd", align 8
@@ -452,165 +355,21 @@ entry:
 
 declare i32 @open(ptr, i32)
 
-declare i64 @creat(ptr, i64)
-
 declare i32 @close(i32)
 
-declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @posix_spawnp(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @waitpid(i64, ptr, i64)
-
-declare i64 @read(i32, ptr, i64)
-
-declare i64 @lseek(i32, i64, i64)
-
 declare i64 @write(i32, ptr, i64)
-
-declare i64 @writev(i32, ptr, i64)
-
-declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
 
-declare i64 @htons(i64)
-
-declare i64 @htonl(i64)
-
-declare i64 @ntohs(i64)
-
-declare i64 @ntohl(i64)
-
-declare i64 @inet_addr(ptr)
-
-declare i64 @socket(i64, i64, i64)
-
-declare i64 @connect(i64, ptr, i64)
-
-declare i64 @bind(i64, ptr, i64)
-
-declare i64 @listen(i64, i64)
-
-declare i64 @accept(i64, ptr, ptr)
-
-declare i64 @send(i64, ptr, i64, i32)
-
-declare i64 @recv(i64, ptr, i64, i32)
-
-declare i64 @sendto(i64, ptr, i64, i32, ptr, i64)
-
-declare i64 @recvfrom(i64, ptr, i64, i32, ptr, ptr)
-
-declare i64 @setsockopt(i64, i64, i64, ptr, i64)
-
-declare i64 @getsockopt(i64, i64, i64, ptr, ptr)
-
-declare i64 @getpeername(i64, ptr, ptr)
-
-declare i64 @getsockname(i64, ptr, ptr)
-
-declare i64 @shutdown(i64, i64)
-
-declare i64 @fcntl(i32, i64, i64)
-
-declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
-
-declare void @freeaddrinfo(ptr)
-
-declare i64 @getifaddrs(ptr)
-
-declare void @freeifaddrs(ptr)
-
-declare ptr @memset(ptr, i64, i64)
-
-declare i64 @atoi(ptr)
-
-declare ptr @opendir(ptr)
-
-declare ptr @readdir(ptr)
-
-declare i64 @closedir(ptr)
-
-declare i64 @strlen(ptr) #0
-
-declare i64 @strcmp(ptr, ptr)
-
-declare ptr @memcpy(ptr, ptr, i64)
-
-declare ptr @memmove(ptr, ptr, i64)
-
-declare i64 @stat(ptr, ptr)
-
-declare i64 @fstat(i32, ptr)
-
-declare i64 @rename(ptr, ptr)
-
-declare i64 @unlink(ptr)
-
-declare i64 @pipe(ptr)
-
-declare ptr @__errno_location()
-
-declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
-
-declare i64 @munmap(ptr, i64)
-
-declare i64 @syscall(i64, ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @dlopen(ptr, i32)
-
-declare ptr @dlsym(ptr, ptr)
-
-declare i64 @dlclose(ptr)
-
-declare ptr @dlerror()
-
-declare i64 @system(ptr)
-
-declare ptr @realpath(ptr, ptr)
-
 declare i64 @isatty(i32)
-
-declare i64 @tcgetattr(i32, ptr)
-
-declare i64 @tcsetattr(i32, i64, ptr)
-
-declare void @cfmakeraw(ptr)
-
-declare i64 @poll(ptr, i64, i64)
-
-declare i64 @epoll_create1(i32)
-
-declare i64 @epoll_ctl(i64, i64, i32, ptr)
-
-declare i64 @epoll_wait(i64, ptr, i64, i64)
-
-declare i64 @time(ptr)
-
-declare ptr @signal(i64, ptr)
-
-declare i64 @raise(i64)
-
-declare i64 @getrlimit(i64, ptr)
-
-declare i64 @setrlimit(i64, ptr)
-
-declare i64 @uname(ptr)
-
-declare i32 @nanosleep(ptr, ptr)
-
-declare ptr @localtime_r(ptr, ptr)
-
-declare ptr @strptime(ptr, ptr, ptr)
 
 declare ptr @getenv(ptr)
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #5
 
-define internal ptr @"log::#level_meta"(ptr %0) #0 {
+define internal ptr @"log::#level_meta"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -677,7 +436,7 @@ choice.next24:                                    ; preds = %choice.next17
   br label %choice.exit
 }
 
-define internal ptr @"log::#rank_to_level"(i64 %0) #0 {
+define internal ptr @"log::#rank_to_level"(i64 %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -737,7 +496,7 @@ choice.next18:                                    ; preds = %choice.next11
   br label %choice.exit
 }
 
-define internal { i64, ptr } @"log::#env_val"(ptr %0) #0 {
+define internal { i64, ptr } @"log::#env_val"(ptr %0) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.raw = alloca ptr, align 8
@@ -815,15 +574,15 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare { i64, ptr } @"sys::c_str"(ptr) #0
+declare { i64, ptr } @"sys::c_str"(ptr) #3
 
-define internal i1 @"log::#auto_color_enabled"() #0 {
+define internal i1 @"log::#auto_color_enabled"() #3 {
 entry:
   %call.res = call i1 @"log::#auto_color_enabled_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)"()
   ret i1 %call.res
 }
 
-define internal i1 @"log::#auto_color_enabled_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)"() #0 {
+define internal i1 @"log::#auto_color_enabled_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)"() #3 {
 entry:
   %ret.ub.salloc18 = alloca { i64, ptr }, align 8
   %var.fc = alloca ptr, align 8
@@ -933,9 +692,9 @@ ret.dead36:                                       ; No predecessors!
   br label %choice.exit35
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define internal i1 @"log::#should_color"() #0 {
+define internal i1 @"log::#should_color"() #3 {
 entry:
   %var.load = load i64, ptr @"var.log::#color_mode", align 8
   %val.match = icmp eq i64 %var.load, 1
@@ -960,7 +719,7 @@ choice.next2:                                     ; preds = %choice.next
   br label %choice.exit
 }
 
-define internal { i64, ptr } @"log::#level_plain"(ptr %0) #0 {
+define internal { i64, ptr } @"log::#level_plain"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %var.lvl = alloca ptr, align 8
@@ -1034,7 +793,7 @@ abort.dead17:                                     ; No predecessors!
   br label %concat.tot.len15
 }
 
-define internal { i64, ptr } @"log::#level_ansi"(ptr %0) #0 {
+define internal { i64, ptr } @"log::#level_ansi"(ptr %0) #3 {
 entry:
   %concat.str67 = alloca { i64, ptr }, align 8
   %var.badge = alloca ptr, align 8
@@ -1202,7 +961,7 @@ abort.dead58:                                     ; No predecessors!
   br label %concat.tot.len56
 }
 
-define internal i1 @"log::#needs_quoting"(ptr %0) #0 {
+define internal i1 @"log::#needs_quoting"(ptr %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -1294,7 +1053,7 @@ ret.dead20:                                       ; No predecessors!
   br label %choice.exit19
 }
 
-define internal { i64, ptr } @"log::#quote_value"(ptr %0) #0 {
+define internal { i64, ptr } @"log::#quote_value"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca i64, align 8
@@ -2079,7 +1838,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define internal { i64, ptr } @"log::#append_fields"(ptr %0, ptr %1) #0 {
+define internal { i64, ptr } @"log::#append_fields"(ptr %0, ptr %1) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._78 = alloca ptr, align 8
@@ -2561,7 +2320,7 @@ abort.dead156:                                    ; No predecessors!
   br label %b.new.buf.len2154
 }
 
-define i64 @"log::level_rank"(ptr %0) #0 {
+define i64 @"log::level_rank"(ptr %0) #3 {
 entry:
   %var.lvl = alloca ptr, align 8
   store ptr %0, ptr %var.lvl, align 8
@@ -2572,7 +2331,7 @@ entry:
   ret i64 %fld.load
 }
 
-define { i64, ptr } @"log::level_name"(ptr %0) #0 {
+define { i64, ptr } @"log::level_name"(ptr %0) #3 {
 entry:
   %var.lvl = alloca ptr, align 8
   store ptr %0, ptr %var.lvl, align 8
@@ -2584,7 +2343,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define { i1, i64 } @"log::parse_level"(ptr %0) #0 {
+define { i1, i64 } @"log::parse_level"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -2867,11 +2626,11 @@ str.eq.merge150:                                  ; preds = %str.eq.else149, %st
   br i1 %case.or157, label %choice.case109, label %choice.next110
 }
 
-declare { i64, ptr } @"str::trim"(ptr) #0
+declare { i64, ptr } @"str::trim"(ptr) #3
 
-declare { i64, ptr } @"str::lower"(ptr) #0
+declare { i64, ptr } @"str::lower"(ptr) #3
 
-define void @"log::set_level"(ptr %0) #0 {
+define void @"log::set_level"(ptr %0) #3 {
 entry:
   %var.lvl = alloca ptr, align 8
   store ptr %0, ptr %var.lvl, align 8
@@ -2881,14 +2640,14 @@ entry:
   ret void
 }
 
-define ptr @"log::get_level"() #0 {
+define ptr @"log::get_level"() #3 {
 entry:
   %var.load = load i64, ptr @"var.log::#min_level", align 8
   %call.res = call ptr @"log::#rank_to_level"(i64 %var.load)
   ret ptr %call.res
 }
 
-define i1 @"log::enabled"(ptr %0) #0 {
+define i1 @"log::enabled"(ptr %0) #3 {
 entry:
   %var.r = alloca i64, align 8
   %var.lvl = alloca ptr, align 8
@@ -2914,7 +2673,7 @@ and.96.exit:                                      ; preds = %and.96.else, %and.9
   ret i1 %and.96.phi
 }
 
-define void @"log::set_timestamps"(i1 %0) #0 {
+define void @"log::set_timestamps"(i1 %0) #3 {
 entry:
   %var.on = alloca i1, align 1
   store i1 %0, ptr %var.on, align 1
@@ -2923,7 +2682,7 @@ entry:
   ret void
 }
 
-define void @"log::set_utc"(i1 %0) #0 {
+define void @"log::set_utc"(i1 %0) #3 {
 entry:
   %var.on = alloca i1, align 1
   store i1 %0, ptr %var.on, align 1
@@ -2932,7 +2691,7 @@ entry:
   ret void
 }
 
-define void @"log::set_basic_iso"(i1 %0) #0 {
+define void @"log::set_basic_iso"(i1 %0) #3 {
 entry:
   %var.on = alloca i1, align 1
   store i1 %0, ptr %var.on, align 1
@@ -2941,7 +2700,7 @@ entry:
   ret void
 }
 
-define void @"log::set_color"(i1 %0) #0 {
+define void @"log::set_color"(i1 %0) #3 {
 entry:
   %var.on = alloca i1, align 1
   store i1 %0, ptr %var.on, align 1
@@ -2960,13 +2719,13 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret void
 }
 
-define void @"log::use_auto_color"() #0 {
+define void @"log::use_auto_color"() #3 {
 entry:
   store i64 0, ptr @"var.log::#color_mode", align 8
   ret void
 }
 
-define void @"log::set_prefix"(ptr %0) #0 {
+define void @"log::set_prefix"(ptr %0) #3 {
 entry:
   %var.pfx = alloca ptr, align 8
   store ptr %0, ptr %var.pfx, align 8
@@ -2975,14 +2734,14 @@ entry:
   ret void
 }
 
-define { i64, ptr } @"log::get_prefix"() #0 {
+define { i64, ptr } @"log::get_prefix"() #3 {
 entry:
   %var.load = load ptr, ptr @"var.log::#prefix_tag", align 8
   %ret.pack = load { i64, ptr }, ptr %var.load, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define void @"log::set_fd"(i64 %0) #0 {
+define void @"log::set_fd"(i64 %0) #3 {
 entry:
   %var.fd = alloca i64, align 8
   store i64 %0, ptr %var.fd, align 8
@@ -2991,7 +2750,7 @@ entry:
   ret void
 }
 
-define internal void @"log::set_fd_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)"(i64 %0) #0 {
+define internal void @"log::set_fd_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)"(i64 %0) #3 {
 entry:
   %var.fd = alloca i64, align 8
   store i64 %0, ptr %var.fd, align 8
@@ -3025,13 +2784,13 @@ choice.exit:                                      ; preds = %choice.then, %and.9
   ret void
 }
 
-define i64 @"log::get_fd"() #0 {
+define i64 @"log::get_fd"() #3 {
 entry:
   %var.load = load i64, ptr @"var.log::#out_fd", align 8
   ret i64 %var.load
 }
 
-define i1 @"log::set_file"(ptr %0) #0 {
+define i1 @"log::set_file"(ptr %0) #3 {
 entry:
   %var.path = alloca ptr, align 8
   store ptr %0, ptr %var.path, align 8
@@ -3040,7 +2799,7 @@ entry:
   ret i1 %call.res
 }
 
-define internal i1 @"log::set_file_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)"(ptr %0) #0 {
+define internal i1 @"log::set_file_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)"(ptr %0) #3 {
 entry:
   %var.fd = alloca i64, align 8
   %var.path = alloca ptr, align 8
@@ -3117,13 +2876,13 @@ choice.exit13:                                    ; preds = %choice.then12, %cho
   br label %choice.exit
 }
 
-define void @"log::close_file"() #0 {
+define void @"log::close_file"() #3 {
 entry:
   call void @"log::close_file_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)"()
   ret void
 }
 
-define internal void @"log::close_file_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)"() #0 {
+define internal void @"log::close_file_os$Rec(log::#LogOsTarget:posix:Int,tag:Int)"() #3 {
 entry:
   %var.load = load i64, ptr @"var.log::#owned_fd", align 8
   %cmptmp = icmp sge i64 %var.load, 0
@@ -3141,7 +2900,7 @@ choice.exit:                                      ; preds = %choice.then, %entry
   ret void
 }
 
-define { i64, ptr } @"log::format_entry"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"log::format_entry"(ptr %0, ptr %1) #3 {
 entry:
   %concat.str153 = alloca { i64, ptr }, align 8
   %var.pfx_part = alloca ptr, align 8
@@ -3473,7 +3232,7 @@ abort.dead140:                                    ; No predecessors!
   br label %concat.tot.len138
 }
 
-define internal { i64, ptr } @"time::utc_iso_basic$Unit"(i64 %0) #0 {
+define internal { i64, ptr } @"time::utc_iso_basic$Unit"(i64 %0) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.x = alloca i64, align 8
@@ -3486,7 +3245,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define internal ptr @"time::resolve_utc_dt$Unit"(i64 %0) #0 {
+define internal ptr @"time::resolve_utc_dt$Unit"(i64 %0) #3 {
 entry:
   %var.x = alloca i64, align 8
   store i64 %0, ptr %var.x, align 8
@@ -3494,11 +3253,11 @@ entry:
   ret ptr %call.res
 }
 
-declare ptr @"time::utc_now_dt"() #0
+declare ptr @"time::utc_now_dt"() #3
 
-declare { i64, ptr } @"time::format_dt_iso_basic"(ptr) #0
+declare { i64, ptr } @"time::format_dt_iso_basic"(ptr) #3
 
-define internal { i64, ptr } @"time::utc_iso$Unit"(i64 %0) #0 {
+define internal { i64, ptr } @"time::utc_iso$Unit"(i64 %0) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.x = alloca i64, align 8
@@ -3511,9 +3270,9 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-declare { i64, ptr } @"time::format_dt_iso"(ptr) #0
+declare { i64, ptr } @"time::format_dt_iso"(ptr) #3
 
-define internal { i64, ptr } @"time::iso_basic$Unit"(i64 %0) #0 {
+define internal { i64, ptr } @"time::iso_basic$Unit"(i64 %0) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.x = alloca i64, align 8
@@ -3526,7 +3285,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define internal ptr @"time::resolve_local_dt$Unit"(i64 %0) #0 {
+define internal ptr @"time::resolve_local_dt$Unit"(i64 %0) #3 {
 entry:
   %var.x = alloca i64, align 8
   store i64 %0, ptr %var.x, align 8
@@ -3534,9 +3293,9 @@ entry:
   ret ptr %call.res
 }
 
-declare ptr @"time::local_now_dt"() #0
+declare ptr @"time::local_now_dt"() #3
 
-define internal { i64, ptr } @"time::iso$Unit"(i64 %0) #0 {
+define internal { i64, ptr } @"time::iso$Unit"(i64 %0) #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.x = alloca i64, align 8
@@ -3549,7 +3308,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"log::format_kv"(ptr %0, ptr %1, ptr %2) #0 {
+define { i64, ptr } @"log::format_kv"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %ret.ub.salloc6 = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -3590,7 +3349,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret { i64, ptr } %ret.pack
 }
 
-define void @"log::log"(ptr %0, ptr %1) #0 {
+define void @"log::log"(ptr %0, ptr %1) #3 {
 entry:
   %var.line = alloca ptr, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -3705,7 +3464,7 @@ abort.dead28:                                     ; No predecessors!
   br label %nulcopy.len26
 }
 
-define void @"log::log_kv"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"log::log_kv"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.line = alloca ptr, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -3843,7 +3602,7 @@ abort.dead32:                                     ; No predecessors!
   br label %nulcopy.len30
 }
 
-define void @"log::debug"(ptr %0) #0 {
+define void @"log::debug"(ptr %0) #3 {
 entry:
   %var.msg = alloca ptr, align 8
   store ptr %0, ptr %var.msg, align 8
@@ -3858,7 +3617,7 @@ entry:
   ret void
 }
 
-define void @"log::info"(ptr %0) #0 {
+define void @"log::info"(ptr %0) #3 {
 entry:
   %var.msg = alloca ptr, align 8
   store ptr %0, ptr %var.msg, align 8
@@ -3873,7 +3632,7 @@ entry:
   ret void
 }
 
-define void @"log::warn"(ptr %0) #0 {
+define void @"log::warn"(ptr %0) #3 {
 entry:
   %var.msg = alloca ptr, align 8
   store ptr %0, ptr %var.msg, align 8
@@ -3888,7 +3647,7 @@ entry:
   ret void
 }
 
-define void @"log::error"(ptr %0) #0 {
+define void @"log::error"(ptr %0) #3 {
 entry:
   %var.msg = alloca ptr, align 8
   store ptr %0, ptr %var.msg, align 8
@@ -3903,7 +3662,7 @@ entry:
   ret void
 }
 
-define void @"log::debug_kv"(ptr %0, ptr %1) #0 {
+define void @"log::debug_kv"(ptr %0, ptr %1) #3 {
 entry:
   %var.fields = alloca ptr, align 8
   %var.msg = alloca ptr, align 8
@@ -3941,7 +3700,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret void
 }
 
-define void @"log::info_kv"(ptr %0, ptr %1) #0 {
+define void @"log::info_kv"(ptr %0, ptr %1) #3 {
 entry:
   %var.fields = alloca ptr, align 8
   %var.msg = alloca ptr, align 8
@@ -3979,7 +3738,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret void
 }
 
-define void @"log::warn_kv"(ptr %0, ptr %1) #0 {
+define void @"log::warn_kv"(ptr %0, ptr %1) #3 {
 entry:
   %var.fields = alloca ptr, align 8
   %var.msg = alloca ptr, align 8
@@ -4017,7 +3776,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret void
 }
 
-define void @"log::error_kv"(ptr %0, ptr %1) #0 {
+define void @"log::error_kv"(ptr %0, ptr %1) #3 {
 entry:
   %var.fields = alloca ptr, align 8
   %var.msg = alloca ptr, align 8
@@ -4055,10 +3814,10 @@ a.after:                                          ; preds = %a.create, %entry
   ret void
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
 attributes #6 = { cold noinline noreturn "nounwind" }

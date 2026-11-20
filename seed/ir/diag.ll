@@ -3,17 +3,8 @@ source_filename = "dva_module"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-@fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
-@dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
 @str.0 = internal unnamed_addr constant [56 x i8] c"Line indented less than first line in multi-line string\00"
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 55, ptr @str.0 }
 @clo.const = internal constant { ptr, ptr } { ptr @"diag::E1017_multiline_under_indented", ptr null }
@@ -493,21 +484,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.diag::get_captured" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_diag, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -541,30 +522,9 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
-
-; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
-
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_diag() #0 {
+define internal void @__dva_global_init_diag() #3 {
 entry:
   store ptr @clo.const, ptr @"var.diag::E1017_multiline_under_indented", align 8
   store ptr @clo.const.1, ptr @"var.diag::E1018_multiline_unterminated", align 8
@@ -691,19 +651,19 @@ entry:
   ret void
 }
 
-define { i64, ptr } @"diag::E1017_multiline_under_indented"() #0 {
+define { i64, ptr } @"diag::E1017_multiline_under_indented"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.0.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E1018_multiline_unterminated"() #0 {
+define { i64, ptr } @"diag::E1018_multiline_unterminated"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.1.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E1017_heredoc_under_indented"() #0 {
+define { i64, ptr } @"diag::E1017_heredoc_under_indented"() #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %call.res = call { i64, ptr } @"diag::E1017_multiline_under_indented"()
@@ -712,7 +672,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E1018_heredoc_unterminated"() #0 {
+define { i64, ptr } @"diag::E1018_heredoc_unterminated"() #3 {
 entry:
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %call.res = call { i64, ptr } @"diag::E1018_multiline_unterminated"()
@@ -721,7 +681,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E2024_bare_bar_position"() #0 {
+define { i64, ptr } @"diag::E2024_bare_bar_position"() #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %concat.lhs = load i64, ptr @str.2.struct, align 8
@@ -790,61 +750,61 @@ declare void @exit(i32) #5
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #6
 
-define { i64, ptr } @"diag::E2025_range_endpoint_whitespace"() #0 {
+define { i64, ptr } @"diag::E2025_range_endpoint_whitespace"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.4.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E2032_call_paren_whitespace"() #0 {
+define { i64, ptr } @"diag::E2032_call_paren_whitespace"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.5.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E2037_params_parenthesized"() #0 {
+define { i64, ptr } @"diag::E2037_params_parenthesized"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.6.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E2039_expr_too_deep"() #0 {
+define { i64, ptr } @"diag::E2039_expr_too_deep"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.7.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E2039_param_mutable_prefix"() #0 {
+define { i64, ptr } @"diag::E2039_param_mutable_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.8.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E2040_underscore_param"() #0 {
+define { i64, ptr } @"diag::E2040_underscore_param"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.9.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E2044_underscore_assign"() #0 {
+define { i64, ptr } @"diag::E2044_underscore_assign"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.10.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E2093_assign_typed_load"() #0 {
+define { i64, ptr } @"diag::E2093_assign_typed_load"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.11.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E2096_bar_before_guard"() #0 {
+define { i64, ptr } @"diag::E2096_bar_before_guard"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.12.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E2105_redundant_choice_tail"() #0 {
+define { i64, ptr } @"diag::E2105_redundant_choice_tail"() #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %concat.lhs = load i64, ptr @str.13.struct, align 8
@@ -894,13 +854,13 @@ abort.dead10:                                     ; No predecessors!
   br label %concat.tot.len8
 }
 
-define { i64, ptr } @"diag::E2108_state_binding_target"() #0 {
+define { i64, ptr } @"diag::E2108_state_binding_target"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.15.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E2109_disallowed_variant_wildcard"(ptr %0) #0 {
+define { i64, ptr } @"diag::E2109_disallowed_variant_wildcard"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %var.tag = alloca ptr, align 8
@@ -1010,7 +970,7 @@ abort.dead36:                                     ; No predecessors!
   br label %concat.tot.len34
 }
 
-define { i64, ptr } @"diag::E3003_choice_underscore_undefined"() #0 {
+define { i64, ptr } @"diag::E3003_choice_underscore_undefined"() #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %cat.lit.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.19.struct, i32 0, i32 1), align 8
@@ -1073,13 +1033,13 @@ abort.dead14:                                     ; No predecessors!
   br label %concat.tot.len12
 }
 
-define { i64, ptr } @"diag::E3008_not_invalid_type"() #0 {
+define { i64, ptr } @"diag::E3008_not_invalid_type"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.22.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3008_not_integer"() #0 {
+define { i64, ptr } @"diag::E3008_not_integer"() #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %concat.lhs = load i64, ptr @str.23.struct, align 8
@@ -1129,37 +1089,37 @@ abort.dead10:                                     ; No predecessors!
   br label %concat.tot.len8
 }
 
-define { i64, ptr } @"diag::E3032_assign_void_var_prefix"() #0 {
+define { i64, ptr } @"diag::E3032_assign_void_var_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.25.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3032_assign_void_elem_prefix"() #0 {
+define { i64, ptr } @"diag::E3032_assign_void_elem_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.26.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3033_reassign_immutable_prefix"() #0 {
+define { i64, ptr } @"diag::E3033_reassign_immutable_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.27.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3033_reassign_immutable_suffix"() #0 {
+define { i64, ptr } @"diag::E3033_reassign_immutable_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.28.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3033_reassign_immutable_tail"() #0 {
+define { i64, ptr } @"diag::E3033_reassign_immutable_tail"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.29.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::reassign_immutable"(ptr %0) #0 {
+define { i64, ptr } @"diag::reassign_immutable"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %ret.ub.salloc24 = alloca { i64, ptr }, align 8
@@ -1291,7 +1251,7 @@ abort.dead53:                                     ; No predecessors!
   br label %concat.tot.len51
 }
 
-define { i64, ptr } @"diag::assign_void_variable"(ptr %0) #0 {
+define { i64, ptr } @"diag::assign_void_variable"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -1370,7 +1330,7 @@ abort.dead21:                                     ; No predecessors!
   br label %concat.tot.len19
 }
 
-define { i64, ptr } @"diag::assign_void_element"(ptr %0) #0 {
+define { i64, ptr } @"diag::assign_void_element"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -1449,7 +1409,7 @@ abort.dead21:                                     ; No predecessors!
   br label %concat.tot.len19
 }
 
-define { i64, ptr } @"diag::whole_value_init"(ptr %0) #0 {
+define { i64, ptr } @"diag::whole_value_init"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %ret.ub.salloc11 = alloca { i64, ptr }, align 8
@@ -1535,19 +1495,19 @@ abort.dead28:                                     ; No predecessors!
   br label %concat.tot.len26
 }
 
-define { i64, ptr } @"diag::E3131_whole_val_init_prefix"() #0 {
+define { i64, ptr } @"diag::E3131_whole_val_init_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.31.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3131_whole_val_init_suffix"() #0 {
+define { i64, ptr } @"diag::E3131_whole_val_init_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.32.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::record_default_missing"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"diag::record_default_missing"(ptr %0, ptr %1) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %var.record = alloca ptr, align 8
@@ -1659,7 +1619,7 @@ abort.dead36:                                     ; No predecessors!
   br label %concat.tot.len34
 }
 
-define { i64, ptr } @"diag::enum_no_variant"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"diag::enum_no_variant"(ptr %0, ptr %1) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %var.label = alloca ptr, align 8
@@ -1771,7 +1731,7 @@ abort.dead36:                                     ; No predecessors!
   br label %concat.tot.len34
 }
 
-define { i64, ptr } @"diag::enum_unit_payload"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"diag::enum_unit_payload"(ptr %0, ptr %1) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %var.label = alloca ptr, align 8
@@ -1883,7 +1843,7 @@ abort.dead36:                                     ; No predecessors!
   br label %concat.tot.len34
 }
 
-define { i64, ptr } @"diag::enum_payload_type"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define { i64, ptr } @"diag::enum_payload_type"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %var.got = alloca ptr, align 8
@@ -2077,7 +2037,7 @@ abort.dead74:                                     ; No predecessors!
   br label %concat.tot.len72
 }
 
-define { i64, ptr } @"diag::partial_composite_argument"(ptr %0) #0 {
+define { i64, ptr } @"diag::partial_composite_argument"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %var.name = alloca ptr, align 8
@@ -2148,19 +2108,19 @@ abort.dead17:                                     ; No predecessors!
   br label %concat.tot.len15
 }
 
-define { i64, ptr } @"diag::E3051_dynamic_index_hetero"() #0 {
+define { i64, ptr } @"diag::E3051_dynamic_index_hetero"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.45.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3051_cycle_iter_hetero"() #0 {
+define { i64, ptr } @"diag::E3051_cycle_iter_hetero"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.46.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3065_rawptr_to_string"() #0 {
+define { i64, ptr } @"diag::E3065_rawptr_to_string"() #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %concat.lhs = load i64, ptr @str.47.struct, align 8
@@ -2210,49 +2170,49 @@ abort.dead10:                                     ; No predecessors!
   br label %concat.tot.len8
 }
 
-define { i64, ptr } @"diag::E3078_addr_builder_or_string"() #0 {
+define { i64, ptr } @"diag::E3078_addr_builder_or_string"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.49.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3084_record_size_mismatch"() #0 {
+define { i64, ptr } @"diag::E3084_record_size_mismatch"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.50.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3084_arithmetic_type_mismatch"() #0 {
+define { i64, ptr } @"diag::E3084_arithmetic_type_mismatch"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.51.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3084_builder_append_type"() #0 {
+define { i64, ptr } @"diag::E3084_builder_append_type"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.52.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3084_choice_branch_mismatch"() #0 {
+define { i64, ptr } @"diag::E3084_choice_branch_mismatch"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.53.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3091_propagate_ram_operand"() #0 {
+define { i64, ptr } @"diag::E3091_propagate_ram_operand"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.54.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3103_cannot_infer_type"() #0 {
+define { i64, ptr } @"diag::E3103_cannot_infer_type"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.55.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3133_addr_escape_restore"() #0 {
+define { i64, ptr } @"diag::E3133_addr_escape_restore"() #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %concat.lhs = load i64, ptr @str.56.struct, align 8
@@ -2302,19 +2262,19 @@ abort.dead10:                                     ; No predecessors!
   br label %concat.tot.len8
 }
 
-define { i64, ptr } @"diag::E3134_addr_escape_lifecycle"() #0 {
+define { i64, ptr } @"diag::E3134_addr_escape_lifecycle"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.58.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3136_type_choice_no_branch"() #0 {
+define { i64, ptr } @"diag::E3136_type_choice_no_branch"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.59.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3140_no_runtime_arena"() #0 {
+define { i64, ptr } @"diag::E3140_no_runtime_arena"() #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %cat.lit.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.60.struct, i32 0, i32 1), align 8
@@ -2393,109 +2353,109 @@ abort.dead21:                                     ; No predecessors!
   br label %concat.tot.len19
 }
 
-define { i64, ptr } @"diag::E3142_raw_write_type"() #0 {
+define { i64, ptr } @"diag::E3142_raw_write_type"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.64.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3150_view_escape_frame"() #0 {
+define { i64, ptr } @"diag::E3150_view_escape_frame"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.65.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3172_exit_status_integerish"() #0 {
+define { i64, ptr } @"diag::E3172_exit_status_integerish"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.66.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3173_return_outside_fn"() #0 {
+define { i64, ptr } @"diag::E3173_return_outside_fn"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.67.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3173_propagate_outside_fn"() #0 {
+define { i64, ptr } @"diag::E3173_propagate_outside_fn"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.68.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3175_choice_const_discarded"() #0 {
+define { i64, ptr } @"diag::E3175_choice_const_discarded"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.69.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::uninitialized_variable_prefix"() #0 {
+define { i64, ptr } @"diag::uninitialized_variable_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.70.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3050_reserved_type_name_suffix"() #0 {
+define { i64, ptr } @"diag::E3050_reserved_type_name_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.71.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::return_type_mismatch_prefix"() #0 {
+define { i64, ptr } @"diag::return_type_mismatch_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.72.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::assignment_type_mismatch_prefix"() #0 {
+define { i64, ptr } @"diag::assignment_type_mismatch_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.73.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::member_index_constant"() #0 {
+define { i64, ptr } @"diag::member_index_constant"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.74.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::field_assignment_type_mismatch_prefix"() #0 {
+define { i64, ptr } @"diag::field_assignment_type_mismatch_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.75.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3067_string_write_prefix"() #0 {
+define { i64, ptr } @"diag::E3067_string_write_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.76.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3067_string_write_suffix"() #0 {
+define { i64, ptr } @"diag::E3067_string_write_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.77.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3049_slice_write_prefix"() #0 {
+define { i64, ptr } @"diag::E3049_slice_write_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.78.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3049_slice_write_suffix"() #0 {
+define { i64, ptr } @"diag::E3049_slice_write_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.79.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::return_type_inference_prefix"() #0 {
+define { i64, ptr } @"diag::return_type_inference_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.80.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3128_function_value_signature_suffix"() #0 {
+define { i64, ptr } @"diag::E3128_function_value_signature_suffix"() #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %concat.lhs = load i64, ptr @str.81.struct, align 8
@@ -2545,115 +2505,115 @@ abort.dead10:                                     ; No predecessors!
   br label %concat.tot.len8
 }
 
-define { i64, ptr } @"diag::expected_primary_prefix"() #0 {
+define { i64, ptr } @"diag::expected_primary_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.83.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::cycle_jump_depth_prefix"() #0 {
+define { i64, ptr } @"diag::cycle_jump_depth_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.84.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::record_repeat_count_prefix"() #0 {
+define { i64, ptr } @"diag::record_repeat_count_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.85.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::record_repeat_limit_suffix"() #0 {
+define { i64, ptr } @"diag::record_repeat_limit_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.86.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::infix_right_binding_power_prefix"() #0 {
+define { i64, ptr } @"diag::infix_right_binding_power_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.87.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::infix_left_binding_power_prefix"() #0 {
+define { i64, ptr } @"diag::infix_left_binding_power_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.88.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::imported_symbol_conflict_suffix"() #0 {
+define { i64, ptr } @"diag::imported_symbol_conflict_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.89.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3033_foreign_function_clash_prefix"() #0 {
+define { i64, ptr } @"diag::E3033_foreign_function_clash_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.90.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::declared_symbol_conflict_suffix"() #0 {
+define { i64, ptr } @"diag::declared_symbol_conflict_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.91.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E5038_package_import_cycle_prefix"() #0 {
+define { i64, ptr } @"diag::E5038_package_import_cycle_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.92.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::clang_compilation_failed_suffix"() #0 {
+define { i64, ptr } @"diag::clang_compilation_failed_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.93.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E5007_no_input"() #0 {
+define { i64, ptr } @"diag::E5007_no_input"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.94.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3084_open_record_fields"() #0 {
+define { i64, ptr } @"diag::E3084_open_record_fields"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.95.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3089_ram_shape_prefix"() #0 {
+define { i64, ptr } @"diag::E3089_ram_shape_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.96.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::locked_manifest_stale_prefix"() #0 {
+define { i64, ptr } @"diag::locked_manifest_stale_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.97.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::repository_illegal_path_suffix"() #0 {
+define { i64, ptr } @"diag::repository_illegal_path_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.98.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::vendor_tree_mismatch_prefix"() #0 {
+define { i64, ptr } @"diag::vendor_tree_mismatch_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.99.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::archive_illegal_path_suffix"() #0 {
+define { i64, ptr } @"diag::archive_illegal_path_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.100.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3127_ram_ordering_suffix"() #0 {
+define { i64, ptr } @"diag::E3127_ram_ordering_suffix"() #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %concat.lhs = load i64, ptr @str.101.struct, align 8
@@ -2703,7 +2663,7 @@ abort.dead10:                                     ; No predecessors!
   br label %concat.tot.len8
 }
 
-define { i64, ptr } @"diag::E3127_enum_ordering_suffix"() #0 {
+define { i64, ptr } @"diag::E3127_enum_ordering_suffix"() #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %concat.lhs = load i64, ptr @str.103.struct, align 8
@@ -2753,13 +2713,13 @@ abort.dead10:                                     ; No predecessors!
   br label %concat.tot.len8
 }
 
-define { i64, ptr } @"diag::record_field_index_constant"() #0 {
+define { i64, ptr } @"diag::record_field_index_constant"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.105.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::enum_variant_index_constant"() #0 {
+define { i64, ptr } @"diag::enum_variant_index_constant"() #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %concat.lhs = load i64, ptr @str.106.struct, align 8
@@ -2809,31 +2769,31 @@ abort.dead10:                                     ; No predecessors!
   br label %concat.tot.len8
 }
 
-define { i64, ptr } @"diag::E4002_string_length_overflow"() #0 {
+define { i64, ptr } @"diag::E4002_string_length_overflow"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.108.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3007_cycle_jump_level_prefix"() #0 {
+define { i64, ptr } @"diag::E3007_cycle_jump_level_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.109.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3007_cycle_jump_level_suffix"() #0 {
+define { i64, ptr } @"diag::E3007_cycle_jump_level_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.110.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E4007_unwrap_empty_or_error"() #0 {
+define { i64, ptr } @"diag::E4007_unwrap_empty_or_error"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.111.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::uninferable_type_param"(ptr %0, ptr %1) #0 {
+define { i64, ptr } @"diag::uninferable_type_param"(ptr %0, ptr %1) #3 {
 entry:
   %concat.str81 = alloca { i64, ptr }, align 8
   %var.who = alloca ptr, align 8
@@ -3043,33 +3003,33 @@ abort.dead69:                                     ; No predecessors!
   br label %concat.tot.len67
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define { i64, ptr } @"diag::compile_time_parameter_suffix"() #0 {
+define { i64, ptr } @"diag::compile_time_parameter_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.117.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E3105_enum_label_ambiguous_suffix"() #0 {
+define { i64, ptr } @"diag::E3105_enum_label_ambiguous_suffix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.118.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E4008_builder_length_bounds"() #0 {
+define { i64, ptr } @"diag::E4008_builder_length_bounds"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.119.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::runtime_error_format"() #0 {
+define { i64, ptr } @"diag::runtime_error_format"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.120.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E4004_arena_allocation_too_large"() #0 {
+define { i64, ptr } @"diag::E4004_arena_allocation_too_large"() #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %concat.lhs = load i64, ptr @str.121.struct, align 8
@@ -3119,31 +3079,31 @@ abort.dead10:                                     ; No predecessors!
   br label %concat.tot.len8
 }
 
-define { i64, ptr } @"diag::E4003_arena_chunk_limit"() #0 {
+define { i64, ptr } @"diag::E4003_arena_chunk_limit"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.123.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E4001_arena_exhausted"() #0 {
+define { i64, ptr } @"diag::E4001_arena_exhausted"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.124.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E5012_write_ir_prefix"() #0 {
+define { i64, ptr } @"diag::E5012_write_ir_prefix"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.125.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define { i64, ptr } @"diag::E1008_string_unterminated"() #0 {
+define { i64, ptr } @"diag::E1008_string_unterminated"() #3 {
 entry:
   %ret.pack = load { i64, ptr }, ptr @str.126.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
-define void @"diag::enable_capture"() #0 {
+define void @"diag::enable_capture"() #3 {
 entry:
   store i1 true, ptr @"var.diag::capture_enabled", align 1
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
@@ -3160,19 +3120,19 @@ entry:
   ret void
 }
 
-define void @"diag::disable_capture"() #0 {
+define void @"diag::disable_capture"() #3 {
 entry:
   store i1 false, ptr @"var.diag::capture_enabled", align 1
   ret void
 }
 
-define i1 @"diag::is_capturing"() #0 {
+define i1 @"diag::is_capturing"() #3 {
 entry:
   %var.load = load i1, ptr @"var.diag::capture_enabled", align 1
   ret i1 %var.load
 }
 
-define void @"diag::clear_captured"() #0 {
+define void @"diag::clear_captured"() #3 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %a.new = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
@@ -3188,7 +3148,7 @@ entry:
   ret void
 }
 
-define void @"diag::record_diag"(i64 %0, ptr %1, i64 %2, i64 %3, ptr %4, i1 %5) #0 {
+define void @"diag::record_diag"(i64 %0, ptr %1, i64 %2, i64 %3, ptr %4, i1 %5) #3 {
 entry:
   %var.ds = alloca ptr, align 8
   %var.is_warn = alloca i1, align 1
@@ -3315,7 +3275,7 @@ a.after35:                                        ; preds = %a.create34, %a.stor
   ret void
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -3363,7 +3323,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #4 {
@@ -3376,7 +3336,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define ptr @"diag::get_captured"() #0 {
+define ptr @"diag::get_captured"() #3 {
 entry:
   %var.load = load ptr, ptr @"var.diag::captured_diags", align 8
   %a.load = load ptr, ptr @"var.diag::captured_diags", align 8
@@ -3402,10 +3362,10 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %a.load2
 }
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noinline noreturn "nounwind" }
 attributes #5 = { cold noreturn "nounwind" }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

@@ -10,6 +10,22 @@
 #foreign("LLVM-18")
    LLVMModuleCreateWithName: (ModuleID: String) => Addr
    LLVMDisposeModule: (M: Addr) => ()
+   LLVMCreatePassBuilderOptions: () => Addr
+   LLVMDisposePassBuilderOptions: (Options: Addr) => ()
+   LLVMRunPasses: (M: Addr, Passes: String, TM: Addr, Options: Addr) => Addr
+   LLVMGetErrorMessage: (Err: Addr) => Addr
+   LLVMDisposeErrorMessage: (Msg: Addr) => ()
+   LLVMGetFirstGlobal: (M: Addr) => Addr
+   LLVMGetNextGlobal: (G: Addr) => Addr
+   LLVMGetLinkage: (GlobalVar: Addr) => Int
+   LLVMGetFirstUse: (Val: Addr) => Addr
+   LLVMGetNextUse: (Use: Addr) => Addr
+   LLVMGetUser: (Use: Addr) => Addr
+   LLVMIsAStoreInst: (Val: Addr) => Addr
+   LLVMGetOperand: (Val: Addr, Index: Int) => Addr
+   LLVMGetVolatile: (Inst: Addr) => Int
+   LLVMGetOrdering: (Inst: Addr) => Int
+   LLVMInstructionEraseFromParent: (Inst: Addr) => ()
    LLVMPrintModuleToFile: (M: Addr, OutputFilename: String, ErrorMessage: Addr) => Int
    LLVMDisposeMessage: (Message: Addr) => ()
    LLVMVerifyModule: (M: Addr, Action: Int, OutMessage: Addr) => Int
@@ -231,8 +247,6 @@
    LLVMOrcDisposeThreadSafeModule: (TSM: Addr) => ()
    LLVMOrcCreateDynamicLibrarySearchGeneratorForProcess: (Result: Addr, GlobalPrefix: Int, Filter: Addr, FilterCtx: Addr) => Addr
    LLVMOrcJITDylibAddGenerator: (JD: Addr, DG: Addr) => ()
-   LLVMGetErrorMessage: (Err: Addr) => String
-   LLVMDisposeErrorMessage: (ErrMsg: String) => ()
    LLVMConsumeError: (Err: Addr) => ()
    LLVMGetGlobalContext: () => Addr
    LLVMCreateStringAttribute: (C: Addr, K: String, KLength: Int, V: String, VLength: Int) => Addr

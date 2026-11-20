@@ -4,104 +4,11 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
 @builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@sys_argc_global = external global i64
-@sys_argv_global = external global ptr
-@"var.annotate::cur_expected_ut" = external global { i1, i64 }
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
-@"var.sys::STDIN" = external global i64
-@"var.sys::STDOUT" = external global i64
-@"var.sys::STDERR" = external global i64
-@"var.sys::addr_null" = external global ptr
-@"var.time::CLOCK_REALTIME" = external global i64
-@"var.time::CLOCK_MONOTONIC" = external global i64
-@"var.time::NS_PER_US" = external global i64
-@"var.time::NS_PER_MS" = external global i64
-@"var.time::NS_PER_SEC" = external global i64
-@"var.time::SEC_PER_MIN" = external global i64
-@"var.time::SEC_PER_HOUR" = external global i64
-@"var.time::SEC_PER_DAY" = external global i64
-@"var.log::#owned_fd" = external global i64
-@"var.log::#O_LOG_APPEND" = external global i64
-@"var.lexer::cur_lex_file" = external global ptr
-@"var.lexer::cur_lex_failed" = external global i1
-@"var.ast::cell_var_names" = external global ptr
-@"var.path::SEP" = external global i32
-@"var.path::SEP_STR" = external global ptr
-@"var.path::LIST_SEP" = external global i32
-@"var.path::LIST_SEP_STR" = external global ptr
-@"var.path::IS_WIN" = external global i1
-@"var.parser::cur_target_triple" = external global ptr
-@"var.layout::target_triple" = external global ptr
-@"var.annotate::cur_source_file" = external global ptr
-@"var.annotate::cur_target_triple" = external global ptr
-@"var.annotate::cur_stmt_files" = external global ptr
-@"var.annotate::cur_stmt_lines" = external global ptr
-@"var.annotate::cur_stmt_cols" = external global ptr
-@"var.annotate::cur_stmt_mods" = external global ptr
-@"var.annotate::cur_is_call_arg" = external global i1
-@"var.annotate::in_ct_expr" = external global i1
-@"var.annotate::cur_fn_name" = external global ptr
-@"var.annotate::unroll_seq" = external global i64
-@"var.annotate::cur_program_exprs" = external global ptr
-@"var.annotate::invalid_scc_fns" = external global ptr
-@"var.annotate::cur_ct_types" = external global ptr
-@"var.annotate::cur_ct_vals" = external global ptr
-@"var.annotate::cur_ct_cursors" = external global ptr
-@"var.annotate::cur_ct_ints" = external global ptr
-@"var.annotate::view_vars" = external global ptr
-@"var.annotate::declared_fns" = external global ptr
-@"var.annotate::called_fns" = external global ptr
-@"var.annotate::user_fns" = external global ptr
-@"var.annotate::value_used_fns" = external global ptr
-@"var.annotate::fn_alias_vars" = external global ptr
-@"var.annotate::fn_alias_tgts" = external global ptr
 @"var.version::VERSION" = external global ptr
-@"var.version::COMMIT_HASH" = external global ptr
 @"var.lsp::SYM_FUNCTION" = global i64 12
 @"var.lsp::SYM_VARIABLE" = global i64 13
 @"var.lsp::SYM_CONSTANT" = global i64 14
@@ -825,26 +732,15 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.291.struct = internal unnamed_addr constant { i64, ptr } { i64 22, ptr @str.291 }
 @str.292 = internal unnamed_addr constant [55 x i8] c",\22error\22:{\22code\22:-32601,\22message\22:\22Method not found\22}}\00"
 @str.292.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.292 }
-@clo.const.61 = internal constant { ptr, ptr } { ptr @"mem::with_value$Int", ptr null }
 @clo.const.62 = internal constant { ptr, ptr } { ptr @"lsp::main", ptr null }
 @"var.lsp::main" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_lsp, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -878,30 +774,12 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
-
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_lsp() #0 {
+define internal void @__dva_global_init_lsp() #3 {
 entry:
   store i64 12, ptr @"var.lsp::SYM_FUNCTION", align 8
   store i64 13, ptr @"var.lsp::SYM_VARIABLE", align 8
@@ -1008,162 +886,14 @@ entry:
   ret void
 }
 
-declare i32 @open(ptr, i32)
-
-declare i64 @creat(ptr, i64)
-
-declare i32 @close(i32)
-
-declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @posix_spawnp(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @waitpid(i64, ptr, i64)
-
 declare i64 @read(i32, ptr, i64)
 
-declare i64 @lseek(i32, i64, i64)
-
 declare i64 @write(i32, ptr, i64)
-
-declare i64 @writev(i32, ptr, i64)
-
-declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
 
-declare i64 @htons(i64)
-
-declare i64 @htonl(i64)
-
-declare i64 @ntohs(i64)
-
-declare i64 @ntohl(i64)
-
-declare i64 @inet_addr(ptr)
-
-declare i64 @socket(i64, i64, i64)
-
-declare i64 @connect(i64, ptr, i64)
-
-declare i64 @bind(i64, ptr, i64)
-
-declare i64 @listen(i64, i64)
-
-declare i64 @accept(i64, ptr, ptr)
-
-declare i64 @send(i64, ptr, i64, i32)
-
-declare i64 @recv(i64, ptr, i64, i32)
-
-declare i64 @sendto(i64, ptr, i64, i32, ptr, i64)
-
-declare i64 @recvfrom(i64, ptr, i64, i32, ptr, ptr)
-
-declare i64 @setsockopt(i64, i64, i64, ptr, i64)
-
-declare i64 @getsockopt(i64, i64, i64, ptr, ptr)
-
-declare i64 @getpeername(i64, ptr, ptr)
-
-declare i64 @getsockname(i64, ptr, ptr)
-
-declare i64 @shutdown(i64, i64)
-
-declare i64 @fcntl(i32, i64, i64)
-
-declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
-
-declare void @freeaddrinfo(ptr)
-
-declare i64 @getifaddrs(ptr)
-
-declare void @freeifaddrs(ptr)
-
-declare ptr @memset(ptr, i64, i64)
-
-declare i64 @atoi(ptr)
-
-declare ptr @opendir(ptr)
-
-declare ptr @readdir(ptr)
-
-declare i64 @closedir(ptr)
-
-declare i64 @strlen(ptr) #0
-
-declare i64 @strcmp(ptr, ptr)
-
-declare ptr @memcpy(ptr, ptr, i64)
-
-declare ptr @memmove(ptr, ptr, i64)
-
-declare i64 @stat(ptr, ptr)
-
-declare i64 @fstat(i32, ptr)
-
-declare i64 @rename(ptr, ptr)
-
-declare i64 @unlink(ptr)
-
-declare i64 @pipe(ptr)
-
-declare ptr @__errno_location()
-
-declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
-
-declare i64 @munmap(ptr, i64)
-
-declare i64 @syscall(i64, ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @dlopen(ptr, i32)
-
-declare ptr @dlsym(ptr, ptr)
-
-declare i64 @dlclose(ptr)
-
-declare ptr @dlerror()
-
-declare i64 @system(ptr)
-
-declare ptr @realpath(ptr, ptr)
-
-declare i64 @isatty(i32)
-
-declare i64 @tcgetattr(i32, ptr)
-
-declare i64 @tcsetattr(i32, i64, ptr)
-
-declare void @cfmakeraw(ptr)
-
-declare i64 @poll(ptr, i64, i64)
-
-declare i64 @epoll_create1(i32)
-
-declare i64 @epoll_ctl(i64, i64, i32, ptr)
-
-declare i64 @epoll_wait(i64, ptr, i64, i64)
-
-declare i64 @time(ptr)
-
-declare ptr @signal(i64, ptr)
-
-declare i64 @raise(i64)
-
-declare i64 @getrlimit(i64, ptr)
-
-declare i64 @setrlimit(i64, ptr)
-
-declare i64 @uname(ptr)
-
-declare i32 @nanosleep(ptr, ptr)
-
-declare ptr @localtime_r(ptr, ptr)
-
-declare ptr @strptime(ptr, ptr, ptr)
-
-define void @"lsp::set_stdlib_dir"(ptr %0) #0 {
+define void @"lsp::set_stdlib_dir"(ptr %0) #3 {
 entry:
   %var.dir = alloca ptr, align 8
   store ptr %0, ptr %var.dir, align 8
@@ -1172,7 +902,7 @@ entry:
   ret void
 }
 
-define i1 @"lsp::has_override"(ptr %0) #0 {
+define i1 @"lsp::has_override"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -1298,9 +1028,9 @@ choice.exit:                                      ; preds = %str.eq.merge
   br label %loop.latch.829
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
-define { i64, ptr } @"lsp::get_override_text"(ptr %0) #0 {
+define { i64, ptr } @"lsp::get_override_text"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -1438,7 +1168,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %lo
   ret { i64, ptr } %ret.niche.pack
 }
 
-define void @"lsp::record_typecheck_ok"(ptr %0, ptr %1) #0 {
+define void @"lsp::record_typecheck_ok"(ptr %0, ptr %1) #3 {
 entry:
   %var.tprog = alloca ptr, align 8
   %var.ctx = alloca ptr, align 8
@@ -1492,7 +1222,7 @@ a.after8:                                         ; preds = %a.create7, %a.after
   ret void
 }
 
-define void @"lsp::enrich_symbols_with_tast"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define void @"lsp::enrich_symbols_with_tast"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %var.max_ln262 = alloca i64, align 8
   %var.min_ln246 = alloca i64, align 8
@@ -2039,9 +1769,9 @@ a.after267:                                       ; preds = %a.create266, %a.aft
   br label %choice.exit
 }
 
-declare { i64, ptr } @"unify::show_utype"(ptr, ptr) #0
+declare { i64, ptr } @"unify::show_utype"(ptr, ptr) #3
 
-define void @"lsp::update_sym_type"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"lsp::update_sym_type"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var._237 = alloca ptr, align 8
   %var._236 = alloca ptr, align 8
@@ -2718,10 +2448,6 @@ err.abort:                                        ; No predecessors!
   br label %choice.exit234
 }
 
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
-
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
@@ -2740,7 +2466,7 @@ abort.dead:                                       ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #6
 
-define i64 @"lsp::find_top_sym_line"(ptr %0, ptr %1) #0 {
+define i64 @"lsp::find_top_sym_line"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -2862,7 +2588,7 @@ choice.exit:                                      ; preds = %and.842.exit
   br label %loop.latch.841
 }
 
-define i64 @"lsp::next_top_sym_line"(ptr %0, i64 %1) #0 {
+define i64 @"lsp::next_top_sym_line"(ptr %0, i64 %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -2989,7 +2715,7 @@ choice.exit:                                      ; preds = %choice.then, %and.8
   br label %loop.latch.843
 }
 
-define void @"lsp::collect_local_typed_exprs"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) #0 {
+define void @"lsp::collect_local_typed_exprs"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) #3 {
 entry:
   %var.k = alloca i64, align 8
   %var.is_fn = alloca i1, align 1
@@ -4133,7 +3859,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define { i64, i64, i64 } @"lsp::find_local_binding_loc"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4) #0 {
+define { i64, i64, i64 } @"lsp::find_local_binding_loc"(ptr %0, ptr %1, i64 %2, i64 %3, ptr %4) #3 {
 entry:
   %var.end_c = alloca i64, align 8
   %var.is_eq = alloca i1, align 1
@@ -4802,7 +4528,7 @@ choice.exit230:                                   ; preds = %choice.else229, %ch
   br label %loop.exit.863
 }
 
-define i64 @"lsp::count_doc_lines"(ptr %0) #0 {
+define i64 @"lsp::count_doc_lines"(ptr %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
@@ -4863,7 +4589,7 @@ choice.exit:                                      ; preds = %choice.then, %loop.
   br label %loop.latch.861
 }
 
-define { i64, ptr } @"lsp::get_line_at"(ptr %0, i64 %1) #0 {
+define { i64, ptr } @"lsp::get_line_at"(ptr %0, i64 %1) #3 {
 entry:
   %var.lend = alloca i64, align 8
   %var._12 = alloca i64, align 8
@@ -5168,7 +4894,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define i1 @"lsp::sym_has_loc"(ptr %0, i64 %1, i64 %2) #0 {
+define i1 @"lsp::sym_has_loc"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -5268,7 +4994,7 @@ choice.exit:                                      ; preds = %and.879.exit
   br label %loop.latch.878
 }
 
-define i1 @"lsp::line_has_type_annot"(ptr %0, i64 %1, i64 %2, ptr %3) #0 {
+define i1 @"lsp::line_has_type_annot"(ptr %0, i64 %1, i64 %2, ptr %3) #3 {
 entry:
   %var.rest = alloca ptr, align 8
   %str.view = alloca { i64, ptr }, align 8
@@ -5643,7 +5369,7 @@ choice.exit133:                                   ; preds = %or.885.exit
   br label %choice.exit102
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -5691,7 +5417,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #5 {
@@ -5704,7 +5430,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define void @"lsp::record_typecheck_errs"(ptr %0, ptr %1) #0 {
+define void @"lsp::record_typecheck_errs"(ptr %0, ptr %1) #3 {
 entry:
   %cat.ibuf135 = alloca [24 x i8], align 1
   %cat.ibuf = alloca [24 x i8], align 1
@@ -6151,7 +5877,7 @@ abort.dead179:                                    ; No predecessors!
   br label %concat.tot.len177
 }
 
-define void @"lsp::add_unique_diag"(ptr %0, ptr %1) #0 {
+define void @"lsp::add_unique_diag"(ptr %0, ptr %1) #3 {
 entry:
   %var.item = alloca ptr, align 8
   %var.list = alloca ptr, align 8
@@ -6236,7 +5962,7 @@ a.store:                                          ; preds = %a.grow, %a.check
   br label %choice.exit
 }
 
-define i1 @"lsp::has_diag"(ptr %0, ptr %1) #0 {
+define i1 @"lsp::has_diag"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -6394,7 +6120,7 @@ choice.exit:                                      ; preds = %and.892.exit
   br label %loop.latch.889
 }
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -6458,7 +6184,7 @@ done:                                             ; preds = %copyloop
   ret i64 %fmt.tot
 }
 
-define i64 @"lsp::read_byte"() #0 {
+define i64 @"lsp::read_byte"() #3 {
 entry:
   %var.n = alloca i64, align 8
   %var.buf = alloca ptr, align 8
@@ -6561,7 +6287,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define { i64, ptr } @"lsp::read_header_line"() #0 {
+define { i64, ptr } @"lsp::read_header_line"() #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.c = alloca i64, align 8
@@ -6775,7 +6501,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define i64 @"lsp::parse_content_length"(ptr %0) #0 {
+define i64 @"lsp::parse_content_length"(ptr %0) #3 {
 entry:
   %var._acc_1 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -6928,13 +6654,13 @@ choice.exit58:                                    ; preds = %choice.else57, %cho
   br label %choice.exit
 }
 
-declare { i64, ptr } @"str::lower"(ptr) #0
+declare { i64, ptr } @"str::lower"(ptr) #3
 
-declare { i64, ptr } @"str::trim"(ptr) #0
+declare { i64, ptr } @"str::trim"(ptr) #3
 
-declare ptr @"str::to_int"(ptr) #0
+declare ptr @"str::to_int"(ptr) #3
 
-define { i64, ptr } @"lsp::read_exact_bytes"(i64 %0) #0 {
+define { i64, ptr } @"lsp::read_exact_bytes"(i64 %0) #3 {
 entry:
   %builder.freeze76 = alloca { i64, ptr }, align 8
   %var.n = alloca i64, align 8
@@ -7279,7 +7005,7 @@ ret.niche.merge84:                                ; preds = %ret.niche.load83, %
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #6
 
-define { i64, ptr } @"lsp::read_rpc_message"() #0 {
+define { i64, ptr } @"lsp::read_rpc_message"() #3 {
 entry:
   %ret.niche.salloc = alloca { i64, ptr }, align 8
   %var.cl = alloca i64, align 8
@@ -7422,7 +7148,7 @@ ret.niche.merge:                                  ; preds = %ret.niche.load, %ch
   ret { i64, ptr } %ret.niche.pack
 }
 
-define void @"lsp::send_rpc_payload"(ptr %0) #0 {
+define void @"lsp::send_rpc_payload"(ptr %0) #3 {
 entry:
   %var.w = alloca i64, align 8
   %var.slice = alloca ptr, align 8
@@ -7681,7 +7407,7 @@ choice.exit80:                                    ; preds = %nulmerge
   br label %loop.latch.899
 }
 
-define i64 @"lsp::hex_val"(i64 %0) #0 {
+define i64 @"lsp::hex_val"(i64 %0) #3 {
 entry:
   %var.c = alloca i64, align 8
   store i64 %0, ptr %var.c, align 8
@@ -7763,7 +7489,7 @@ and.902.exit:                                     ; preds = %and.902.else, %and.
   br i1 %and.902.phi, label %choice.case13, label %choice.next14
 }
 
-define { i64, ptr } @"lsp::uri_to_path"(ptr %0) #0 {
+define { i64, ptr } @"lsp::uri_to_path"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.lo = alloca i64, align 8
@@ -8319,7 +8045,7 @@ abort.dead209:                                    ; No predecessors!
   br label %b.new.buf.len207
 }
 
-define { i64, ptr } @"lsp::path_to_uri"(ptr %0) #0 {
+define { i64, ptr } @"lsp::path_to_uri"(ptr %0) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %var.p = alloca ptr, align 8
@@ -8438,7 +8164,7 @@ abort.dead22:                                     ; No predecessors!
   br label %concat.tot.len20
 }
 
-define { i64, ptr } @"lsp::format_value_type"(ptr %0) #0 {
+define { i64, ptr } @"lsp::format_value_type"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -8622,7 +8348,7 @@ choice.next87:                                    ; preds = %choice.next82
   br label %choice.exit
 }
 
-define { i64, ptr } @"lsp::format_type_info"(ptr %0) #0 {
+define { i64, ptr } @"lsp::format_type_info"(ptr %0) #3 {
 entry:
   %concat.str1843 = alloca { i64, ptr }, align 8
   %ret.ub.salloc1804 = alloca { i64, ptr }, align 8
@@ -11961,9 +11687,9 @@ abort.dead1833:                                   ; No predecessors!
   br label %concat.tot.len1831
 }
 
-declare { i64, ptr } @"str::from_int"(i64) #0
+declare { i64, ptr } @"str::from_int"(i64) #3
 
-define i1 @"lsp::is_fwd_marker"(ptr %0) #0 {
+define i1 @"lsp::is_fwd_marker"(ptr %0) #3 {
 entry:
   %var.v = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -12043,7 +11769,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %and.914.exit
 }
 
-define ptr @"lsp::extract_symbols"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"lsp::extract_symbols"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var._1291 = alloca ptr, align 8
   %var._1290 = alloca ptr, align 8
@@ -14729,7 +14455,7 @@ a.after1385:                                      ; preds = %a.create1384, %loop
   ret ptr %a.load21393
 }
 
-define i1 @"lsp::has_use_imports"(ptr %0) #0 {
+define i1 @"lsp::has_use_imports"(ptr %0) #3 {
 entry:
   %var._6 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -14823,7 +14549,7 @@ choice.exit7:                                     ; preds = %choice.exit
   br label %loop.latch.924
 }
 
-define { i64, ptr } @"lsp::lsp_range_json"(i64 %0, i64 %1, i64 %2, i64 %3) #0 {
+define { i64, ptr } @"lsp::lsp_range_json"(i64 %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
   %cat.ibuf39 = alloca [24 x i8], align 1
@@ -15072,7 +14798,7 @@ abort.dead89:                                     ; No predecessors!
   br label %concat.tot.len87
 }
 
-define { i64, ptr } @"lsp::lsp_diag_json"(i64 %0, i64 %1, i64 %2, ptr %3, i1 %4) #0 {
+define { i64, ptr } @"lsp::lsp_diag_json"(i64 %0, i64 %1, i64 %2, ptr %3, i1 %4) #3 {
 entry:
   %concat.str190 = alloca { i64, ptr }, align 8
   %ret.ub.salloc94 = alloca { i64, ptr }, align 8
@@ -15516,9 +15242,9 @@ abort.dead166:                                    ; No predecessors!
   br label %concat.tot.len164
 }
 
-declare { i64, ptr } @"json::escape_string"(ptr) #0
+declare { i64, ptr } @"json::escape_string"(ptr) #3
 
-define void @"lsp::publish_diagnostics"(ptr %0, ptr %1) #0 {
+define void @"lsp::publish_diagnostics"(ptr %0, ptr %1) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -16091,7 +15817,7 @@ abort.dead252:                                    ; No predecessors!
   br label %b.new.buf.len2250
 }
 
-define ptr @"lsp::copy_sym_entries"(ptr %0) #0 {
+define ptr @"lsp::copy_sym_entries"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -16316,7 +16042,7 @@ a.after84:                                        ; preds = %a.create83, %loop.e
   ret ptr %a.load292
 }
 
-define void @"lsp::upsert_doc"(ptr %0, ptr %1, ptr %2, ptr %3) #0 {
+define void @"lsp::upsert_doc"(ptr %0, ptr %1, ptr %2, ptr %3) #3 {
 entry:
   %clo.salloc = alloca { ptr, ptr }, align 8
   %env.salloc = alloca { ptr, ptr, ptr, ptr }, align 8
@@ -16348,7 +16074,7 @@ entry:
   ret void
 }
 
-define internal void @"$anon_fn.123"(ptr %0) #0 {
+define internal void @"$anon_fn.123"(ptr %0) #3 {
 entry:
   %var._175 = alloca ptr, align 8
   %var._174 = alloca ptr, align 8
@@ -16973,9 +16699,9 @@ a.after252:                                       ; preds = %a.create251, %a.sto
   br label %choice.exit207
 }
 
-declare void @"mem::escape"(ptr) #0
+declare void @"mem::escape"(ptr) #3
 
-define ptr @"lsp::get_doc"(ptr %0) #0 {
+define ptr @"lsp::get_doc"(ptr %0) #3 {
 entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -17102,7 +16828,7 @@ choice.exit:                                      ; preds = %str.eq.merge
   br label %loop.latch.931
 }
 
-define void @"lsp::remove_doc"(ptr %0) #0 {
+define void @"lsp::remove_doc"(ptr %0) #3 {
 entry:
   %clo.salloc = alloca { ptr, ptr }, align 8
   %env.salloc = alloca { ptr }, align 8
@@ -17119,16 +16845,16 @@ entry:
   ret void
 }
 
-define internal void @"$anon_fn.127"(ptr %0) #0 {
+define internal void @"$anon_fn.127"(ptr %0) #3 {
 entry:
-  %var._map_v_856 = alloca ptr, align 8
+  %var._map_v_857 = alloca ptr, align 8
   %var._22 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.d = alloca ptr, align 8
   %loop.step.932 = alloca i64, align 8
   %loop.idx.932 = alloca i64, align 8
-  %var._map_out_856 = alloca ptr, align 8
+  %var._map_out_857 = alloca ptr, align 8
   %env.gep = getelementptr inbounds { ptr }, ptr %0, i32 0, i32 0
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %a.new = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
@@ -17140,7 +16866,7 @@ entry:
   store ptr %a.buf, ptr %a.data.gep, align 8
   %a.cap.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new, i32 0, i32 2
   store i64 16, ptr %a.cap.gep, align 8
-  store ptr %a.new, ptr %var._map_out_856, align 8
+  store ptr %a.new, ptr %var._map_out_857, align 8
   %var.load = load ptr, ptr @"var.lsp::open_docs", align 8
   %a.load = load ptr, ptr @"var.lsp::open_docs", align 8
   %a.null = icmp eq ptr %a.load, null
@@ -17206,8 +16932,8 @@ loop.latch.932:                                   ; preds = %choice.exit21
   br label %loop.header.932
 
 loop.exit.932:                                    ; preds = %loop.exit.nat.932
-  %var.load40 = load ptr, ptr %var._map_out_856, align 8
-  %a.load41 = load ptr, ptr %var._map_out_856, align 8
+  %var.load40 = load ptr, ptr %var._map_out_857, align 8
+  %a.load41 = load ptr, ptr %var._map_out_857, align 8
   %a.null42 = icmp eq ptr %a.load41, null
   br i1 %a.null42, label %a.create43, label %a.after44
 
@@ -17242,9 +16968,9 @@ choice.exit:                                      ; preds = %choice.else, %choic
 
 choice.then20:                                    ; preds = %choice.exit
   store ptr %choice.res, ptr %var._22, align 8
-  store ptr %choice.res, ptr %var._map_v_856, align 8
-  %var.load23 = load ptr, ptr %var._map_v_856, align 8
-  %a.load24 = load ptr, ptr %var._map_out_856, align 8
+  store ptr %choice.res, ptr %var._map_v_857, align 8
+  %var.load23 = load ptr, ptr %var._map_v_857, align 8
+  %a.load24 = load ptr, ptr %var._map_out_857, align 8
   %a.null25 = icmp eq ptr %a.load24, null
   br i1 %a.null25, label %a.create26, label %a.after27
 
@@ -17262,11 +16988,11 @@ a.create26:                                       ; preds = %choice.then20
   store ptr %a.buf31, ptr %a.data.gep33, align 8
   %a.cap.gep34 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create29, i32 0, i32 2
   store i64 16, ptr %a.cap.gep34, align 8
-  store ptr %a.create29, ptr %var._map_out_856, align 8
+  store ptr %a.create29, ptr %var._map_out_857, align 8
   br label %a.after27
 
 a.after27:                                        ; preds = %a.create26, %choice.then20
-  %a.load235 = load ptr, ptr %var._map_out_856, align 8
+  %a.load235 = load ptr, ptr %var._map_out_857, align 8
   br label %a.check
 
 a.check:                                          ; preds = %a.after27
@@ -17305,16 +17031,16 @@ a.create43:                                       ; preds = %loop.exit.932
   store ptr %a.buf48, ptr %a.data.gep50, align 8
   %a.cap.gep51 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create46, i32 0, i32 2
   store i64 16, ptr %a.cap.gep51, align 8
-  store ptr %a.create46, ptr %var._map_out_856, align 8
+  store ptr %a.create46, ptr %var._map_out_857, align 8
   br label %a.after44
 
 a.after44:                                        ; preds = %a.create43, %loop.exit.932
-  %a.load252 = load ptr, ptr %var._map_out_856, align 8
+  %a.load252 = load ptr, ptr %var._map_out_857, align 8
   store ptr %a.load252, ptr @"var.lsp::open_docs", align 8
   ret void
 }
 
-define void @"lsp::analyze_document"(ptr %0, ptr %1, ptr %2) #0 {
+define void @"lsp::analyze_document"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var._362 = alloca ptr, align 8
   %var._i361 = alloca i64, align 8
@@ -18299,31 +18025,31 @@ a.after457:                                       ; preds = %a.create456, %a.aft
   ret void
 }
 
-declare void @"ast::cell_var_reset"() #0
+declare void @"ast::cell_var_reset"() #3
 
-declare void @"diag::enable_capture"() #0
+declare void @"diag::enable_capture"() #3
 
-declare void @"lexer::lex_set_file"(ptr) #0
+declare void @"lexer::lex_set_file"(ptr) #3
 
-declare ptr @"parser::parse_init"(ptr) #0
+declare ptr @"parser::parse_init"(ptr) #3
 
-declare void @"parser::parser_set_file"(ptr, ptr) #0
+declare void @"parser::parser_set_file"(ptr, ptr) #3
 
-declare { i1, i64 } @"parser::parse_program"(ptr) #0
+declare { i1, i64 } @"parser::parse_program"(ptr) #3
 
-declare ptr @"diag::get_captured"() #0
+declare ptr @"diag::get_captured"() #3
 
-declare void @"diag::disable_capture"() #0
+declare void @"diag::disable_capture"() #3
 
-declare ptr @"parser::fold_program_consts"(ptr) #0
+declare ptr @"parser::fold_program_consts"(ptr) #3
 
-declare void @"annotate::set_source_file"(ptr) #0
+declare void @"annotate::set_source_file"(ptr) #3
 
-declare void @"annotate::set_program_locs"(ptr, ptr, ptr) #0
+declare void @"annotate::set_program_locs"(ptr, ptr, ptr) #3
 
-declare { i1, i64 } @"annotate::annotate_program"(ptr) #0
+declare { i1, i64 } @"annotate::annotate_program"(ptr) #3
 
-define i1 @"lsp::is_ident_char"(i64 %0) #0 {
+define i1 @"lsp::is_ident_char"(i64 %0) #3 {
 entry:
   %var.c = alloca i64, align 8
   store i64 %0, ptr %var.c, align 8
@@ -18387,7 +18113,7 @@ and.940.exit:                                     ; preds = %and.940.else, %and.
   br i1 %case.or13, label %choice.case, label %choice.next
 }
 
-define { i64, ptr } @"lsp::extract_word_at"(ptr %0, i64 %1, i64 %2) #0 {
+define { i64, ptr } @"lsp::extract_word_at"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var._57 = alloca i64, align 8
@@ -18675,7 +18401,7 @@ choice.exit78:                                    ; preds = %choice.then76
   br label %loop.latch.943
 }
 
-define i1 @"lsp::is_op_char"(i64 %0) #0 {
+define i1 @"lsp::is_op_char"(i64 %0) #3 {
 entry:
   %var.c = alloca i64, align 8
   store i64 %0, ptr %var.c, align 8
@@ -18728,7 +18454,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i64, ptr } @"lsp::extract_operator_at"(ptr %0, i64 %1, i64 %2) #0 {
+define { i64, ptr } @"lsp::extract_operator_at"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var._163 = alloca i64, align 8
@@ -19238,7 +18964,7 @@ choice.exit184:                                   ; preds = %choice.then182
   br label %loop.latch.953
 }
 
-define { i64, ptr } @"lsp::operator_hover_doc"(ptr %0) #0 {
+define { i64, ptr } @"lsp::operator_hover_doc"(ptr %0) #3 {
 entry:
   %var.op = alloca ptr, align 8
   store ptr %0, ptr %var.op, align 8
@@ -20846,7 +20572,7 @@ str.eq.merge994:                                  ; preds = %str.eq.else993, %st
   br i1 %case.or1001, label %choice.case937, label %choice.next938
 }
 
-define { i64, ptr } @"lsp::builtin_hover_doc"(ptr %0) #0 {
+define { i64, ptr } @"lsp::builtin_hover_doc"(ptr %0) #3 {
 entry:
   %var.word = alloca ptr, align 8
   store ptr %0, ptr %var.word, align 8
@@ -21642,7 +21368,7 @@ str.eq.merge474:                                  ; preds = %str.eq.else473, %st
   br i1 %str.eq.result480, label %choice.case464, label %choice.next465
 }
 
-define ptr @"lsp::find_imported_symbol"(ptr %0, ptr %1, ptr %2) #0 {
+define ptr @"lsp::find_imported_symbol"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var._206 = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -22263,15 +21989,15 @@ choice.exit243:                                   ; preds = %str.eq.merge234
   br label %loop.latch.959
 }
 
-declare { i64, ptr } @"path::parent"(ptr) #0
+declare { i64, ptr } @"path::parent"(ptr) #3
 
-declare { i64, ptr } @"path::join"(ptr, ptr) #0
+declare { i64, ptr } @"path::join"(ptr, ptr) #3
 
-declare i1 @"fs::is_file"(ptr) #0
+declare i1 @"fs::is_file"(ptr) #3
 
-declare { i64, ptr } @"fs::read_to_string"(ptr) #0
+declare { i64, ptr } @"fs::read_to_string"(ptr) #3
 
-define { ptr, ptr } @"lsp::split_qualified"(ptr %0) #0 {
+define { ptr, ptr } @"lsp::split_qualified"(ptr %0) #3 {
 entry:
   %rec.salloc75 = alloca { ptr, ptr }, align 8
   %rec.salloc = alloca { ptr, ptr }, align 8
@@ -22479,7 +22205,7 @@ choice.exit35:                                    ; preds = %choice.else, %choic
   ret { ptr, ptr } %ret.pack
 }
 
-define { i64, ptr } @"lsp::format_id_json"(ptr %0) #0 {
+define { i64, ptr } @"lsp::format_id_json"(ptr %0) #3 {
 entry:
   %ret.ub.salloc12 = alloca { i64, ptr }, align 8
   %var.s = alloca ptr, align 8
@@ -22542,9 +22268,9 @@ choice.next3:                                     ; preds = %choice.next
   br label %choice.exit
 }
 
-declare { i64, ptr } @"json::format_number"(double) #0
+declare { i64, ptr } @"json::format_number"(double) #3
 
-define void @"lsp::send_result"(ptr %0, ptr %1) #0 {
+define void @"lsp::send_result"(ptr %0, ptr %1) #3 {
 entry:
   %var.payload = alloca ptr, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
@@ -22663,7 +22389,7 @@ abort.dead36:                                     ; No predecessors!
   br label %concat.tot.len34
 }
 
-define void @"lsp::handle_initialize"(ptr %0) #0 {
+define void @"lsp::handle_initialize"(ptr %0) #3 {
 entry:
   %var.caps = alloca ptr, align 8
   %concat.str = alloca { i64, ptr }, align 8
@@ -22869,7 +22595,7 @@ abort.dead73:                                     ; No predecessors!
   br label %concat.tot.len71
 }
 
-define { ptr, i64, i64 } @"lsp::extract_doc_uri_and_pos"(ptr %0) #0 {
+define { ptr, i64, i64 } @"lsp::extract_doc_uri_and_pos"(ptr %0) #3 {
 entry:
   %rec.salloc = alloca { ptr, i64, i64 }, align 8
   %var.char0 = alloca i64, align 8
@@ -23017,13 +22743,13 @@ choice.exit42:                                    ; preds = %choice.else41, %cho
   ret { ptr, i64, i64 } %ret.pack
 }
 
-declare { i1, i64 } @"json::get"(ptr, ptr) #0
+declare { i1, i64 } @"json::get"(ptr, ptr) #3
 
-declare { i64, ptr } @"json::get_str"(ptr, ptr) #0
+declare { i64, ptr } @"json::get_str"(ptr, ptr) #3
 
-declare { i1, i64 } @"json::get_int"(ptr, ptr) #0
+declare { i1, i64 } @"json::get_int"(ptr, ptr) #3
 
-define void @"lsp::handle_hover"(ptr %0, ptr %1) #0 {
+define void @"lsp::handle_hover"(ptr %0, ptr %1) #3 {
 entry:
   %var.odoc643 = alloca ptr, align 8
   %var.op610 = alloca ptr, align 8
@@ -24365,7 +24091,7 @@ abort.dead707:                                    ; No predecessors!
   br label %concat.tot.len705
 }
 
-define void @"lsp::handle_definition"(ptr %0, ptr %1) #0 {
+define void @"lsp::handle_definition"(ptr %0, ptr %1) #3 {
 entry:
   %var.rng213 = alloca ptr, align 8
   %var._160 = alloca ptr, align 8
@@ -24988,7 +24714,7 @@ abort.dead275:                                    ; No predecessors!
   br label %concat.tot.len273
 }
 
-define void @"lsp::handle_document_symbol"(ptr %0, ptr %1) #0 {
+define void @"lsp::handle_document_symbol"(ptr %0, ptr %1) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.rng = alloca ptr, align 8
@@ -26191,7 +25917,7 @@ abort.dead619:                                    ; No predecessors!
   br label %b.new.buf.len2617
 }
 
-define void @"lsp::handle_formatting"(ptr %0, ptr %1) #0 {
+define void @"lsp::handle_formatting"(ptr %0, ptr %1) #3 {
 entry:
   %var._126 = alloca ptr, align 8
   %var.edit = alloca ptr, align 8
@@ -26528,9 +26254,9 @@ abort.dead113:                                    ; No predecessors!
   br label %concat.tot.len111
 }
 
-declare { i1, i64 } @"formatter::format_source"(ptr, ptr) #0
+declare { i1, i64 } @"formatter::format_source"(ptr, ptr) #3
 
-define void @"lsp::handle_completion"(ptr %0, ptr %1) #0 {
+define void @"lsp::handle_completion"(ptr %0, ptr %1) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.ckind = alloca i64, align 8
@@ -27459,7 +27185,7 @@ abort.dead447:                                    ; No predecessors!
   br label %b.new.buf.len2445
 }
 
-define void @"lsp::handle_inlay_hint"(ptr %0, ptr %1) #0 {
+define void @"lsp::handle_inlay_hint"(ptr %0, ptr %1) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.ty_str = alloca ptr, align 8
@@ -29033,7 +28759,7 @@ abort.dead769:                                    ; No predecessors!
   br label %b.new.buf.len2767
 }
 
-define void @"lsp::handle_did_open"(ptr %0, ptr %1) #0 {
+define void @"lsp::handle_did_open"(ptr %0, ptr %1) #3 {
 entry:
   %var.text = alloca ptr, align 8
   %var.s25 = alloca ptr, align 8
@@ -29179,7 +28905,7 @@ choice.exit34:                                    ; preds = %choice.then33, %str
   ret void
 }
 
-define void @"lsp::handle_did_change"(ptr %0, ptr %1) #0 {
+define void @"lsp::handle_did_change"(ptr %0, ptr %1) #3 {
 entry:
   %var.text = alloca ptr, align 8
   %var.s54 = alloca ptr, align 8
@@ -29375,11 +29101,11 @@ choice.exit52:                                    ; preds = %choice.else51, %cho
   br label %choice.exit36
 }
 
-declare i64 @"json::array_len"(ptr) #0
+declare i64 @"json::array_len"(ptr) #3
 
-declare ptr @"json::array_at"(ptr, i64) #0
+declare ptr @"json::array_at"(ptr, i64) #3
 
-define void @"lsp::handle_did_save"(ptr %0, ptr %1) #0 {
+define void @"lsp::handle_did_save"(ptr %0, ptr %1) #3 {
 entry:
   %var.disk_text = alloca ptr, align 8
   %var._51 = alloca ptr, align 8
@@ -29560,7 +29286,7 @@ choice.exit50:                                    ; preds = %choice.then49, %ret
   br label %choice.exit24
 }
 
-define void @"lsp::handle_did_close"(ptr %0) #0 {
+define void @"lsp::handle_did_close"(ptr %0) #3 {
 entry:
   %var.uri = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -29682,7 +29408,7 @@ choice.exit17:                                    ; preds = %choice.then16, %str
   ret void
 }
 
-define i64 @"lsp::main"(ptr %0, ptr %1) #0 {
+define i64 @"lsp::main"(ptr %0, ptr %1) #3 {
 entry:
   %var.step_rc = alloca i64, align 8
   %clo.salloc = alloca { ptr, ptr }, align 8
@@ -29776,13 +29502,13 @@ choice.exit12:                                    ; preds = %choice.else, %choic
   ret i64 %choice.res
 }
 
-declare void @"log::set_fd"(i64) #0
+declare void @"log::set_fd"(i64) #3
 
-declare void @"log::set_timestamps"(i1) #0
+declare void @"log::set_timestamps"(i1) #3
 
-declare { ptr, i64 } @"mem::arena"(i64) #0
+declare { ptr, i64 } @"mem::arena"(i64) #3
 
-define internal i64 @"$anon_fn.178"(ptr %0) #0 {
+define internal i64 @"$anon_fn.178"(ptr %0) #3 {
 entry:
   %var._338 = alloca ptr, align 8
   %var.err_payload = alloca ptr, align 8
@@ -30456,11 +30182,11 @@ abort.dead329:                                    ; No predecessors!
   br label %concat.tot.len327
 }
 
-declare { i1, i64 } @"json::parse"(ptr) #0
+declare { i1, i64 } @"json::parse"(ptr) #3
 
-declare i1 @"json::has"(ptr, ptr) #0
+declare i1 @"json::has"(ptr, ptr) #3
 
-define internal i64 @"mem::with_value$Int"(ptr %0, ptr %1) #0 {
+define internal i64 @"mem::with_value$Int"(ptr %0, ptr %1) #3 {
 entry:
   %var.result = alloca i64, align 8
   %var.prev = alloca ptr, align 8
@@ -30498,16 +30224,16 @@ clo.merge:                                        ; preds = %clo.plain, %clo.cap
   ret i64 %var.load3
 }
 
-declare ptr @"mem::set_current"(ptr) #0
+declare ptr @"mem::set_current"(ptr) #3
 
-declare void @"mem::reset"(ptr) #0
+declare void @"mem::reset"(ptr) #3
 
-declare void @"mem::destroy"(ptr) #0
+declare void @"mem::destroy"(ptr) #3
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

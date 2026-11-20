@@ -4,77 +4,11 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@dva_arena_tls = external thread_local global ptr
-@dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
-@arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
 @builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
 @sys_argc_global = external global i64
-@sys_argv_global = external global ptr
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
-@"var.const::pi" = external global double
-@"var.const::tau" = external global double
-@"var.const::e" = external global double
-@"var.const::phi" = external global double
-@"var.const::inv_phi" = external global double
-@"var.const::sqrt2" = external global double
-@"var.const::sqrt3" = external global double
-@"var.const::ln2" = external global double
-@"var.const::ln10" = external global double
-@"var.const::max_i64" = external global i64
-@"var.const::min_i64" = external global i64
-@"var.const::max_safe_int" = external global i64
-@"var.const::max_i32" = external global i32
-@"var.const::min_i32" = external global i32
-@"var.const::max_i16" = external global i16
-@"var.const::min_i16" = external global i16
-@"var.const::max_i8" = external global i8
-@"var.const::min_i8" = external global i8
-@"var.const::max_u64" = external global i64
-@"var.const::max_u32" = external global i32
-@"var.const::max_u16" = external global i16
-@"var.const::max_u8" = external global i8
-@"var.const::inf_f64" = external global double
-@"var.const::nan_f64" = external global double
-@"var.const::max_f64" = external global double
-@"var.const::min_f64" = external global double
-@"var.const::sub_f64" = external global double
-@"var.const::eps_f64" = external global double
-@"var.const::inf_f32" = external global float
-@"var.const::nan_f32" = external global float
-@"var.const::max_f32" = external global float
-@"var.const::min_f32" = external global float
-@"var.const::sub_f32" = external global float
-@"var.const::eps_f32" = external global float
-@"var.sys::STDIN" = external global i64
-@"var.sys::STDOUT" = external global i64
-@"var.sys::STDERR" = external global i64
-@"var.sys::addr_null" = external global ptr
-@"var.time::CLOCK_REALTIME" = external global i64
-@"var.time::CLOCK_MONOTONIC" = external global i64
-@"var.time::NS_PER_US" = external global i64
-@"var.time::NS_PER_MS" = external global i64
-@"var.time::NS_PER_SEC" = external global i64
-@"var.time::SEC_PER_MIN" = external global i64
-@"var.time::SEC_PER_HOUR" = external global i64
-@"var.time::SEC_PER_DAY" = external global i64
-@"var.log::#owned_fd" = external global i64
-@"var.log::#O_LOG_APPEND" = external global i64
-@"var.lexer::cur_lex_file" = external global ptr
-@"var.lexer::cur_lex_failed" = external global i1
-@"var.ast::cell_var_names" = external global ptr
-@"var.path::SEP" = external global i32
-@"var.path::SEP_STR" = external global ptr
-@"var.path::LIST_SEP" = external global i32
-@"var.path::LIST_SEP_STR" = external global ptr
-@"var.path::IS_WIN" = external global i1
-@"var.parser::cur_target_triple" = external global ptr
 @clo.const = internal constant { ptr, ptr } { ptr @"formatter::is_space_or_tab", ptr null }
 @"var.formatter::is_space_or_tab" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"formatter::is_id_byte", ptr null }
@@ -332,21 +266,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.formatter::main" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_formatter, ptr null }]
 
-declare ptr @dva_arena_current() #0
-
-declare ptr @dva_arena_set_current(ptr) #0
-
-declare noalias ptr @malloc(i64) #0
-
-declare void @free(ptr) #0
-
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
-
-declare void @dva_arena_init(ptr, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: alwaysinline
-define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
@@ -380,30 +304,12 @@ slow:                                             ; preds = %entry
 }
 
 ; Function Attrs: noinline
-declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
-
-declare void @dva_arena_destroy(ptr) #0
-
-declare i64 @dva_arena_save(ptr) #0
-
-declare void @dva_arena_restore(ptr, i64) #0
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #2
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #3
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr) #0
-
-declare i64 @dva_hash_string(ptr, i64)
-
-declare ptr @dva_cov_map_ptr()
-
-declare void @dva_cov_trace(i64)
-
-declare void @__sanitizer_cov_trace_pc_guard(ptr)
-
-declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
-
-define internal void @__dva_global_init_formatter() #0 {
+define internal void @__dva_global_init_formatter() #3 {
 entry:
   store ptr @clo.const, ptr @"var.formatter::is_space_or_tab", align 8
   store ptr @clo.const.1, ptr @"var.formatter::is_id_byte", align 8
@@ -438,162 +344,14 @@ entry:
   ret void
 }
 
-declare i32 @open(ptr, i32)
-
-declare i64 @creat(ptr, i64)
-
-declare i32 @close(i32)
-
-declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @posix_spawnp(ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare i64 @waitpid(i64, ptr, i64)
-
 declare i64 @read(i32, ptr, i64)
 
-declare i64 @lseek(i32, i64, i64)
-
 declare i64 @write(i32, ptr, i64)
-
-declare i64 @writev(i32, ptr, i64)
-
-declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #4
 
-declare i64 @htons(i64)
-
-declare i64 @htonl(i64)
-
-declare i64 @ntohs(i64)
-
-declare i64 @ntohl(i64)
-
-declare i64 @inet_addr(ptr)
-
-declare i64 @socket(i64, i64, i64)
-
-declare i64 @connect(i64, ptr, i64)
-
-declare i64 @bind(i64, ptr, i64)
-
-declare i64 @listen(i64, i64)
-
-declare i64 @accept(i64, ptr, ptr)
-
-declare i64 @send(i64, ptr, i64, i32)
-
-declare i64 @recv(i64, ptr, i64, i32)
-
-declare i64 @sendto(i64, ptr, i64, i32, ptr, i64)
-
-declare i64 @recvfrom(i64, ptr, i64, i32, ptr, ptr)
-
-declare i64 @setsockopt(i64, i64, i64, ptr, i64)
-
-declare i64 @getsockopt(i64, i64, i64, ptr, ptr)
-
-declare i64 @getpeername(i64, ptr, ptr)
-
-declare i64 @getsockname(i64, ptr, ptr)
-
-declare i64 @shutdown(i64, i64)
-
-declare i64 @fcntl(i32, i64, i64)
-
-declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
-
-declare void @freeaddrinfo(ptr)
-
-declare i64 @getifaddrs(ptr)
-
-declare void @freeifaddrs(ptr)
-
-declare ptr @memset(ptr, i64, i64)
-
-declare i64 @atoi(ptr)
-
-declare ptr @opendir(ptr)
-
-declare ptr @readdir(ptr)
-
-declare i64 @closedir(ptr)
-
-declare i64 @strlen(ptr) #0
-
-declare i64 @strcmp(ptr, ptr)
-
-declare ptr @memcpy(ptr, ptr, i64)
-
-declare ptr @memmove(ptr, ptr, i64)
-
-declare i64 @stat(ptr, ptr)
-
-declare i64 @fstat(i32, ptr)
-
-declare i64 @rename(ptr, ptr)
-
-declare i64 @unlink(ptr)
-
-declare i64 @pipe(ptr)
-
-declare ptr @__errno_location()
-
-declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
-
-declare i64 @munmap(ptr, i64)
-
-declare i64 @syscall(i64, ptr, ptr, ptr, ptr, ptr, ptr)
-
-declare ptr @dlopen(ptr, i32)
-
-declare ptr @dlsym(ptr, ptr)
-
-declare i64 @dlclose(ptr)
-
-declare ptr @dlerror()
-
-declare i64 @system(ptr)
-
-declare ptr @realpath(ptr, ptr)
-
-declare i64 @isatty(i32)
-
-declare i64 @tcgetattr(i32, ptr)
-
-declare i64 @tcsetattr(i32, i64, ptr)
-
-declare void @cfmakeraw(ptr)
-
-declare i64 @poll(ptr, i64, i64)
-
-declare i64 @epoll_create1(i32)
-
-declare i64 @epoll_ctl(i64, i64, i32, ptr)
-
-declare i64 @epoll_wait(i64, ptr, i64, i64)
-
-declare i64 @time(ptr)
-
-declare ptr @signal(i64, ptr)
-
-declare i64 @raise(i64)
-
-declare i64 @getrlimit(i64, ptr)
-
-declare i64 @setrlimit(i64, ptr)
-
-declare i64 @uname(ptr)
-
-declare i32 @nanosleep(ptr, ptr)
-
-declare ptr @localtime_r(ptr, ptr)
-
-declare ptr @strptime(ptr, ptr, ptr)
-
-define i1 @"formatter::is_space_or_tab"(i64 %0) #0 {
+define i1 @"formatter::is_space_or_tab"(i64 %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -614,7 +372,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i1 @"formatter::is_id_byte"(i64 %0) #0 {
+define i1 @"formatter::is_id_byte"(i64 %0) #3 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -672,7 +430,7 @@ and.512.exit:                                     ; preds = %and.512.else, %and.
   br i1 %case.or7, label %choice.case, label %choice.next
 }
 
-define i64 @"formatter::scan_line_state"(ptr %0, i64 %1) #0 {
+define i64 @"formatter::scan_line_state"(ptr %0, i64 %1) #3 {
 entry:
   %var.step = alloca i64, align 8
   %var.prev_b = alloca i64, align 8
@@ -1340,7 +1098,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define { i64, ptr } @"formatter::strip_cr_and_trailing_ws"(ptr %0) #0 {
+define { i64, ptr } @"formatter::strip_cr_and_trailing_ws"(ptr %0) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.c = alloca i64, align 8
@@ -1471,7 +1229,7 @@ choice.exit15:                                    ; preds = %choice.then14
   br label %loop.latch.523
 }
 
-define { i64, ptr } @"formatter::strip_cr_only"(ptr %0) #0 {
+define { i64, ptr } @"formatter::strip_cr_only"(ptr %0) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var.s = alloca ptr, align 8
@@ -1564,7 +1322,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret { i64, ptr } %ret.pack
 }
 
-define ptr @"formatter::split_source_lines"(ptr %0) #0 {
+define ptr @"formatter::split_source_lines"(ptr %0) #3 {
 entry:
   %var.next_st = alloca i64, align 8
   %var.is_comm = alloca i1, align 1
@@ -2172,7 +1930,7 @@ a.after216:                                       ; preds = %a.create215, %loop.
   ret ptr %a.load2224
 }
 
-define internal void @dva_array_grow(ptr %0) #0 {
+define internal void @dva_array_grow(ptr %0) #3 {
 entry:
   %a.len = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 0
   %a.len1 = load i64, ptr %a.len, align 8
@@ -2220,7 +1978,7 @@ abort.dead10:                                     ; No predecessors!
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #1
+declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_arr_overflow_msg() #5 {
@@ -2236,7 +1994,7 @@ abort.dead:                                       ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #6
 
-define { i64, ptr } @"formatter::format_code_body"(ptr %0) #0 {
+define { i64, ptr } @"formatter::format_code_body"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.is_annot_colon = alloca i1, align 1
@@ -5106,7 +4864,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define i1 @"formatter::starts_with_str"(ptr %0, ptr %1) #0 {
+define i1 @"formatter::starts_with_str"(ptr %0, ptr %1) #3 {
 entry:
   %var.pfx = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -5180,7 +4938,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %and.540.exit
 }
 
-declare i32 @memcmp(ptr, ptr, i64) #0
+declare i32 @memcmp(ptr, ptr, i64) #3
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_b_byte_msg() #5 {
@@ -5193,7 +4951,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define { i64, ptr } @"formatter::make_spaces"(i64 %0) #0 {
+define { i64, ptr } @"formatter::make_spaces"(i64 %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var._ = alloca i64, align 8
@@ -5391,7 +5149,7 @@ br.done.570:                                      ; preds = %br.b4.570, %br.b3.5
   br label %loop.latch.569
 }
 
-define { i64, ptr } @"formatter::strip_leading_ws"(ptr %0) #0 {
+define { i64, ptr } @"formatter::strip_leading_ws"(ptr %0) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var._ = alloca i64, align 8
@@ -5521,7 +5279,7 @@ choice.exit13:                                    ; preds = %choice.then12
   br label %loop.latch.571
 }
 
-define { i64, ptr } @"formatter::strip_code_comment"(ptr %0) #0 {
+define { i64, ptr } @"formatter::strip_code_comment"(ptr %0) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var._123 = alloca i64, align 8
@@ -5954,7 +5712,7 @@ choice.exit146:                                   ; preds = %choice.then144
   br label %loop.latch.576
 }
 
-define i1 @"formatter::ends_with_str"(ptr %0, ptr %1) #0 {
+define i1 @"formatter::ends_with_str"(ptr %0, ptr %1) #3 {
 entry:
   %var.suf = alloca ptr, align 8
   %var.s = alloca ptr, align 8
@@ -6038,7 +5796,7 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
   br label %and.578.exit
 }
 
-define i1 @"formatter::starts_with_choice_sep"(ptr %0) #0 {
+define i1 @"formatter::starts_with_choice_sep"(ptr %0) #3 {
 entry:
   %var.c0 = alloca i64, align 8
   %var.code = alloca ptr, align 8
@@ -6233,7 +5991,7 @@ abort.dead52:                                     ; No predecessors!
   br label %idx_ok50
 }
 
-define i1 @"formatter::is_inline_pipe_arm"(ptr %0) #0 {
+define i1 @"formatter::is_inline_pipe_arm"(ptr %0) #3 {
 entry:
   %var.code = alloca ptr, align 8
   store ptr %0, ptr %var.code, align 8
@@ -6384,7 +6142,7 @@ abort.dead36:                                     ; No predecessors!
   br label %idx_ok34
 }
 
-define i1 @"formatter::ends_with_block_opener"(ptr %0) #0 {
+define i1 @"formatter::ends_with_block_opener"(ptr %0) #3 {
 entry:
   %var.code = alloca ptr, align 8
   store ptr %0, ptr %var.code, align 8
@@ -6875,7 +6633,7 @@ and.609.exit:                                     ; preds = %and.609.else, %and.
   ret i1 %and.609.phi
 }
 
-define i1 @"formatter::ends_with_cont_op"(ptr %0) #0 {
+define i1 @"formatter::ends_with_cont_op"(ptr %0) #3 {
 entry:
   %var.code = alloca ptr, align 8
   store ptr %0, ptr %var.code, align 8
@@ -7250,7 +7008,7 @@ or.636.exit:                                      ; preds = %or.636.else, %or.63
   ret i1 %or.636.phi
 }
 
-define i1 @"formatter::has_intermediate_dedent"(ptr %0, i64 %1, i64 %2, i64 %3) #0 {
+define i1 @"formatter::has_intermediate_dedent"(ptr %0, i64 %1, i64 %2, i64 %3) #3 {
 entry:
   %var.r = alloca i64, align 8
   %var.ln = alloca ptr, align 8
@@ -7534,15 +7292,11 @@ choice.exit69:                                    ; preds = %choice.exit64
   br label %choice.exit56
 }
 
-declare i32 @pthread_create(ptr, ptr, ptr, ptr)
-
-declare i32 @pthread_join(i64, ptr)
-
 declare void @pthread_exit(ptr)
 
 declare i32 @printf(ptr, ...)
 
-define i64 @"formatter::compute_child_delta"(ptr %0, i64 %1, ptr %2, ptr %3, i64 %4, i64 %5) #0 {
+define i64 @"formatter::compute_child_delta"(ptr %0, i64 %1, ptr %2, ptr %3, i64 %4, i64 %5) #3 {
 entry:
   %var.child_raw = alloca i64, align 8
   %var.parent_raw = alloca i64, align 8
@@ -7654,7 +7408,7 @@ choice.exit23:                                    ; preds = %choice.else22, %cho
   br label %choice.exit6
 }
 
-define i64 @"formatter::find_stack_level"(ptr %0, i64 %1, i64 %2) #0 {
+define i64 @"formatter::find_stack_level"(ptr %0, i64 %1, i64 %2) #3 {
 entry:
   %var.v = alloca i64, align 8
   %var._26 = alloca ptr, align 8
@@ -7832,7 +7586,7 @@ choice.exit32:                                    ; preds = %choice.else31
   br label %loop.latch.643
 }
 
-define { i64, ptr } @"formatter::format_lines"(ptr %0) #0 {
+define { i64, ptr } @"formatter::format_lines"(ptr %0) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var._2139 = alloca i64, align 8
@@ -11887,7 +11641,7 @@ choice.exit2168:                                  ; preds = %choice.then2166
   br label %loop.latch.652
 }
 
-define { i64, ptr } @"formatter::format_safe_fallback"(ptr %0) #0 {
+define { i64, ptr } @"formatter::format_safe_fallback"(ptr %0) #3 {
 entry:
   %str.view = alloca { i64, ptr }, align 8
   %var._72 = alloca i64, align 8
@@ -12319,7 +12073,7 @@ choice.exit:                                      ; preds = %choice.then
   br label %loop.latch.657
 }
 
-define { i1, i64 } @"formatter::parse_ast_signature"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"formatter::parse_ast_signature"(ptr %0, ptr %1) #3 {
 entry:
   %cat.ibuf444 = alloca [24 x i8], align 1
   %cat.ibuf438 = alloca [24 x i8], align 1
@@ -13449,19 +13203,19 @@ abort.dead564:                                    ; No predecessors!
   br label %concat.tot.len562
 }
 
-declare void @"diag::enable_capture"() #0
+declare void @"diag::enable_capture"() #3
 
-declare void @"lexer::lex_set_file"(ptr) #0
+declare void @"lexer::lex_set_file"(ptr) #3
 
-declare ptr @"parser::parse_init"(ptr) #0
+declare ptr @"parser::parse_init"(ptr) #3
 
-declare void @"parser::parser_set_file"(ptr, ptr) #0
+declare void @"parser::parser_set_file"(ptr, ptr) #3
 
-declare { i1, i64 } @"parser::parse_program"(ptr) #0
+declare { i1, i64 } @"parser::parse_program"(ptr) #3
 
-declare ptr @"diag::get_captured"() #0
+declare ptr @"diag::get_captured"() #3
 
-declare void @"diag::disable_capture"() #0
+declare void @"diag::disable_capture"() #3
 
 ; Function Attrs: cold noinline
 define internal void @dva_validate_tag_or_abort_stale_str_msg(i64 %0) #7 {
@@ -13492,7 +13246,7 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #0 {
+define internal i64 @dva_fmt_i64_buf(ptr %0, i64 %1, i1 %2) #3 {
 entry:
   %fmt.tmp = alloca [24 x i8], align 1
   %fmt.is.zero = icmp eq i64 %1, 0
@@ -13556,9 +13310,9 @@ done:                                             ; preds = %copyloop
   ret i64 %fmt.tot
 }
 
-declare { i64, ptr } @"show::show_expr"(ptr) #0
+declare { i64, ptr } @"show::show_expr"(ptr) #3
 
-define { i1, i64 } @"formatter::format_source"(ptr %0, ptr %1) #0 {
+define { i1, i64 } @"formatter::format_source"(ptr %0, ptr %1) #3 {
 entry:
   %var.err = alloca ptr, align 8
   %var._216 = alloca ptr, align 8
@@ -13989,7 +13743,7 @@ choice.exit198:                                   ; preds = %choice.else197, %ch
   br label %choice.exit158
 }
 
-define void @"formatter::sort_names"(ptr %0) #0 {
+define void @"formatter::sort_names"(ptr %0) #3 {
 entry:
   %var._227 = alloca ptr, align 8
   %var._226 = alloca ptr, align 8
@@ -14596,9 +14350,9 @@ err.abort257:                                     ; No predecessors!
   br label %choice.exit224
 }
 
-declare i64 @"str::cmp"(ptr, ptr) #0
+declare i64 @"str::cmp"(ptr, ptr) #3
 
-define void @"formatter::collect_dva_files"(ptr %0, ptr %1) #0 {
+define void @"formatter::collect_dva_files"(ptr %0, ptr %1) #3 {
 entry:
   %var.sub = alloca ptr, align 8
   %var._122 = alloca ptr, align 8
@@ -14983,17 +14737,17 @@ a.after132:                                       ; preds = %a.create131, %loop.
   br label %loop.latch.666
 }
 
-declare i1 @"fs::is_file"(ptr) #0
+declare i1 @"fs::is_file"(ptr) #3
 
-declare { i64, ptr } @"fs::ext"(ptr) #0
+declare { i64, ptr } @"fs::ext"(ptr) #3
 
-declare i1 @"fs::is_dir"(ptr) #0
+declare i1 @"fs::is_dir"(ptr) #3
 
-declare ptr @"fs::read_dir"(ptr) #0
+declare ptr @"fs::read_dir"(ptr) #3
 
-declare { i64, ptr } @"fs::join"(ptr, ptr) #0
+declare { i64, ptr } @"fs::join"(ptr, ptr) #3
 
-define { i64, ptr } @"formatter::read_stdin_all"() #0 {
+define { i64, ptr } @"formatter::read_stdin_all"() #3 {
 entry:
   %builder.freeze54 = alloca { i64, ptr }, align 8
   %var.n = alloca i64, align 8
@@ -15272,7 +15026,7 @@ abort.dead:                                       ; No predecessors!
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #6
 
-define void @"formatter::write_stdout"(ptr %0) #0 {
+define void @"formatter::write_stdout"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -15332,7 +15086,7 @@ abort.dead:                                       ; No predecessors!
   br label %nulcopy.len9
 }
 
-define void @"formatter::print_line"(ptr %0) #0 {
+define void @"formatter::print_line"(ptr %0) #3 {
 entry:
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -15388,7 +15142,7 @@ abort.dead12:                                     ; No predecessors!
   br label %concat.tot.len10
 }
 
-define void @"formatter::print_fmt_help"() #0 {
+define void @"formatter::print_fmt_help"() #3 {
 entry:
   call void @"formatter::print_line"(ptr @str.75.struct)
   call void @"formatter::print_line"(ptr @str.12.struct)
@@ -15400,7 +15154,7 @@ entry:
   ret void
 }
 
-define i64 @"formatter::main"(i64 %0) #0 {
+define i64 @"formatter::main"(i64 %0) #3 {
 entry:
   %var.err510 = alloca ptr, align 8
   %var._509 = alloca ptr, align 8
@@ -16636,20 +16390,20 @@ choice.exit566:                                   ; preds = %choice.else565, %ch
   br label %choice.exit357
 }
 
-declare { i64, ptr } @"sys::argv_string"(i64) #0
+declare { i64, ptr } @"sys::argv_string"(i64) #3
 
-declare void @"log::error"(ptr) #0
+declare void @"log::error"(ptr) #3
 
-declare i1 @"fs::exists"(ptr) #0
+declare i1 @"fs::exists"(ptr) #3
 
-declare { i64, ptr } @"fs::read_to_string"(ptr) #0
+declare { i64, ptr } @"fs::read_to_string"(ptr) #3
 
-declare i1 @"fs::write_file"(ptr, ptr) #0
+declare i1 @"fs::write_file"(ptr, ptr) #3
 
-attributes #0 = { "nounwind" }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { alwaysinline "nounwind" }
-attributes #3 = { noinline "nounwind" }
+attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { alwaysinline "nounwind" }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
