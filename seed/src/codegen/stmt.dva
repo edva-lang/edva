@@ -4169,8 +4169,7 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
       |
          get_or_create_dyn_fn_ptr(cg, fd.name, <+ fn +>)
    runtime::mark_nounwind(cg, fn)
-   is_inline_hint_fn(fd.name)
-      | runtime::mark_fn_enum_attr(cg, fn, "inlinehint")
+   mark_inline_preference(cg, fn, fd.name)
    cg.current_fn = fn
    cg.in_fn = <+>
    entry = LLVMAppendBasicBlock(fn, "entry")
@@ -6225,7 +6224,9 @@ codegen_typed_eval_block_step_tail = cg, exprs, i, n, tail_k =>
          types::g.unboxed_ret_tail = 0
          is_last
             | v
-            | codegen_typed_eval_block_step_tail(cg, exprs, i + 1, n, tail_k)
+            |
+               types::vra_bound_after_guard(cg, te)
+               codegen_typed_eval_block_step_tail(cg, exprs, i + 1, n, tail_k)
 
 codegen_typed_eval_block_step: types::Cg, tast::TypedExprs, Int, Int => (Addr, ast::ValueType)
 codegen_typed_eval_block_step = cg, exprs, i, n =>
@@ -6467,7 +6468,11 @@ codegen_typed_eval_block_tail = cg, exprs, tail_k =>
    eff_tail = !has_alloc | tail_k | 0
    binding = tast::block_binding_name(exprs)
    saved_ranges = types::vra_enter_binding(binding)
+   nr = ?types::vra.locals
+   nb = ?types::vra.bounded_idxs
    last = codegen_typed_eval_block_step_tail(cg, exprs, 0, ?exprs, eff_tail)
+   types::vra_truncate_locals(nr)
+   types::vra_truncate_bounded(nb)
    expr::codegen_restore_scope_leave(cg, mark)
    escapes_addr = types::is_ptr_vt(last.1) ||
      (?exprs > 0 && tast_expr_has_scoped_addr(cg, exprs(?exprs - 1)!!, var_threshold))
@@ -6757,9 +6762,9 @@ str_var_only_safe_uses = cg, name, te, safe =>
       [LitInt, LitFloat, LitStr, LitRune, LitFlag, LitUnit, CycleJump] <+>
       [Var v] (v.0 == name | safe | <+>)
       [Unary u]
-         u.0 [Length]
-            | str_var_only_safe_uses(cg, name, u.1, <+>)
-            | str_var_only_safe_uses(cg, name, u.1, <->)
+         header_projection = types::g.analyzing_str_header && (u.0 [AddrOf]) &&
+           types::is_str_vt(types::vt_from_ti_cg(cg, u.1.ti))
+         str_var_only_safe_uses(cg, name, u.1, (u.0 [Length]) || header_projection)
       [Bin b]
          b.0 [Seq]
             | str_var_only_safe_uses(cg, name, b.1, <->) &&
@@ -6856,9 +6861,18 @@ fn_ret_unboxes_str = cg =>
       | u => (u.1 [1, 2])
       | <->
 
+mark_inline_preference: types::Cg, Addr, String => ()
+mark_inline_preference = cg, fn, name =>
+   name
+      ["str::#find_substring_from"]
+         // Keep the full substring retry loop out of the byte-search entry point.
+         runtime::mark_fn_enum_attr(cg, fn, "noinline")
+      |
+         is_inline_hint_fn(name) | runtime::mark_fn_enum_attr(cg, fn, "inlinehint")
+
 is_inline_hint_fn: String => <>
 is_inline_hint_fn = fn =>
-   fn ["str::find", "str::find_from", "str::rfind", "str::starts_with",
+   fn ["str::#load_search_word", "str::find", "str::find_from", "str::rfind", "str::starts_with",
      "str::ends_with", "str::contains", "str::index_of", "str::last_index_of",
      "str::is_empty", "str::is_blank", "str::is_ws", "str::trim_start",
      "str::trim_end", "str::trim", "str::split_once",
@@ -6978,9 +6992,10 @@ callee_param_str_safe_d = cg, fname, param_idx, depth =>
    sum_opt
       | s =>
          bit = 1 .<. param_idx
-         !s.may_arena_effect && ((s.param_str_read_only_mask .&. bit) != 0) &&
-           ((s.param_mutated_mask .&. bit) == 0) &&
-           ((s.param_escapes_mask .&. bit) == 0)
+         header_ok = types::g.analyzing_str_header && ((s.param_str_header_mask .&. bit) != 0)
+         str_ok = ((s.param_str_read_only_mask .&. bit) != 0) &&
+           ((s.param_mutated_mask .&. bit) == 0) && ((s.param_escapes_mask .&. bit) == 0)
+         !s.may_arena_effect && (header_ok || str_ok)
       |
          rname = types::resolve_fn_name(cg, fname)
          eff_name = rname != "" | rname | fname
@@ -7016,8 +7031,12 @@ str_slice_var_non_escaping = cg, name =>
    types::g.current_fn_body
       | fn_body =>
          tail_safe = fn_ret_unboxes_str(cg)
-         count_var_assigns(name, fn_body) == 1 &&
+         saved = types::g.analyzing_str_header
+         types::g.analyzing_str_header = <+>
+         safe = count_var_assigns(name, fn_body) == 1 &&
            str_var_only_safe_uses(cg, name, fn_body, tail_safe)
+         types::g.analyzing_str_header = saved
+         safe
       | <->
 
 param_proj_exprs_safe: types::Cg, String, tast::TypedExprs, Int, Int => <>
@@ -7820,8 +7839,9 @@ fneff_scan_opt = cg, params, opt, acc, in_tail =>
       fneff_scan_expr(cg, params, e, acc, in_tail)
 
 // Computes a single function summary step given the current fixed-point table.
-compute_one_fn_summary: types::Cg, String, ast::Names, tast::TypedExpr => types::FnEffectSummary
-compute_one_fn_summary = cg, fname, params, body =>
+compute_one_fn_summary: types::Cg, String, ast::Names, tast::TypedExpr,
+  ast::TypeInfo => types::FnEffectSummary
+compute_one_fn_summary = cg, fname, params, body, fn_ti =>
    nparams = ?params
    saved_fn_body = types::g.current_fn_body
    saved_fn_params = types::g.current_fn_params
@@ -7842,6 +7862,8 @@ compute_one_fn_summary = cg, fname, params, body =>
    retained_mask = acc(6)!!
    7 @ si => acc(si) = 0 !| _
    fneff_or_slot(acc, 2, esc_mask .|. ret_alias_mask .|. retained_mask)
+   ptis = fn_ti [Fn f] f.1 | ast::VInfos()
+   headers' = 0
    nparams @ i =>
       i < 62
          |
@@ -7851,6 +7873,13 @@ compute_one_fn_summary = cg, fname, params, body =>
             str_ok = no_assign && ((mut_mask .&. bit) == 0) &&
               ((retained_mask .&. bit) == 0) && ((ret_alias_mask .&. bit) == 0) &&
               str_var_only_safe_uses(cg, pname, body, <->)
+            no_assign && i < ?ptis && types::is_str_vt(types::vt_from_ti_cg(cg, ptis(i)!!))
+               |
+                  saved_header = types::g.analyzing_str_header
+                  types::g.analyzing_str_header = <+>
+                  header_ok = str_var_only_safe_uses(cg, pname, body, <->)
+                  types::g.analyzing_str_header = saved_header
+                  header_ok | headers' = (headers' .|. bit)
             rec_ok = no_assign && ((mut_mask .&. bit) == 0) &&
               ((retained_mask .&. bit) == 0) && ((ret_alias_mask .&. bit) == 0) &&
               param_proj_safe(cg, pname, body, <->, <->)
@@ -7877,7 +7906,8 @@ compute_one_fn_summary = cg, fname, params, body =>
       inv_mask,
       acc(2)!!,
       ret_alias_mask,
-      retained_mask .|. acc(6)!!
+      retained_mask .|. acc(6)!!,
+      headers'
    )
 
 // Incrementally registers and computes an effect summary for a newly specialized
@@ -7910,7 +7940,7 @@ register_mono_fn_summary = cg, fname, params, body, fn_ti =>
    )
    3 @ _iter =>
       old_s = types::fneff.summaries(idx)!!
-      next_s = compute_one_fn_summary(cg, fname, params, body)
+      next_s = compute_one_fn_summary(cg, fname, params, body, fn_ti)
       joined = types::FnEffectSummary(
          fname,
          old_s.nparams,
@@ -8002,12 +8032,14 @@ run_typed_fn_summaries = cg, prog =>
          0,
          0,
          0,
-         0
+         0,
+         all_bits
       )
    types::fneff.ready = <+>
    // Monotone fixed-point iteration (converges in <= 8 passes on recursive SCCs;
    // any unconverged cycle after 8 passes is already soundly conservative because
    // may_arena_effect/mut/inv/esc/ret_alias/retained only grow monotonically and str_ro/rec_proj only shrink).
+   stable' = <->
    8 @ iter_k =>
       changed' = <->
       ?types::fneff.entries @ fi =>
@@ -8015,7 +8047,7 @@ run_typed_fn_summaries = cg, prog =>
          fname = ent.name
          cg.current_module = types::decl_module(fname, 0)
          old_s = types::fneff.summaries(fi)!!
-         next_s = compute_one_fn_summary(cg, fname, ent.params, ent.body)
+         next_s = compute_one_fn_summary(cg, fname, ent.params, ent.body, ent.fn_ti)
          joined = types::FnEffectSummary(
             fname,
             old_s.nparams,
@@ -8029,7 +8061,8 @@ run_typed_fn_summaries = cg, prog =>
             old_s.param_invoked_mask .|. next_s.param_invoked_mask,
             old_s.param_escapes_mask .|. next_s.param_escapes_mask,
             old_s.param_ret_alias_mask .|. next_s.param_ret_alias_mask,
-            old_s.param_retained_mask .|. next_s.param_retained_mask
+            old_s.param_retained_mask .|. next_s.param_retained_mask,
+            old_s.param_str_header_mask .&. next_s.param_str_header_mask
          )
          same = (joined.may_arena_effect == old_s.may_arena_effect) &&
            (joined.may_read_global == old_s.may_read_global) &&
@@ -8040,12 +8073,21 @@ run_typed_fn_summaries = cg, prog =>
            (joined.param_invoked_mask == old_s.param_invoked_mask) &&
            (joined.param_escapes_mask == old_s.param_escapes_mask) &&
            (joined.param_ret_alias_mask == old_s.param_ret_alias_mask) &&
-           (joined.param_retained_mask == old_s.param_retained_mask)
+           (joined.param_retained_mask == old_s.param_retained_mask) &&
+           (joined.param_str_header_mask == old_s.param_str_header_mask)
          !same
             |
                types::fneff.summaries(fi) = joined !| _
                changed' = <+>
-      !changed' | -->
+      !changed'
+         |
+            stable' = <+>
+            -->
+   // Incomplete proofs cannot authorize a stack descriptor.
+   !stable'
+      |
+         types::fneff.summaries @ item, i =>
+            types::fneff.summaries(i) = item(param_str_header_mask = 0) !| _
    cg.current_module = saved_mod
 
 count_builder_inits: String, tast::TypedExpr => Int
@@ -9449,8 +9491,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
       |
          get_or_create_dyn_fn_ptr(cg, name, <+ fn +>)
    runtime::mark_nounwind(cg, fn)
-   is_inline_hint_fn(name)
-      | runtime::mark_fn_enum_attr(cg, fn, "inlinehint")
+   mark_inline_preference(cg, fn, name)
    cg.current_fn = fn
    cg.in_fn = <+>
    cg.in_restore_scope = 0

@@ -3502,5 +3502,94 @@ for opt in -O0 -O2; do
 done
 echo "PASS"
 
+# --- Test 68: guarded byte offsets and String slice header lifetimes ---
+echo -n "Testing guarded String offsets and slice headers... "
+T68_DIR="$TMPDIR/t68_str"
+mkdir -p "$T68_DIR"
+cat >"$T68_DIR/check.dva" <<'DVA'
+#use io
+#use str
+#use sys
+
+::kept = ""
+
+#export word_bytes: String, Int => Int
+word_bytes = s, i =>
+   limit = ?s - 7
+   (i < 0 || i !< limit) | --| -1
+   s(i) + s(i + 1) + s(i + 2) + s(i + 3) + s(i + 4) + s(i + 5) + s(i + 6) + s(i + 7)
+
+#export ninth: String, Int => Int
+ninth = s, i =>
+   (i < 0 || i !< ?s - 7) | --| -1
+   s(i + 8)
+
+wrapped_bound: String, Int => Int
+wrapped_bound = s, cap =>
+   limit = %min(?s, cap) - 1
+   0..limit @ i =>
+      --| s(i)
+   -1
+
+#export find_on_slice: String => Int
+find_on_slice = s =>
+   view = s(1..)
+   str::find(view, " ") |_| -1
+
+save_view: String => ()
+save_view = s =>
+   ::kept = s
+
+#export retain_slice: String => ()
+retain_slice = s =>
+   view = s(1..)
+   save_view(view)
+
+mode = sys::argv(1) |_| ""
+mode == "trap" | io::out $ ninth("abcdefgh", 0)
+mode == "wrap" | io::out $ wrapped_bound("", 0 - 9223372036854775807 - 1)
+io::out $ word_bytes("abcdefghi", 1)
+io::out $ word_bytes("abcdefg", 0)
+io::out $ word_bytes("abcdefgh", 0 - 1)
+io::out $ find_on_slice("Xabc def")
+retain_slice("Xretained")
+io::out $ ::kept
+DVA
+for opt in -O0 -O2; do
+    timeout 30 ./edva "$T68_DIR/check.dva" "$opt" --no-cache \
+        -o "$T68_DIR/program" < /dev/null >"$T68_DIR/build.log" 2>&1
+    timeout 10 "$T68_DIR/program" >"$T68_DIR/out"
+    printf '812\n-1\n-1\n3\nretained\n' >"$T68_DIR/expected"
+    diff -u "$T68_DIR/expected" "$T68_DIR/out"
+    for mode in trap wrap; do
+        status=0
+        timeout 10 "$T68_DIR/program" "$mode" >"$T68_DIR/trap.log" 2>&1 || status=$?
+        if [ "$status" -ne 1 ] || ! grep -Fq 'E4006:' "$T68_DIR/trap.log"; then
+            echo "FAILED: $mode lost an out-of-bounds diagnostic"
+            cat "$T68_DIR/trap.log"
+            exit 1
+        fi
+    done
+done
+for target in native wasm; do
+    args=()
+    if [ "$target" = wasm ]; then args+=(-target wasm32-unknown-unknown); fi
+    timeout 30 ./edva "$T68_DIR/check.dva" -O2 --ir --no-cache "${args[@]}" \
+        -o "$T68_DIR/$target" < /dev/null >"$T68_DIR/ir.log" 2>&1
+    sed -n '/^define .* @word_bytes(/,/^}/p' "$T68_DIR/$target.ll" >"$T68_DIR/word.ir"
+    if [ ! -s "$T68_DIR/word.ir" ] || grep -q 'str_oob_msg' "$T68_DIR/word.ir"; then
+        echo "FAILED: the width-eight guard did not eliminate byte bounds checks on $target"
+        exit 1
+    fi
+    sed -n '/^define .* @find_on_slice(/,/^}/p' "$T68_DIR/$target.ll" >"$T68_DIR/find.ir"
+    sed -n '/^define .* @retain_slice(/,/^}/p' "$T68_DIR/$target.ll" >"$T68_DIR/retain.ir"
+    if ! grep -Fq 'alloca { i64, ptr }' "$T68_DIR/find.ir" ||
+       ! grep -Eq 'call ptr @dva_arena_alloc.*i64 16' "$T68_DIR/retain.ir"; then
+        echo "FAILED: String descriptor allocation did not follow its lifetime on $target"
+        exit 1
+    fi
+done
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

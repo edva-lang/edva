@@ -11908,6 +11908,7 @@ declare { i64, ptr } @"json::format_number"(double) #3
 
 define void @"lsp::send_result"(ptr %0, ptr %1) #3 {
 entry:
+  %concat.str = alloca { i64, ptr }, align 8
   %call.res = call { i64, ptr } @"lsp::format_id_json"(ptr %0)
   %call.res.fca.0.extract = extractvalue { i64, ptr } %call.res, 0
   %call.res.fca.1.extract = extractvalue { i64, ptr } %call.res, 1
@@ -11942,8 +11943,6 @@ entry:
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst42, ptr align 1 @str.44, i64 1, i1 false)
   %concat.nul = getelementptr i8, ptr %concat.buf, i64 %sum27
   store i8 0, ptr %concat.nul, align 1
-  %arena.cur43 = load ptr, ptr @dva_active_arena_tls, align 8
-  %concat.str = call ptr @dva_arena_alloc(ptr %arena.cur43, i64 16)
   store i64 %sum27, ptr %concat.str, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   store ptr %concat.buf, ptr %str.build.data.gep, align 8

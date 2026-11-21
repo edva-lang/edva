@@ -21,6 +21,17 @@
    c_memchr = memchr: (ptr: Addr, ch: Int, n: Int) => Addr
 
 #private
+   // Assemble the word from safe byte accesses. The guard proves all eight
+   // offsets fit, and LLVM can combine the contiguous loads.
+   load_search_word: String, Int => u64
+   load_search_word = s, p =>
+      (p < 0 || p !< ?s - 7) | --| 0u64
+      lo = u64(s(p)) .|. (u64(s(p + 1)) .<. 8) .|.
+         (u64(s(p + 2)) .<. 16) .|. (u64(s(p + 3)) .<. 24)
+      hi = u64(s(p + 4)) .|. (u64(s(p + 5)) .<. 8) .|.
+         (u64(s(p + 6)) .<. 16) .|. (u64(s(p + 7)) .<. 24)
+      lo .|. (hi .<. 32)
+
    find_byte_from: String, Int, Int => Int
    find_byte_from = s, ch, start =>
       ls = ?s
@@ -38,10 +49,8 @@
                   pat = u64(ch) * 0x0101010101010101u64
                   p' = st
                   0.. @
-                     p' + 8 > ls | -->
-                     lo = u64(s(p')) .|. (u64(s(p' + 1)) .<. 8) .|. (u64(s(p' + 2)) .<. 16) .|. (u64(s(p' + 3)) .<. 24)
-                     hi = u64(s(p' + 4)) .|. (u64(s(p' + 5)) .<. 8) .|. (u64(s(p' + 6)) .<. 16) .|. (u64(s(p' + 7)) .<. 24)
-                     w = lo .|. (hi .<. 32)
+                     p' !< ls - 7 | -->
+                     w = load_search_word(s, p')
                      x = w .^. pat
                      m = (x - 0x0101010101010101u64) .&. (.!. x) .&. 0x8080808080808080u64
                      m != 0u64 | --| p' + Int(%ctz(m) .>. 3)
@@ -55,6 +64,21 @@
          raw_base = Int(base) .&. 0xFFFFFFFFFFFF
          hit = c_memchr(base + st, ch, rem)
          hit == Addr(0) | -1 | (Int(hit) - raw_base)
+
+   find_substring_from: String, String, Int, Int => < Int | >
+   find_substring_from = s, needle, start, limit =>
+      ln = ?needle
+      first = needle(0)
+      last = needle(ln - 1)
+      pos' = start
+      0.. @
+         hit = find_byte_from(s, first, pos')
+         (hit < 0 || hit > limit) | --| <-->
+         s(hit + ln - 1) == last &&
+           (ln == 2 || s((hit + 1)..(hit + ln - 1)) == needle(1..(ln - 1)))
+            | --| <+ hit +>
+         pos' = hit + 1
+      <-->
 
 #public
    is_digit: Int => <>
@@ -290,30 +314,14 @@
    find_from = s, needle, start =>
       ls = ?s
       ln = ?needle
-      st = start < 0 | 0 | start
-      ln == 0
-         | (st !> ls | <+ st +> | <-->)
-         |
-            st + ln > ls
-               | <-->
-               |
-                  ln == 1
-                     |
-                        pos = find_byte_from(s, needle(0), st)
-                        pos < 0 | <--> | <+ pos +>
-                     |
-                        limit = ls - ln
-                        first_b = needle(0)
-                        last_b = needle(ln - 1)
-                        pos' = st
-                        0.. @
-                           hit = find_byte_from(s, first_b, pos')
-                           (hit < 0 || hit > limit) | --| <-->
-                           s(hit + ln - 1) == last_b &&
-                             (ln == 2 || s((hit + 1)..(hit + ln - 1)) == needle(1..(ln - 1)))
-                              | --| <+ hit +>
-                           pos' = hit + 1
-                        <-->
+      st = %max(start, 0)
+      (st > ls || ln > ls - st) | --| <-->
+      ln
+         [0] <+ st +>
+         [1]
+            pos = find_byte_from(s, needle(0), st)
+            pos < 0 | <--> | <+ pos +>
+         | find_substring_from(s, needle, st, ls - ln)
 
    find: String, String => < Int | >
    find = s, needle => str::find_from(s, needle, 0)

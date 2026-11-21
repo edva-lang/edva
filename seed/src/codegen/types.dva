@@ -271,7 +271,8 @@ param_clo_tys: Addrs,
    inline_ret_bb: Addr = sys::addr_null,
    inline_ret_slot: Addr = sys::addr_null,
    validated_str_vals: Addrs = Addrs(),
-   escape_check_depth: Int = 0
+   escape_check_depth: Int = 0,
+   analyzing_str_header: <> = <->
 )
 
 ::g = GlobalState(
@@ -293,9 +294,10 @@ param_clo_tys: Addrs,
 #type VraIndex String ^ Int
 #type VraLocal (name: String, rng: VraRange)
 #type VraLocals VraLocal{}
-#type BoundedStrIdx (idx_var: String, str_var: String)
+#type BoundedStrIdx (idx_var: String, str_var: String, slack: Int = 0)
 #type BoundedStrIdxs BoundedStrIdx{}
-#type LenVarEntry (len_var: String, str_var: String)
+#type StrLenBound (str_var: String, slack: Int)
+#type LenVarEntry (len_var: String, str_var: String, slack: Int)
 #type LenVarEntries LenVarEntry{}
 #type NamedShapeMeta (shape_key: String, anon_sig: String, field_names: ast::Names)
 #type NamedShapeMetas NamedShapeMeta{}
@@ -328,7 +330,9 @@ param_clo_tys: Addrs,
    param_invoked_mask: Int,
    param_escapes_mask: Int,
    param_ret_alias_mask: Int = 0,
-   param_retained_mask: Int = 0
+   param_retained_mask: Int = 0,
+   // Byte-address uses can still leave the separate String descriptor local.
+   param_str_header_mask: Int = 0
 )
 #type FnEffectSummaries FnEffectSummary{}
 #type FnBodyEntry (
@@ -6348,50 +6352,81 @@ vra_imm_var = cg, te, want_int =>
          type_ok && imm_ok | v.0 | ""
       | ""
 
-vra_len_var_root: Cg, String => String
-vra_len_var_root = cg, name =>
-   has_str(vra.cur_muts, name) | --| ""
+vra_len_var_bound: String => <StrLenBound|>
+vra_len_var_bound = name =>
+   has_str(vra.cur_muts, name) | --| <-->
    n = ?vra.len_vars
    n @ rev_i =>
-      i = n - 1 - rev_i
-      lv = vra.len_vars(i)!!
-      lv.len_var == name | --| lv.str_var
-   ""
+      lv = vra.len_vars(n - 1 - rev_i)!!
+      lv.len_var == name | --| <+ StrLenBound(lv.str_var, lv.slack) +>
+   <-->
 
-vra_str_bound_var: Cg, tast::TypedExpr => String
-vra_str_bound_var = cg, te =>
+vra_str_len_bound: Cg, tast::TypedExpr => <StrLenBound|>
+vra_str_len_bound = cg, te =>
    te.kind
       [Unary u]
-         res_u = u.0 [Length] | vra_imm_var(cg, u.1, <->) | ""
-         res_u
+         sv = u.0 [Length] | vra_imm_var(cg, u.1, <->) | ""
+         sv != "" | <+ StrLenBound(sv, 0) +> | <-->
       [Var v]
-         res_v = !v.2 && !has_str(vra.cur_muts, v.0) && !is_marked_global_name(cg, v.0)
-            | vra_len_var_root(cg, v.0)
-            | ""
-         res_v
+         vra_imm_var(cg, te, <+>) == "" | <--> | vra_len_var_bound(v.0)
       [Bin b]
-         res_b = b.0 [Sub]
-            |
-               k = b.2.kind [LitInt kv] kv | -1
-               k !< 0 | vra_str_bound_var(cg, b.1) | ""
-            | ""
-         res_b
+         k = (b.0 [Sub]) | (b.2.kind [LitInt n] n | -1) | -1
+         k < 0 | --| <-->
+         // The inequality survives subtraction only if it cannot wrap.
+         lhs = vra_eval(cg, b.1)
+         lhs.state != 1 || lhs.lo < const::min_i64 + k | --| <-->
+         bound = vra_str_len_bound(cg, b.1)
+         bound
+            | rb =>
+               sum = vra_checked_add(rb.slack, k)
+               sum $+> (slack => StrLenBound(rb.str_var, slack))
       [Call c]
-         res_c = c.0 == "%min" && ?c.2 == 2
+         c.0 == "%min" && ?c.2 == 2
             |
-               r0 = vra_str_bound_var(cg, c.2(0)!!)
-               r0 != "" | r0 | vra_str_bound_var(cg, c.2(1)!!)
-            | ""
-         res_c
-      | ""
+               first = vra_str_len_bound(cg, c.2(0)!!)
+               <>(first) | first | vra_str_len_bound(cg, c.2(1)!!)
+            | <-->
+      | <-->
 
 vra_record_len_var: Cg, String, tast::TypedExpr => ()
 vra_record_len_var = cg, lhs_name, rhs_te =>
    vra.enabled && lhs_name != "" && !has_str(vra.cur_muts, lhs_name) &&
      !is_marked_global_name(cg, lhs_name)
         |
-           sv = vra_str_bound_var(cg, rhs_te)
-           sv != "" | vra.len_vars += LenVarEntry(lhs_name, sv)
+           vra_str_len_bound(cg, rhs_te)
+              | bound => vra.len_vars += LenVarEntry(lhs_name, bound.str_var, bound.slack)
+
+// Record the consequence of a terminating guard for the rest of its block.
+vra_bound_after_guard: Cg, tast::TypedExpr => ()
+vra_bound_after_guard = cg, te =>
+   !vra.enabled | --|
+   te.kind [Choice ch]
+      ?ch.1 == 1
+         |
+            br = ch.1(0)!!
+            br.kind [Bare] && vra_expr_always_exits(br.body)
+               |
+                  vra_narrow_cond(cg, ch.0, <->, ast::Names())
+                  vra_guard_str_bound(cg, ch.0)
+
+vra_guard_str_bound: Cg, tast::TypedExpr => ()
+vra_guard_str_bound = cg, test =>
+   test.kind [Bin b]
+      b.0
+         [Or]
+            vra_guard_str_bound(cg, b.1)
+            vra_guard_str_bound(cg, b.2)
+         [NotLt] vra_add_str_bound(cg, b.1, b.2)
+         [NotGt] vra_add_str_bound(cg, b.2, b.1)
+
+vra_add_str_bound: Cg, tast::TypedExpr, tast::TypedExpr => ()
+vra_add_str_bound = cg, idx, limit =>
+   name = vra_imm_var(cg, idx, <+>)
+   name == "" | --|
+   nr = vra_lookup_local_var(cg, name)
+   nr.state != 1 || nr.lo < 0 | --|
+   vra_str_len_bound(cg, limit)
+      | bound => vra.bounded_idxs += BoundedStrIdx(name, bound.str_var, bound.slack)
 
 vra_fn_exists_in: ast::Names, String => <>
 vra_fn_exists_in = fn_names, target => has_str(fn_names, target)
@@ -6519,10 +6554,10 @@ vra_push_cycle_bounds_in = cg, iterable, is_rune, params, rec_eff, fn_names =>
                                  | vra_top!
                            vra.locals += VraLocal(p0, p0_rng)
                            is_zero_lo = b.1.kind [LitInt lv] (lv == 0) | <->
-                           sv = is_zero_lo && !is_unb | vra_str_bound_var(cg, b.2) | ""
-                           sv != ""
-                              |
-                                 vra.bounded_idxs += BoundedStrIdx(p0, sv)
+                           bound = is_zero_lo && !is_unb | vra_str_len_bound(cg, b.2) | <-->
+                           bound
+                              | rb =>
+                                 vra.bounded_idxs += BoundedStrIdx(p0, rb.str_var, rb.slack)
                                  bound_pushed' = <+>
                      p1_track
                         |
@@ -6539,10 +6574,9 @@ vra_push_cycle_bounds_in = cg, iterable, is_rune, params, rec_eff, fn_names =>
                                     | vra_bot!)
                                  | VraRange(1, 0, const::max_i64)
                            vra.locals += VraLocal(p0, p0_rng)
-                           sv = vra_str_bound_var(cg, iterable)
-                           sv != ""
-                              |
-                                 vra.bounded_idxs += BoundedStrIdx(p0, sv)
+                           vra_str_len_bound(cg, iterable)
+                              | rb =>
+                                 vra.bounded_idxs += BoundedStrIdx(p0, rb.str_var, rb.slack)
                                  bound_pushed' = <+>
             |
                it_vt = vt_from_ti_cg(cg, iterable.ti)
@@ -6577,10 +6611,9 @@ vra_push_cycle_bounds_in = cg, iterable, is_rune, params, rec_eff, fn_names =>
                                     | vra_bot!)
                                  | VraRange(1, 0, const::max_i64)
                            vra.locals += VraLocal(p0, p0_rng)
-                           sv = vra_str_bound_var(cg, iterable)
-                           sv != ""
-                              |
-                                 vra.bounded_idxs += BoundedStrIdx(p0, sv)
+                           vra_str_len_bound(cg, iterable)
+                              | rb =>
+                                 vra.bounded_idxs += BoundedStrIdx(p0, rb.str_var, rb.slack)
                                  bound_pushed' = <+>
          !bound_pushed' && p0 != "" && p0 != "_"
             | vra.bounded_idxs += BoundedStrIdx(p0, "")
@@ -6744,8 +6777,7 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
                           avt = vt_from_ti_cg(cg, a.5.ti)
                           vra_is_tracked_int_vt(avt) && vr.state != 2
                              | vra.locals += VraLocal(a.0, vr)
-                          sv = vra_str_bound_var(cg, a.5)
-                          sv != "" | vra.len_vars += LenVarEntry(a.0, sv)
+                          vra_record_len_var(cg, a.0, a.5)
                |
                   sr = vra_walk_expr(cg, st, rec_eff, fn_names)
                   last_r' = sr
@@ -6962,14 +6994,14 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
 vra_eval: Cg, tast::TypedExpr => VraRange
 vra_eval = cg, te => vra_walk_expr(cg, te, <->, ast::Names())
 
-vra_has_bounded_str_idx: String, String => <>
-vra_has_bounded_str_idx = idx_name, str_name =>
+vra_has_bounded_str_idx: String, String, Int => <>
+vra_has_bounded_str_idx = idx_name, str_name, offset =>
    n = ?vra.bounded_idxs
    n @ rev_i =>
       i = n - 1 - rev_i
       entry = vra.bounded_idxs(i)!!
       entry.idx_var == idx_name
-         | --| (entry.str_var == str_name && entry.str_var != "")
+         | --| (entry.str_var == str_name && offset !> entry.slack)
    <->
 
 vra_is_bounded_str_access: Cg, tast::TypedExpr, tast::TypedExpr => <>
@@ -6984,21 +7016,12 @@ vra_is_bounded_str_access = cg, target, index =>
          sv.2 || has_str(vra.cur_muts, sv.0) || is_marked_global_name(cg, sv.0)
             | <->
             |
-               idx_name0 = vra_imm_var(cg, index, <+>)
-               idx_name = idx_name0 == ""
-                  |
-                     res_bn = index.kind
-                        [Bin b]
-                           res_add = b.0 [Add]
-                              |
-                                 d = b.2.kind [LitInt dv] dv | -1
-                                 d == 0 | vra_imm_var(cg, b.1, <+>) | ""
-                              | ""
-                           res_add
-                        | ""
-                     res_bn
-                  | idx_name0
-               idx_name == "" | <-> | vra_has_bounded_str_idx(idx_name, sv.0)
+               idx = index.kind
+                  [Bin b]
+                     offset = (b.0 [Add]) | (b.2.kind [LitInt n] n | -1) | -1
+                     (vra_imm_var(cg, b.1, <+>), offset)
+                  | (vra_imm_var(cg, index, <+>), 0)
+               idx.0 != "" && idx.1 !< 0 && vra_has_bounded_str_idx(idx.0, sv.0, idx.1)
       | <->
 
 vra_register_named_shapes: Cg => ()

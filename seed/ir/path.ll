@@ -1747,6 +1747,7 @@ entry:
   %var.clen = alloca i64, align 8
   %var.rlen = alloca i64, align 8
   %var.clean = alloca ptr, align 8
+  %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.len = alloca i64, align 8
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -1766,10 +1767,8 @@ choice.then:                                      ; preds = %entry
 choice.exit:                                      ; preds = %ret.dead, %entry
   %var.load4 = load ptr, ptr %var.p, align 8
   %call.res = call { i64, ptr } @"path::win_strip_trailing_sep"(ptr %var.load4)
-  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
-  %ret.ub.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
-  store { i64, ptr } %call.res, ptr %ret.ub.alloc, align 8
-  store ptr %ret.ub.alloc, ptr %var.clean, align 8
+  store { i64, ptr } %call.res, ptr %ret.ub.salloc, align 8
+  store ptr %ret.ub.salloc, ptr %var.clean, align 8
   %var.load5 = load ptr, ptr %var.clean, align 8
   %call.res6 = call i64 @"path::win_root_len"(ptr %var.load5)
   store i64 %call.res6, ptr %var.rlen, align 8
@@ -2274,6 +2273,7 @@ entry:
   %var.clen = alloca i64, align 8
   %var.rlen = alloca i64, align 8
   %var.clean = alloca ptr, align 8
+  %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.len = alloca i64, align 8
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -2293,10 +2293,8 @@ choice.then:                                      ; preds = %entry
 choice.exit:                                      ; preds = %ret.dead, %entry
   %var.load4 = load ptr, ptr %var.p, align 8
   %call.res = call { i64, ptr } @"path::win_strip_trailing_sep"(ptr %var.load4)
-  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
-  %ret.ub.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
-  store { i64, ptr } %call.res, ptr %ret.ub.alloc, align 8
-  store ptr %ret.ub.alloc, ptr %var.clean, align 8
+  store { i64, ptr } %call.res, ptr %ret.ub.salloc, align 8
+  store ptr %ret.ub.salloc, ptr %var.clean, align 8
   %var.load5 = load ptr, ptr %var.clean, align 8
   %call.res6 = call i64 @"path::win_root_len"(ptr %var.load5)
   store i64 %call.res6, ptr %var.rlen, align 8
