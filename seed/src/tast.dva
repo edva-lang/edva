@@ -89,7 +89,8 @@
    Choice(TypedExpr, TypedBranches)
    Lambda(ast::Names, TypedExpr, TypedCaptures)
    Block(TypedExprs)
-   Assign(String, <>, <>, <>, <>, TypedExpr)
+   // The last field marks a compiler-generated lexical binding.
+   Assign(String, <>, <>, <>, <>, TypedExpr, <>)
    Cycle(TypedExpr, TypedExpr, <TypedExpr|>, <>)
    CycleJump(<>, Int)
    RamConstruct(unify::URamShape, <>, <TypedExpr|>)
@@ -249,8 +250,22 @@ mk_typed_block = exprs, ut, ti, lay, line, col =>
 mk_typed_assign: String, <>, <>, <>, <>, TypedExpr, unify::UType,
    ast::TypeInfo, TypedLayout, Int, Int => TypedExpr
 mk_typed_assign = name, mut, cmp, glob, len, val, ut, ti, lay, l, c =>
-   as_tup = (name, mut, cmp, glob, len, val)
+   as_tup = (name, mut, cmp, glob, len, val, <->)
    mk_typed_expr(TypedExprKind(Assign, as_tup), ut, ti, lay, l, c)
+
+mk_typed_local_binding: String, TypedExpr => TypedExpr
+mk_typed_local_binding = name, value =>
+   unit = mk_lit_unit(0, 0)
+   unit(kind = TypedExprKind(Assign, (name, <->, <->, <->, <->, value, <+>)))
+
+block_binding_name: TypedExprs => String
+block_binding_name = exprs =>
+   exprs(0)
+      | first =>
+         first.kind
+            [Assign a] (a.6 | a.0 | "")
+            | ""
+      | ""
 
 mk_typed_member: TypedExpr, String, Int, unify::UType, ast::TypeInfo,
    TypedLayout, Int, Int => TypedExpr

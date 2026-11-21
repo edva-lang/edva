@@ -813,28 +813,28 @@ choice.exit4:                                     ; preds = %choice.else3, %choi
   %choice.res5 = phi i64 [ 4, %choice.then2 ], [ 8, %choice.else3 ]
   store i64 %choice.res5, ptr %var.ptr_align, align 8
   %var.load = load i1, ptr %var.has_pos, align 1
-  br i1 %var.load, label %and.146.then, label %and.146.else
+  br i1 %var.load, label %and.148.then, label %and.148.else
 
-and.146.then:                                     ; preds = %choice.exit4
+and.148.then:                                     ; preds = %choice.exit4
   %var.load6 = load i1, ptr %var.has_neg, align 1
   %nottmp = xor i1 %var.load6, true
-  br label %and.146.exit
+  br label %and.148.exit
 
-and.146.else:                                     ; preds = %choice.exit4
-  br label %and.146.exit
+and.148.else:                                     ; preds = %choice.exit4
+  br label %and.148.exit
 
-and.146.exit:                                     ; preds = %and.146.else, %and.146.then
-  %and.146.phi = phi i1 [ %nottmp, %and.146.then ], [ %var.load, %and.146.else ]
-  br i1 %and.146.phi, label %choice.then7, label %choice.else8
+and.148.exit:                                     ; preds = %and.148.else, %and.148.then
+  %and.148.phi = phi i1 [ %nottmp, %and.148.then ], [ %var.load, %and.148.else ]
+  br i1 %and.148.phi, label %choice.then7, label %choice.else8
 
-choice.then7:                                     ; preds = %and.146.exit
+choice.then7:                                     ; preds = %and.148.exit
   %var.load10 = load i1, ptr %var.pos_is_niche, align 1
   br i1 %var.load10, label %choice.then11, label %choice.else12
 
-choice.else8:                                     ; preds = %and.146.exit
+choice.else8:                                     ; preds = %and.148.exit
   %var.load21 = load i1, ptr %var.has_pos, align 1
   %nottmp22 = xor i1 %var.load21, true
-  br i1 %nottmp22, label %and.147.then, label %and.147.else
+  br i1 %nottmp22, label %and.149.then, label %and.149.else
 
 choice.exit9:                                     ; preds = %choice.exit26, %choice.exit13
   %choice.res51 = phi ptr [ %choice.res20, %choice.exit13 ], [ %choice.res50, %choice.exit26 ]
@@ -857,24 +857,24 @@ choice.exit13:                                    ; preds = %choice.else12, %cho
   %choice.res20 = phi ptr [ %call.res16, %choice.then11 ], [ %call.res19, %choice.else12 ]
   br label %choice.exit9
 
-and.147.then:                                     ; preds = %choice.else8
+and.149.then:                                     ; preds = %choice.else8
   %var.load23 = load i1, ptr %var.has_neg, align 1
-  br label %and.147.exit
+  br label %and.149.exit
 
-and.147.else:                                     ; preds = %choice.else8
-  br label %and.147.exit
+and.149.else:                                     ; preds = %choice.else8
+  br label %and.149.exit
 
-and.147.exit:                                     ; preds = %and.147.else, %and.147.then
-  %and.147.phi = phi i1 [ %var.load23, %and.147.then ], [ %nottmp22, %and.147.else ]
-  br i1 %and.147.phi, label %choice.then24, label %choice.else25
+and.149.exit:                                     ; preds = %and.149.else, %and.149.then
+  %and.149.phi = phi i1 [ %var.load23, %and.149.then ], [ %nottmp22, %and.149.else ]
+  br i1 %and.149.phi, label %choice.then24, label %choice.else25
 
-choice.then24:                                    ; preds = %and.147.exit
+choice.then24:                                    ; preds = %and.149.exit
   %var.load27 = load i1, ptr %var.neg_is_niche, align 1
   br i1 %var.load27, label %choice.then28, label %choice.else29
 
-choice.else25:                                    ; preds = %and.147.exit
+choice.else25:                                    ; preds = %and.149.exit
   %var.load39 = load i1, ptr %var.has_pos, align 1
-  br i1 %var.load39, label %or.148.then, label %or.148.else
+  br i1 %var.load39, label %or.150.then, label %or.150.else
 
 choice.exit26:                                    ; preds = %choice.exit43, %choice.exit30
   %choice.res50 = phi ptr [ %choice.res38, %choice.exit30 ], [ %choice.res49, %choice.exit43 ]
@@ -897,25 +897,25 @@ choice.exit30:                                    ; preds = %choice.else29, %cho
   %choice.res38 = phi ptr [ %call.res33, %choice.then28 ], [ %call.res37, %choice.else29 ]
   br label %choice.exit26
 
-or.148.then:                                      ; preds = %choice.else25
-  br label %or.148.exit
+or.150.then:                                      ; preds = %choice.else25
+  br label %or.150.exit
 
-or.148.else:                                      ; preds = %choice.else25
+or.150.else:                                      ; preds = %choice.else25
   %var.load40 = load i1, ptr %var.has_neg, align 1
-  br label %or.148.exit
+  br label %or.150.exit
 
-or.148.exit:                                      ; preds = %or.148.else, %or.148.then
-  %or.148.phi = phi i1 [ %var.load39, %or.148.then ], [ %var.load40, %or.148.else ]
-  br i1 %or.148.phi, label %choice.then41, label %choice.else42
+or.150.exit:                                      ; preds = %or.150.else, %or.150.then
+  %or.150.phi = phi i1 [ %var.load39, %or.150.then ], [ %var.load40, %or.150.else ]
+  br i1 %or.150.phi, label %choice.then41, label %choice.else42
 
-choice.then41:                                    ; preds = %or.148.exit
+choice.then41:                                    ; preds = %or.150.exit
   %var.load44 = load i64, ptr %var.ptr_sz, align 8
   %multmp45 = mul i64 %var.load44, 2
   %var.load46 = load i64, ptr %var.ptr_align, align 8
   %call.res47 = call ptr @"tast::layout_ram_unboxed"(i64 %multmp45, i64 %var.load46)
   br label %choice.exit43
 
-choice.else42:                                    ; preds = %or.148.exit
+choice.else42:                                    ; preds = %or.150.exit
   %call.res48 = call ptr @"tast::layout_ram_flag"()
   br label %choice.exit43
 
@@ -946,8 +946,8 @@ entry:
   %var._i = alloca i64, align 8
   %var.f = alloca ptr, align 8
   %var._46 = alloca ptr, align 8
-  %loop.step.149 = alloca i64, align 8
-  %loop.idx.149 = alloca i64, align 8
+  %loop.step.151 = alloca i64, align 8
+  %loop.idx.151 = alloca i64, align 8
   %"var.max_align'" = alloca i64, align 8
   %"var.cur_off'" = alloca i64, align 8
   %var.r = alloca ptr, align 8
@@ -1009,8 +1009,8 @@ choice.exit9:                                     ; preds = %choice.else8, %choi
   %tag.match = icmp eq i64 %tag.id, 0
   br i1 %tag.match, label %choice.case, label %choice.next
 
-choice.exit14:                                    ; preds = %choice.next142, %choice.case141, %choice.case121, %choice.case101, %choice.case71, %loop.exit.149, %choice.case17, %choice.case
-  %choice.res164 = phi ptr [ %call.res16, %choice.case ], [ %rec.alloc, %choice.case17 ], [ %call.res70, %loop.exit.149 ], [ %call.res100, %choice.case71 ], [ %rec.alloc117, %choice.case101 ], [ %rec.alloc137, %choice.case121 ], [ %rec.alloc157, %choice.case141 ], [ %call.res163, %choice.next142 ]
+choice.exit14:                                    ; preds = %choice.next142, %choice.case141, %choice.case121, %choice.case101, %choice.case71, %loop.exit.151, %choice.case17, %choice.case
+  %choice.res164 = phi ptr [ %call.res16, %choice.case ], [ %rec.alloc, %choice.case17 ], [ %call.res70, %loop.exit.151 ], [ %call.res100, %choice.case71 ], [ %rec.alloc117, %choice.case101 ], [ %rec.alloc137, %choice.case121 ], [ %rec.alloc157, %choice.case141 ], [ %call.res163, %choice.next142 ]
   ret ptr %choice.res164
 
 choice.case:                                      ; preds = %choice.exit9
@@ -1095,17 +1095,17 @@ a.after:                                          ; preds = %a.create, %choice.c
   %arr.cycle.len44 = load i64, ptr %arr.cycle.len, align 8
   %arr.cycle.data = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2, i32 0, i32 1
   %arr.cycle.data45 = load ptr, ptr %arr.cycle.data, align 8
-  store i64 0, ptr %loop.idx.149, align 8
-  br label %loop.header.149
+  store i64 0, ptr %loop.idx.151, align 8
+  br label %loop.header.151
 
-loop.header.149:                                  ; preds = %loop.latch.149, %a.after
-  %counter.load = load i64, ptr %loop.idx.149, align 8
+loop.header.151:                                  ; preds = %loop.latch.151, %a.after
+  %counter.load = load i64, ptr %loop.idx.151, align 8
   %loop.cond = icmp slt i64 %counter.load, %arr.cycle.len44
-  br i1 %loop.cond, label %loop.body.149, label %loop.exit.nat.149
+  br i1 %loop.cond, label %loop.body.151, label %loop.exit.nat.151
 
-loop.body.149:                                    ; preds = %loop.header.149
+loop.body.151:                                    ; preds = %loop.header.151
   %loop.rel.i = sub i64 %counter.load, 0
-  store i64 1, ptr %loop.step.149, align 8
+  store i64 1, ptr %loop.step.151, align 8
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data45, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
@@ -1135,18 +1135,18 @@ loop.body.149:                                    ; preds = %loop.header.149
   %fld.load61 = load i64, ptr %fld.gep60, align 8
   %addtmp = add i64 %call.res58, %fld.load61
   store i64 %addtmp, ptr %"var.cur_off'", align 8
-  br label %loop.latch.149
+  br label %loop.latch.151
 
-loop.exit.nat.149:                                ; preds = %loop.header.149
-  br label %loop.exit.149
+loop.exit.nat.151:                                ; preds = %loop.header.151
+  br label %loop.exit.151
 
-loop.latch.149:                                   ; preds = %loop.body.149
-  %step.val = load i64, ptr %loop.step.149, align 8
+loop.latch.151:                                   ; preds = %loop.body.151
+  %step.val = load i64, ptr %loop.step.151, align 8
   %loop.next = add i64 %counter.load, %step.val
-  store i64 %loop.next, ptr %loop.idx.149, align 8
-  br label %loop.header.149
+  store i64 %loop.next, ptr %loop.idx.151, align 8
+  br label %loop.header.151
 
-loop.exit.149:                                    ; preds = %loop.exit.nat.149
+loop.exit.151:                                    ; preds = %loop.exit.nat.151
   %var.load62 = load i64, ptr %"var.cur_off'", align 8
   %var.load63 = load i64, ptr %"var.max_align'", align 8
   %call.res64 = call i64 @"layout::align_up"(i64 %var.load62, i64 %var.load63)

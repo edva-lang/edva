@@ -2703,8 +2703,7 @@ is_fn_vt = vt => vt [Fn]
 
 // --- TypedExpr Lowering (Milestone 2 - Unification) --------------------------
 
-// Pipeline temporaries and the lowered fold accumulator alias are assignments.
-// Check those slots before removing their writes.
+// Check pipeline temporary slots before removing their writes.
 fuse_collection_block: types::Cg, tast::TypedExpr, tast::TypedExprs => tast::TypedExprs
 fuse_collection_block = cg, te, original =>
    !cg.in_fn || cg.in_restore_scope > 0 || cg.opts.no_typed_opt || cg.opts.no_runtime
@@ -3124,13 +3123,13 @@ codegen_typed_eval = cg, te =>
             | stmt::codegen_typed_eval_block_tail(cg, body, tail_k)
             | stmt::codegen_typed_eval_block(cg, body)
       [Assign a]
-         !cg.in_fn && cg.opts.is_module && !types::name_is_in_current_module(cg, a.0)
+         !a.6 && !cg.in_fn && cg.opts.is_module && !types::name_is_in_current_module(cg, a.0)
             |
                is_lam = a.5.kind [Lambda]
                !is_lam && types::is_external_module_name(cg, a.0)
                   | stmt::declare_external_var(cg, a.0, a.5.ti)
                (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
-            | stmt::codegen_typed_eval_assign(cg, a.0, a.1, a.2, a.3, a.4, a.5, te.ti)
+            | stmt::codegen_typed_eval_assign(cg, a.0, a.1, a.2, a.3, a.4, a.5, te.ti, a.6)
       [Call c]
          expr::codegen_typed_eval_call(cg, c.0, c.1, c.2, te.ti)
       [Choice c]

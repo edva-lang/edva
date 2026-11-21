@@ -6465,10 +6465,14 @@ codegen_typed_eval_block_tail = cg, exprs, tail_k =>
    mark = expr::codegen_block_arena_mark(cg, has_alloc)
    expr::codegen_restore_scope_enter(cg, has_alloc)
    eff_tail = !has_alloc | tail_k | 0
+   binding = tast::block_binding_name(exprs)
+   saved_ranges = types::vra_enter_binding(binding)
    last = codegen_typed_eval_block_step_tail(cg, exprs, 0, ?exprs, eff_tail)
    expr::codegen_restore_scope_leave(cg, mark)
    escapes_addr = types::is_ptr_vt(last.1) ||
      (?exprs > 0 && tast_expr_has_scoped_addr(cg, exprs(?exprs - 1)!!, var_threshold))
+   binding != "" | cg.vars = truncate_vars(cg.vars, var_threshold)
+   saved_ranges | scope => types::vra_leave_scope(scope)
    has_alloc && escapes_addr
       |
          types::init_error(cg, "E3133", diag::E3133_addr_escape_restore!, 0, 0)
@@ -8307,17 +8311,17 @@ closure_var_non_escaping = cg, name =>
       | <->
 
 codegen_typed_eval_assign: types::Cg, String, <>, <>, <>, <>, tast::TypedExpr,
-  ast::TypeInfo => (Addr, ast::ValueType)
-codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
+  ast::TypeInfo, <> => (Addr, ast::ValueType)
+codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti, new_local =>
    is_fwd = val.kind [Var v] (v.0 == "<fwd>") | <->
    is_fwd
       | codegen_typed_eval_fwd(cg, name, ti)
       |
-         is_glob = glob || types::is_marked_global_name(cg, name)
+         is_glob = !new_local && (glob || types::is_marked_global_name(cg, name))
          has_slot = <>(types::var_slot(cg, name))
          has_existing = is_glob | has_slot |
             (cg.in_fn | types::has_local_var(cg, name) | has_slot)
-         is_fresh = !cmp && !has_existing
+         is_fresh = new_local || (!cmp && !has_existing)
          !is_fresh | codegen_typed_check_addr_escape(cg, name, val, ti)
          target_vt = is_fresh | ast::ValueType(Unknown) | types::var_type(cg, name)
          target_is_arr = target_vt [Array]
@@ -8437,7 +8441,7 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                                     | types::llvm_abi_type_of_ti(cg, eff_ti)
                            is_synth_loc = ?name > 5 &&
                              (name(0..5) == "_map_" || (?name > 6 && name(0..6) == "_fold_"))
-                           is_loc = !is_glob && (cg.in_fn || ?cg.cycle_breaks > 0 || is_synth_loc)
+                           is_loc = new_local || (!is_glob && (cg.in_fn || ?cg.cycle_breaks > 0 || is_synth_loc))
                            slot' = is_fresh
                               | types::create_slot(cg, name, llvm_ty, is_loc)
                               |
@@ -9009,7 +9013,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
          main::codegen_typed_eval(cg, lam.1)
       |
          main::codegen_typed_eval(cg, bfn)
-   types::vra_leave_cycle(saved_ranges)
+   types::vra_leave_scope(saved_ranges)
    cg.vars = truncate_vars(cg.vars, saved_cycle_vars)
    branch_to(cg, latch)
    LLVMPositionBuilderAtEnd(cg.builder, latch)
@@ -9029,7 +9033,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
          esc_ranges = types::vra_enter_cycle(params)
          u_some = codegen_typed_cycle_escape_construct(cg, <+>,
            <+ esc_te +>, ti)
-         types::vra_leave_cycle(esc_ranges)
+         types::vra_leave_scope(esc_ranges)
          LLVMBuildStore(cg.builder, u_some, eb.2)
          branch_to(cg, eb.1)
          LLVMPositionBuilderAtEnd(cg.builder, eb.1)
@@ -9155,7 +9159,7 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
          main::codegen_typed_eval(cg, lam.1)
       |
          main::codegen_typed_eval(cg, body_fn)
-   types::vra_leave_cycle(saved_ranges)
+   types::vra_leave_scope(saved_ranges)
    cg.vars = truncate_vars(cg.vars, saved_cycle_vars)
    branch_to(cg, latch)
    LLVMPositionBuilderAtEnd(cg.builder, latch)
@@ -9176,7 +9180,7 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
          esc_ranges = types::vra_enter_cycle(params)
          u_some = codegen_typed_cycle_escape_construct(cg, <+>,
            <+ esc_te +>, ti)
-         types::vra_leave_cycle(esc_ranges)
+         types::vra_leave_scope(esc_ranges)
          LLVMBuildStore(cg.builder, u_some, eb.2)
          branch_to(cg, eb.1)
          LLVMPositionBuilderAtEnd(cg.builder, eb.1)
@@ -9682,7 +9686,7 @@ declare_external_var = cg, name, ti =>
             !is_mono_lam
                |
                   saved_mod = enter_decl_module(cg, name)
-                  codegen_typed_eval_assign(cg, name, is_mut, <->, is_glob, <->, val, ti)
+                  codegen_typed_eval_assign(cg, name, is_mut, <->, is_glob, <->, val, ti, <->)
                   cg.current_module = saved_mod
 
 #public

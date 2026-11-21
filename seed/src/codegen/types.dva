@@ -6076,33 +6076,43 @@ vra_finalize_anon_merges = !=>
 
 #type VraCycleScope (locals: VraLocals, bounds: BoundedStrIdxs, lengths: LenVarEntries)
 
-vra_cycle_shadows: ast::Names, String => <>
-vra_cycle_shadows = params, name => name ["_", "_i"] || has_str(params, name)
+vra_scope_shadows: ast::Names, String, <>, String => <>
+vra_scope_shadows = params, binding, is_cycle, name =>
+   (is_cycle && (name ["_", "_i"])) || (binding != "" && name == binding) || has_str(params, name)
 
 // A bound depends on both the index and the collection it describes.
-vra_enter_cycle: ast::Names => VraCycleScope
-vra_enter_cycle = params =>
+vra_enter_scope: ast::Names, String, <> => VraCycleScope
+vra_enter_scope = params, binding, is_cycle =>
    saved = VraCycleScope(vra.locals, vra.bounded_idxs, vra.len_vars)
    vra.enabled
       |
          locals = VraLocals()
          saved.locals @ e =>
-            !vra_cycle_shadows(params, e.name) | locals += e
+            !vra_scope_shadows(params, binding, is_cycle, e.name) | locals += e
          bounds = BoundedStrIdxs()
          saved.bounds @ e =>
-            !(vra_cycle_shadows(params, e.idx_var) || vra_cycle_shadows(params, e.str_var))
+            !(vra_scope_shadows(params, binding, is_cycle, e.idx_var) ||
+              vra_scope_shadows(params, binding, is_cycle, e.str_var))
                | bounds += e
          lengths = LenVarEntries()
          saved.lengths @ e =>
-            !(vra_cycle_shadows(params, e.len_var) || vra_cycle_shadows(params, e.str_var))
+            !(vra_scope_shadows(params, binding, is_cycle, e.len_var) ||
+              vra_scope_shadows(params, binding, is_cycle, e.str_var))
                | lengths += e
          vra.locals = locals
          vra.bounded_idxs = bounds
          vra.len_vars = lengths
    saved
 
-vra_leave_cycle: VraCycleScope => ()
-vra_leave_cycle = saved =>
+vra_enter_cycle: ast::Names => VraCycleScope
+vra_enter_cycle = params => vra_enter_scope(params, "", <+>)
+
+vra_enter_binding: String => <VraCycleScope|>
+vra_enter_binding = name =>
+   vra.enabled && name != "" | <+ vra_enter_scope(ast::Names(), name, <->) +> | <-->
+
+vra_leave_scope: VraCycleScope => ()
+vra_leave_scope = saved =>
    vra.locals = saved.locals
    vra.bounded_idxs = saved.bounds
    vra.len_vars = saved.lengths
@@ -6718,6 +6728,7 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
       [Assign a]
          vra_walk_expr(cg, a.5, rec_eff, fn_names)
       [Block bk]
+         saved_binding = vra_enter_binding(tast::block_binding_name(bk))
          saved_locs = ?vra.locals
          saved_lvs = ?vra.len_vars
          last_r' = vra_top!
@@ -6759,6 +6770,7 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
                                              | vra_narrow_cond(cg, ch.0, <+>, fn_names)
          vra_truncate_locals(saved_locs)
          vra_truncate_len_vars(saved_lvs)
+         saved_binding | scope => vra_leave_scope(scope)
          last_r'
       [Record rfields]
          track_rf = rec_eff && vra.whole_prog && ?rfields !> 32
@@ -6858,12 +6870,12 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
             [Lambda lam]
                vra_walk_expr(cg, lam.1, rec_eff, fn_names)
             | vra_walk_expr(cg, cy.1, rec_eff, fn_names)
-         vra_leave_cycle(saved_ranges)
+         vra_leave_scope(saved_ranges)
          cy.2
             | esc =>
                esc_ranges = vra_enter_cycle(lam_params)
                vra_walk_expr(cg, esc, rec_eff, fn_names)
-               vra_leave_cycle(esc_ranges)
+               vra_leave_scope(esc_ranges)
          vra_top!
       [Lambda lam]
          saved_locs = vra.locals

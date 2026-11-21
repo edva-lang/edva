@@ -3303,5 +3303,53 @@ if [ "$(grep -c '^loop.header[.]' "$T64_DIR/eager.ir")" -ne 2 ] ||
 fi
 echo "PASS"
 
+# --- Test 65: Seeded fold accumulator scope in eager and fused lowering ---
+echo -n "Testing seeded fold accumulator scopes... "
+T65_DIR="$TMPDIR/t65_fold"
+T65_SRC=tests/pass/460_fold_bindings
+mkdir -p "$T65_DIR"
+
+cat >"$T65_DIR/bounds.dva" <<'DVA'
+#use io
+#use str
+read_shadow: String => ()
+read_shadow = text =>
+   0..?text @ i =>
+      res = ("", 1) @> (text, x => str::from_int(text(i)))
+      io::out $ res
+read_shadow("x")
+DVA
+
+for mode in eager fused; do
+    opts=()
+    if [ "$mode" = eager ]; then
+        opts+=(--no-typed-opt)
+    fi
+    for opt in -O0 -O2; do
+        timeout 30 ./edva "$T65_SRC.dva" "$opt" "${opts[@]}" --no-cache \
+            -o "$T65_DIR/$mode" < /dev/null >"$T65_DIR/$mode.log" 2>&1
+        timeout 10 "$T65_DIR/$mode" >"$T65_DIR/out"
+        diff -u "$T65_SRC.expected" "$T65_DIR/out"
+    done
+    sed -n '/^define .* @fold_shadow_fusion(/,/^}/p' "$T65_DIR/$mode.ll" >"$T65_DIR/$mode.ir"
+
+    timeout 30 ./edva "$T65_DIR/bounds.dva" -O2 "${opts[@]}" --no-cache \
+        -o "$T65_DIR/bounds" < /dev/null >"$T65_DIR/build-bounds.log" 2>&1
+    status=0
+    timeout 10 "$T65_DIR/bounds" >"$T65_DIR/bounds.log" 2>&1 || status=$?
+    if [ "$status" -ne 1 ] || ! grep -Fiq 'out of bounds' "$T65_DIR/bounds.log"; then
+        echo "FAILED: seeded accumulator reused a bound from the enclosing string"
+        cat "$T65_DIR/bounds.log"
+        exit 1
+    fi
+done
+
+if [ "$(grep -c '^loop.header[.]' "$T65_DIR/eager.ir")" -ne 2 ] ||
+   [ "$(grep -c '^loop.header[.]' "$T65_DIR/fused.ir")" -ne 1 ]; then
+    echo "FAILED: a shadowing accumulator prevented pipeline fusion"
+    exit 1
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

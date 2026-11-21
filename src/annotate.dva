@@ -2495,11 +2495,7 @@ annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
    acc_name = "_fold_acc_" + str::from_int(fold_id)
    val_name = "_fold_v_" + str::from_int(fold_id)
    step_el_name = "_fold_el_" + str::from_int(fold_id)
-   // A module root prefers qualified globals to bare root bindings.
-   module_scope = env.cur_scope == 0 && env.current_module != ""
-   module_scope | type_env::enter_scope(env)
-   prev_u = type_env::lookup_binding_exact(env, "_")
-   prev_ui = type_env::lookup_binding_exact(env, "_i")
+   type_env::enter_scope(env)
    step_info = c.body_fn
       [Fn fe]
          np = ?fe.params
@@ -2509,15 +2505,6 @@ annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
          p_acc = fe.params(0) | _ | ""
          p_elem = fe.params(1) | _ | ""
          p_idx = fe.params(2) | _ | ""
-         prev_p0 = p_acc != "" && p_acc != "_"
-            | type_env::lookup_local_exact(env, p_acc)
-            | <-->
-         prev_p1 = p_elem != "" && p_elem != "_"
-            | type_env::lookup_local_exact(env, p_elem)
-            | <-->
-         prev_p2 = p_idx != "" && p_idx != "_"
-            | type_env::lookup_local_exact(env, p_idx)
-            | <-->
          p_acc != "" && p_acc != "_"
             |
                type_env::bind_local(env, p_acc, acc_ut, acc_ti0, <->)
@@ -2536,21 +2523,6 @@ annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
             | type_env::bind_local(env, "_", eff_elem_ut, eff_elem_ti, <->)
          env.discard_result = <->
          fe_body_te = annotate_expr(ctx, env, fe.body)
-         p_acc != "" && p_acc != "_"
-            |
-               prev_p0
-                  | pp0 => type_env::bind_local(env, p_acc, pp0.ut, pp0.ti, pp0.is_mut)
-                  | type_env::unbind_local(env, p_acc)
-         p_elem != "" && p_elem != "_"
-            |
-               prev_p1
-                  | pp1 => type_env::bind_local(env, p_elem, pp1.ut, pp1.ti, pp1.is_mut)
-                  | type_env::unbind_local(env, p_elem)
-         p_idx != "" && p_idx != "_"
-            |
-               prev_p2
-                  | pp2 => type_env::bind_local(env, p_idx, pp2.ut, pp2.ti, pp2.is_mut)
-                  | type_env::unbind_local(env, p_idx)
          lparams = ast::Names()
          np < 2
             | lparams += step_el_name
@@ -2558,7 +2530,9 @@ annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
                lparams += (p_elem != "" | p_elem | step_el_name)
                np > 2
                   | lparams += (p_idx != "" | p_idx | "_i")
-         (fe_body_te, p_acc, lparams)
+         has_acc = p_acc !["", "_i"] && p_acc != p_elem && p_acc != p_idx &&
+           (p_acc != "_" || np == 1)
+         (fe_body_te, (has_acc | p_acc | ""), lparams)
       |
          p_acc = "_fold_a_" + str::from_int(fold_id)
          p_elem = "_fold_x_" + str::from_int(fold_id)
@@ -2590,18 +2564,10 @@ annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
                      cargs += ast::Expr(Var, p_elem)
                      ast::Expr(Call, ast::CallExpr("", c.body_fn, cargs, 0, 0))
          fe_body_te = annotate_expr(ctx, env, call_e)
-         type_env::unbind_local(env, p_acc)
-         type_env::unbind_local(env, p_elem)
          lparams = ast::Names()
          lparams += p_elem
          (fe_body_te, p_acc, lparams)
-   prev_u
-      | pu => type_env::bind_local(env, "_", pu.ut, pu.ti, pu.is_mut)
-      | type_env::unbind_local(env, "_")
-   prev_ui
-      | pui => type_env::bind_local(env, "_i", pui.ut, pui.ti, pui.is_mut)
-      | type_env::unbind_local(env, "_i")
-   module_scope | type_env::leave_scope(env)
+   type_env::leave_scope(env)
    env.discard_result = saved_disc
    fe_body_te = step_info.0
    p_acc_name = step_info.1
@@ -2638,9 +2604,7 @@ annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
    p_acc_name != ""
       |
          acc_var_te = tast::mk_typed_var(acc_name, 0, <+>, acc_ut, acc_ti, acc_lay, 0, 0)
-         bind_acc_te = tast::mk_typed_assign(p_acc_name, <+>, <->, <->, <->,
-           acc_var_te, unit_ut, unit_ti, unit_lay, 0, 0)
-         step_stmts += bind_acc_te
+         step_stmts += tast::mk_typed_local_binding(p_acc_name, acc_var_te)
    upd_acc_te = (is_acc_builder && is_body_unit)
       | fe_body_te
       |
@@ -2879,9 +2843,7 @@ try_unroll_seeded_ct_range_fold = ctx, env, c, seed_e, rhs_e =>
                blk_exprs = tast::TypedExprs()
                blk_exprs += tast::mk_typed_assign(acc_name, <+>, <->, <->, <->,
                  seed_f, unit_ut, unit_ti, unit_lay, 0, 0)
-               prev_p0 = p_acc != "" && p_acc != "_"
-                  | type_env::lookup_local_exact(env, p_acc)
-                  | <-->
+               type_env::enter_scope(env)
                p_acc != "" && p_acc != "_"
                   |
                      type_env::bind_local(env, p_acc, seed_f.ut, seed_f.ti, <->)
@@ -2891,26 +2853,23 @@ try_unroll_seeded_ct_range_fold = ctx, env, c, seed_e, rhs_e =>
                   saved_in = ?cur_ct_ints
                   push_ct_int(p_elem, iv)
                   p_idx != "" && p_idx != "_" | push_ct_int(p_idx, k)
-                  p_acc != "" && p_acc != "_"
+                  step = tast::TypedExprs()
+                  p_acc !["", "_"] && p_acc != p_elem && p_acc != p_idx
                      |
                         acc_ref = tast::mk_typed_var(acc_name, 0, <+>,
                           seed_f.ut, seed_f.ti, seed_f.layout, 0, 0)
-                        blk_exprs += tast::mk_typed_assign(p_acc, <+>, <->, <->, <->,
-                          acc_ref, unit_ut, unit_ti, unit_lay, 0, 0)
+                        step += tast::mk_typed_local_binding(p_acc, acc_ref)
                   body_k = alpha_rename_iter_body(env, fe_f.params, fe_f.body)
                   step_k = annotate_expr(ctx, env, body_k)
                   ok_f = unify::unify(ctx, seed_f.ut, step_k.ut)
                   !ok_f
                      | unify::add_error(ctx, 3084,
                        "Type mismatch in seeded cycle (@>) accumulator")
-                  blk_exprs += tast::mk_typed_assign(acc_name, <->, <->, <->, <->,
+                  step += tast::mk_typed_assign(acc_name, <->, <->, <->, <->,
                     step_k, unit_ut, unit_ti, unit_lay, 0, 0)
+                  blk_exprs += tast::mk_typed_block(step, unit_ut, unit_ti, unit_lay, 0, 0)
                   pop_ct_ints_to(saved_in)
-               p_acc != "" && p_acc != "_"
-                  |
-                     prev_p0
-                        | pp0 => type_env::bind_local(env, p_acc, pp0.ut, pp0.ti, pp0.is_mut)
-                        | type_env::unbind_local(env, p_acc)
+               type_env::leave_scope(env)
                type_env::unbind_local(env, acc_name)
                blk_exprs += tast::mk_typed_var(acc_name, 0, <+>,
                  seed_f.ut, seed_f.ti, seed_f.layout, 0, 0)
@@ -3752,7 +3711,7 @@ annotate_expr = ctx, env, expr =>
                      fwd_val = tast::mk_typed_expr(fwd_kind,
                        decl_ut, declared_ti, lay, 0, 0)
                      as_kind = tast::TypedExprKind(Assign,
-                       (name, is_mut, <->, <->, <->, fwd_val))
+                       (name, is_mut, <->, <->, <->, fwd_val, <->))
                      tast::mk_typed_expr(as_kind, decl_ut, declared_ti,
                        lay, 0, 0)
             |
@@ -6363,7 +6322,7 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf, is_bitfield,
                         tmp_name = "__ctor_arg_" + str::from_int(tmp_id)
                         type_env::bind_local(env, tmp_name, val_te.ut, val_te.ti, <->)
                         type_env::init_mark_whole(env, tmp_name)
-                        as_kind = tast::TypedExprKind(Assign, (tmp_name, <->, <->, <->, <->, val_te))
+                        as_kind = tast::TypedExprKind(Assign, (tmp_name, <->, <->, <->, <->, val_te, <->))
                         as_te = tast::mk_typed_expr(as_kind, val_te.ut, val_te.ti, val_te.layout, 0, 0)
                         pre_stmts += as_te
                         new_args += ast::Expr(NamedArg, ast::NamedArgExpr(na.name, ast::Expr(Var, tmp_name)))
@@ -6380,7 +6339,7 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf, is_bitfield,
                               tmp_name = "__ctor_arg_" + str::from_int(tmp_id)
                               type_env::bind_local(env, tmp_name, rhs_te.ut, rhs_te.ti, <->)
                               type_env::init_mark_whole(env, tmp_name)
-                              as_kind = tast::TypedExprKind(Assign, (tmp_name, <->, <->, <->, <->, rhs_te))
+                              as_kind = tast::TypedExprKind(Assign, (tmp_name, <->, <->, <->, <->, rhs_te, <->))
                               as_te = tast::mk_typed_expr(as_kind, rhs_te.ut, rhs_te.ti, rhs_te.layout, 0, 0)
                               pre_stmts += as_te
                               new_r = ast::RangeExpr(r.has_lhs, r.has_rhs, r.lhs, ast::Expr(Var, tmp_name), r.is_inclusive)
@@ -6402,7 +6361,7 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf, is_bitfield,
                         tmp_name = "__ctor_arg_" + str::from_int(tmp_id)
                         type_env::bind_local(env, tmp_name, arg_te.ut, arg_te.ti, <->)
                         type_env::init_mark_whole(env, tmp_name)
-                        as_kind = tast::TypedExprKind(Assign, (tmp_name, <->, <->, <->, <->, arg_te))
+                        as_kind = tast::TypedExprKind(Assign, (tmp_name, <->, <->, <->, <->, arg_te, <->))
                         as_te = tast::mk_typed_expr(as_kind, arg_te.ut, arg_te.ti, arg_te.layout, 0, 0)
                         pre_stmts += as_te
                         new_args += ast::Expr(Var, tmp_name)
@@ -6965,7 +6924,7 @@ annotate_call_normal = ctx, env, ce =>
                                  tmp_name = "__rec_upd_" + str::from_int(tmp_id)
                                  type_env::bind_local(env, tmp_name, target_te.ut, eff_tgt_ti, <->)
                                  type_env::init_mark_whole(env, tmp_name)
-                                 as_kind = tast::TypedExprKind(Assign, (tmp_name, <->, <->, <->, <->, target_te))
+                                 as_kind = tast::TypedExprKind(Assign, (tmp_name, <->, <->, <->, <->, target_te, <->))
                                  as_te = tast::mk_typed_expr(as_kind, target_te.ut, eff_tgt_ti, eff_tgt_lay, ce.line, ce.col)
                                  ctor_te = annotate_record_copy_update(ctx, env, ce,
                                    ast::Expr(Var, tmp_name), c_tgt, eff_tgt_ti, rec2)
@@ -8200,7 +8159,7 @@ annotate_record = ctx, env, re =>
                         tmp_name = "__splat_arg_" + str::from_int(tmp_id)
                         type_env::bind_local(env, tmp_name, s_te.ut, s_te.ti, <->)
                         type_env::init_mark_whole(env, tmp_name)
-                        as_kind = tast::TypedExprKind(Assign, (tmp_name, <->, <->, <->, <->, s_te))
+                        as_kind = tast::TypedExprKind(Assign, (tmp_name, <->, <->, <->, <->, s_te, <->))
                         as_te = tast::mk_typed_expr(as_kind, s_te.ut, s_te.ti, s_te.layout, 0, 0)
                         pre_stmts += as_te
                         tast::mk_typed_expr(tast::TypedExprKind(Var, (tmp_name, 0, <->)), s_te.ut, s_te.ti, s_te.layout, 0, 0)
@@ -9058,7 +9017,7 @@ refresh_typed_expr = ctx, te =>
          tast::TypedExprKind(Block, refresh_expr_list(ctx, bk))
       [Assign a]
          tast::TypedExprKind(Assign, (a.0, a.1, a.2, a.3, a.4,
-           refresh_typed_expr(ctx, a.5)))
+           refresh_typed_expr(ctx, a.5), a.6))
       [Cycle cy]
          tast::TypedExprKind(Cycle, (refresh_typed_expr(ctx, cy.0),
            refresh_typed_expr(ctx, cy.1), refresh_target(ctx, cy.2), cy.3))
@@ -10036,7 +9995,7 @@ mono_rewrite_expr = mctx, te =>
          tast::TypedExprKind(Block, mono_rewrite_list(mctx, bk))
       [Assign a]
          tast::TypedExprKind(Assign, (a.0, a.1, a.2, a.3, a.4,
-           mono_rewrite_expr(mctx, a.5)))
+           mono_rewrite_expr(mctx, a.5), a.6))
       [Cycle cy]
          new_esc = cy.2 | es => <+ mono_rewrite_expr(mctx, es) +> | <-->
          tast::TypedExprKind(Cycle, (mono_rewrite_expr(mctx, cy.0),

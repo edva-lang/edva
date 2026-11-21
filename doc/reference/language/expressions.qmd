@@ -178,6 +178,10 @@ Element, index, and key binders shadow enclosing names for the cycle body and it
 | Seeded Fold / Reduce | `(seed, items) @> body` | `Acc` | Initializes accumulator to `seed: Acc` and folds over `items` via `acc, x =>`, `acc, (a, b) =>`, `acc, x, i =>`, `acc =>`, or binary `(Acc, E) => Acc` (`(+)`, `(*)`, `fn`); returns `seed` on empty `items` |
 | Conditional Fold | `(seed, items) @> (acc, x => cond | <+ next +>)` | `Acc` | Updates accumulator on `<+ next +>` and preserves current `acc` on `<-->` |
 
+A seeded fold binds its current accumulator to an immutable parameter for each
+iteration. The step's result becomes the next accumulator. A Builder parameter
+can still append to its contents with `+=`.
+
 Inside `@>`, `--^` skips appending (map) or preserves the current `acc` (seeded fold), and `-->` stops early and returns the elements collected or `acc` accumulated so far.
 
 ```{.dva .run}
