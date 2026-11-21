@@ -1,0 +1,39 @@
+// The exported functions keep their input dynamic in emitted IR.
+apply: #param T: Type, T, (T => T) => T
+apply = value, fn => fn(value)
+
+#export dva_local_closure: Int => Int
+dva_local_closure = base =>
+   bump = value => value + base
+   bump(3) + bump(4)
+
+#export dva_generic_closure: Int => Int
+dva_generic_closure = base =>
+   bump = value => value + base
+   apply(5, bump)
+
+walk: Int, (Int => Int) => Int
+walk = n, step => n < 1 | step(3) | walk(n - 1, step) + 1
+
+#public
+   // Calls from another compilation unit keep the ordinary closure ABI.
+   invoke: (Int => Int), Int => Int
+   invoke = fn, value => fn(value)
+
+   counter: Int => (Int => Int)
+   counter = start =>
+      n' = start
+      delta =>
+         n' = n' + delta
+         n'
+
+   recurse: Int => Int
+   recurse = base => walk(3, (x => x + base))
+
+#export dva_closure_state: Int => Int
+dva_closure_state = base =>
+   next = counter(base)
+   alias = next
+   first = invoke(next, 1)
+   second = invoke(alias, 2)
+   first * 1000 + second + recurse(base)

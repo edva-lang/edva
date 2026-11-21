@@ -9,6 +9,9 @@
 #use sort
 #use mem
 
+#foreign("c")
+   c_ftruncate = ftruncate: (fd: Int, length: Int) => Int
+
 #public
 
 #type EntryLoc (
@@ -64,6 +67,7 @@ write_all = fd, data =>
    (off' < n) @
       slice = data(off'..n)
       w = libc::write(fd, slice, ?slice)
+      w < 0 && libc::errno! == 4 | --^
       w !> 0 |->
       off' = off' + w
    <+>
@@ -77,6 +81,7 @@ read_exact_at = fd, off, len =>
    got' = 0
    (got' < len) @
       r = libc::read(fd, &buf + got', len - got')
+      r < 0 && libc::errno! == 4 | --^
       r !> 0 | -->
       got' = got' + r
    got' != len
@@ -102,26 +107,37 @@ encode_record = flags, key, val =>
    rec += body_str
    +rec
 
-replay_log: Store, String => < | Error >
-replay_log = db, content =>
+truncate_tail: Store, Int, Int => < Int | Error >
+truncate_tail = db, valid_end, orig_len =>
+   rc = c_ftruncate(db.fd, valid_end)
+   rc != 0 | --| <- kv_err("failed to truncate torn trailing KV record", valid_end) +>
+   _p = libc::lseek(db.fd, valid_end, 0)
+   db.pos = valid_end
+   <+ (orig_len - valid_end) ->
+
+replay_log_impl: Store, String, <> => < Int | Error >
+replay_log_impl = db, content, recover_crc =>
    n = ?content
-   n == 0 |++>
+   n == 0 | --| <+ 0 ->
    n < 5 || content(0..5) != KV_MAGIC
-      | --| <- kv_err("invalid KV store header magic", 0) ->
+      | --| <- kv_err("invalid KV store header magic", 0) +>
    off' = 5
    (off' < n) @
       off' + 13 > n
-         | --| <- kv_err("truncated record header in KV log", off') ->
+         | --| truncate_tail(db, off', n)
       exp_crc = binary::read_u32_le(content, off')--!
       flags = content(off' + 4) .&. 0xFF
       klen = Int(binary::read_u32_le(content, off' + 5)--!)
       vlen = Int(binary::read_u32_le(content, off' + 9)--!)
       rec_end = off' + 13 + klen + vlen
-      rec_end > n
-         | --| <- kv_err("truncated record payload in KV log", off') ->
+      (klen < 0 || vlen < 0 || rec_end < off' + 13 || rec_end > n)
+         | --| truncate_tail(db, off', n)
       got_crc = hash::crc32(content(off' + 4..rec_end))
       exp_crc != got_crc
-         | --| <- kv_err("CRC-32 mismatch in KV log record", off') ->
+         |
+            recover_crc
+               | --| truncate_tail(db, off', n)
+               | --| <- kv_err("CRC-32 mismatch in KV log record", off') +>
       key = content(off' + 13..off' + 13 + klen)
       val_off = off' + 13 + klen
       flags == FLAG_PUT
@@ -129,10 +145,13 @@ replay_log = db, content =>
          |
             flags == FLAG_DEL
                | _rem = db.keydir ^- key
-               | --| <- kv_err("unknown record flag in KV log", off') ->
+               |
+                  recover_crc
+                     | --| truncate_tail(db, off', n)
+                     | --| <- kv_err("unknown record flag in KV log", off') +>
       off' = rec_end
    db.pos = n
-   <++>
+   <+ 0 ->
 
 read_all_file: String => String
 read_all_file = path =>
@@ -142,17 +161,15 @@ read_all_file = path =>
    chunk = {4096}
    0.. @
       n = libc::read(fd, &chunk, 4096)
+      n < 0 && libc::errno! == 4 | --^
       n !> 0 | -->
       ?chunk = n
       out += +chunk
    libc::close(fd)
    +out
 
-#public
-
-// Opens or creates a persistent log-structured key-value store at `path`.
-open: String => < Store | Error >
-open = path =>
+open_impl: String, <> => < (Store, Int) | Error >
+open_impl = path, recover_crc =>
    existing = read_all_file(path)
    fd = libc::open_mode(path, open_rdwr_creat_append!, 0o644)
    fd < 0 | --| <- kv_err("failed to open KV store file: " + path, 0) +>
@@ -169,13 +186,46 @@ open = path =>
                <- kv_err("failed to write KV header magic", 0) +>
             |
                db.pos = 5
-               <+ db ->
+               <+ (db, 0) ->
       |
-         replay_log(db, existing)
-            | <+ db ->
+         replay_log_impl(db, existing, recover_crc)
+            | trimmed => <+ (db, trimmed) ->
             | err =>
                libc::close(fd)
                <- err +>
+
+#public
+
+// Opens or creates a persistent log-structured key-value store at `path`.
+// Automatically truncates an incomplete torn trailing record at EOF if a prior write crashed.
+open: String => < Store | Error >
+open = path =>
+   open_impl(path, <->)
+      | pair => <+ pair.0 ->
+      | err => <- err +>
+
+// Opens or creates a persistent KV store, additionally truncating any trailing record
+// with a corrupted CRC-32 or unknown flag back to the last valid record boundary.
+open_recover: String => < Store | Error >
+open_recover = path =>
+   open_impl(path, <+>)
+      | pair => <+ pair.0 ->
+      | err => <- err +>
+
+// Repairs a KV store file in-place by truncating any torn/corrupt trailing record and
+// returns the number of trailing bytes removed (0 if the log was already clean).
+repair: String => < Int | Error >
+repair = path =>
+   open_impl(path, <+>)
+      | pair =>
+         _closed = close(pair.0)
+         <+ pair.1 ->
+      | err => <- err +>
+
+// Returns the current log file size in bytes.
+size: Store => Int
+size = db =>
+   db.pos
 
 // Closes the underlying file descriptor of `db`.
 close: Store => <>

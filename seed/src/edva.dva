@@ -2989,7 +2989,8 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
    clang_err = opts.repl_mode | 6003 | 5013
    cg_opts = codegen::CodegenOpts(opts.triple, opts.no_runtime, opts.no_main,
      dynamic_mods, dynamic_paths, opts.is_shared, compiler_exe_path,
-     opts.is_module, opts.module_name, opts.fuzz_cov, opts.no_typed_opt)
+     opts.is_module, opts.module_name, opts.fuzz_cov, opts.no_typed_opt,
+     opts.opt != "-O0")
    src_f = opts.target != "" | opts.target | "<eval>"
    annotate::set_source_file(src_f)
    annotate::set_target_triple(opts.triple)

@@ -3082,5 +3082,78 @@ for target in native wasm; do
 done
 echo "PASS"
 
+# --- Test 62: Direct closure calls, environment elimination, and closure ABI ---
+echo -n "Testing known closure specialization and escaping state... "
+T62_DIR="$TMPDIR/t62_closures"
+T62_SRC=tests/pass/457_closure_specialization
+mkdir -p "$T62_DIR"
+
+for opt in -O0 -O2; do
+    timeout 30 ./edva "$T62_SRC/main.dva" "$opt" --no-cache -o "$T62_DIR/native$opt" \
+        < /dev/null >"$T62_DIR/native$opt.log" 2>&1
+    timeout 10 "$T62_DIR/native$opt" >"$T62_DIR/out"
+    diff -u "$T62_SRC.expected" "$T62_DIR/out"
+
+    timeout 30 ./edva "$T62_SRC/closure_cases.dva" "$opt" --no-cache --ir -o "$T62_DIR/cases$opt.ll" \
+        < /dev/null >"$T62_DIR/ir$opt.log" 2>&1
+    sed -n '/^define .* @dva_local_closure(/,/^}/p' "$T62_DIR/cases$opt.ll" >"$T62_DIR/local$opt"
+    sed -n '/^define .*@"apply[$]Int"(/,/^}/p' "$T62_DIR/cases$opt.ll" >"$T62_DIR/generic$opt"
+done
+
+if ! grep -Fq 'call i64 %clo.fn.load' "$T62_DIR/local-O0" ||
+   ! grep -Fq '%env.salloc = alloca' "$T62_DIR/local-O0" ||
+   ! grep -Fq 'call i64 @"dva_local_closure$bump.' "$T62_DIR/local-O2" ||
+   grep -Eq 'clo[.]fn[.]load|alloca' "$T62_DIR/local-O2" ||
+   ! grep -Fq 'call i64 @"dva_generic_closure$bump.' "$T62_DIR/generic-O2" ||
+   grep -Fq 'call i64 %clo.fn.load' "$T62_DIR/generic-O2"; then
+    echo "FAILED: expected direct local and generic callback calls and no local environment allocation"
+    exit 1
+fi
+
+timeout 30 ./edva "$T62_SRC/closure_cases.dva" -c --module closure_cases -O2 --no-cache \
+    -o "$T62_DIR/closure_cases.o" < /dev/null >"$T62_DIR/module.log" 2>&1
+timeout 30 ./edva "$T62_SRC/main.dva" -c --entry -O2 --no-cache \
+    -o "$T62_DIR/main.o" < /dev/null >"$T62_DIR/main.log" 2>&1
+clang -Qunused-arguments -Wno-unused-command-line-argument \
+    "$T62_DIR/main.o" "$T62_DIR/closure_cases.o" \
+    "$T57_DIR/const.o" "$T57_DIR/ascii.o" "$T57_DIR/utf.o" "$T57_DIR/str.o" "$T57_DIR/mem.o" \
+    "$T57_DIR/sys.o" "$T57_DIR/libc.o" "$T57_DIR/unicode.o" "$T57_DIR/io.o" -lm -o "$T62_DIR/separate"
+timeout 10 "$T62_DIR/separate" >"$T62_DIR/out"
+diff -u "$T62_SRC.expected" "$T62_DIR/out"
+
+if command -v wasm-ld >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then
+    for opt in -O0 -O2; do
+        timeout 30 ./edva "$T62_SRC/closure_cases.dva" "$opt" --no-cache -target wasm32-unknown-unknown \
+            -o "$T62_DIR/cases.wasm" < /dev/null >"$T62_DIR/wasm$opt.log" 2>&1
+        timeout 10 node --disable-wasm-trap-handler -e '
+            const assert = require("node:assert/strict");
+            const bytes = require("node:fs").readFileSync(process.argv[1]);
+            let memory;
+            let heap;
+            const env = {
+                malloc(size) {
+                    const start = heap;
+                    heap += Math.ceil(Number(size) / 16) * 16;
+                    if (heap > memory.buffer.byteLength) {
+                        memory.grow(Math.ceil((heap - memory.buffer.byteLength) / 65536));
+                    }
+                    return start;
+                }
+            };
+            WebAssembly.instantiate(bytes, { env }).then(({ instance: { exports: e } }) => {
+                memory = e.memory;
+                heap = memory.buffer.byteLength;
+                assert.equal(e.dva_local_closure(11n), 29n);
+                assert.equal(e.dva_generic_closure(11n), 16n);
+                assert.equal(e.dva_closure_state(100n), 101209n);
+            }).catch(error => {
+                console.error(error);
+                process.exitCode = 1;
+            });
+        ' "$T62_DIR/cases.wasm"
+    done
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

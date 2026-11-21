@@ -2696,6 +2696,7 @@ codegen_destroy: types::Cg => ()
 codegen_destroy = cg =>
    types::llvm_val_opt(cg.builder) | b => LLVMDisposeBuilder(b)
    types::llvm_val_opt(cg.module) | m => LLVMDisposeModule(m)
+   types::llvm_val_opt(cg.target_machine) | tm => LLVMDisposeTargetMachine(tm)
 
 is_fn_vt: ast::ValueType => <>
 is_fn_vt = vt => vt [Fn]

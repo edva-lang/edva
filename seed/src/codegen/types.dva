@@ -149,7 +149,8 @@ empty_fndef = FnDef("", ast::Names(), ast::Expr(Var, ""))
    is_module: <>,
    module_name: String,
    fuzz_cov: <> = <->,
-   no_typed_opt: <> = <->
+   no_typed_opt: <> = <->,
+   optimize_closures: <> = <->
 )
 
 default_codegen_opts: () => CodegenOpts
@@ -159,6 +160,7 @@ default_codegen_opts = !=> CodegenOpts("", <->, <->, ast::Names(),
 #type Cg (
    module: Addr,
    builder: Addr,
+   target_machine: Addr,
    main_fn: <Addr|>,
    vars: CgVars,
    exited: <>,
@@ -222,6 +224,7 @@ param_clo_tys: Addrs,
   fn_var_start: Int,
   fn_binding_start: Int,
   opts: CodegenOpts,
+   has_closure_dispatch: <> = <->
 )
 
 #type Flags <>{}
@@ -1039,15 +1042,16 @@ codegen_init = opts =>
    target_raw' = 0
    err_raw' = 0
    res = LLVMGetTargetFromTriple(triple, &target_raw', &err_raw')
-   layout = res == 0
+   tm = res == 0
+      | LLVMCreateTargetMachine(Addr(target_raw'), triple, "", "", 2, 0, 0)
+      | sys::addr_null
+   layout = tm != sys::addr_null
       |
-         tm = LLVMCreateTargetMachine(Addr(target_raw'), triple, "", "", 2, 0, 0)
          td = LLVMCreateTargetDataLayout(tm)
          raw_l = LLVMCopyStringRepOfTargetData(td)
          l_str = c_str(raw_l)
          LLVMDisposeMessage(raw_l)
          LLVMDisposeTargetData(td)
-         LLVMDisposeTargetMachine(tm)
          l_str
       |
          err_ptr_opt = llvm_val_opt(Addr(err_raw'))
@@ -1066,8 +1070,9 @@ codegen_init = opts =>
    st2 = struct_type2(i8p, i64t)
    eff_opts = CodegenOpts(triple, opts.no_runtime, opts.no_main,
      opts.dynamic_modules, opts.dynamic_paths, opts.is_shared,
-     opts.compiler_exe, opts.is_module, opts.module_name, opts.fuzz_cov, opts.no_typed_opt)
-   Cg(module, builder, <-->, CgVars(), <->, st, ut, st2,
+     opts.compiler_exe, opts.is_module, opts.module_name, opts.fuzz_cov,
+     opts.no_typed_opt, opts.optimize_closures)
+   Cg(module, builder, tm, <-->, CgVars(), <->, st, ut, st2,
      <-->, <-->, <-->, <-->, <-->, <-->, <-->, <-->,
      0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", <-->,
      ast::Names(),

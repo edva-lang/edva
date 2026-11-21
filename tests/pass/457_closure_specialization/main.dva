@@ -1,0 +1,8 @@
+#use io
+#use ./closure_cases
+
+next = closure_cases::counter(100)
+alias = next
+io::out $ closure_cases::invoke(next, 1)
+io::out $ closure_cases::invoke(alias, 2)
+io::out $ closure_cases::recurse(11)

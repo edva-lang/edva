@@ -2469,16 +2469,29 @@ prune_write_only_globals = cg =>
             use == sys::addr_null | -->
             LLVMInstructionEraseFromParent(LLVMGetUser(use))
 
-prune_unreachable_ir: types::Cg => ()
-prune_unreachable_ir = cg =>
+optimize_emitted_ir: types::Cg => ()
+optimize_emitted_ir = cg =>
    prune_write_only_globals(cg)
+   // Scalarize local closures, then expose the fields of read-only closure
+   // parameters of internal functions to interprocedural constant propagation.
+   // LLVM bounds specialization and reuses a clone for identical arguments.
+   // After devirtualization, a second promotion can turn by-reference captures
+   // into scalar arguments, allowing SROA to release the stack environment.
+   // Externally visible signatures retain the closure ABI.
+   passes = cg.opts.optimize_closures && cg.has_closure_dispatch
+      |
+         "globaldce,function(sroa,early-cse,simplifycfg),cgscc(argpromotion)," +
+           "function(sroa,early-cse),ipsccp<func-spec>," +
+           "function(simplifycfg)," +
+           "cgscc(argpromotion),function(sroa,dce),globaldce"
+      | "globaldce"
    options = LLVMCreatePassBuilderOptions!
-   err = LLVMRunPasses(cg.module, "globaldce", sys::addr_null, options)
+   err = LLVMRunPasses(cg.module, passes, cg.target_machine, options)
    LLVMDisposePassBuilderOptions(options)
    err != sys::addr_null |
       msg = LLVMGetErrorMessage(err)
       detail = c_str(msg)
-      log::error $ "E5011: LLVM reachability pass failed: ${detail}"
+      log::error $ "E5011: LLVM IR optimization failed: ${detail}"
       LLVMDisposeErrorMessage(msg)
       cg.error = <+>
 
@@ -2531,7 +2544,7 @@ codegen_finish = cg, out_path =>
                log::error $ "E5011: LLVM module verification failed"
          cg.error = <+>
       |
-         prune_unreachable_ir(cg)
+         optimize_emitted_ir(cg)
          !cg.error | write_verified_ir(cg, out_path)
 
 // call void @dva_arena_destroy(ptr @global_arena) before a function returns.

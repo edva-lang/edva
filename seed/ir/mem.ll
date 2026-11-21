@@ -87,8 +87,7 @@ define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #1 {
 entry:
   %align.add = add i64 %1, 15
   %aligned = and i64 %align.add, -16
-  %cap.ptr = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %0, i32 0, i32 0
-  %cap = load i64, ptr %cap.ptr, align 8
+  %cap = load i64, ptr %0, align 8
   %nc.ptr = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %0, i32 0, i32 1
   %nc = load i64, ptr %nc.ptr, align 8
   %off.ptr = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %0, i32 0, i32 2
@@ -101,19 +100,23 @@ entry:
   %fast.ok = and i1 %has.chunk, %fits.safe
   br i1 %fast.ok, label %bump, label %slow
 
+common.ret:                                       ; preds = %slow, %bump
+  %common.ret.op = phi ptr [ %result, %bump ], [ %result.slow, %slow ]
+  ret ptr %common.ret.op
+
 bump:                                             ; preds = %entry
   %chunks = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %0, i32 0, i32 3
-  %last = sub i64 %nc, 1
+  %last = sub nuw i64 %nc, 1
   %slot = getelementptr [16384 x ptr], ptr %chunks, i64 0, i64 %last
   %chunk = load ptr, ptr %slot, align 8
   %result = getelementptr i8, ptr %chunk, i64 %off
   %next = add i64 %off, %aligned
   store i64 %next, ptr %off.ptr, align 8
-  ret ptr %result
+  br label %common.ret
 
 slow:                                             ; preds = %entry
   %result.slow = call ptr @dva_arena_alloc_slow(ptr %0, i64 %1)
-  ret ptr %result.slow
+  br label %common.ret
 }
 
 ; Function Attrs: noinline
@@ -173,22 +176,13 @@ declare ptr @memchr(ptr, i64, i64) #0
 
 define ptr @"mem::copy"(ptr %0, ptr %1, i64 %2) #0 {
 entry:
-  %var.bytes = alloca i64, align 8
-  %var.src = alloca ptr, align 8
-  %var.dst = alloca ptr, align 8
-  store ptr %0, ptr %var.dst, align 8
-  store ptr %1, ptr %var.src, align 8
-  store i64 %2, ptr %var.bytes, align 8
-  %var.load = load ptr, ptr %var.dst, align 8
-  %var.load1 = load ptr, ptr %var.src, align 8
-  %var.load2 = load i64, ptr %var.bytes, align 8
-  %raw.int = ptrtoint ptr %var.load to i64
+  %raw.int = ptrtoint ptr %0 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %raw.int3 = ptrtoint ptr %var.load1 to i64
+  %raw.int3 = ptrtoint ptr %1 to i64
   %raw.clean.int4 = and i64 %raw.int3, 281474976710655
   %raw.clean.ptr5 = inttoptr i64 %raw.clean.int4 to ptr
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %raw.clean.ptr, ptr align 1 %raw.clean.ptr5, i64 %var.load2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %raw.clean.ptr, ptr align 1 %raw.clean.ptr5, i64 %2, i1 false)
   ret ptr %raw.clean.ptr
 }
 
@@ -197,22 +191,13 @@ declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias
 
 define ptr @"mem::move"(ptr %0, ptr %1, i64 %2) #0 {
 entry:
-  %var.bytes = alloca i64, align 8
-  %var.src = alloca ptr, align 8
-  %var.dst = alloca ptr, align 8
-  store ptr %0, ptr %var.dst, align 8
-  store ptr %1, ptr %var.src, align 8
-  store i64 %2, ptr %var.bytes, align 8
-  %var.load = load ptr, ptr %var.dst, align 8
-  %var.load1 = load ptr, ptr %var.src, align 8
-  %var.load2 = load i64, ptr %var.bytes, align 8
-  %raw.int = ptrtoint ptr %var.load to i64
+  %raw.int = ptrtoint ptr %0 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %raw.int3 = ptrtoint ptr %var.load1 to i64
+  %raw.int3 = ptrtoint ptr %1 to i64
   %raw.clean.int4 = and i64 %raw.int3, 281474976710655
   %raw.clean.ptr5 = inttoptr i64 %raw.clean.int4 to ptr
-  call void @llvm.memmove.p0.p0.i64(ptr align 1 %raw.clean.ptr, ptr align 1 %raw.clean.ptr5, i64 %var.load2, i1 false)
+  call void @llvm.memmove.p0.p0.i64(ptr align 1 %raw.clean.ptr, ptr align 1 %raw.clean.ptr5, i64 %2, i1 false)
   ret ptr %raw.clean.ptr
 }
 
@@ -221,16 +206,10 @@ declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture read
 
 define ptr @"mem::zero"(ptr %0, i64 %1) #0 {
 entry:
-  %var.bytes = alloca i64, align 8
-  %var.dst = alloca ptr, align 8
-  store ptr %0, ptr %var.dst, align 8
-  store i64 %1, ptr %var.bytes, align 8
-  %var.load = load ptr, ptr %var.dst, align 8
-  %var.load1 = load i64, ptr %var.bytes, align 8
-  %raw.int = ptrtoint ptr %var.load to i64
+  %raw.int = ptrtoint ptr %0 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr, i8 0, i64 %var.load1, i1 false)
+  call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr, i8 0, i64 %1, i1 false)
   ret ptr %raw.clean.ptr
 }
 
@@ -239,42 +218,20 @@ declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #5
 
 define ptr @"mem::set"(ptr %0, i64 %1, i64 %2) #0 {
 entry:
-  %var.bytes = alloca i64, align 8
-  %var.val = alloca i64, align 8
-  %var.dst = alloca ptr, align 8
-  store ptr %0, ptr %var.dst, align 8
-  store i64 %1, ptr %var.val, align 8
-  store i64 %2, ptr %var.bytes, align 8
-  %var.load = load ptr, ptr %var.dst, align 8
-  %var.load1 = load i64, ptr %var.val, align 8
-  %var.load2 = load i64, ptr %var.bytes, align 8
-  %raw.int = ptrtoint ptr %var.load to i64
+  %raw.int = ptrtoint ptr %0 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %coerce.trunc = trunc i64 %var.load1 to i8
-  call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr, i8 %coerce.trunc, i64 %var.load2, i1 false)
+  %coerce.trunc = trunc i64 %1 to i8
+  call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr, i8 %coerce.trunc, i64 %2, i1 false)
   ret ptr %raw.clean.ptr
 }
 
 define ptr @"mem::align_forward"(ptr %0, i64 %1) #0 {
 entry:
-  %var.a = alloca i64, align 8
-  %var.i = alloca i64, align 8
-  %var.align = alloca i64, align 8
-  %var.addr = alloca ptr, align 8
-  store ptr %0, ptr %var.addr, align 8
-  store i64 %1, ptr %var.align, align 8
-  %var.load = load ptr, ptr %var.addr, align 8
-  %coerce.ptr2int = ptrtoint ptr %var.load to i64
-  store i64 %coerce.ptr2int, ptr %var.i, align 8
-  %var.load1 = load i64, ptr %var.align, align 8
-  %subtmp = sub i64 %var.load1, 1
-  store i64 %subtmp, ptr %var.a, align 8
-  %var.load2 = load i64, ptr %var.i, align 8
-  %var.load3 = load i64, ptr %var.a, align 8
-  %addtmp = add i64 %var.load2, %var.load3
-  %var.load4 = load i64, ptr %var.a, align 8
-  %bitnottmp = xor i64 %var.load4, -1
+  %coerce.ptr2int = ptrtoint ptr %0 to i64
+  %subtmp = sub i64 %1, 1
+  %addtmp = add i64 %coerce.ptr2int, %subtmp
+  %bitnottmp = xor i64 %subtmp, -1
   %bandtmp = and i64 %addtmp, %bitnottmp
   %cast.int2ptr = inttoptr i64 %bandtmp to ptr
   ret ptr %cast.int2ptr
@@ -282,21 +239,9 @@ entry:
 
 define i1 @"mem::is_aligned"(ptr %0, i64 %1) #0 {
 entry:
-  %var.a = alloca i64, align 8
-  %var.i = alloca i64, align 8
-  %var.align = alloca i64, align 8
-  %var.addr = alloca ptr, align 8
-  store ptr %0, ptr %var.addr, align 8
-  store i64 %1, ptr %var.align, align 8
-  %var.load = load ptr, ptr %var.addr, align 8
-  %coerce.ptr2int = ptrtoint ptr %var.load to i64
-  store i64 %coerce.ptr2int, ptr %var.i, align 8
-  %var.load1 = load i64, ptr %var.align, align 8
-  %subtmp = sub i64 %var.load1, 1
-  store i64 %subtmp, ptr %var.a, align 8
-  %var.load2 = load i64, ptr %var.i, align 8
-  %var.load3 = load i64, ptr %var.a, align 8
-  %bandtmp = and i64 %var.load2, %var.load3
+  %coerce.ptr2int = ptrtoint ptr %0 to i64
+  %subtmp = sub i64 %1, 1
+  %bandtmp = and i64 %coerce.ptr2int, %subtmp
   %cmptmp = icmp eq i64 %bandtmp, 0
   ret i1 %cmptmp
 }
@@ -309,10 +254,7 @@ entry:
 
 define ptr @"mem::set_current"(ptr %0) #0 {
 entry:
-  %var.raw = alloca ptr, align 8
-  store ptr %0, ptr %var.raw, align 8
-  %var.load = load ptr, ptr %var.raw, align 8
-  %addr.ffi.int = ptrtoint ptr %var.load to i64
+  %addr.ffi.int = ptrtoint ptr %0 to i64
   %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
   %call.res = call ptr @dva_arena_set_current(ptr %addr.ffi.clean)
@@ -321,11 +263,7 @@ entry:
 
 define i64 @"mem::save"(ptr %0) #0 {
 entry:
-  %var.a = alloca ptr, align 8
-  store ptr %0, ptr %var.a, align 8
-  %var.load = load ptr, ptr %var.a, align 8
-  %fld.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load, i32 0, i32 0
-  %fld.load = load ptr, ptr %fld.gep, align 8
+  %fld.load = load ptr, ptr %0, align 8
   %addr.ffi.int = ptrtoint ptr %fld.load to i64
   %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
@@ -335,66 +273,35 @@ entry:
 
 define void @"mem::restore_to"(ptr %0, i64 %1) #0 {
 entry:
-  %var.mark = alloca i64, align 8
-  %var.a = alloca ptr, align 8
-  store ptr %0, ptr %var.a, align 8
-  store i64 %1, ptr %var.mark, align 8
-  %var.load = load ptr, ptr %var.a, align 8
-  %fld.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load, i32 0, i32 0
-  %fld.load = load ptr, ptr %fld.gep, align 8
+  %fld.load = load ptr, ptr %0, align 8
   %addr.ffi.int = ptrtoint ptr %fld.load to i64
   %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
-  %var.load1 = load i64, ptr %var.mark, align 8
-  call void @dva_arena_restore(ptr %addr.ffi.clean, i64 %var.load1)
+  call void @dva_arena_restore(ptr %addr.ffi.clean, i64 %1)
   ret void
 }
 
 define { ptr, i64 } @"mem::arena"(i64 %0) #0 {
 entry:
-  %var.raw = alloca ptr, align 8
-  %var.sz = alloca i64, align 8
-  %var.chunk_size = alloca i64, align 8
-  store i64 %0, ptr %var.chunk_size, align 8
-  %var.load = load i64, ptr %var.chunk_size, align 8
-  %cmptmp = icmp sle i64 %var.load, 0
-  br i1 %cmptmp, label %choice.then, label %choice.else
-
-choice.then:                                      ; preds = %entry
-  br label %choice.exit
-
-choice.else:                                      ; preds = %entry
-  %var.load1 = load i64, ptr %var.chunk_size, align 8
-  br label %choice.exit
-
-choice.exit:                                      ; preds = %choice.else, %choice.then
-  %choice.res = phi i64 [ 67108864, %choice.then ], [ %var.load1, %choice.else ]
-  store i64 %choice.res, ptr %var.sz, align 8
+  %cmptmp = icmp sle i64 %0, 0
+  %. = select i1 %cmptmp, i64 67108864, i64 %0
   %call.res = call ptr @malloc(i64 131632)
-  store ptr %call.res, ptr %var.raw, align 8
-  %var.load2 = load ptr, ptr %var.raw, align 8
-  %ptr.int.l = ptrtoint ptr %var.load2 to i64
+  %ptr.int.l = ptrtoint ptr %call.res to i64
   %cmptmp3 = icmp ne i64 %ptr.int.l, 0
   br i1 %cmptmp3, label %choice.then4, label %choice.exit5
 
-choice.then4:                                     ; preds = %choice.exit
-  %var.load6 = load ptr, ptr %var.raw, align 8
-  %addr.ffi.int = ptrtoint ptr %var.load6 to i64
-  %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
+choice.then4:                                     ; preds = %entry
+  %addr.ffi.masked = and i64 %ptr.int.l, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
-  %var.load7 = load i64, ptr %var.sz, align 8
-  call void @dva_arena_init(ptr %addr.ffi.clean, i64 %var.load7)
+  call void @dva_arena_init(ptr %addr.ffi.clean, i64 %.)
   br label %choice.exit5
 
-choice.exit5:                                     ; preds = %choice.then4, %choice.exit
-  %var.load8 = load ptr, ptr %var.raw, align 8
-  %var.load9 = load i64, ptr %var.sz, align 8
+choice.exit5:                                     ; preds = %choice.then4, %entry
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, i64 }, ptr null, i32 1) to i64))
-  %rec.fld = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 0
-  store ptr %var.load8, ptr %rec.fld, align 8
+  store ptr %call.res, ptr %rec.alloc, align 8
   %rec.fld10 = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 1
-  store i64 %var.load9, ptr %rec.fld10, align 8
+  store i64 %., ptr %rec.fld10, align 8
   %ret.pack = load { ptr, i64 }, ptr %rec.alloc, align 8
   ret { ptr, i64 } %ret.pack
 }
@@ -405,34 +312,22 @@ entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, i64 }, ptr null, i32 1) to i64))
   store { ptr, i64 } %call.res, ptr %ret.ub.alloc, align 8
-  %ret.pack = load { ptr, i64 }, ptr %ret.ub.alloc, align 8
-  ret { ptr, i64 } %ret.pack
+  ret { ptr, i64 } %call.res
 }
 
 define ptr @"mem::alloc"(ptr %0, i64 %1) #0 {
 entry:
-  %var.size = alloca i64, align 8
-  %var.a = alloca ptr, align 8
-  store ptr %0, ptr %var.a, align 8
-  store i64 %1, ptr %var.size, align 8
-  %var.load = load ptr, ptr %var.a, align 8
-  %fld.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load, i32 0, i32 0
-  %fld.load = load ptr, ptr %fld.gep, align 8
+  %fld.load = load ptr, ptr %0, align 8
   %addr.ffi.int = ptrtoint ptr %fld.load to i64
   %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
-  %var.load1 = load i64, ptr %var.size, align 8
-  %call.res = call ptr @dva_arena_alloc(ptr %addr.ffi.clean, i64 %var.load1)
+  %call.res = call ptr @dva_arena_alloc(ptr %addr.ffi.clean, i64 %1)
   ret ptr %call.res
 }
 
 define void @"mem::reset"(ptr %0) #0 {
 entry:
-  %var.a = alloca ptr, align 8
-  store ptr %0, ptr %var.a, align 8
-  %var.load = load ptr, ptr %var.a, align 8
-  %fld.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load, i32 0, i32 0
-  %fld.load = load ptr, ptr %fld.gep, align 8
+  %fld.load = load ptr, ptr %0, align 8
   %addr.ffi.int = ptrtoint ptr %fld.load to i64
   %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
@@ -442,11 +337,7 @@ entry:
 
 define void @"mem::release"(ptr %0) #0 {
 entry:
-  %var.a = alloca ptr, align 8
-  store ptr %0, ptr %var.a, align 8
-  %var.load = load ptr, ptr %var.a, align 8
-  %fld.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load, i32 0, i32 0
-  %fld.load = load ptr, ptr %fld.gep, align 8
+  %fld.load = load ptr, ptr %0, align 8
   %addr.ffi.int = ptrtoint ptr %fld.load to i64
   %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
@@ -456,21 +347,14 @@ entry:
 
 define void @"mem::destroy"(ptr %0) #0 {
 entry:
-  %var.a = alloca ptr, align 8
-  store ptr %0, ptr %var.a, align 8
-  %var.load = load ptr, ptr %var.a, align 8
-  %fld.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load, i32 0, i32 0
-  %fld.load = load ptr, ptr %fld.gep, align 8
+  %fld.load = load ptr, ptr %0, align 8
   %ptr.int.l = ptrtoint ptr %fld.load to i64
   %cmptmp = icmp ne i64 %ptr.int.l, 0
   br i1 %cmptmp, label %choice.then, label %choice.exit
 
 choice.then:                                      ; preds = %entry
-  %var.load1 = load ptr, ptr %var.a, align 8
-  call void @"mem::release"(ptr %var.load1)
-  %var.load2 = load ptr, ptr %var.a, align 8
-  %fld.gep3 = getelementptr inbounds { ptr, i64 }, ptr %var.load2, i32 0, i32 0
-  %fld.load4 = load ptr, ptr %fld.gep3, align 8
+  call void @"mem::release"(ptr %0)
+  %fld.load4 = load ptr, ptr %0, align 8
   %addr.ffi.int = ptrtoint ptr %fld.load4 to i64
   %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
@@ -483,85 +367,45 @@ choice.exit:                                      ; preds = %choice.then, %entry
 
 define { i64, i64, i64 } @"mem::stats"(ptr %0) #0 {
 entry:
-  %rec.salloc = alloca { i64, i64, i64 }, align 8
-  %var.allocated = alloca i64, align 8
-  %var.off = alloca i64, align 8
-  %var.num_chunks = alloca i64, align 8
-  %var.a = alloca ptr, align 8
-  store ptr %0, ptr %var.a, align 8
-  %var.load = load ptr, ptr %var.a, align 8
-  %fld.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load, i32 0, i32 0
-  %fld.load = load ptr, ptr %fld.gep, align 8
+  %fld.load = load ptr, ptr %0, align 8
   %ptr.int.l = ptrtoint ptr %fld.load to i64
   %addtmp = add i64 %ptr.int.l, 8
-  %ptr.res = inttoptr i64 %addtmp to ptr
-  %raw.int = ptrtoint ptr %ptr.res to i64
-  %raw.clean.int = and i64 %raw.int, 281474976710655
+  %raw.clean.int = and i64 %addtmp, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
-  store i64 %raw.load, ptr %var.num_chunks, align 8
-  %var.load1 = load ptr, ptr %var.a, align 8
-  %fld.gep2 = getelementptr inbounds { ptr, i64 }, ptr %var.load1, i32 0, i32 0
-  %fld.load3 = load ptr, ptr %fld.gep2, align 8
+  %fld.load3 = load ptr, ptr %0, align 8
   %ptr.int.l4 = ptrtoint ptr %fld.load3 to i64
   %addtmp5 = add i64 %ptr.int.l4, 16
-  %ptr.res6 = inttoptr i64 %addtmp5 to ptr
-  %raw.int7 = ptrtoint ptr %ptr.res6 to i64
-  %raw.clean.int8 = and i64 %raw.int7, 281474976710655
+  %raw.clean.int8 = and i64 %addtmp5, 281474976710655
   %raw.clean.ptr9 = inttoptr i64 %raw.clean.int8 to ptr
   %raw.load10 = load volatile i64, ptr %raw.clean.ptr9, align 8
-  store i64 %raw.load10, ptr %var.off, align 8
-  %var.load11 = load i64, ptr %var.num_chunks, align 8
-  %cmptmp = icmp sgt i64 %var.load11, 1
-  br i1 %cmptmp, label %choice.then, label %choice.else
+  %cmptmp = icmp sgt i64 %raw.load, 1
+  br i1 %cmptmp, label %choice.then, label %choice.exit
 
 choice.then:                                      ; preds = %entry
-  %var.load12 = load i64, ptr %var.num_chunks, align 8
-  %subtmp = sub i64 %var.load12, 1
-  %var.load13 = load ptr, ptr %var.a, align 8
-  %fld.gep14 = getelementptr inbounds { ptr, i64 }, ptr %var.load13, i32 0, i32 1
+  %subtmp = sub nuw nsw i64 %raw.load, 1
+  %fld.gep14 = getelementptr inbounds { ptr, i64 }, ptr %0, i32 0, i32 1
   %fld.load15 = load i64, ptr %fld.gep14, align 8
   %multmp = mul i64 %subtmp, %fld.load15
-  %var.load16 = load i64, ptr %var.off, align 8
-  %addtmp17 = add i64 %multmp, %var.load16
+  %addtmp17 = add i64 %multmp, %raw.load10
   br label %choice.exit
 
-choice.else:                                      ; preds = %entry
-  %var.load18 = load i64, ptr %var.off, align 8
-  br label %choice.exit
-
-choice.exit:                                      ; preds = %choice.else, %choice.then
-  %choice.res = phi i64 [ %addtmp17, %choice.then ], [ %var.load18, %choice.else ]
-  store i64 %choice.res, ptr %var.allocated, align 8
-  %var.load19 = load i64, ptr %var.allocated, align 8
-  %var.load20 = load i64, ptr %var.num_chunks, align 8
-  %var.load21 = load ptr, ptr %var.a, align 8
-  %fld.gep22 = getelementptr inbounds { ptr, i64 }, ptr %var.load21, i32 0, i32 1
+choice.exit:                                      ; preds = %entry, %choice.then
+  %choice.res = phi i64 [ %addtmp17, %choice.then ], [ %raw.load10, %entry ]
+  %fld.gep22 = getelementptr inbounds { ptr, i64 }, ptr %0, i32 0, i32 1
   %fld.load23 = load i64, ptr %fld.gep22, align 8
-  %rec.fld = getelementptr inbounds { i64, i64, i64 }, ptr %rec.salloc, i32 0, i32 0
-  store i64 %var.load19, ptr %rec.fld, align 8
-  %rec.fld24 = getelementptr inbounds { i64, i64, i64 }, ptr %rec.salloc, i32 0, i32 1
-  store i64 %var.load20, ptr %rec.fld24, align 8
-  %rec.fld25 = getelementptr inbounds { i64, i64, i64 }, ptr %rec.salloc, i32 0, i32 2
-  store i64 %fld.load23, ptr %rec.fld25, align 8
-  %ret.pack = load { i64, i64, i64 }, ptr %rec.salloc, align 8
-  ret { i64, i64, i64 } %ret.pack
+  %ret.pack.fca.0.insert = insertvalue { i64, i64, i64 } poison, i64 %choice.res, 0
+  %ret.pack.fca.1.insert = insertvalue { i64, i64, i64 } %ret.pack.fca.0.insert, i64 %raw.load, 1
+  %ret.pack.fca.2.insert = insertvalue { i64, i64, i64 } %ret.pack.fca.1.insert, i64 %fld.load23, 2
+  ret { i64, i64, i64 } %ret.pack.fca.2.insert
 }
 
 define { ptr, i64 } @"mem::global_arena"() #0 {
 entry:
-  %var.eff_cap = alloca i64, align 8
-  %var.cap = alloca i64, align 8
-  %var.g_raw = alloca ptr, align 8
-  %var.prev = alloca ptr, align 8
   %call.res = call ptr @"mem::set_current"(ptr null)
-  store ptr %call.res, ptr %var.prev, align 8
   %call.res1 = call ptr @"mem::current"()
-  store ptr %call.res1, ptr %var.g_raw, align 8
-  %var.load = load ptr, ptr %var.prev, align 8
-  %call.res2 = call ptr @"mem::set_current"(ptr %var.load)
-  %var.load3 = load ptr, ptr %var.g_raw, align 8
-  %raw.int = ptrtoint ptr %var.load3 to i64
+  %call.res2 = call ptr @"mem::set_current"(ptr %call.res)
+  %raw.int = ptrtoint ptr %call.res1 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
   %addr.tag = lshr i64 %raw.int, 48
@@ -573,35 +417,19 @@ entry:
 
 addr_ok:                                          ; preds = %tag.slow_check, %entry
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
-  store i64 %raw.load, ptr %var.cap, align 8
-  %var.load4 = load i64, ptr %var.cap, align 8
-  %cmptmp = icmp sgt i64 %var.load4, 0
-  br i1 %cmptmp, label %choice.then, label %choice.else
+  %cmptmp = icmp sgt i64 %raw.load, 0
+  %raw.load. = select i1 %cmptmp, i64 %raw.load, i64 67108864
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, i64 }, ptr null, i32 1) to i64))
+  store ptr %call.res1, ptr %rec.alloc, align 8
+  %rec.fld8 = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 1
+  store i64 %raw.load., ptr %rec.fld8, align 8
+  %ret.pack = load { ptr, i64 }, ptr %rec.alloc, align 8
+  ret { ptr, i64 } %ret.pack
 
 tag.slow_check:                                   ; preds = %entry
   call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
   br label %addr_ok
-
-choice.then:                                      ; preds = %addr_ok
-  %var.load5 = load i64, ptr %var.cap, align 8
-  br label %choice.exit
-
-choice.else:                                      ; preds = %addr_ok
-  br label %choice.exit
-
-choice.exit:                                      ; preds = %choice.else, %choice.then
-  %choice.res = phi i64 [ %var.load5, %choice.then ], [ 67108864, %choice.else ]
-  store i64 %choice.res, ptr %var.eff_cap, align 8
-  %var.load6 = load ptr, ptr %var.g_raw, align 8
-  %var.load7 = load i64, ptr %var.eff_cap, align 8
-  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
-  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, i64 }, ptr null, i32 1) to i64))
-  %rec.fld = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 0
-  store ptr %var.load6, ptr %rec.fld, align 8
-  %rec.fld8 = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 1
-  store i64 %var.load7, ptr %rec.fld8, align 8
-  %ret.pack = load { ptr, i64 }, ptr %rec.alloc, align 8
-  ret { ptr, i64 } %ret.pack
 }
 
 ; Function Attrs: cold noinline
@@ -617,9 +445,6 @@ valid:                                            ; preds = %entry
 stale:                                            ; preds = %entry
   call void @dva_abort_stale_addr_msg()
   unreachable
-
-abort.dead:                                       ; No predecessors!
-  unreachable
 }
 
 ; Function Attrs: cold noinline noreturn
@@ -628,171 +453,83 @@ entry:
   %0 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
   call void @exit(i32 1)
   unreachable
-
-abort.dead:                                       ; No predecessors!
-  unreachable
 }
 
 define ptr @"mem::provenance"(ptr %0) #0 {
 entry:
-  %var.resets = alloca i64, align 8
-  %var.gen = alloca i64, align 8
-  %var.next_gen = alloca i64, align 8
-  %var.depth = alloca i64, align 8
-  %var.allocated = alloca i64, align 8
-  %var.off = alloca i64, align 8
-  %var.num_chunks = alloca i64, align 8
-  %var.cap = alloca i64, align 8
-  %var.a = alloca ptr, align 8
-  store ptr %0, ptr %var.a, align 8
-  %var.load = load ptr, ptr %var.a, align 8
-  %fld.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load, i32 0, i32 1
+  %fld.gep = getelementptr inbounds { ptr, i64 }, ptr %0, i32 0, i32 1
   %fld.load = load i64, ptr %fld.gep, align 8
   %cmptmp = icmp sgt i64 %fld.load, 0
-  br i1 %cmptmp, label %choice.then, label %choice.else
-
-choice.then:                                      ; preds = %entry
-  %var.load1 = load ptr, ptr %var.a, align 8
-  %fld.gep2 = getelementptr inbounds { ptr, i64 }, ptr %var.load1, i32 0, i32 1
-  %fld.load3 = load i64, ptr %fld.gep2, align 8
-  br label %choice.exit
+  br i1 %cmptmp, label %choice.exit, label %choice.else
 
 choice.else:                                      ; preds = %entry
-  %var.load4 = load ptr, ptr %var.a, align 8
-  %fld.gep5 = getelementptr inbounds { ptr, i64 }, ptr %var.load4, i32 0, i32 0
-  %fld.load6 = load ptr, ptr %fld.gep5, align 8
+  %fld.load6 = load ptr, ptr %0, align 8
   %raw.int = ptrtoint ptr %fld.load6 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
   br label %choice.exit
 
-choice.exit:                                      ; preds = %choice.else, %choice.then
-  %choice.res = phi i64 [ %fld.load3, %choice.then ], [ %raw.load, %choice.else ]
-  store i64 %choice.res, ptr %var.cap, align 8
-  %var.load7 = load ptr, ptr %var.a, align 8
-  %fld.gep8 = getelementptr inbounds { ptr, i64 }, ptr %var.load7, i32 0, i32 0
-  %fld.load9 = load ptr, ptr %fld.gep8, align 8
+choice.exit:                                      ; preds = %entry, %choice.else
+  %choice.res = phi i64 [ %raw.load, %choice.else ], [ %fld.load, %entry ]
+  %fld.load9 = load ptr, ptr %0, align 8
   %ptr.int.l = ptrtoint ptr %fld.load9 to i64
   %addtmp = add i64 %ptr.int.l, 8
-  %ptr.res = inttoptr i64 %addtmp to ptr
-  %raw.int10 = ptrtoint ptr %ptr.res to i64
-  %raw.clean.int11 = and i64 %raw.int10, 281474976710655
+  %raw.clean.int11 = and i64 %addtmp, 281474976710655
   %raw.clean.ptr12 = inttoptr i64 %raw.clean.int11 to ptr
   %raw.load13 = load volatile i64, ptr %raw.clean.ptr12, align 8
-  store i64 %raw.load13, ptr %var.num_chunks, align 8
-  %var.load14 = load ptr, ptr %var.a, align 8
-  %fld.gep15 = getelementptr inbounds { ptr, i64 }, ptr %var.load14, i32 0, i32 0
-  %fld.load16 = load ptr, ptr %fld.gep15, align 8
+  %fld.load16 = load ptr, ptr %0, align 8
   %ptr.int.l17 = ptrtoint ptr %fld.load16 to i64
   %addtmp18 = add i64 %ptr.int.l17, 16
-  %ptr.res19 = inttoptr i64 %addtmp18 to ptr
-  %raw.int20 = ptrtoint ptr %ptr.res19 to i64
-  %raw.clean.int21 = and i64 %raw.int20, 281474976710655
+  %raw.clean.int21 = and i64 %addtmp18, 281474976710655
   %raw.clean.ptr22 = inttoptr i64 %raw.clean.int21 to ptr
   %raw.load23 = load volatile i64, ptr %raw.clean.ptr22, align 8
-  store i64 %raw.load23, ptr %var.off, align 8
-  %var.load24 = load i64, ptr %var.num_chunks, align 8
-  %cmptmp25 = icmp sgt i64 %var.load24, 1
-  br i1 %cmptmp25, label %choice.then26, label %choice.else27
-
-choice.then26:                                    ; preds = %choice.exit
-  %var.load29 = load i64, ptr %var.num_chunks, align 8
-  %subtmp = sub i64 %var.load29, 1
-  %var.load30 = load i64, ptr %var.cap, align 8
-  %multmp = mul i64 %subtmp, %var.load30
-  %var.load31 = load i64, ptr %var.off, align 8
-  %addtmp32 = add i64 %multmp, %var.load31
-  br label %choice.exit28
-
-choice.else27:                                    ; preds = %choice.exit
-  %var.load33 = load i64, ptr %var.off, align 8
-  br label %choice.exit28
-
-choice.exit28:                                    ; preds = %choice.else27, %choice.then26
-  %choice.res34 = phi i64 [ %addtmp32, %choice.then26 ], [ %var.load33, %choice.else27 ]
-  store i64 %choice.res34, ptr %var.allocated, align 8
-  %var.load35 = load ptr, ptr %var.a, align 8
-  %fld.gep36 = getelementptr inbounds { ptr, i64 }, ptr %var.load35, i32 0, i32 0
-  %fld.load37 = load ptr, ptr %fld.gep36, align 8
+  %cmptmp25 = icmp sgt i64 %raw.load13, 1
+  %subtmp = sub i64 %raw.load13, 1
+  %multmp = mul i64 %subtmp, %choice.res
+  %addtmp32 = add i64 %multmp, %raw.load23
+  %choice.res34 = select i1 %cmptmp25, i64 %addtmp32, i64 %raw.load23
+  %fld.load37 = load ptr, ptr %0, align 8
   %ptr.int.l38 = ptrtoint ptr %fld.load37 to i64
   %addtmp39 = add i64 %ptr.int.l38, 131104
-  %ptr.res40 = inttoptr i64 %addtmp39 to ptr
-  %raw.int41 = ptrtoint ptr %ptr.res40 to i64
-  %raw.clean.int42 = and i64 %raw.int41, 281474976710655
+  %raw.clean.int42 = and i64 %addtmp39, 281474976710655
   %raw.clean.ptr43 = inttoptr i64 %raw.clean.int42 to ptr
   %raw.load44 = load volatile i64, ptr %raw.clean.ptr43, align 8
-  store i64 %raw.load44, ptr %var.depth, align 8
-  %var.load45 = load ptr, ptr %var.a, align 8
-  %fld.gep46 = getelementptr inbounds { ptr, i64 }, ptr %var.load45, i32 0, i32 0
-  %fld.load47 = load ptr, ptr %fld.gep46, align 8
+  %fld.load47 = load ptr, ptr %0, align 8
   %ptr.int.l48 = ptrtoint ptr %fld.load47 to i64
   %addtmp49 = add i64 %ptr.int.l48, 131112
-  %ptr.res50 = inttoptr i64 %addtmp49 to ptr
-  %raw.int51 = ptrtoint ptr %ptr.res50 to i64
-  %raw.clean.int52 = and i64 %raw.int51, 281474976710655
+  %raw.clean.int52 = and i64 %addtmp49, 281474976710655
   %raw.clean.ptr53 = inttoptr i64 %raw.clean.int52 to ptr
   %raw.load54 = load volatile i64, ptr %raw.clean.ptr53, align 8
-  store i64 %raw.load54, ptr %var.next_gen, align 8
-  %var.load55 = load i64, ptr %var.next_gen, align 8
-  %cmptmp56 = icmp sgt i64 %var.load55, 0
-  br i1 %cmptmp56, label %choice.then57, label %choice.else58
-
-choice.then57:                                    ; preds = %choice.exit28
-  %var.load60 = load i64, ptr %var.next_gen, align 8
-  br label %choice.exit59
-
-choice.else58:                                    ; preds = %choice.exit28
-  br label %choice.exit59
-
-choice.exit59:                                    ; preds = %choice.else58, %choice.then57
-  %choice.res61 = phi i64 [ %var.load60, %choice.then57 ], [ 1, %choice.else58 ]
-  store i64 %choice.res61, ptr %var.gen, align 8
-  %var.load62 = load ptr, ptr %var.a, align 8
-  %fld.gep63 = getelementptr inbounds { ptr, i64 }, ptr %var.load62, i32 0, i32 0
-  %fld.load64 = load ptr, ptr %fld.gep63, align 8
+  %cmptmp56 = icmp sgt i64 %raw.load54, 0
+  %choice.res61 = select i1 %cmptmp56, i64 %raw.load54, i64 1
+  %fld.load64 = load ptr, ptr %0, align 8
   %ptr.int.l65 = ptrtoint ptr %fld.load64 to i64
   %addtmp66 = add i64 %ptr.int.l65, 131120
-  %ptr.res67 = inttoptr i64 %addtmp66 to ptr
-  %raw.int68 = ptrtoint ptr %ptr.res67 to i64
-  %raw.clean.int69 = and i64 %raw.int68, 281474976710655
+  %raw.clean.int69 = and i64 %addtmp66, 281474976710655
   %raw.clean.ptr70 = inttoptr i64 %raw.clean.int69 to ptr
   %raw.load71 = load volatile i64, ptr %raw.clean.ptr70, align 8
-  store i64 %raw.load71, ptr %var.resets, align 8
-  %var.load72 = load ptr, ptr %var.a, align 8
-  %fld.gep73 = getelementptr inbounds { ptr, i64 }, ptr %var.load72, i32 0, i32 0
-  %fld.load74 = load ptr, ptr %fld.gep73, align 8
-  %var.load75 = load i64, ptr %var.gen, align 8
-  %var.load76 = load i64, ptr %var.depth, align 8
-  %var.load77 = load i64, ptr %var.resets, align 8
-  %var.load78 = load i64, ptr %var.allocated, align 8
-  %var.load79 = load i64, ptr %var.num_chunks, align 8
+  %fld.load74 = load ptr, ptr %0, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, i64, i64, i64, i64, i64 }, ptr null, i32 1) to i64))
-  %rec.fld = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 0
-  store ptr %fld.load74, ptr %rec.fld, align 8
+  store ptr %fld.load74, ptr %rec.alloc, align 8
   %rec.fld80 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 1
-  store i64 %var.load75, ptr %rec.fld80, align 8
+  store i64 %choice.res61, ptr %rec.fld80, align 8
   %rec.fld81 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 2
-  store i64 %var.load76, ptr %rec.fld81, align 8
+  store i64 %raw.load44, ptr %rec.fld81, align 8
   %rec.fld82 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 3
-  store i64 %var.load77, ptr %rec.fld82, align 8
+  store i64 %raw.load71, ptr %rec.fld82, align 8
   %rec.fld83 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 4
-  store i64 %var.load78, ptr %rec.fld83, align 8
+  store i64 %choice.res34, ptr %rec.fld83, align 8
   %rec.fld84 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 5
-  store i64 %var.load79, ptr %rec.fld84, align 8
+  store i64 %raw.load13, ptr %rec.fld84, align 8
   ret ptr %rec.alloc
 }
 
 define ptr @"mem::current_provenance"() #0 {
 entry:
-  %var.eff_cap = alloca i64, align 8
-  %var.cap = alloca i64, align 8
-  %var.raw = alloca ptr, align 8
   %call.res = call ptr @"mem::current"()
-  store ptr %call.res, ptr %var.raw, align 8
-  %var.load = load ptr, ptr %var.raw, align 8
-  %raw.int = ptrtoint ptr %var.load to i64
+  %raw.int = ptrtoint ptr %call.res to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
   %addr.tag = lshr i64 %raw.int, 48
@@ -804,237 +541,101 @@ entry:
 
 addr_ok:                                          ; preds = %tag.slow_check, %entry
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
-  store i64 %raw.load, ptr %var.cap, align 8
-  %var.load1 = load i64, ptr %var.cap, align 8
-  %cmptmp = icmp sgt i64 %var.load1, 0
-  br i1 %cmptmp, label %choice.then, label %choice.else
+  %cmptmp = icmp sgt i64 %raw.load, 0
+  %raw.load. = select i1 %cmptmp, i64 %raw.load, i64 67108864
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, i64 }, ptr null, i32 1) to i64))
+  store ptr %call.res, ptr %rec.alloc, align 8
+  %rec.fld5 = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 1
+  store i64 %raw.load., ptr %rec.fld5, align 8
+  %call.res6 = call ptr @"mem::provenance"(ptr %rec.alloc)
+  ret ptr %call.res6
 
 tag.slow_check:                                   ; preds = %entry
   call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
   br label %addr_ok
-
-choice.then:                                      ; preds = %addr_ok
-  %var.load2 = load i64, ptr %var.cap, align 8
-  br label %choice.exit
-
-choice.else:                                      ; preds = %addr_ok
-  br label %choice.exit
-
-choice.exit:                                      ; preds = %choice.else, %choice.then
-  %choice.res = phi i64 [ %var.load2, %choice.then ], [ 67108864, %choice.else ]
-  store i64 %choice.res, ptr %var.eff_cap, align 8
-  %var.load3 = load ptr, ptr %var.raw, align 8
-  %var.load4 = load i64, ptr %var.eff_cap, align 8
-  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
-  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, i64 }, ptr null, i32 1) to i64))
-  %rec.fld = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 0
-  store ptr %var.load3, ptr %rec.fld, align 8
-  %rec.fld5 = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 1
-  store i64 %var.load4, ptr %rec.fld5, align 8
-  %call.res6 = call ptr @"mem::provenance"(ptr %rec.alloc)
-  ret ptr %call.res6
 }
 
 define i1 @"mem::owns_addr"(ptr %0, ptr %1) #0 {
 entry:
-  %var.c_limit = alloca i64, align 8
-  %var.c_base = alloca i64, align 8
-  %var._ = alloca i64, align 8
-  %var._i = alloca i64, align 8
-  %var.i = alloca i64, align 8
-  %loop.step.29 = alloca i64, align 8
-  %loop.idx.29 = alloca i64, align 8
-  %var.off = alloca i64, align 8
-  %var.num_chunks = alloca i64, align 8
-  %var.cap = alloca i64, align 8
-  %var.raw_addr = alloca i64, align 8
-  %var.ptr = alloca ptr, align 8
-  %var.a = alloca ptr, align 8
-  store ptr %0, ptr %var.a, align 8
-  store ptr %1, ptr %var.ptr, align 8
-  %var.load = load ptr, ptr %var.a, align 8
-  %fld.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load, i32 0, i32 0
-  %fld.load = load ptr, ptr %fld.gep, align 8
+  %fld.load = load ptr, ptr %0, align 8
   %ptr.int.l = ptrtoint ptr %fld.load to i64
   %cmptmp = icmp eq i64 %ptr.int.l, 0
-  br i1 %cmptmp, label %choice.then, label %choice.exit
+  br i1 %cmptmp, label %common.ret, label %choice.exit
 
-choice.then:                                      ; preds = %entry
-  ret i1 false
+common.ret:                                       ; preds = %loop.body.29, %loop.header.29, %choice.exit, %entry
+  %common.ret.op = phi i1 [ false, %entry ], [ false, %choice.exit ], [ false, %loop.header.29 ], [ true, %loop.body.29 ]
+  ret i1 %common.ret.op
 
-choice.exit:                                      ; preds = %ret.dead, %entry
-  %var.load1 = load ptr, ptr %var.ptr, align 8
-  %coerce.ptr2int = ptrtoint ptr %var.load1 to i64
+choice.exit:                                      ; preds = %entry
+  %coerce.ptr2int = ptrtoint ptr %1 to i64
   %bandtmp = and i64 %coerce.ptr2int, 281474976710655
-  store i64 %bandtmp, ptr %var.raw_addr, align 8
-  %var.load2 = load i64, ptr %var.raw_addr, align 8
-  %cmptmp3 = icmp eq i64 %var.load2, 0
-  br i1 %cmptmp3, label %choice.then4, label %choice.exit5
+  %cmptmp3 = icmp eq i64 %bandtmp, 0
+  br i1 %cmptmp3, label %common.ret, label %choice.exit5
 
-ret.dead:                                         ; No predecessors!
-  br label %choice.exit
-
-choice.then4:                                     ; preds = %choice.exit
-  ret i1 false
-
-choice.exit5:                                     ; preds = %ret.dead6, %choice.exit
-  %var.load7 = load ptr, ptr %var.a, align 8
-  %fld.gep8 = getelementptr inbounds { ptr, i64 }, ptr %var.load7, i32 0, i32 1
+choice.exit5:                                     ; preds = %choice.exit
+  %fld.gep8 = getelementptr inbounds { ptr, i64 }, ptr %0, i32 0, i32 1
   %fld.load9 = load i64, ptr %fld.gep8, align 8
   %cmptmp10 = icmp sgt i64 %fld.load9, 0
-  br i1 %cmptmp10, label %choice.then11, label %choice.else
-
-ret.dead6:                                        ; No predecessors!
-  br label %choice.exit5
-
-choice.then11:                                    ; preds = %choice.exit5
-  %var.load13 = load ptr, ptr %var.a, align 8
-  %fld.gep14 = getelementptr inbounds { ptr, i64 }, ptr %var.load13, i32 0, i32 1
-  %fld.load15 = load i64, ptr %fld.gep14, align 8
-  br label %choice.exit12
+  br i1 %cmptmp10, label %choice.exit12, label %choice.else
 
 choice.else:                                      ; preds = %choice.exit5
-  %var.load16 = load ptr, ptr %var.a, align 8
-  %fld.gep17 = getelementptr inbounds { ptr, i64 }, ptr %var.load16, i32 0, i32 0
-  %fld.load18 = load ptr, ptr %fld.gep17, align 8
-  %raw.int = ptrtoint ptr %fld.load18 to i64
-  %raw.clean.int = and i64 %raw.int, 281474976710655
+  %raw.clean.int = and i64 %ptr.int.l, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
   br label %choice.exit12
 
-choice.exit12:                                    ; preds = %choice.else, %choice.then11
-  %choice.res = phi i64 [ %fld.load15, %choice.then11 ], [ %raw.load, %choice.else ]
-  store i64 %choice.res, ptr %var.cap, align 8
-  %var.load19 = load ptr, ptr %var.a, align 8
-  %fld.gep20 = getelementptr inbounds { ptr, i64 }, ptr %var.load19, i32 0, i32 0
-  %fld.load21 = load ptr, ptr %fld.gep20, align 8
+choice.exit12:                                    ; preds = %choice.exit5, %choice.else
+  %choice.res = phi i64 [ %raw.load, %choice.else ], [ %fld.load9, %choice.exit5 ]
+  %fld.load21 = load ptr, ptr %0, align 8
   %ptr.int.l22 = ptrtoint ptr %fld.load21 to i64
   %addtmp = add i64 %ptr.int.l22, 8
-  %ptr.res = inttoptr i64 %addtmp to ptr
-  %raw.int23 = ptrtoint ptr %ptr.res to i64
-  %raw.clean.int24 = and i64 %raw.int23, 281474976710655
+  %raw.clean.int24 = and i64 %addtmp, 281474976710655
   %raw.clean.ptr25 = inttoptr i64 %raw.clean.int24 to ptr
   %raw.load26 = load volatile i64, ptr %raw.clean.ptr25, align 8
-  store i64 %raw.load26, ptr %var.num_chunks, align 8
-  %var.load27 = load ptr, ptr %var.a, align 8
-  %fld.gep28 = getelementptr inbounds { ptr, i64 }, ptr %var.load27, i32 0, i32 0
-  %fld.load29 = load ptr, ptr %fld.gep28, align 8
+  %fld.load29 = load ptr, ptr %0, align 8
   %ptr.int.l30 = ptrtoint ptr %fld.load29 to i64
   %addtmp31 = add i64 %ptr.int.l30, 16
-  %ptr.res32 = inttoptr i64 %addtmp31 to ptr
-  %raw.int33 = ptrtoint ptr %ptr.res32 to i64
-  %raw.clean.int34 = and i64 %raw.int33, 281474976710655
+  %raw.clean.int34 = and i64 %addtmp31, 281474976710655
   %raw.clean.ptr35 = inttoptr i64 %raw.clean.int34 to ptr
   %raw.load36 = load volatile i64, ptr %raw.clean.ptr35, align 8
-  store i64 %raw.load36, ptr %var.off, align 8
-  %var.load37 = load i64, ptr %var.num_chunks, align 8
-  store i64 0, ptr %loop.idx.29, align 8
   br label %loop.header.29
 
-loop.header.29:                                   ; preds = %loop.latch.29, %choice.exit12
-  %counter.load = load i64, ptr %loop.idx.29, align 8
-  %loop.cond = icmp slt i64 %counter.load, %var.load37
-  br i1 %loop.cond, label %loop.body.29, label %loop.exit.nat.29
+loop.header.29:                                   ; preds = %choice.exit71, %choice.exit12
+  %loop.idx.29.0 = phi i64 [ 0, %choice.exit12 ], [ %loop.next, %choice.exit71 ]
+  %loop.cond = icmp slt i64 %loop.idx.29.0, %raw.load26
+  br i1 %loop.cond, label %loop.body.29, label %common.ret
 
 loop.body.29:                                     ; preds = %loop.header.29
-  %loop.rel.i = sub i64 %counter.load, 0
-  store i64 1, ptr %loop.step.29, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
-  store i64 %counter.load, ptr %var._, align 8
-  store i64 %counter.load, ptr %var.i, align 8
-  %var.load38 = load ptr, ptr %var.a, align 8
-  %fld.gep39 = getelementptr inbounds { ptr, i64 }, ptr %var.load38, i32 0, i32 0
-  %fld.load40 = load ptr, ptr %fld.gep39, align 8
+  %fld.load40 = load ptr, ptr %0, align 8
   %ptr.int.l41 = ptrtoint ptr %fld.load40 to i64
   %addtmp42 = add i64 %ptr.int.l41, 24
-  %ptr.res43 = inttoptr i64 %addtmp42 to ptr
-  %var.load44 = load i64, ptr %var.i, align 8
-  %multmp = mul i64 %var.load44, 8
-  %ptr.int.l45 = ptrtoint ptr %ptr.res43 to i64
-  %addtmp46 = add i64 %ptr.int.l45, %multmp
-  %ptr.res47 = inttoptr i64 %addtmp46 to ptr
-  %raw.int48 = ptrtoint ptr %ptr.res47 to i64
-  %raw.clean.int49 = and i64 %raw.int48, 281474976710655
+  %multmp = mul i64 %loop.idx.29.0, 8
+  %addtmp46 = add i64 %addtmp42, %multmp
+  %raw.clean.int49 = and i64 %addtmp46, 281474976710655
   %raw.clean.ptr50 = inttoptr i64 %raw.clean.int49 to ptr
   %raw.load51 = load volatile i64, ptr %raw.clean.ptr50, align 8
   %bandtmp52 = and i64 %raw.load51, 281474976710655
-  store i64 %bandtmp52, ptr %var.c_base, align 8
-  %var.load53 = load i64, ptr %var.i, align 8
-  %var.load54 = load i64, ptr %var.num_chunks, align 8
-  %subtmp = sub i64 %var.load54, 1
-  %cmptmp55 = icmp eq i64 %var.load53, %subtmp
-  br i1 %cmptmp55, label %choice.then56, label %choice.else57
+  %subtmp = sub i64 %raw.load26, 1
+  %cmptmp55 = icmp eq i64 %loop.idx.29.0, %subtmp
+  %raw.load36.choice.res = select i1 %cmptmp55, i64 %raw.load36, i64 %choice.res
+  %cmptmp64 = icmp sge i64 %bandtmp, %bandtmp52
+  %addtmp68 = add i64 %bandtmp52, %raw.load36.choice.res
+  %cmptmp69 = icmp slt i64 %bandtmp, %addtmp68
+  %and.30.phi = select i1 %cmptmp64, i1 %cmptmp69, i1 false
+  br i1 %and.30.phi, label %common.ret, label %choice.exit71
 
-loop.exit.nat.29:                                 ; preds = %loop.header.29
-  br label %loop.exit.29
-
-loop.latch.29:                                    ; preds = %choice.exit71
-  %step.val = load i64, ptr %loop.step.29, align 8
-  %loop.next = add i64 %counter.load, %step.val
-  store i64 %loop.next, ptr %loop.idx.29, align 8
+choice.exit71:                                    ; preds = %loop.body.29
+  %loop.next = add i64 %loop.idx.29.0, 1
   br label %loop.header.29
-
-loop.exit.29:                                     ; preds = %loop.exit.nat.29
-  ret i1 false
-
-choice.then56:                                    ; preds = %loop.body.29
-  %var.load59 = load i64, ptr %var.off, align 8
-  br label %choice.exit58
-
-choice.else57:                                    ; preds = %loop.body.29
-  %var.load60 = load i64, ptr %var.cap, align 8
-  br label %choice.exit58
-
-choice.exit58:                                    ; preds = %choice.else57, %choice.then56
-  %choice.res61 = phi i64 [ %var.load59, %choice.then56 ], [ %var.load60, %choice.else57 ]
-  store i64 %choice.res61, ptr %var.c_limit, align 8
-  %var.load62 = load i64, ptr %var.raw_addr, align 8
-  %var.load63 = load i64, ptr %var.c_base, align 8
-  %cmptmp64 = icmp sge i64 %var.load62, %var.load63
-  br i1 %cmptmp64, label %and.30.then, label %and.30.else
-
-and.30.then:                                      ; preds = %choice.exit58
-  %var.load65 = load i64, ptr %var.raw_addr, align 8
-  %var.load66 = load i64, ptr %var.c_base, align 8
-  %var.load67 = load i64, ptr %var.c_limit, align 8
-  %addtmp68 = add i64 %var.load66, %var.load67
-  %cmptmp69 = icmp slt i64 %var.load65, %addtmp68
-  br label %and.30.exit
-
-and.30.else:                                      ; preds = %choice.exit58
-  br label %and.30.exit
-
-and.30.exit:                                      ; preds = %and.30.else, %and.30.then
-  %and.30.phi = phi i1 [ %cmptmp69, %and.30.then ], [ %cmptmp64, %and.30.else ]
-  br i1 %and.30.phi, label %choice.then70, label %choice.exit71
-
-choice.then70:                                    ; preds = %and.30.exit
-  ret i1 true
-
-choice.exit71:                                    ; preds = %ret.dead72, %and.30.exit
-  br label %loop.latch.29
-
-ret.dead72:                                       ; No predecessors!
-  br label %choice.exit71
 }
 
 define void @"mem::with"(ptr %0, ptr %1) #0 {
 entry:
-  %var.prev = alloca ptr, align 8
-  %var.action = alloca ptr, align 8
-  %var.a = alloca ptr, align 8
-  store ptr %0, ptr %var.a, align 8
-  store ptr %1, ptr %var.action, align 8
-  %var.load = load ptr, ptr %var.a, align 8
-  %fld.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load, i32 0, i32 0
-  %fld.load = load ptr, ptr %fld.gep, align 8
+  %fld.load = load ptr, ptr %0, align 8
   %call.res = call ptr @"mem::set_current"(ptr %fld.load)
-  store ptr %call.res, ptr %var.prev, align 8
-  %clo.load = load ptr, ptr %var.action, align 8
-  %clo.fn.gep = getelementptr inbounds { ptr, ptr }, ptr %clo.load, i32 0, i32 0
-  %clo.env.gep = getelementptr inbounds { ptr, ptr }, ptr %clo.load, i32 0, i32 1
-  %clo.fn.load = load ptr, ptr %clo.fn.gep, align 8
+  %clo.env.gep = getelementptr inbounds { ptr, ptr }, ptr %1, i32 0, i32 1
+  %clo.fn.load = load ptr, ptr %1, align 8
   %clo.env.load = load ptr, ptr %clo.env.gep, align 8
   %clo.is_cap = icmp ne ptr %clo.env.load, null
   br i1 %clo.is_cap, label %clo.cap, label %clo.plain
@@ -1048,22 +649,15 @@ clo.plain:                                        ; preds = %entry
   br label %clo.merge
 
 clo.merge:                                        ; preds = %clo.plain, %clo.cap
-  %var.load1 = load ptr, ptr %var.prev, align 8
-  %call.res2 = call ptr @"mem::set_current"(ptr %var.load1)
+  %call.res2 = call ptr @"mem::set_current"(ptr %call.res)
   ret void
 }
 
 define void @"mem::escape"(ptr %0) #0 {
 entry:
-  %var.prev = alloca ptr, align 8
-  %var.action = alloca ptr, align 8
-  store ptr %0, ptr %var.action, align 8
   %call.res = call ptr @"mem::set_current"(ptr null)
-  store ptr %call.res, ptr %var.prev, align 8
-  %clo.load = load ptr, ptr %var.action, align 8
-  %clo.fn.gep = getelementptr inbounds { ptr, ptr }, ptr %clo.load, i32 0, i32 0
-  %clo.env.gep = getelementptr inbounds { ptr, ptr }, ptr %clo.load, i32 0, i32 1
-  %clo.fn.load = load ptr, ptr %clo.fn.gep, align 8
+  %clo.env.gep = getelementptr inbounds { ptr, ptr }, ptr %0, i32 0, i32 1
+  %clo.fn.load = load ptr, ptr %0, align 8
   %clo.env.load = load ptr, ptr %clo.env.gep, align 8
   %clo.is_cap = icmp ne ptr %clo.env.load, null
   br i1 %clo.is_cap, label %clo.cap, label %clo.plain
@@ -1077,198 +671,81 @@ clo.plain:                                        ; preds = %entry
   br label %clo.merge
 
 clo.merge:                                        ; preds = %clo.plain, %clo.cap
-  %var.load = load ptr, ptr %var.prev, align 8
-  %call.res1 = call ptr @"mem::set_current"(ptr %var.load)
+  %call.res1 = call ptr @"mem::set_current"(ptr %call.res)
   ret void
 }
 
 define ptr @"mem::pool"(i64 %0, i64 %1) #0 {
 entry:
-  %var.st_cap = alloca i64, align 8
-  %var._ = alloca i64, align 8
-  %var._i = alloca i64, align 8
-  %var.i = alloca i64, align 8
-  %loop.step.32 = alloca i64, align 8
-  %loop.idx.32 = alloca i64, align 8
-  %var.act = alloca ptr, align 8
-  %var.st = alloca ptr, align 8
-  %var.fs = alloca ptr, align 8
-  %var.buf = alloca ptr, align 8
-  %var.total = alloca i64, align 8
-  %var.act_sz = alloca i64, align 8
-  %var.st_sz = alloca i64, align 8
-  %var.fs_sz = alloca i64, align 8
-  %var.buf_sz = alloca i64, align 8
-  %var.cap = alloca i64, align 8
-  %var.es = alloca i64, align 8
-  %var.capacity = alloca i64, align 8
-  %var.elem_size = alloca i64, align 8
-  store i64 %0, ptr %var.elem_size, align 8
-  store i64 %1, ptr %var.capacity, align 8
-  %var.load = load i64, ptr %var.elem_size, align 8
-  %cmptmp = icmp sle i64 %var.load, 8
-  br i1 %cmptmp, label %choice.then, label %choice.else
-
-choice.then:                                      ; preds = %entry
-  br label %choice.exit
-
-choice.else:                                      ; preds = %entry
-  %var.load1 = load i64, ptr %var.elem_size, align 8
-  %addtmp = add i64 %var.load1, 7
+  %cmptmp = icmp sle i64 %0, 8
+  %addtmp = add i64 %0, 7
   %bandtmp = and i64 %addtmp, -8
-  br label %choice.exit
-
-choice.exit:                                      ; preds = %choice.else, %choice.then
-  %choice.res = phi i64 [ 8, %choice.then ], [ %bandtmp, %choice.else ]
-  store i64 %choice.res, ptr %var.es, align 8
-  %var.load2 = load i64, ptr %var.capacity, align 8
-  %cmptmp3 = icmp sle i64 %var.load2, 0
-  br i1 %cmptmp3, label %choice.then4, label %choice.else5
-
-choice.then4:                                     ; preds = %choice.exit
-  br label %choice.exit6
-
-choice.else5:                                     ; preds = %choice.exit
-  %var.load7 = load i64, ptr %var.capacity, align 8
-  br label %choice.exit6
-
-choice.exit6:                                     ; preds = %choice.else5, %choice.then4
-  %choice.res8 = phi i64 [ 1, %choice.then4 ], [ %var.load7, %choice.else5 ]
-  store i64 %choice.res8, ptr %var.cap, align 8
-  %var.load9 = load i64, ptr %var.cap, align 8
-  %var.load10 = load i64, ptr %var.es, align 8
-  %multmp = mul i64 %var.load9, %var.load10
-  store i64 %multmp, ptr %var.buf_sz, align 8
-  %var.load11 = load i64, ptr %var.cap, align 8
-  %multmp12 = mul i64 %var.load11, 8
-  store i64 %multmp12, ptr %var.fs_sz, align 8
-  store i64 16, ptr %var.st_sz, align 8
-  %var.load13 = load i64, ptr %var.cap, align 8
-  store i64 %var.load13, ptr %var.act_sz, align 8
-  %var.load14 = load i64, ptr %var.buf_sz, align 8
-  %var.load15 = load i64, ptr %var.fs_sz, align 8
-  %addtmp16 = add i64 %var.load14, %var.load15
-  %var.load17 = load i64, ptr %var.st_sz, align 8
-  %addtmp18 = add i64 %addtmp16, %var.load17
-  %var.load19 = load i64, ptr %var.act_sz, align 8
-  %addtmp20 = add i64 %addtmp18, %var.load19
-  store i64 %addtmp20, ptr %var.total, align 8
-  %var.load21 = load i64, ptr %var.total, align 8
-  %call.res = call ptr @malloc(i64 %var.load21)
-  store ptr %call.res, ptr %var.buf, align 8
-  %var.load22 = load ptr, ptr %var.buf, align 8
-  %var.load23 = load i64, ptr %var.buf_sz, align 8
-  %ptr.int.l = ptrtoint ptr %var.load22 to i64
-  %addtmp24 = add i64 %ptr.int.l, %var.load23
+  %choice.res = select i1 %cmptmp, i64 8, i64 %bandtmp
+  %cmptmp3 = icmp sle i64 %1, 0
+  %choice.res8 = select i1 %cmptmp3, i64 1, i64 %1
+  %multmp = mul i64 %choice.res8, %choice.res
+  %multmp12 = mul i64 %choice.res8, 8
+  %addtmp16 = add i64 %multmp, %multmp12
+  %addtmp18 = add i64 %addtmp16, 16
+  %addtmp20 = add i64 %addtmp18, %choice.res8
+  %call.res = call ptr @malloc(i64 %addtmp20)
+  %ptr.int.l = ptrtoint ptr %call.res to i64
+  %addtmp24 = add i64 %ptr.int.l, %multmp
   %ptr.res = inttoptr i64 %addtmp24 to ptr
-  store ptr %ptr.res, ptr %var.fs, align 8
-  %var.load25 = load ptr, ptr %var.fs, align 8
-  %var.load26 = load i64, ptr %var.fs_sz, align 8
-  %ptr.int.l27 = ptrtoint ptr %var.load25 to i64
-  %addtmp28 = add i64 %ptr.int.l27, %var.load26
+  %addtmp28 = add i64 %addtmp24, %multmp12
   %ptr.res29 = inttoptr i64 %addtmp28 to ptr
-  store ptr %ptr.res29, ptr %var.st, align 8
-  %var.load30 = load ptr, ptr %var.st, align 8
-  %var.load31 = load i64, ptr %var.st_sz, align 8
-  %ptr.int.l32 = ptrtoint ptr %var.load30 to i64
-  %addtmp33 = add i64 %ptr.int.l32, %var.load31
+  %addtmp33 = add i64 %addtmp28, 16
   %ptr.res34 = inttoptr i64 %addtmp33 to ptr
-  store ptr %ptr.res34, ptr %var.act, align 8
-  %var.load35 = load ptr, ptr %var.act, align 8
-  %var.load36 = load i64, ptr %var.act_sz, align 8
-  %raw.int = ptrtoint ptr %var.load35 to i64
-  %raw.clean.int = and i64 %raw.int, 281474976710655
+  %raw.clean.int = and i64 %addtmp33, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr, i8 0, i64 %var.load36, i1 false)
-  %var.load37 = load i64, ptr %var.cap, align 8
-  store i64 0, ptr %loop.idx.32, align 8
+  call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr, i8 0, i64 %choice.res8, i1 false)
   br label %loop.header.32
 
-loop.header.32:                                   ; preds = %loop.latch.32, %choice.exit6
-  %counter.load = load i64, ptr %loop.idx.32, align 8
-  %loop.cond = icmp slt i64 %counter.load, %var.load37
-  br i1 %loop.cond, label %loop.body.32, label %loop.exit.nat.32
+loop.header.32:                                   ; preds = %loop.body.32, %entry
+  %loop.idx.32.0 = phi i64 [ 0, %entry ], [ %loop.next, %loop.body.32 ]
+  %loop.cond = icmp slt i64 %loop.idx.32.0, %choice.res8
+  br i1 %loop.cond, label %loop.body.32, label %loop.exit.32
 
 loop.body.32:                                     ; preds = %loop.header.32
-  %loop.rel.i = sub i64 %counter.load, 0
-  store i64 1, ptr %loop.step.32, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
-  store i64 %counter.load, ptr %var._, align 8
-  store i64 %counter.load, ptr %var.i, align 8
-  %var.load38 = load ptr, ptr %var.fs, align 8
-  %var.load39 = load i64, ptr %var.i, align 8
-  %multmp40 = mul i64 %var.load39, 8
-  %ptr.int.l41 = ptrtoint ptr %var.load38 to i64
-  %addtmp42 = add i64 %ptr.int.l41, %multmp40
-  %ptr.res43 = inttoptr i64 %addtmp42 to ptr
-  %var.load44 = load i64, ptr %var.i, align 8
-  %raw.int45 = ptrtoint ptr %ptr.res43 to i64
-  %raw.clean.int46 = and i64 %raw.int45, 281474976710655
+  %multmp40 = mul i64 %loop.idx.32.0, 8
+  %addtmp42 = add i64 %addtmp24, %multmp40
+  %raw.clean.int46 = and i64 %addtmp42, 281474976710655
   %raw.clean.ptr47 = inttoptr i64 %raw.clean.int46 to ptr
-  store i64 %var.load44, ptr %raw.clean.ptr47, align 8
-  br label %loop.latch.32
-
-loop.exit.nat.32:                                 ; preds = %loop.header.32
-  br label %loop.exit.32
-
-loop.latch.32:                                    ; preds = %loop.body.32
-  %step.val = load i64, ptr %loop.step.32, align 8
-  %loop.next = add i64 %counter.load, %step.val
-  store i64 %loop.next, ptr %loop.idx.32, align 8
+  store i64 %loop.idx.32.0, ptr %raw.clean.ptr47, align 8
+  %loop.next = add i64 %loop.idx.32.0, 1
   br label %loop.header.32
 
-loop.exit.32:                                     ; preds = %loop.exit.nat.32
-  %var.load48 = load i64, ptr %var.cap, align 8
-  store i64 %var.load48, ptr %var.st_cap, align 8
-  %var.load49 = load ptr, ptr %var.st, align 8
-  %var.load50 = load i64, ptr %var.st_cap, align 8
-  %raw.int51 = ptrtoint ptr %var.load49 to i64
-  %raw.clean.int52 = and i64 %raw.int51, 281474976710655
+loop.exit.32:                                     ; preds = %loop.header.32
+  %raw.clean.int52 = and i64 %addtmp28, 281474976710655
   %raw.clean.ptr53 = inttoptr i64 %raw.clean.int52 to ptr
-  store i64 %var.load50, ptr %raw.clean.ptr53, align 8
-  %var.load54 = load ptr, ptr %var.st, align 8
-  %ptr.int.l55 = ptrtoint ptr %var.load54 to i64
-  %addtmp56 = add i64 %ptr.int.l55, 8
-  %ptr.res57 = inttoptr i64 %addtmp56 to ptr
-  %raw.int58 = ptrtoint ptr %ptr.res57 to i64
-  %raw.clean.int59 = and i64 %raw.int58, 281474976710655
+  store i64 %choice.res8, ptr %raw.clean.ptr53, align 8
+  %addtmp56 = add i64 %addtmp28, 8
+  %raw.clean.int59 = and i64 %addtmp56, 281474976710655
   %raw.clean.ptr60 = inttoptr i64 %raw.clean.int59 to ptr
   store i64 0, ptr %raw.clean.ptr60, align 8
-  %var.load61 = load ptr, ptr %var.buf, align 8
-  %var.load62 = load ptr, ptr %var.fs, align 8
-  %var.load63 = load ptr, ptr %var.act, align 8
-  %var.load64 = load ptr, ptr %var.st, align 8
-  %var.load65 = load i64, ptr %var.es, align 8
-  %var.load66 = load i64, ptr %var.cap, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, ptr, i64, i64 }, ptr null, i32 1) to i64))
-  %rec.fld = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 0
-  store ptr %var.load61, ptr %rec.fld, align 8
+  store ptr %call.res, ptr %rec.alloc, align 8
   %rec.fld67 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 1
-  store ptr %var.load62, ptr %rec.fld67, align 8
+  store ptr %ptr.res, ptr %rec.fld67, align 8
   %rec.fld68 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 2
-  store ptr %var.load63, ptr %rec.fld68, align 8
+  store ptr %ptr.res34, ptr %rec.fld68, align 8
   %rec.fld69 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 3
-  store ptr %var.load64, ptr %rec.fld69, align 8
+  store ptr %ptr.res29, ptr %rec.fld69, align 8
   %rec.fld70 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 4
-  store i64 %var.load65, ptr %rec.fld70, align 8
+  store i64 %choice.res, ptr %rec.fld70, align 8
   %rec.fld71 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 5
-  store i64 %var.load66, ptr %rec.fld71, align 8
+  store i64 %choice.res8, ptr %rec.fld71, align 8
   ret ptr %rec.alloc
 }
 
 define i64 @"mem::pool_count"(ptr %0) #0 {
 entry:
-  %var.p = alloca ptr, align 8
-  store ptr %0, ptr %var.p, align 8
-  %var.load = load ptr, ptr %var.p, align 8
-  %fld.gep = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load, i32 0, i32 3
+  %fld.gep = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load = load ptr, ptr %fld.gep, align 8
   %ptr.int.l = ptrtoint ptr %fld.load to i64
   %addtmp = add i64 %ptr.int.l, 8
-  %ptr.res = inttoptr i64 %addtmp to ptr
-  %raw.int = ptrtoint ptr %ptr.res to i64
-  %raw.clean.int = and i64 %raw.int, 281474976710655
+  %raw.clean.int = and i64 %addtmp, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
   ret i64 %raw.load
@@ -1276,183 +753,106 @@ entry:
 
 define i64 @"mem::pool_capacity"(ptr %0) #0 {
 entry:
-  %var._acc_1 = alloca ptr, align 8
-  store ptr %0, ptr %var._acc_1, align 8
-  %var.load = load ptr, ptr %var._acc_1, align 8
-  %fld.gep = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load, i32 0, i32 5
+  %fld.gep = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 5
   %fld.load = load i64, ptr %fld.gep, align 8
   ret i64 %fld.load
 }
 
 define { i1, i64 } @"mem::pool_alloc"(ptr %0) #0 {
 entry:
-  %var.cnt = alloca i64, align 8
-  %var.idx = alloca i64, align 8
-  %var.top_next = alloca i64, align 8
-  %var.top = alloca i64, align 8
-  %var.p = alloca ptr, align 8
-  store ptr %0, ptr %var.p, align 8
-  %var.load = load ptr, ptr %var.p, align 8
-  %fld.gep = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load, i32 0, i32 3
+  %fld.gep = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load = load ptr, ptr %fld.gep, align 8
   %raw.int = ptrtoint ptr %fld.load to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
-  store i64 %raw.load, ptr %var.top, align 8
-  %var.load1 = load i64, ptr %var.top, align 8
-  %cmptmp = icmp eq i64 %var.load1, 0
-  br i1 %cmptmp, label %choice.then, label %choice.exit
+  %cmptmp = icmp eq i64 %raw.load, 0
+  br i1 %cmptmp, label %common.ret, label %choice.exit
 
-choice.then:                                      ; preds = %entry
-  ret { i1, i64 } zeroinitializer
+common.ret:                                       ; preds = %entry, %choice.exit
+  %common.ret.op = phi { i1, i64 } [ %ram.pay, %choice.exit ], [ zeroinitializer, %entry ]
+  ret { i1, i64 } %common.ret.op
 
-choice.exit:                                      ; preds = %ret.dead, %entry
-  %var.load2 = load i64, ptr %var.top, align 8
-  %subtmp = sub i64 %var.load2, 1
-  store i64 %subtmp, ptr %var.top_next, align 8
-  %var.load3 = load ptr, ptr %var.p, align 8
-  %fld.gep4 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load3, i32 0, i32 3
-  %fld.load5 = load ptr, ptr %fld.gep4, align 8
-  %var.load6 = load i64, ptr %var.top_next, align 8
+choice.exit:                                      ; preds = %entry
+  %subtmp = sub nuw i64 %raw.load, 1
+  %fld.load5 = load ptr, ptr %fld.gep, align 8
   %raw.int7 = ptrtoint ptr %fld.load5 to i64
   %raw.clean.int8 = and i64 %raw.int7, 281474976710655
   %raw.clean.ptr9 = inttoptr i64 %raw.clean.int8 to ptr
-  store i64 %var.load6, ptr %raw.clean.ptr9, align 8
-  %var.load10 = load ptr, ptr %var.p, align 8
-  %fld.gep11 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load10, i32 0, i32 1
+  store i64 %subtmp, ptr %raw.clean.ptr9, align 8
+  %fld.gep11 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 1
   %fld.load12 = load ptr, ptr %fld.gep11, align 8
-  %var.load13 = load i64, ptr %var.top_next, align 8
-  %multmp = mul i64 %var.load13, 8
+  %multmp = mul i64 %subtmp, 8
   %ptr.int.l = ptrtoint ptr %fld.load12 to i64
   %addtmp = add i64 %ptr.int.l, %multmp
-  %ptr.res = inttoptr i64 %addtmp to ptr
-  %raw.int14 = ptrtoint ptr %ptr.res to i64
-  %raw.clean.int15 = and i64 %raw.int14, 281474976710655
+  %raw.clean.int15 = and i64 %addtmp, 281474976710655
   %raw.clean.ptr16 = inttoptr i64 %raw.clean.int15 to ptr
   %raw.load17 = load volatile i64, ptr %raw.clean.ptr16, align 8
-  store i64 %raw.load17, ptr %var.idx, align 8
-  %var.load18 = load ptr, ptr %var.p, align 8
-  %fld.gep19 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load18, i32 0, i32 2
+  %fld.gep19 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 2
   %fld.load20 = load ptr, ptr %fld.gep19, align 8
-  %var.load21 = load i64, ptr %var.idx, align 8
   %ptr.int.l22 = ptrtoint ptr %fld.load20 to i64
-  %addtmp23 = add i64 %ptr.int.l22, %var.load21
-  %ptr.res24 = inttoptr i64 %addtmp23 to ptr
-  %raw.int25 = ptrtoint ptr %ptr.res24 to i64
-  %raw.clean.int26 = and i64 %raw.int25, 281474976710655
+  %addtmp23 = add i64 %ptr.int.l22, %raw.load17
+  %raw.clean.int26 = and i64 %addtmp23, 281474976710655
   %raw.clean.ptr27 = inttoptr i64 %raw.clean.int26 to ptr
   call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr27, i8 1, i64 1, i1 false)
-  %var.load28 = load ptr, ptr %var.p, align 8
-  %fld.gep29 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load28, i32 0, i32 3
-  %fld.load30 = load ptr, ptr %fld.gep29, align 8
+  %fld.load30 = load ptr, ptr %fld.gep, align 8
   %ptr.int.l31 = ptrtoint ptr %fld.load30 to i64
   %addtmp32 = add i64 %ptr.int.l31, 8
-  %ptr.res33 = inttoptr i64 %addtmp32 to ptr
-  %raw.int34 = ptrtoint ptr %ptr.res33 to i64
-  %raw.clean.int35 = and i64 %raw.int34, 281474976710655
+  %raw.clean.int35 = and i64 %addtmp32, 281474976710655
   %raw.clean.ptr36 = inttoptr i64 %raw.clean.int35 to ptr
   %raw.load37 = load volatile i64, ptr %raw.clean.ptr36, align 8
-  store i64 %raw.load37, ptr %var.cnt, align 8
-  %var.load38 = load ptr, ptr %var.p, align 8
-  %fld.gep39 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load38, i32 0, i32 3
-  %fld.load40 = load ptr, ptr %fld.gep39, align 8
+  %fld.load40 = load ptr, ptr %fld.gep, align 8
   %ptr.int.l41 = ptrtoint ptr %fld.load40 to i64
   %addtmp42 = add i64 %ptr.int.l41, 8
-  %ptr.res43 = inttoptr i64 %addtmp42 to ptr
-  %var.load44 = load i64, ptr %var.cnt, align 8
-  %addtmp45 = add i64 %var.load44, 1
-  %raw.int46 = ptrtoint ptr %ptr.res43 to i64
-  %raw.clean.int47 = and i64 %raw.int46, 281474976710655
+  %addtmp45 = add i64 %raw.load37, 1
+  %raw.clean.int47 = and i64 %addtmp42, 281474976710655
   %raw.clean.ptr48 = inttoptr i64 %raw.clean.int47 to ptr
   store i64 %addtmp45, ptr %raw.clean.ptr48, align 8
-  %var.load49 = load ptr, ptr %var.p, align 8
-  %fld.gep50 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load49, i32 0, i32 0
-  %fld.load51 = load ptr, ptr %fld.gep50, align 8
-  %var.load52 = load i64, ptr %var.idx, align 8
-  %var.load53 = load ptr, ptr %var.p, align 8
-  %fld.gep54 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load53, i32 0, i32 4
+  %fld.load51 = load ptr, ptr %0, align 8
+  %fld.gep54 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 4
   %fld.load55 = load i64, ptr %fld.gep54, align 8
-  %multmp56 = mul i64 %var.load52, %fld.load55
+  %multmp56 = mul i64 %raw.load17, %fld.load55
   %ptr.int.l57 = ptrtoint ptr %fld.load51 to i64
   %addtmp58 = add i64 %ptr.int.l57, %multmp56
-  %ptr.res59 = inttoptr i64 %addtmp58 to ptr
-  %p.to.i64 = ptrtoint ptr %ptr.res59 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
-  ret { i1, i64 } %ram.pay
-
-ret.dead:                                         ; No predecessors!
-  br label %choice.exit
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %addtmp58, 1
+  br label %common.ret
 }
 
 define i1 @"mem::pool_free"(ptr %0, ptr %1) #0 {
 entry:
-  %var.cnt = alloca i64, align 8
-  %var.top = alloca i64, align 8
-  %var.is_act = alloca i8, align 1
-  %var.idx = alloca i64, align 8
-  %var.off = alloca i64, align 8
-  %var.addr = alloca ptr, align 8
-  %var.p = alloca ptr, align 8
-  store ptr %0, ptr %var.p, align 8
-  store ptr %1, ptr %var.addr, align 8
-  %var.load = load ptr, ptr %var.addr, align 8
-  %coerce.ptr2int = ptrtoint ptr %var.load to i64
-  %var.load1 = load ptr, ptr %var.p, align 8
-  %fld.gep = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load1, i32 0, i32 0
-  %fld.load = load ptr, ptr %fld.gep, align 8
+  %coerce.ptr2int = ptrtoint ptr %1 to i64
+  %fld.load = load ptr, ptr %0, align 8
   %coerce.ptr2int2 = ptrtoint ptr %fld.load to i64
   %subtmp = sub i64 %coerce.ptr2int, %coerce.ptr2int2
-  store i64 %subtmp, ptr %var.off, align 8
-  %var.load3 = load i64, ptr %var.off, align 8
-  %cmptmp = icmp sge i64 %var.load3, 0
-  br i1 %cmptmp, label %and.34.then, label %and.34.else
-
-choice.exit:                                      ; preds = %choice.next, %choice.case
-  %choice.res = phi i1 [ true, %choice.case ], [ false, %choice.next ]
-  %nottmp = xor i1 %choice.res, true
-  br i1 %nottmp, label %choice.then, label %choice.exit11
-
-choice.case:                                      ; preds = %and.34.exit
-  br label %choice.exit
-
-choice.next:                                      ; preds = %and.34.exit
-  br label %choice.exit
+  %cmptmp = icmp sge i64 %subtmp, 0
+  br i1 %cmptmp, label %and.34.then, label %and.34.exit
 
 and.34.then:                                      ; preds = %entry
-  %var.load4 = load ptr, ptr %var.p, align 8
-  %fld.gep5 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load4, i32 0, i32 5
+  %fld.gep5 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 5
   %fld.load6 = load i64, ptr %fld.gep5, align 8
-  %var.load7 = load ptr, ptr %var.p, align 8
-  %fld.gep8 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load7, i32 0, i32 4
+  %fld.gep8 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 4
   %fld.load9 = load i64, ptr %fld.gep8, align 8
   %multmp = mul i64 %fld.load6, %fld.load9
-  %cmptmp10 = icmp slt i64 %var.load3, %multmp
+  %cmptmp10 = icmp slt i64 %subtmp, %multmp
   br label %and.34.exit
 
-and.34.else:                                      ; preds = %entry
-  br label %and.34.exit
+and.34.exit:                                      ; preds = %entry, %and.34.then
+  %and.34.phi = phi i1 [ %cmptmp10, %and.34.then ], [ false, %entry ]
+  %nottmp = xor i1 %and.34.phi, true
+  br i1 %nottmp, label %common.ret, label %choice.exit11
 
-and.34.exit:                                      ; preds = %and.34.else, %and.34.then
-  %and.34.phi = phi i1 [ %cmptmp10, %and.34.then ], [ %cmptmp, %and.34.else ]
-  br i1 %and.34.phi, label %choice.case, label %choice.next
+common.ret:                                       ; preds = %choice.exit33, %div.ok, %and.34.exit, %choice.exit42
+  %common.ret.op = phi i1 [ true, %choice.exit42 ], [ false, %and.34.exit ], [ false, %div.ok ], [ false, %choice.exit33 ]
+  ret i1 %common.ret.op
 
-choice.then:                                      ; preds = %choice.exit
-  ret i1 false
-
-choice.exit11:                                    ; preds = %ret.dead, %choice.exit
-  %var.load12 = load i64, ptr %var.off, align 8
-  %var.load13 = load ptr, ptr %var.p, align 8
-  %fld.gep14 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load13, i32 0, i32 4
+choice.exit11:                                    ; preds = %and.34.exit
+  %fld.gep14 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 4
   %fld.load15 = load i64, ptr %fld.gep14, align 8
   %div.is.zero = icmp eq i64 %fld.load15, 0
   br i1 %div.is.zero, label %div.zero_abort, label %div.notzero
 
-ret.dead:                                         ; No predecessors!
-  br label %choice.exit11
-
-div.notzero:                                      ; preds = %abort.dead, %choice.exit11
-  %div.is.min = icmp eq i64 %var.load12, -9223372036854775808
+div.notzero:                                      ; preds = %choice.exit11
+  %div.is.min = icmp eq i64 %subtmp, -9223372036854775808
   %div.is.negone = icmp eq i64 %fld.load15, -1
   %div.is.ovf = and i1 %div.is.min, %div.is.negone
   br i1 %div.is.ovf, label %div.ovf_abort, label %div.ok
@@ -1461,147 +861,69 @@ div.zero_abort:                                   ; preds = %choice.exit11
   call void @dva_abort_div_zero_msg()
   unreachable
 
-abort.dead:                                       ; No predecessors!
-  br label %div.notzero
-
-div.ok:                                           ; preds = %abort.dead16, %div.notzero
-  %divtmp = sdiv i64 %var.load12, %fld.load15
-  store i64 %divtmp, ptr %var.idx, align 8
-  %var.load17 = load i64, ptr %var.off, align 8
-  %var.load18 = load ptr, ptr %var.p, align 8
-  %fld.gep19 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load18, i32 0, i32 4
-  %fld.load20 = load i64, ptr %fld.gep19, align 8
-  %div.is.zero21 = icmp eq i64 %fld.load20, 0
-  br i1 %div.is.zero21, label %div.zero_abort23, label %div.notzero22
+div.ok:                                           ; preds = %div.notzero
+  %divtmp = sdiv i64 %subtmp, %fld.load15
+  %modtmp = srem i64 %subtmp, %fld.load15
+  %cmptmp31 = icmp ne i64 %modtmp, 0
+  br i1 %cmptmp31, label %common.ret, label %choice.exit33
 
 div.ovf_abort:                                    ; preds = %div.notzero
   call void @dva_abort_div_ovf_msg()
   unreachable
 
-abort.dead16:                                     ; No predecessors!
-  br label %div.ok
-
-div.notzero22:                                    ; preds = %abort.dead24, %div.ok
-  %div.is.min25 = icmp eq i64 %var.load17, -9223372036854775808
-  %div.is.negone26 = icmp eq i64 %fld.load20, -1
-  %div.is.ovf27 = and i1 %div.is.min25, %div.is.negone26
-  br i1 %div.is.ovf27, label %div.ovf_abort29, label %div.ok28
-
-div.zero_abort23:                                 ; preds = %div.ok
-  call void @dva_abort_div_zero_msg()
-  unreachable
-
-abort.dead24:                                     ; No predecessors!
-  br label %div.notzero22
-
-div.ok28:                                         ; preds = %abort.dead30, %div.notzero22
-  %modtmp = srem i64 %var.load17, %fld.load20
-  %cmptmp31 = icmp ne i64 %modtmp, 0
-  br i1 %cmptmp31, label %choice.then32, label %choice.exit33
-
-div.ovf_abort29:                                  ; preds = %div.notzero22
-  call void @dva_abort_div_ovf_msg()
-  unreachable
-
-abort.dead30:                                     ; No predecessors!
-  br label %div.ok28
-
-choice.then32:                                    ; preds = %div.ok28
-  ret i1 false
-
-choice.exit33:                                    ; preds = %ret.dead34, %div.ok28
-  %var.load35 = load ptr, ptr %var.p, align 8
-  %fld.gep36 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load35, i32 0, i32 2
+choice.exit33:                                    ; preds = %div.ok
+  %fld.gep36 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 2
   %fld.load37 = load ptr, ptr %fld.gep36, align 8
-  %var.load38 = load i64, ptr %var.idx, align 8
   %ptr.int.l = ptrtoint ptr %fld.load37 to i64
-  %addtmp = add i64 %ptr.int.l, %var.load38
-  %ptr.res = inttoptr i64 %addtmp to ptr
-  %raw.int = ptrtoint ptr %ptr.res to i64
-  %raw.clean.int = and i64 %raw.int, 281474976710655
+  %addtmp = add i64 %ptr.int.l, %divtmp
+  %raw.clean.int = and i64 %addtmp, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
   %raw.load = load volatile i8, ptr %raw.clean.ptr, align 1
-  store i8 %raw.load, ptr %var.is_act, align 1
-  %var.load39 = load i8, ptr %var.is_act, align 1
-  %coerce.zext = zext i8 %var.load39 to i64
+  %coerce.zext = zext i8 %raw.load to i64
   %cmptmp40 = icmp eq i64 %coerce.zext, 0
-  br i1 %cmptmp40, label %choice.then41, label %choice.exit42
+  br i1 %cmptmp40, label %common.ret, label %choice.exit42
 
-ret.dead34:                                       ; No predecessors!
-  br label %choice.exit33
-
-choice.then41:                                    ; preds = %choice.exit33
-  ret i1 false
-
-choice.exit42:                                    ; preds = %ret.dead43, %choice.exit33
-  %var.load44 = load ptr, ptr %var.p, align 8
-  %fld.gep45 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load44, i32 0, i32 2
-  %fld.load46 = load ptr, ptr %fld.gep45, align 8
-  %var.load47 = load i64, ptr %var.idx, align 8
+choice.exit42:                                    ; preds = %choice.exit33
+  %fld.load46 = load ptr, ptr %fld.gep36, align 8
   %ptr.int.l48 = ptrtoint ptr %fld.load46 to i64
-  %addtmp49 = add i64 %ptr.int.l48, %var.load47
-  %ptr.res50 = inttoptr i64 %addtmp49 to ptr
-  %raw.int51 = ptrtoint ptr %ptr.res50 to i64
-  %raw.clean.int52 = and i64 %raw.int51, 281474976710655
+  %addtmp49 = add i64 %ptr.int.l48, %divtmp
+  %raw.clean.int52 = and i64 %addtmp49, 281474976710655
   %raw.clean.ptr53 = inttoptr i64 %raw.clean.int52 to ptr
   call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr53, i8 0, i64 1, i1 false)
-  %var.load54 = load ptr, ptr %var.p, align 8
-  %fld.gep55 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load54, i32 0, i32 3
+  %fld.gep55 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load56 = load ptr, ptr %fld.gep55, align 8
   %raw.int57 = ptrtoint ptr %fld.load56 to i64
   %raw.clean.int58 = and i64 %raw.int57, 281474976710655
   %raw.clean.ptr59 = inttoptr i64 %raw.clean.int58 to ptr
   %raw.load60 = load volatile i64, ptr %raw.clean.ptr59, align 8
-  store i64 %raw.load60, ptr %var.top, align 8
-  %var.load61 = load ptr, ptr %var.p, align 8
-  %fld.gep62 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load61, i32 0, i32 1
+  %fld.gep62 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 1
   %fld.load63 = load ptr, ptr %fld.gep62, align 8
-  %var.load64 = load i64, ptr %var.top, align 8
-  %multmp65 = mul i64 %var.load64, 8
+  %multmp65 = mul i64 %raw.load60, 8
   %ptr.int.l66 = ptrtoint ptr %fld.load63 to i64
   %addtmp67 = add i64 %ptr.int.l66, %multmp65
-  %ptr.res68 = inttoptr i64 %addtmp67 to ptr
-  %var.load69 = load i64, ptr %var.idx, align 8
-  %raw.int70 = ptrtoint ptr %ptr.res68 to i64
-  %raw.clean.int71 = and i64 %raw.int70, 281474976710655
+  %raw.clean.int71 = and i64 %addtmp67, 281474976710655
   %raw.clean.ptr72 = inttoptr i64 %raw.clean.int71 to ptr
-  store i64 %var.load69, ptr %raw.clean.ptr72, align 8
-  %var.load73 = load ptr, ptr %var.p, align 8
-  %fld.gep74 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load73, i32 0, i32 3
-  %fld.load75 = load ptr, ptr %fld.gep74, align 8
-  %var.load76 = load i64, ptr %var.top, align 8
-  %addtmp77 = add i64 %var.load76, 1
+  store i64 %divtmp, ptr %raw.clean.ptr72, align 8
+  %fld.load75 = load ptr, ptr %fld.gep55, align 8
+  %addtmp77 = add i64 %raw.load60, 1
   %raw.int78 = ptrtoint ptr %fld.load75 to i64
   %raw.clean.int79 = and i64 %raw.int78, 281474976710655
   %raw.clean.ptr80 = inttoptr i64 %raw.clean.int79 to ptr
   store i64 %addtmp77, ptr %raw.clean.ptr80, align 8
-  %var.load81 = load ptr, ptr %var.p, align 8
-  %fld.gep82 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load81, i32 0, i32 3
-  %fld.load83 = load ptr, ptr %fld.gep82, align 8
+  %fld.load83 = load ptr, ptr %fld.gep55, align 8
   %ptr.int.l84 = ptrtoint ptr %fld.load83 to i64
   %addtmp85 = add i64 %ptr.int.l84, 8
-  %ptr.res86 = inttoptr i64 %addtmp85 to ptr
-  %raw.int87 = ptrtoint ptr %ptr.res86 to i64
-  %raw.clean.int88 = and i64 %raw.int87, 281474976710655
+  %raw.clean.int88 = and i64 %addtmp85, 281474976710655
   %raw.clean.ptr89 = inttoptr i64 %raw.clean.int88 to ptr
   %raw.load90 = load volatile i64, ptr %raw.clean.ptr89, align 8
-  store i64 %raw.load90, ptr %var.cnt, align 8
-  %var.load91 = load ptr, ptr %var.p, align 8
-  %fld.gep92 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load91, i32 0, i32 3
-  %fld.load93 = load ptr, ptr %fld.gep92, align 8
+  %fld.load93 = load ptr, ptr %fld.gep55, align 8
   %ptr.int.l94 = ptrtoint ptr %fld.load93 to i64
   %addtmp95 = add i64 %ptr.int.l94, 8
-  %ptr.res96 = inttoptr i64 %addtmp95 to ptr
-  %var.load97 = load i64, ptr %var.cnt, align 8
-  %subtmp98 = sub i64 %var.load97, 1
-  %raw.int99 = ptrtoint ptr %ptr.res96 to i64
-  %raw.clean.int100 = and i64 %raw.int99, 281474976710655
+  %subtmp98 = sub i64 %raw.load90, 1
+  %raw.clean.int100 = and i64 %addtmp95, 281474976710655
   %raw.clean.ptr101 = inttoptr i64 %raw.clean.int100 to ptr
   store i64 %subtmp98, ptr %raw.clean.ptr101, align 8
-  ret i1 true
-
-ret.dead43:                                       ; No predecessors!
-  br label %choice.exit42
+  br label %common.ret
 }
 
 ; Function Attrs: cold noinline noreturn
@@ -1609,9 +931,6 @@ define internal void @dva_abort_div_zero_msg() #7 {
 entry:
   %0 = call i64 @write(i32 2, ptr @div_zero_msg, i64 32)
   call void @exit(i32 1)
-  unreachable
-
-abort.dead:                                       ; No predecessors!
   unreachable
 }
 
@@ -1621,18 +940,11 @@ entry:
   %0 = call i64 @write(i32 2, ptr @div_ovf_msg, i64 55)
   call void @exit(i32 1)
   unreachable
-
-abort.dead:                                       ; No predecessors!
-  unreachable
 }
 
 define void @"mem::pool_destroy"(ptr %0) #0 {
 entry:
-  %var.p = alloca ptr, align 8
-  store ptr %0, ptr %var.p, align 8
-  %var.load = load ptr, ptr %var.p, align 8
-  %fld.gep = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load, i32 0, i32 0
-  %fld.load = load ptr, ptr %fld.gep, align 8
+  %fld.load = load ptr, ptr %0, align 8
   %addr.ffi.int = ptrtoint ptr %fld.load to i64
   %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
@@ -1642,67 +954,35 @@ entry:
 
 define void @"mem::pool_for_each"(ptr %0, ptr %1) #0 {
 entry:
-  %var.is_act = alloca i8, align 1
-  %var._ = alloca i64, align 8
-  %var._i = alloca i64, align 8
-  %var.i = alloca i64, align 8
-  %loop.step.36 = alloca i64, align 8
-  %loop.idx.36 = alloca i64, align 8
-  %var.f = alloca ptr, align 8
-  %var.p = alloca ptr, align 8
-  store ptr %0, ptr %var.p, align 8
-  store ptr %1, ptr %var.f, align 8
-  %var.load = load ptr, ptr %var.p, align 8
-  %fld.gep = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load, i32 0, i32 5
+  %fld.gep = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 5
   %fld.load = load i64, ptr %fld.gep, align 8
-  store i64 0, ptr %loop.idx.36, align 8
   br label %loop.header.36
 
-loop.header.36:                                   ; preds = %loop.latch.36, %entry
-  %counter.load = load i64, ptr %loop.idx.36, align 8
-  %loop.cond = icmp slt i64 %counter.load, %fld.load
-  br i1 %loop.cond, label %loop.body.36, label %loop.exit.nat.36
+loop.header.36:                                   ; preds = %choice.exit, %entry
+  %loop.idx.36.0 = phi i64 [ 0, %entry ], [ %loop.next, %choice.exit ]
+  %loop.cond = icmp slt i64 %loop.idx.36.0, %fld.load
+  br i1 %loop.cond, label %loop.body.36, label %loop.exit.36
 
 loop.body.36:                                     ; preds = %loop.header.36
-  %loop.rel.i = sub i64 %counter.load, 0
-  store i64 1, ptr %loop.step.36, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
-  store i64 %counter.load, ptr %var._, align 8
-  store i64 %counter.load, ptr %var.i, align 8
-  %var.load1 = load ptr, ptr %var.p, align 8
-  %fld.gep2 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load1, i32 0, i32 2
+  %fld.gep2 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 2
   %fld.load3 = load ptr, ptr %fld.gep2, align 8
-  %var.load4 = load i64, ptr %var.i, align 8
   %ptr.int.l = ptrtoint ptr %fld.load3 to i64
-  %addtmp = add i64 %ptr.int.l, %var.load4
-  %ptr.res = inttoptr i64 %addtmp to ptr
-  %raw.int = ptrtoint ptr %ptr.res to i64
-  %raw.clean.int = and i64 %raw.int, 281474976710655
+  %addtmp = add i64 %ptr.int.l, %loop.idx.36.0
+  %raw.clean.int = and i64 %addtmp, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
+  %addr.tag = lshr i64 %addtmp, 48
   %tag.immortal = icmp eq i64 %addr.tag, 0
   %active.gen = load i64, ptr @dva_active_gen_tls, align 8
   %tag.current = icmp eq i64 %addr.tag, %active.gen
   %tag.fast.ok = or i1 %tag.immortal, %tag.current
   br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
 
-loop.exit.nat.36:                                 ; preds = %loop.header.36
-  br label %loop.exit.36
-
-loop.latch.36:                                    ; preds = %choice.exit
-  %step.val = load i64, ptr %loop.step.36, align 8
-  %loop.next = add i64 %counter.load, %step.val
-  store i64 %loop.next, ptr %loop.idx.36, align 8
-  br label %loop.header.36
-
-loop.exit.36:                                     ; preds = %loop.exit.nat.36
+loop.exit.36:                                     ; preds = %loop.header.36
   ret void
 
 addr_ok:                                          ; preds = %tag.slow_check, %loop.body.36
   %raw.load = load volatile i8, ptr %raw.clean.ptr, align 1
-  store i8 %raw.load, ptr %var.is_act, align 1
-  %var.load5 = load i8, ptr %var.is_act, align 1
-  %coerce.zext = zext i8 %var.load5 to i64
+  %coerce.zext = zext i8 %raw.load to i64
   %cmptmp = icmp ne i64 %coerce.zext, 0
   br i1 %cmptmp, label %choice.then, label %choice.exit
 
@@ -1711,89 +991,53 @@ tag.slow_check:                                   ; preds = %loop.body.36
   br label %addr_ok
 
 choice.then:                                      ; preds = %addr_ok
-  %clo.load = load ptr, ptr %var.f, align 8
-  %clo.fn.gep = getelementptr inbounds { ptr, ptr }, ptr %clo.load, i32 0, i32 0
-  %clo.env.gep = getelementptr inbounds { ptr, ptr }, ptr %clo.load, i32 0, i32 1
-  %clo.fn.load = load ptr, ptr %clo.fn.gep, align 8
+  %clo.env.gep = getelementptr inbounds { ptr, ptr }, ptr %1, i32 0, i32 1
+  %clo.fn.load = load ptr, ptr %1, align 8
   %clo.env.load = load ptr, ptr %clo.env.gep, align 8
-  %var.load6 = load ptr, ptr %var.p, align 8
-  %fld.gep7 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load6, i32 0, i32 0
-  %fld.load8 = load ptr, ptr %fld.gep7, align 8
-  %var.load9 = load i64, ptr %var.i, align 8
-  %var.load10 = load ptr, ptr %var.p, align 8
-  %fld.gep11 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load10, i32 0, i32 4
+  %fld.load8 = load ptr, ptr %0, align 8
+  %fld.gep11 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 4
   %fld.load12 = load i64, ptr %fld.gep11, align 8
-  %multmp = mul i64 %var.load9, %fld.load12
+  %multmp = mul i64 %loop.idx.36.0, %fld.load12
   %ptr.int.l13 = ptrtoint ptr %fld.load8 to i64
   %addtmp14 = add i64 %ptr.int.l13, %multmp
   %ptr.res15 = inttoptr i64 %addtmp14 to ptr
   %clo.is_cap = icmp ne ptr %clo.env.load, null
   br i1 %clo.is_cap, label %clo.cap, label %clo.plain
 
-choice.exit:                                      ; preds = %clo.merge, %addr_ok
-  br label %loop.latch.36
+choice.exit:                                      ; preds = %clo.cap, %clo.plain, %addr_ok
+  %loop.next = add i64 %loop.idx.36.0, 1
+  br label %loop.header.36
 
 clo.cap:                                          ; preds = %choice.then
   call void %clo.fn.load(ptr %clo.env.load, ptr %ptr.res15)
-  br label %clo.merge
+  br label %choice.exit
 
 clo.plain:                                        ; preds = %choice.then
   call void %clo.fn.load(ptr %ptr.res15)
-  br label %clo.merge
-
-clo.merge:                                        ; preds = %clo.plain, %clo.cap
   br label %choice.exit
 }
 
 define { i1, i64 } @"mem::index_byte"(ptr %0, i64 %1, i64 %2) #0 {
 entry:
-  %var.r = alloca ptr, align 8
-  %var.len = alloca i64, align 8
-  %var.byte = alloca i64, align 8
-  %var.p = alloca ptr, align 8
-  store ptr %0, ptr %var.p, align 8
-  store i64 %1, ptr %var.byte, align 8
-  store i64 %2, ptr %var.len, align 8
-  %var.load = load i64, ptr %var.len, align 8
-  %cmptmp = icmp sle i64 %var.load, 0
-  br i1 %cmptmp, label %choice.then, label %choice.exit
+  %cmptmp = icmp sle i64 %2, 0
+  br i1 %cmptmp, label %common.ret, label %choice.exit
 
-choice.then:                                      ; preds = %entry
-  ret { i1, i64 } zeroinitializer
+common.ret:                                       ; preds = %entry, %choice.exit
+  %common.ret.op = phi { i1, i64 } [ %choice.res, %choice.exit ], [ zeroinitializer, %entry ]
+  ret { i1, i64 } %common.ret.op
 
-choice.exit:                                      ; preds = %ret.dead, %entry
-  %var.load1 = load ptr, ptr %var.p, align 8
-  %addr.ffi.int = ptrtoint ptr %var.load1 to i64
+choice.exit:                                      ; preds = %entry
+  %addr.ffi.int = ptrtoint ptr %0 to i64
   %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
-  %var.load2 = load i64, ptr %var.byte, align 8
-  %bandtmp = and i64 %var.load2, 255
-  %var.load3 = load i64, ptr %var.len, align 8
-  %call.res = call ptr @memchr(ptr %addr.ffi.clean, i64 %bandtmp, i64 %var.load3)
-  store ptr %call.res, ptr %var.r, align 8
-  %var.load4 = load ptr, ptr %var.r, align 8
-  %ptr.int.l = ptrtoint ptr %var.load4 to i64
+  %bandtmp = and i64 %1, 255
+  %call.res = call ptr @memchr(ptr %addr.ffi.clean, i64 %bandtmp, i64 %2)
+  %ptr.int.l = ptrtoint ptr %call.res to i64
   %cmptmp5 = icmp eq i64 %ptr.int.l, 0
-  br i1 %cmptmp5, label %choice.then6, label %choice.else
-
-ret.dead:                                         ; No predecessors!
-  br label %choice.exit
-
-choice.then6:                                     ; preds = %choice.exit
-  br label %choice.exit7
-
-choice.else:                                      ; preds = %choice.exit
-  %var.load8 = load ptr, ptr %var.r, align 8
-  %var.load9 = load ptr, ptr %var.p, align 8
-  %ptr.int.l10 = ptrtoint ptr %var.load8 to i64
-  %ptr.int.r = ptrtoint ptr %var.load9 to i64
-  %subtmp = sub i64 %ptr.int.l10, %ptr.int.r
+  %subtmp = sub i64 %ptr.int.l, %addr.ffi.int
   %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %subtmp, 1
-  br label %choice.exit7
-
-choice.exit7:                                     ; preds = %choice.else, %choice.then6
-  %choice.res = phi { i1, i64 } [ zeroinitializer, %choice.then6 ], [ %ram.pay, %choice.else ]
-  ret { i1, i64 } %choice.res
+  %choice.res = select i1 %cmptmp5, { i1, i64 } zeroinitializer, { i1, i64 } %ram.pay
+  br label %common.ret
 }
 
 attributes #0 = { "nounwind" }
