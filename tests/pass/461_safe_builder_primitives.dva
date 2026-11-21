@@ -1,0 +1,47 @@
+// Safe Builder buffer primitives: mem::clear, mem::truncate, mem::zero_buf, mem::write_tail (DVA-116)
+#use io
+#use mem
+
+// 1. clear and truncate
+b = {32}
+b += "hello world"
+io::out $ ?b
+mem::truncate(b, 5)
+io::out $ ?b
+io::out $ b(0..?b)
+mem::clear(b)
+io::out $ ?b
+b += "ok"
+io::out $ +b
+
+// 2. zero_buf (zero-initialized fixed-length buffer)
+z = mem::zero_buf(4)
+io::out $ ?z
+io::out $ z(0)
+io::out $ z(3)
+@[&z + 0] = 72i8
+@[&z + 1] = 105i8
+mem::truncate(z, 2)
+io::out $ +z
+
+// 3. write_tail with non-capturing fill function
+fill_ab: Addr, Int => Int
+fill_ab = dst, avail =>
+   avail < 2 | --| 0
+   @[dst + 0] = 65i8
+   @[dst + 1] = 66i8
+   2
+
+w = {2}
+w += "pre:"
+n1 = mem::write_tail(w, 4, fill_ab)
+io::out $ n1
+
+// 4. write_tail with capturing closure + capacity growth
+tag = "XYZ!"
+n2 = mem::write_tail(w, ?tag, (dst, avail =>
+   %memcpy(dst, &tag, avail)
+   avail
+))
+io::out $ n2
+io::out $ +w

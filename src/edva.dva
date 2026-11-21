@@ -947,17 +947,17 @@ resolve_module = base, mod_path, ldr =>
          | resolve_local_module(base, mod_path, ldr)
          | resolve_std_module(mod_path)
 
-read_fd_bytes_loop: Int, Builder, Int, Int => < Int | >
-read_fd_bytes_loop = fd, b, off, rem =>
-   rem == 0 | --| <+ off +>
+read_fd_bytes_loop: Int, Builder, Int => <>
+read_fd_bytes_loop = fd, b, rem =>
+   rem == 0 | --| <+>
    chunk = rem < 65536 | rem | 65536
-   n = libc::read(fd, &b + off, chunk)
+   n = mem::write_tail(b, chunk, (dst, avail => libc::read(fd, dst, avail)))
    n < 0
       |
          err = @[__errno_location! i32]
-         err == 4 | read_fd_bytes_loop(fd, b, off, rem) | <-->
+         err == 4 | read_fd_bytes_loop(fd, b, rem) | <->
       |
-         n == 0 | <+ off +> | read_fd_bytes_loop(fd, b, off + n, rem - n)
+         n == 0 | <+> | read_fd_bytes_loop(fd, b, rem - n)
 
 read_file_text: String => < String | >
 read_file_text = path =>
@@ -971,13 +971,9 @@ read_file_text = path =>
          sz == 0 | libc::close(fd); --| <+ "" +>
          libc::lseek(fd, 0, 0)
          b = {sz}
-         read_res = read_fd_bytes_loop(fd, b, 0, sz)
+         ok = read_fd_bytes_loop(fd, b, sz)
          libc::close(fd)
-         read_res
-            | total =>
-               ?b = total
-               <+ +b +>
-            | <-->
+         ok | <+ +b +> | <-->
 
 type_info_known: ast::Exprs, ast::TypeInfo, String, ast::Names => <>
 type_info_known = exprs, ti, owner, seen =>
@@ -3301,8 +3297,7 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
 // Returns < String | >: positive line on success, negative unit on EOF.
 read_stdin_line: Int => < String | >
 read_stdin_line = max =>
-   buf = {max + 1}
-   ?buf = max + 1
+   buf = mem::zero_buf(max + 1)
    n' = 0
    max @ i =>
       rb = libc::read(0, &buf + i, 1)
@@ -3316,7 +3311,7 @@ read_stdin_line = max =>
       | <-->
       |
          len = (buf(n' - 1) == 10) | n' - 1 | n'
-         ?buf = len
+         mem::truncate(buf, len)
          <+ +buf +>
 
 write_bytes_loop: Int, String, Int, Int => <>
@@ -3455,7 +3450,7 @@ active_repl_dir = ""
 // Saved terminal attributes (struct termios is ~60 bytes; 128 leaves headroom).
 // A Builder gives a stable, writable buffer for tcgetattr/tcsetattr via &buf.
 ::orig_termios: Builder
-::orig_termios = {128}
+::orig_termios = mem::zero_buf(128)
 ::raw_mode_active: <>
 ::raw_mode_active = <->
 
@@ -3464,12 +3459,10 @@ enable_raw_mode = !=>
    libc::isatty(0) == 0
       | <->
       |
-         ?orig_termios = 128
          libc::tcgetattr(0, &orig_termios) != 0
             | <->
             |
-               raw = {128}
-               ?raw = 128
+               raw = mem::zero_buf(128)
                libc::memcpy(&raw, &orig_termios, 128)
                libc::cfmakeraw(&raw)
                res = libc::tcsetattr(0, 0, &raw)

@@ -1,10 +1,11 @@
 #use io
+#use mem
 
 #foreign("c")
    strlen : (s: Addr) -> Int
 
 res =
-   b = {16}
+   b = mem::zero_buf(5)
    p = &b
    @[p] = 72i8
    @[p + 1] = 101i8
@@ -12,7 +13,6 @@ res =
    @[p + 3] = 108i8
    @[p + 4] = 111i8
    @[p + 5] = 0i8
-   ?b = 5
    io::out $ @[p i8]
    io::out $ @[p + 1 i8]
    s = +b

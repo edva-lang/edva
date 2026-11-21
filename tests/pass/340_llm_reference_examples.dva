@@ -2,6 +2,7 @@
 // Verifies code examples published in doc/llms.txt and doc/llms-full.txt.
 
 #use io
+#use mem
 
 #foreign("c")
    open: (path: String, flags: Int) => Int
@@ -99,9 +100,9 @@ read_file = path =>
    fd [< 0] <-->
    |
       b = {4096}
-      n = read(fd, &b, 4096)
+      n = mem::write_tail(b, 4096, (dst, avail => read(fd, dst, avail)))
       close(fd)
-      n > 0 | (?b = n; <+ +b +>) | <-->
+      n > 0 | <+ +b +> | <-->
 
 // Main driver
 io::out $ test_rebinding!

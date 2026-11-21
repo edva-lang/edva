@@ -78,17 +78,13 @@ read_exact_at = fd, off, len =>
    pos = libc::lseek(fd, off, 0) // SEEK_SET = 0
    pos < 0 | --| <- kv_err("lseek failed reading value", off) +>
    buf = {len}
-   got' = 0
-   (got' < len) @
-      r = libc::read(fd, &buf + got', len - got')
+   (?buf < len) @
+      r = mem::write_tail(buf, len - ?buf, (dst, avail => libc::read(fd, dst, avail)))
       r < 0 && libc::errno! == 4 | --^
       r !> 0 | -->
-      got' = got' + r
-   got' != len
-      | <- kv_err("short read from kv log file", off + got') +>
-      |
-         ?buf = len
-         <+ +buf ->
+   ?buf != len
+      | <- kv_err("short read from kv log file", off + ?buf) +>
+      | <+ +buf ->
 
 encode_record: Int, String, String => String
 encode_record = flags, key, val =>
@@ -164,14 +160,11 @@ read_all_file = path =>
          --| ""
    _p0 = libc::lseek(fd, 0, 0) // SEEK_SET = 0
    out = {fsize}
-   got' = 0
-   (got' < fsize) @
-      n = libc::read(fd, &out + got', fsize - got')
+   (?out < fsize) @
+      n = mem::write_tail(out, fsize - ?out, (dst, avail => libc::read(fd, dst, avail)))
       n < 0 && libc::errno! == 4 | --^
       n !> 0 | -->
-      got' = got' + n
    libc::close(fd)
-   ?out = got'
    +out
 
 open_impl: String, <> => < (Store, Int) | Error >

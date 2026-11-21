@@ -1,0 +1,3 @@
+// Direct Builder length assignment '?b = n' is disallowed (DVA-116)
+b = {16}
+?b = 4

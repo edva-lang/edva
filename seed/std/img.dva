@@ -8,6 +8,7 @@
 #use flate
 #use hash
 #use libc
+#use mem
 #use str
 
 #public
@@ -439,14 +440,12 @@ load = path =>
    chunk = {4096}
    err' = <->
    0.. @
-      n = libc::read(fd, &chunk, 4096)
+      n = mem::write_tail(out, 4096, (dst, avail => libc::read(fd, dst, avail)))
       n < 0
          |
             err' = <+>
             -->
       n == 0 | -->
-      ?chunk = n
-      out += chunk(0..n)
    libc::close(fd)
    err'
       | <- img_err("failed to read image file: " + path, 0) +>

@@ -16,6 +16,7 @@
 #use binary
 #use hex
 #use libc
+#use mem
 #use sys
 
 #private
@@ -844,11 +845,10 @@ random_bytes = n =>
    n < 0 | --| <- crypto_err("random_bytes count must be >= 0") +>
    n == 0 | --| <+ "" ->
    buf = {n}
-   !fill_os_random(OsTarget, &buf, n)
+   got = mem::write_tail(buf, n, (dst, avail => fill_os_random(OsTarget, dst, avail) | avail | 0))
+   got != n
       | <- crypto_err("OS CSPRNG read failed") +>
-      |
-         ?buf = n
-         <+ +buf ->
+      | <+ +buf ->
 
 // Returns `n` cryptographically secure random bytes encoded as `2 * n` lowercase hex characters.
 random_hex: Int => < String | Error >

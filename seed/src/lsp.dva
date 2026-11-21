@@ -108,13 +108,11 @@ record_typecheck_errs = fpath, errs =>
 
 read_byte: () => Int
 read_byte = !=>
-   buf = {4}
+   buf = mem::zero_buf(4)
    n = libc::read(0, &buf, 1)
    n !> 0
       | -1
-      |
-         ?buf = 1
-         buf(0) .&. 0xFF
+      | buf(0) .&. 0xFF
 
 read_header_line: () => < String | >
 read_header_line = !=>
@@ -145,18 +143,15 @@ read_exact_bytes = count =>
    count !> 0 | --| <+ "" +>
    out = {count}
    rem' = count
-   chunk = {4096}
    err' = <->
    0.. @
       rem' !> 0 | -->
       want = rem' < 4096 | rem' | 4096
-      n = libc::read(0, &chunk, want)
+      n = mem::write_tail(out, want, (dst, avail => libc::read(0, dst, avail)))
       n !> 0
          |
             err' = <+>
             -->
-      ?chunk = n
-      out += chunk(0..n)
       rem' = rem' - n
    err' | <--> | <+ +out +>
 

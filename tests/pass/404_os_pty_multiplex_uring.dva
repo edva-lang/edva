@@ -7,6 +7,7 @@
 // - uring::prep_pipe_read, uring::prep_pipe_write, uring::prep_timeout_ms, uring::drain_pipes
 
 #use io
+#use mem
 #use os
 #use str
 #use test
@@ -121,12 +122,12 @@ uring::new(16)
       test::eq(w_cqe.res, ?msg, "uring::prep_pipe_write byte count")
       os::close(up.w)
 
-      rbuf = {64}
+      rbuf = mem::zero_buf(64)
       uring::prep_pipe_read(ring, up.r, &rbuf, 64, 2)
       uring::submit(ring)
       r_cqe = uring::wait_cqe(ring)!!
       test::eq(r_cqe.res, ?msg, "uring::prep_pipe_read byte count")
-      ?rbuf = r_cqe.res
+      mem::truncate(rbuf, r_cqe.res)
       test::eq(+rbuf, msg, "uring::prep_pipe_read payload")
       os::close(up.r)
 

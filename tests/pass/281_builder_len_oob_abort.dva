@@ -1,3 +1,4 @@
-// Runtime bounds check on ?b = n: aborts with E4008 if n > cap or n < 0
+// Runtime bounds check on mem::truncate: aborts with E4008 if n > ?b or n < 0
+#use mem
 b = {16}
-?b = 20
+mem::truncate(b, 20)

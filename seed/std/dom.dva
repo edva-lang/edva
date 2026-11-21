@@ -117,8 +117,10 @@ owned_free = buffer =>
 owned_string: Owned => String
 owned_string = buffer =>
    b = {buffer.length}
-   buffer.length > 0 | %memcpy(&b, buffer.data, buffer.length)
-   ?b = buffer.length
+   mem::write_tail(b, buffer.length, (dst, n =>
+      %memcpy(dst, buffer.data, n)
+      n
+   ))
    +b
 
 token: Element => Int
@@ -133,8 +135,10 @@ listener_token = listener => listener.listener_slot .|. (listener.generation .<.
 reply_string: Reply => String
 reply_string = reply =>
    b = {reply.length}
-   reply.length > 0 | %memcpy(&b, Addr(reply.first), reply.length)
-   ?b = reply.length
+   mem::write_tail(b, reply.length, (dst, n =>
+      %memcpy(dst, Addr(reply.first), n)
+      n
+   ))
    edva_dom_free(Addr(reply.first))
    +b
 

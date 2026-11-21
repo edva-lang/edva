@@ -7,6 +7,7 @@
 // (reader, reader_with_cap, read, read_all, read_byte, read_until, read_line).
 
 #use libc
+#use mem
 #use str
 #use utf
 
@@ -244,7 +245,7 @@
          |
             rem = ?buf - r.pos
             rem > 0 | %memmove(&buf, &buf + r.pos, rem)
-            ?buf = rem
+            mem::truncate(buf, rem)
             r.pos = 0
       read_cap = r.cap > 0 | r.cap | 4096
       space = read_cap - ?buf
@@ -253,8 +254,7 @@
          |
             n' = 0
             0.. @
-               cur = ?buf
-               n = libc::read(r.fd, &buf + cur, space)
+               n = mem::write_tail(buf, space, (dst, avail => libc::read(r.fd, dst, avail)))
                n < 0
                   |
                      errno_val = libc::errno!
@@ -270,7 +270,6 @@
                            n' = 0
                            -->
                         |
-                           ?buf = cur + n
                            r.err = 0
                            n' = n
                            -->
@@ -346,8 +345,7 @@
          rem = max - ?res_b
          rem !> 0 | -->
          to_read = rem < chunk | rem | chunk
-         cur = ?res_b
-         n = libc::read(r.fd, &res_b + cur, to_read)
+         n = mem::write_tail(res_b, to_read, (dst, avail => libc::read(r.fd, dst, avail)))
          n < 0
             |
                errno_val = libc::errno!
@@ -362,7 +360,6 @@
                      -->
                   |
                      r.err = 0
-                     ?res_b = cur + n
       ?res_b == 0 |-->
       <+ +res_b +>
 

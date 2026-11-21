@@ -11,6 +11,7 @@
 #use ./show
 #use ./diag
 #use str
+#use mem
 #use path
 #use log
 #use fs
@@ -740,12 +741,9 @@ collect_dva_files = target, out =>
 read_stdin_all: () => String
 read_stdin_all = !=>
    b = {4096}
-   chunk = {4096}
    0.. @
-      n = libc::read(0, &chunk, 4096)
+      n = mem::write_tail(b, 4096, (dst, avail => libc::read(0, dst, avail)))
       n !> 0 | -->
-      ?chunk = n
-      b += chunk(0..n)
    +b
 
 write_stdout: String => ()

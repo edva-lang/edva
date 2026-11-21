@@ -3663,6 +3663,8 @@ annotate_expr = ctx, env, expr =>
          annotate_block(ctx, env, be, cur_disc)
       [Assign a]
          name = a.0
+         a.4
+            | unify::add_error(ctx, 3176, diag::E3176_builder_length_assign!)
          is_reserved_type_name(name)
             |
                unify::add_error(ctx, 3050, "Cannot define '" + name +
@@ -8746,7 +8748,7 @@ register_foreign_decl = env, f =>
             p = f.params(i) | _ | ast::ForeignFnParam("",
               ast::ValueType(Unknown),
               ast::TypeInfo(Prim, ast::ValueType(Unknown)))
-            is_rec = p.param_type [Record]
+            is_rec = p.param_type [Record, Fn]
             is_rec | utype_from_ti_env(env, p.record_info) |
                unify::UType(Prim, unify::vt_to_uprim(p.param_type))
          fn_ut = unify::UType(Fn, unify::UFn(param_uts, ret_ut))

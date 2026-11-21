@@ -2,6 +2,7 @@
 // Exposes compiler and runtime parameters (argv, exit, STDIN/STDOUT/STDERR)
 
 #use libc
+#use mem
 
 #public
    #foreign
@@ -34,9 +35,11 @@
          | ""
          |
             len = libc::strlen(raw)
-            b = {len + 1}
-            %memcpy(&b, raw, len + 1)
-            ?b = len
+            b = {len}
+            mem::write_tail(b, len, (dst, n =>
+               %memcpy(dst, raw, n)
+               n
+            ))
             +b
 
    argv_string: Int => String

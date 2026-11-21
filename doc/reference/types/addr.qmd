@@ -51,13 +51,13 @@ io::out $ probe!   // 15
 
 ```{.dva .run}
 #use io
+#use mem
 
-b = {16}
+b = mem::zero_buf(4)
 @[&b] = 69u8
 @[&b + 1] = 100u8
 @[&b + 2] = 118u8
 @[&b + 3] = 97u8
-?b = 4
 io::out $ +b   // Edva
 ```
 
@@ -68,7 +68,7 @@ io::out $ +b   // Edva
 | **Import C symbol** | `#foreign("c") open: Addr, i32, i32 => i32`<br>`#foreign("m") hypot: Float, Float => Float` | Links against `libc`, `libm`, or native libraries declared in `edva.ccl` (`native.libs` / `native.pkg-config`); explicit type signature required (`E2060`) |
 | **Export C symbol** | `#export compute: i32, i32 => i32` | Emits unmangled symbol with platform C calling convention |
 | **C string passing** | `libc::puts(&s)` | Whole `String` values guarantee `data[len] == '\0'`; slices `s(a..b)` share interior bytes and must be copied (`++sub`) if a trailing `\0` is required by C |
-| **C buffer reads** | `n = libc::read(fd, &b, 1024); ?b = n` | Pass `&b` for writable buffer pointer, then update `?b = n` (`0 <= n <= cap`, `E4008`) |
+| **C buffer reads** | `mem::write_tail(b, 1024, (dst, avail => libc::read(fd, dst, avail)))` | Safe bounded tail-write (`0 <= written <= avail`, `E4008`), or allocate a fixed buffer with `mem::zero_buf(n)` and shrink with `mem::truncate(b, got)` / `mem::clear(b)`. Direct `?b = n` is disallowed (`E3176`) |
 | **C struct layout** | `#type Stat (...)` / `#type(packed) Hdr (...)` | Named records match platform C `struct` ABI layout; `#type(packed)` and `#type(align = N)` match `__attribute__((packed, aligned(N)))` |
 
 ## Supported target triples and architecture rules

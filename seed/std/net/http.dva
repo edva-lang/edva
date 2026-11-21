@@ -12,6 +12,7 @@
 
 #use ascii
 #use const
+#use mem
 #use net
 #use str
 
@@ -352,9 +353,9 @@
          rem = max - ?b
          rem !> 0 | -->
          peek_sz = rem < 1024 | rem | 1024
-         p = libc::recv(fd, &peek_buf, peek_sz, 2)
+         mem::clear(peek_buf)
+         p = mem::write_tail(peek_buf, peek_sz, (dst, avail => libc::recv(fd, dst, avail, 2)))
          p [< 1] -->
-         ?peek_buf = p
          found' = -1
          0..p @ i =>
             byte = peek_buf(i)
@@ -362,9 +363,9 @@
                found' = i
                -->
          to_consume = found' !< 0 | found' + 1 | p
-         r = libc::recv(fd, &peek_buf, to_consume, 0)
+         mem::clear(peek_buf)
+         r = mem::write_tail(peek_buf, to_consume, (dst, avail => libc::recv(fd, dst, avail, 0)))
          r [< 1] -->
-         ?peek_buf = r
          got_any' = <+>
          limit = found' !< 0 | found' | r
          0..limit @ j =>
@@ -487,14 +488,10 @@
    read_body: Int, Int => Chunk
    read_body = fd, n =>
       b = {n}
-      got' = 0
-      0.. @
-         got' !< n | -->
-         r = libc::recv(fd, &b + got', n - got', 0)
+      (?b < n) @
+         r = mem::write_tail(b, n - ?b, (dst, avail => libc::recv(fd, dst, avail, 0)))
          r [< 1] -->
-         got' = got' + r
-      ?b = got'
-      got' == n
+      ?b == n
          | Chunk(<+ +b +>)
          | Chunk(<-->)
 

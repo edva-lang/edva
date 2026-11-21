@@ -1,5 +1,6 @@
 // Linux io_uring integration test
 #use libc
+#use mem
 #use uring
 #use io
 
@@ -26,7 +27,7 @@ r_res
       msg = "io_uring ok\n"
       uring::prep_write(ring, wfd, &msg, ?msg, 2001)
 
-      in_b = {32}
+      in_b = mem::zero_buf(32)
       uring::prep_read(ring, rfd, &in_b, 32, 2002)
 
       uring::submit_and_wait(ring, 2)
@@ -45,7 +46,7 @@ r_res
             io::out $ c.res
          | _
 
-      ?in_b = 12
+      mem::truncate(in_b, 12)
       io::out $ +in_b
 
       // 3. Test reap

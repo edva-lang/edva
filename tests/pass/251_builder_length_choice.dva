@@ -1,13 +1,15 @@
 #use io
+#use mem
 
 set_len: Builder, Int => ()
 set_len = buf, cond =>
    cond > 0
-      | ?buf = 10
-      | ?buf = 20
+      | mem::truncate(buf, 10)
+      | mem::truncate(buf, 20)
 
-b = {32}
-set_len(b, 1)
-io::out $ str::from_int(?b)
-set_len(b, 0)
-io::out $ str::from_int(?b)
+b1 = mem::zero_buf(32)
+set_len(b1, 1)
+io::out $ str::from_int(?b1)
+b2 = mem::zero_buf(32)
+set_len(b2, 0)
+io::out $ str::from_int(?b2)

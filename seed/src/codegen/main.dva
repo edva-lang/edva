@@ -187,6 +187,189 @@ builder_set_len_checked = cg, b, len_val, gname =>
             | LLVMConstNull(i8p)
       | LLVMConstNull(i8p)
 
+// Safe Builder shrink/clear: asserts 0 <= n <= ?b, updates len and NUL terminator.
+codegen_builder_truncate: types::Cg, Addr, Addr => Addr
+codegen_builder_truncate = cg, b, n_val =>
+   i64t = LLVMInt64Type!
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   !cg.error
+      |
+         types::llvm_val_opt(b)
+            | bv =>
+               types::llvm_val_opt(n_val)
+                  | nv =>
+                     len_i64 = LLVMTypeOf(nv) == i64t
+                        | nv
+                        | LLVMBuildSExt(cg.builder, nv, i64t, "b.trunc.sext")
+                     zero = LLVMConstInt(i64t, 0, 0)
+                     cur_len = builder_len(cg, bv, "b.trunc.cur")
+                     parent = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
+                     big_bb = LLVMAppendBasicBlock(parent, "b.trunc.big")
+                     ok_bb = LLVMAppendBasicBlock(parent, "b.trunc.ok")
+                     oob_bb = LLVMAppendBasicBlock(parent, "b.trunc.oob")
+                     nul_bb = LLVMAppendBasicBlock(parent, "b.trunc.nul")
+                     done_bb = LLVMAppendBasicBlock(parent, "b.trunc.done")
+                     is_neg = LLVMBuildICmp(cg.builder, 40, len_i64, zero, "b.trunc.neg")
+                     LLVMBuildCondBr(cg.builder, is_neg, oob_bb, big_bb)
+                     LLVMPositionBuilderAtEnd(cg.builder, big_bb)
+                     is_big = LLVMBuildICmp(cg.builder, 38, len_i64, cur_len, "b.trunc.gt")
+                     LLVMBuildCondBr(cg.builder, is_big, oob_bb, ok_bb)
+                     LLVMPositionBuilderAtEnd(cg.builder, oob_bb)
+                     runtime::emit_abort_msg(cg, diag::E4008_builder_length_bounds!, "builder_len_oob_msg")
+                     LLVMBuildUnreachable(cg.builder)
+                     LLVMPositionBuilderAtEnd(cg.builder, ok_bb)
+                     builder_set_len(cg, bv, len_i64)
+                     data = builder_data(cg, bv, "b.trunc.data")
+                     has_data = LLVMBuildICmp(cg.builder, 33, data, LLVMConstNull(i8p), "b.trunc.nonnull")
+                     LLVMBuildCondBr(cg.builder, has_data, nul_bb, done_bb)
+                     LLVMPositionBuilderAtEnd(cg.builder, nul_bb)
+                     LLVMBuildStore(cg.builder, LLVMConstInt(LLVMInt8Type!, 0, 0),
+                       types::gep1(cg, LLVMInt8Type!, data, len_i64, "b.trunc.nul.gep"))
+                     LLVMBuildBr(cg.builder, done_bb)
+                     LLVMPositionBuilderAtEnd(cg.builder, done_bb)
+                     LLVMConstInt(i64t, 0, 0)
+                  | LLVMConstInt(i64t, 0, 0)
+            | LLVMConstInt(i64t, 0, 0)
+      | LLVMConstInt(i64t, 0, 0)
+
+// Zero-initialized fixed-length Builder: len = cap = max(n, 0), all bytes zeroed.
+codegen_builder_zero: types::Cg, Addr => Addr
+codegen_builder_zero = cg, n_val =>
+   i64t = LLVMInt64Type!
+   n_i64 = types::llvm_val_opt(n_val)
+      | nv =>
+         LLVMTypeOf(nv) == i64t | nv | LLVMBuildSExt(cg.builder, nv, i64t, "b.zero.sext")
+      | LLVMConstInt(i64t, 0, 0)
+   b = codegen_builder_create(cg, n_i64, "b.zero")
+   !cg.error
+      |
+         cap_safe = builder_cap(cg, b, "b.zero.cap")
+         data = builder_data(cg, b, "b.zero.data")
+         buf_len = LLVMBuildAdd(cg.builder, cap_safe, LLVMConstInt(i64t, 1, 0), "b.zero.blen")
+         LLVMBuildMemSet(cg.builder, data, LLVMConstInt(LLVMInt8Type!, 0, 0), buf_len, 1)
+         builder_set_len(cg, b, cap_safe)
+   b
+
+// Single atomic bounded tail-write: ensures ?b + max_n capacity, invokes the
+// Edva closure fill(dst, max_n), asserts written <= max_n and ?b + written <= cap
+// (aborting with E4008 on violation), updates len + NUL terminator, and returns written.
+codegen_builder_write_tail: types::Cg, Addr, Addr, Addr => Addr
+codegen_builder_write_tail = cg, b, max_val, clo_val =>
+   i64t = LLVMInt64Type!
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   zero = LLVMConstInt(i64t, 0, 0)
+   !cg.error
+      |
+         types::llvm_val_opt(b)
+            | bv =>
+               m_i64 = types::llvm_val_opt(max_val)
+                  | mv =>
+                     LLVMTypeOf(mv) == i64t | mv | LLVMBuildSExt(cg.builder, mv, i64t, "b.wtail.msext")
+                  | zero
+               parent = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
+               nonpos_bb = LLVMAppendBasicBlock(parent, "b.wtail.nonpos")
+               work_bb = LLVMAppendBasicBlock(parent, "b.wtail.work")
+               plain_bb = LLVMAppendBasicBlock(parent, "b.wtail.plain")
+               env_bb = LLVMAppendBasicBlock(parent, "b.wtail.env")
+               after_call_bb = LLVMAppendBasicBlock(parent, "b.wtail.after")
+               commit_bb = LLVMAppendBasicBlock(parent, "b.wtail.commit")
+               cap_bb = LLVMAppendBasicBlock(parent, "b.wtail.capchk")
+               ok_bb = LLVMAppendBasicBlock(parent, "b.wtail.ok")
+               oob_bb = LLVMAppendBasicBlock(parent, "b.wtail.oob")
+               nul_bb = LLVMAppendBasicBlock(parent, "b.wtail.nul")
+               ret_bb = LLVMAppendBasicBlock(parent, "b.wtail.ret")
+
+               is_nonpos = LLVMBuildICmp(cg.builder, 41, m_i64, zero, "b.wtail.le0")
+               LLVMBuildCondBr(cg.builder, is_nonpos, nonpos_bb, work_bb)
+
+               LLVMPositionBuilderAtEnd(cg.builder, nonpos_bb)
+               LLVMBuildBr(cg.builder, ret_bb)
+
+               LLVMPositionBuilderAtEnd(cg.builder, work_bb)
+               cur_len = builder_len(cg, bv, "b.wtail.cur")
+               needed = stmt::codegen_add_checked_u64(cg, cur_len, m_i64, "b.wtail.need")
+               codegen_builder_ensure_cap(cg, bv, needed)
+               data0 = builder_data(cg, bv, "b.wtail.data0")
+               dst = types::gep1(cg, LLVMInt8Type!, data0, cur_len, "b.wtail.dst")
+
+               clo_t = stmt::closure_struct_type(cg)
+               clo_p = LLVMBuildBitCast(cg.builder, clo_val, LLVMPointerType(clo_t, 0), "b.wtail.clo")
+               fptr = stmt::closure_fn_ptr(cg, clo_p, "b.wtail.fn")
+               envp = stmt::closure_env_ptr(cg, clo_p, "b.wtail.env")
+               env_is_null = LLVMBuildICmp(cg.builder, 32, envp, LLVMConstNull(i8p), "b.wtail.noenv")
+               LLVMBuildCondBr(cg.builder, env_is_null, plain_bb, env_bb)
+
+               LLVMPositionBuilderAtEnd(cg.builder, plain_bb)
+               p_params = types::Addrs()
+               p_params += i8p
+               p_params += i64t
+               p_fty = stmt::fn_type_n(cg, i64t, p_params, 2)
+               p_args = types::Addrs()
+               p_args += dst
+               p_args += m_i64
+               w_plain = LLVMBuildCall2(cg.builder, p_fty,
+                 LLVMBuildBitCast(cg.builder, fptr, LLVMPointerType(p_fty, 0), "b.wtail.pfn"),
+                 &types::addrs_buf(p_args), 2, "b.wtail.wp")
+               LLVMBuildBr(cg.builder, after_call_bb)
+
+               LLVMPositionBuilderAtEnd(cg.builder, env_bb)
+               e_params = types::Addrs()
+               e_params += i8p
+               e_params += i8p
+               e_params += i64t
+               e_fty = stmt::fn_type_n(cg, i64t, e_params, 3)
+               e_args = types::Addrs()
+               e_args += envp
+               e_args += dst
+               e_args += m_i64
+               w_env = LLVMBuildCall2(cg.builder, e_fty,
+                 LLVMBuildBitCast(cg.builder, fptr, LLVMPointerType(e_fty, 0), "b.wtail.efn"),
+                 &types::addrs_buf(e_args), 3, "b.wtail.we")
+               LLVMBuildBr(cg.builder, after_call_bb)
+
+               LLVMPositionBuilderAtEnd(cg.builder, after_call_bb)
+               written = LLVMBuildPhi(cg.builder, i64t, "b.wtail.written")
+               stmt::llvm_add_incoming1(cg, written, w_plain, plain_bb)
+               stmt::llvm_add_incoming1(cg, written, w_env, env_bb)
+               has_written = LLVMBuildICmp(cg.builder, 38, written, zero, "b.wtail.pos")
+               LLVMBuildCondBr(cg.builder, has_written, commit_bb, ret_bb)
+
+               LLVMPositionBuilderAtEnd(cg.builder, commit_bb)
+               is_gt_max = LLVMBuildICmp(cg.builder, 38, written, m_i64, "b.wtail.gtmax")
+               LLVMBuildCondBr(cg.builder, is_gt_max, oob_bb, cap_bb)
+
+               LLVMPositionBuilderAtEnd(cg.builder, cap_bb)
+               cur_len2 = builder_len(cg, bv, "b.wtail.cur2")
+               cap2 = builder_cap(cg, bv, "b.wtail.cap2")
+               new_len = LLVMBuildAdd(cg.builder, cur_len2, written, "b.wtail.new")
+               is_gt_cap = LLVMBuildICmp(cg.builder, 38, new_len, cap2, "b.wtail.gtcap")
+               LLVMBuildCondBr(cg.builder, is_gt_cap, oob_bb, ok_bb)
+
+               LLVMPositionBuilderAtEnd(cg.builder, oob_bb)
+               runtime::emit_abort_msg(cg, diag::E4008_builder_length_bounds!, "builder_len_oob_msg")
+               LLVMBuildUnreachable(cg.builder)
+
+               LLVMPositionBuilderAtEnd(cg.builder, ok_bb)
+               builder_set_len(cg, bv, new_len)
+               data2 = builder_data(cg, bv, "b.wtail.data2")
+               has_data = LLVMBuildICmp(cg.builder, 33, data2, LLVMConstNull(i8p), "b.wtail.nonnull")
+               LLVMBuildCondBr(cg.builder, has_data, nul_bb, ret_bb)
+
+               LLVMPositionBuilderAtEnd(cg.builder, nul_bb)
+               LLVMBuildStore(cg.builder, LLVMConstInt(LLVMInt8Type!, 0, 0),
+                 types::gep1(cg, LLVMInt8Type!, data2, new_len, "b.wtail.nul.gep"))
+               LLVMBuildBr(cg.builder, ret_bb)
+
+               LLVMPositionBuilderAtEnd(cg.builder, ret_bb)
+               res_phi = LLVMBuildPhi(cg.builder, i64t, "b.wtail.res")
+               stmt::llvm_add_incoming1(cg, res_phi, zero, nonpos_bb)
+               stmt::llvm_add_incoming1(cg, res_phi, written, after_call_bb)
+               stmt::llvm_add_incoming1(cg, res_phi, written, ok_bb)
+               stmt::llvm_add_incoming1(cg, res_phi, written, nul_bb)
+               res_phi
+            | zero
+      | zero
+
 // Deep-copies a growable array into a fresh { len, data, cap } struct so a
 // spawned worker gets its own buffer (the worker's appends must not mutate the
 // caller's array).

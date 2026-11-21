@@ -1,5 +1,6 @@
 // tests/pass/346_uring_correctness.dva — issue #146: uring queue capacity, file offset, timeout, cancellation
 #use libc
+#use mem
 #use uring
 #use io
 #use str
@@ -35,28 +36,25 @@ r_res
 
       fd = libc::open(test_path, 0)
 
-      b1 = {4}
+      b1 = mem::zero_buf(3)
       uring::prep_read(ring, fd, &b1, 3, 101)
       uring::submit_and_wait(ring, 1)
       uring::reap(ring)
-      ?b1 = 3
       io::out $ "first read " + (+b1)
 
-      b2 = {4}
+      b2 = mem::zero_buf(3)
       uring::prep_read(ring, fd, &b2, 3, 102)
       uring::submit_and_wait(ring, 1)
       uring::reap(ring)
-      ?b2 = 3
       io::out $ "second read " + (+b2)
 
       pos = libc::lseek(fd, 0, 1)
       io::out $ "file position " + str::from_int(pos)
 
-      b3 = {4}
+      b3 = mem::zero_buf(3)
       uring::prep_read_at(ring, fd, &b3, 3, 1, 103)
       uring::submit_and_wait(ring, 1)
       uring::reap(ring)
-      ?b3 = 3
       io::out $ "explicit offset read " + (+b3)
 
       pos2 = libc::lseek(fd, 0, 1)

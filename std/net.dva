@@ -11,6 +11,7 @@
 // See M8 in process/codebase_review.md.
 
 #use libc
+#use mem
 #use str
 #use sys
 
@@ -403,9 +404,8 @@
    recv: Int, Int => Chunk
    recv = fd, max =>
       b = {max}
-      n = libc::recv(fd, &b, max, 0)
+      n = mem::write_tail(b, max, (dst, avail => libc::recv(fd, dst, avail, 0)))
       n [< 1] Chunk(<-->) |
-         ?b = n
          Chunk(<+ +b +>)
 
    // Set the receive timeout on fd (ms). 0 clears it (block forever).
@@ -507,9 +507,8 @@
    udp_recv: Int, Int => Chunk
    udp_recv = fd, max =>
       b = {max}
-      n = libc::recvfrom(fd, &b, max, 0, sys::addr_null, sys::addr_null)
+      n = mem::write_tail(b, max, (dst, avail => libc::recvfrom(fd, dst, avail, 0, sys::addr_null, sys::addr_null)))
       n [< 1] Chunk(<-->) |
-         ?b = n
          Chunk(<+ +b +>)
 
    // Match network interface from ifaddrs linked list by IP

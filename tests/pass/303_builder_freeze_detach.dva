@@ -1,10 +1,11 @@
 #use io
+#use mem
 
 b = {32}
 b += "abc"
 c = b
 s = +b
-?c = 0
+mem::clear(c)
 c += "XYZ"
 io::out $ s
 io::out $ +c

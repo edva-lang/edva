@@ -5,11 +5,11 @@
 // Write bytes straight into the Builder's buffer via its address. A byte
 // store needs an i8 value; an i32/i64 would store that many bytes.
 #use io
+#use mem
 
-b = {16}
+b = mem::zero_buf(2)
 @[&b] = 65i8
 @[&b + 1] = 66i8
-?b = 2
 io::out $ ?b
 
 // The address is a RawPtr; pointer arithmetic works on it, and a typed
@@ -21,9 +21,8 @@ io::out $ @[p + 1 i8]
 s = +b
 io::out $ s
 
-// Length can be extended; bytes beyond the written ones are zero-filled.
-c = {16}
-?c = 4
+// Zero-initialized fixed-length Builder: bytes are zero-filled.
+c = mem::zero_buf(4)
 io::out $ ?c
 t = +c
 io::out $ @[&t + 2 i8]

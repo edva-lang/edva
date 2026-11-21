@@ -2,18 +2,17 @@
 
 // 1. %memset
 #use io
+#use mem
 
-b1' = {32}
+b1' = mem::zero_buf(5)
 %memset(&b1', 65, 5)
-?b1' = 5
 io::out $ +b1'
 
 // 2. %memcpy
 src' = {32}
 src' += "Hello, World!"
-dst' = {32}
+dst' = mem::zero_buf(5)
 %memcpy(&dst', &src', 5)
-?dst' = 5
 io::out $ +dst'
 
 // 3. %memmove (overlapping copy)
@@ -23,9 +22,8 @@ b2' += "0123456789"
 io::out $ +b2'
 
 // 4. Return value of %memset / %memcpy is destination Addr
-b3' = {16}
+b3' = mem::zero_buf(4)
 ret_p = %memset(&b3', 88, 4)
 is_same = ret_p == &b3' | 1 | 0
-?b3' = 4
 io::out $ +b3'
 io::out $ is_same

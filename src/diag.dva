@@ -358,6 +358,11 @@ E3105_enum_label_ambiguous_suffix = !=>
 E4008_builder_length_bounds: () => String
 E4008_builder_length_bounds = !=> "E4008: Builder length assignment out of bounds\n"
 
+E3176_builder_length_assign: () => String
+E3176_builder_length_assign = !=>
+   "Direct Builder length assignment '?b = n' is disallowed; use mem::clear(b), " +
+   "mem::truncate(b, n), mem::zero_buf(n), or mem::write_tail(b, max_n, fill) instead."
+
 E4012_scoped_global_store: () => String
 E4012_scoped_global_store = !=>
    "E4012: cannot store a scoped-arena value in a global; " +

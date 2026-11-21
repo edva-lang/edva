@@ -74,12 +74,11 @@ set_nonblock = fd =>
 append_bytes: Builder, Addr, Int => Builder
 append_bytes = b, src, n =>
    n !> 0 | --| b
-   len = ?b
-   b2 = {len + n + 64}
-   len > 0 | %memcpy(&b2, &b, len)
-   %memcpy(&b2 + len, src, n)
-   ?b2 = len + n
-   b2
+   mem::write_tail(b, n, (dst, avail =>
+      %memcpy(dst, src, avail)
+      avail
+   ))
+   b
 
 #public
    SIGINT  = 2
@@ -194,12 +193,8 @@ append_bytes = b, src, n =>
          | ""
          |
             b = {count}
-            n = libc::read(fd, &b, count)
-            n > 0
-               |
-                  ?b = n
-                  +b
-               | ""
+            n = mem::write_tail(b, count, (dst, avail => libc::read(fd, dst, avail)))
+            n > 0 | +b | ""
 
    // Creates an anonymous POSIX pipe pair `(r, w)`.
    pipe: () => < Pipe | >
@@ -223,11 +218,9 @@ append_bytes = b, src, n =>
    try_read = fd, count =>
       fd < 0 || count !> 0 | --| <-->
       b = {count}
-      n = libc::read(fd, &b, count)
+      n = mem::write_tail(b, count, (dst, avail => libc::read(fd, dst, avail)))
       n > 0
-         |
-            ?b = n
-            <+ +b +>
+         | <+ +b +>
          | n == 0
             | <-->
             |
@@ -961,10 +954,11 @@ append_bytes = b, src, n =>
                   r = libc::read(ofd, &chunk, 4096)
                   r > 0
                      |
-                        b = {r + 1}
-                        %memcpy(&b, &chunk, r)
-                        @[&b + r] = 0u8
-                        ?b = r
+                        b = {r}
+                        mem::write_tail(b, r, (dst, avail =>
+                           %memcpy(dst, &chunk, avail)
+                           avail
+                        ))
                         out_strs'(i) = (out_strs'(i)!!) + (+b)
                      | r == 0 || (rev0 .&. 24) != 0
                         |
@@ -979,10 +973,11 @@ append_bytes = b, src, n =>
                   r2 = libc::read(efd, &chunk, 4096)
                   r2 > 0
                      |
-                        b2 = {r2 + 1}
-                        %memcpy(&b2, &chunk, r2)
-                        @[&b2 + r2] = 0u8
-                        ?b2 = r2
+                        b2 = {r2}
+                        mem::write_tail(b2, r2, (dst, avail =>
+                           %memcpy(dst, &chunk, avail)
+                           avail
+                        ))
                         err_strs'(i) = (err_strs'(i)!!) + (+b2)
                      | r2 == 0 || (rev1 .&. 24) != 0
                         |
@@ -1029,32 +1024,12 @@ append_bytes = b, src, n =>
       fp == sys::addr_null
          | <-->
          |
-            cap' = 1024
-            buf' = {cap'}
-            len' = 0
-            chunk = {512}
+            buf = {1024}
             0.. @
-               n = c_fread(&chunk, 1, 512, fp)
-               n !> 0
-                  | -->
-                  |
-                     need = len' + n
-                     need > cap'
-                        |
-                           new_cap' = cap' * 2
-                           new_cap' < need @
-                              new_cap' = new_cap' * 2
-                           next_buf = {new_cap'}
-                           len' > 0
-                              | %memcpy(&next_buf, &buf', len')
-                              | sys::addr_null
-                           buf' = next_buf
-                           cap' = new_cap'
-                     %memcpy(&buf' + len', &chunk, n)
-                     len' = need
-            ?buf' = len'
+               n = mem::write_tail(buf, 512, (dst, avail => c_fread(dst, 1, avail, fp)))
+               n !> 0 | -->
             raw_status = Int(c_pclose(fp))
-            <+ (status = decode_wait_status(raw_status), output = +buf') +>
+            <+ (status = decode_wait_status(raw_status), output = +buf) +>
 
    // Runs `cmd` and returns `<+ output +>` if exit status is 0, or `<-->` on failure.
    run: String => < String | >

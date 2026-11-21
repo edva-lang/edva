@@ -2,6 +2,7 @@
 // Provides low-level Linux io_uring kernel submission & completion rings.
 
 #use libc
+#use mem
 #use sys
 
 #public
@@ -386,10 +387,11 @@
                cqe.res > 0
                   |
                      nb = cqe.res
-                     b = {nb + 1}
-                     %memcpy(&b, &scratch + idx * 4096, nb)
-                     @[&b + nb] = 0u8
-                     ?b = nb
+                     b = {nb}
+                     mem::write_tail(b, nb, (dst, avail =>
+                        %memcpy(dst, &scratch + idx * 4096, avail)
+                        avail
+                     ))
                      prev = outs'(idx)!!
                      outs'(idx) = prev + (+b)
                      fd = fds(idx)!!

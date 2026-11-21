@@ -38,9 +38,7 @@ os::socketpair!
          |
             libc::close(pair.1)
             buf = {16}
-            ?buf = 16
-            n = libc::read(pair.0, &buf, 16)
-            ?buf = n < 0 | 0 | n
+            mem::write_tail(buf, 16, (dst, avail => libc::read(pair.0, dst, avail)))
             io::out $ "pair=" + +buf
             st = os::wait_pid(pid) | s => s | -1
             pr("child_status", st)
@@ -61,9 +59,7 @@ os::socketpair!
       sent = net::sendfile(sp.0, fd_r, 3, 4)
       pr("sent", sent)
       rb = {8}
-      ?rb = 8
-      got = libc::read(sp.1, &rb, 8)
-      ?rb = got < 0 | 0 | got
+      mem::write_tail(rb, 8, (dst, avail => libc::read(sp.1, dst, avail)))
       io::out $ "sendfile=" + +rb
       libc::close(sp.0)
       libc::close(sp.1)

@@ -3,13 +3,11 @@
 
 // --- 1. Low-Level Memory Utilities ---
 
-b1' = {32}
+b1' = mem::zero_buf(4)
 mem::set(&b1', 67, 4)
-?b1' = 4
 
-b2' = {32}
+b2' = mem::zero_buf(4)
 mem::copy(&b2', &b1', 4)
-?b2' = 4
 
 io::out $ +b1'
 io::out $ +b2'

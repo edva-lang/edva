@@ -628,6 +628,27 @@ codegen_emit_runtime_module = cg =>
    hash_t = stmt::fn_type_n(cg, i64t, hash_params, 2)
    LLVMAddFunction(cg.module, "dva_hash_string", hash_t)
 
+   bt_params = types::Addrs()
+   bt_params += i8p
+   bt_params += i64t
+   d_btrunc = LLVMAddFunction(cg.module, "dva_builder_truncate",
+     stmt::fn_type_n(cg, LLVMVoidType!, bt_params, 2))
+   mark_nounwind(cg, d_btrunc)
+
+   bz_params = types::Addrs()
+   bz_params += i64t
+   d_bzero = LLVMAddFunction(cg.module, "dva_builder_zero",
+     stmt::fn_type_n(cg, i8p, bz_params, 1))
+   mark_nounwind(cg, d_bzero)
+
+   bw_params = types::Addrs()
+   bw_params += i8p
+   bw_params += i64t
+   bw_params += i8p
+   d_bwtail = LLVMAddFunction(cg.module, "dva_builder_write_tail",
+     stmt::fn_type_n(cg, i64t, bw_params, 3))
+   mark_nounwind(cg, d_bwtail)
+
    // Coverage bitmap hooks (declared in module mode, defined in runtime full mode)
    cov_map_t = types::fn_type0(i8p)
    LLVMAddFunction(cg.module, "dva_cov_map_ptr", cov_map_t)
@@ -1321,6 +1342,45 @@ codegen_emit_runtime_full = cg =>
    LLVMPositionBuilderAtEnd(cg.builder, hs_d)
    res_ret = LLVMBuildRet(cg.builder, h_phi)
 
+   // Safe Builder runtime helpers (backing std/mem clear, truncate, zero_buf, write_tail).
+   saved_cfn = cg.current_fn
+
+   bt_params = types::Addrs()
+   bt_params += i8p
+   bt_params += i64t
+   btrunc_fn = LLVMAddFunction(cg.module, "dva_builder_truncate",
+     stmt::fn_type_n(cg, LLVMVoidType!, bt_params, 2))
+   mark_nounwind(cg, btrunc_fn)
+   cg.current_fn = btrunc_fn
+   LLVMPositionBuilderAtEnd(cg.builder, LLVMAppendBasicBlock(btrunc_fn, "entry"))
+   _bt_r = main::codegen_builder_truncate(cg, LLVMGetParam(btrunc_fn, 0), LLVMGetParam(btrunc_fn, 1))
+   LLVMBuildRetVoid(cg.builder)
+
+   bz_params = types::Addrs()
+   bz_params += i64t
+   bzero_fn = LLVMAddFunction(cg.module, "dva_builder_zero",
+     stmt::fn_type_n(cg, i8p, bz_params, 1))
+   mark_nounwind(cg, bzero_fn)
+   cg.current_fn = bzero_fn
+   LLVMPositionBuilderAtEnd(cg.builder, LLVMAppendBasicBlock(bzero_fn, "entry"))
+   bz_res = main::codegen_builder_zero(cg, LLVMGetParam(bzero_fn, 0))
+   LLVMBuildRet(cg.builder, bz_res)
+
+   bw_params = types::Addrs()
+   bw_params += i8p
+   bw_params += i64t
+   bw_params += i8p
+   bwtail_fn = LLVMAddFunction(cg.module, "dva_builder_write_tail",
+     stmt::fn_type_n(cg, i64t, bw_params, 3))
+   mark_nounwind(cg, bwtail_fn)
+   cg.current_fn = bwtail_fn
+   LLVMPositionBuilderAtEnd(cg.builder, LLVMAppendBasicBlock(bwtail_fn, "entry"))
+   bw_res = main::codegen_builder_write_tail(cg, LLVMGetParam(bwtail_fn, 0),
+     LLVMGetParam(bwtail_fn, 1), LLVMGetParam(bwtail_fn, 2))
+   LLVMBuildRet(cg.builder, bw_res)
+
+   cg.current_fn = saved_cfn
+
    // Built-in 64 KB edge/branch coverage bitmap and sanitizer-coverage hooks
    i8t = LLVMInt8Type!
    cov_arr = LLVMArrayType(i8t, 65536)
@@ -1418,6 +1478,9 @@ codegen_emit_runtime_full = cg =>
       LLVMSetLinkage(cov_trace_fn, 8)
       LLVMSetLinkage(scov_guard_fn, 8)
       LLVMSetLinkage(scov_init_fn, 8)
+      LLVMSetLinkage(btrunc_fn, 8)
+      LLVMSetLinkage(bzero_fn, 8)
+      LLVMSetLinkage(bwtail_fn, 8)
    res_ret
 
 // "x = <expr>" — evaluate the RHS and store it into the variable's global.

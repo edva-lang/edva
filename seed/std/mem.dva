@@ -15,6 +15,9 @@
    runtime_arena_save = dva_arena_save: (arena: Addr) => Int
    runtime_arena_current = dva_arena_current: () => Addr
    runtime_arena_set_current = dva_arena_set_current: (arena: Addr) => Addr
+   runtime_builder_truncate = dva_builder_truncate: (b: Builder, n: Int) => ()
+   runtime_builder_zero = dva_builder_zero: (n: Int) => Builder
+   runtime_builder_write_tail = dva_builder_write_tail: (b: Builder, max_n: Int, fill: (Addr, Int => Int)) => Int
    c_memchr = memchr: (ptr: Addr, ch: Int, n: Int) => Addr
 
 #public
@@ -38,6 +41,20 @@
 
    set: Addr, Int, Int => ()
    set = dst, val, bytes => %memset(dst, val, bytes)
+
+   // --- Safe Builder Buffer Operations --------------------------------------
+
+   clear: Builder => ()
+   clear = b => runtime_builder_truncate(b, 0)
+
+   truncate: Builder, Int => ()
+   truncate = b, n => runtime_builder_truncate(b, n)
+
+   zero_buf: Int => Builder
+   zero_buf = n => runtime_builder_zero(n)
+
+   write_tail: Builder, Int, (Addr, Int => Int) => Int
+   write_tail = b, max_n, fill => runtime_builder_write_tail(b, max_n, fill)
 
    align_forward: Addr, Int => Addr
    align_forward = addr, align =>

@@ -99,21 +99,22 @@ cat <<'EOF' > "$TMPDIR/test_f5.dva"
 #use io
 #use str
 #use libc
+#use mem
 #use sys
 
-read_fd_bytes_loop: Int, Builder, Int, Int => < Int | >
-read_fd_bytes_loop = fd, b, off, rem =>
+read_fd_bytes_loop: Int, Builder, Int => <>
+read_fd_bytes_loop = fd, b, rem =>
    rem == 0
-      | <+ off +>
+      | <+>
       |
          chunk = rem < 65536 | rem | 65536
-         n = libc::read(fd, &b + off, chunk)
+         n = mem::write_tail(b, chunk, (dst, avail => libc::read(fd, dst, avail)))
          n < 0
-            | <-->
+            | <->
             |
                n == 0
-                  | <+ off +>
-                  | read_fd_bytes_loop(fd, b, off + n, rem - n)
+                  | <+>
+                  | read_fd_bytes_loop(fd, b, rem - n)
 
 read_file_text: String => < String | >
 read_file_text = path =>
@@ -134,13 +135,9 @@ read_file_text = path =>
                   |
                      libc::lseek(fd, 0, 0)
                      b = {sz}
-                     read_res = read_fd_bytes_loop(fd, b, 0, sz)
+                     ok = read_fd_bytes_loop(fd, b, sz)
                      libc::close(fd)
-                     read_res
-                        | total =>
-                           ?b = total
-                           <+ +b +>
-                        | <-->
+                     ok | <+ +b +> | <-->
 
 empty_res = read_file_text("FILE_EMPTY_PATH")
 empty_res

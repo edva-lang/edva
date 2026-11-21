@@ -2,6 +2,7 @@
 // High-level safe abstractions for paths, file I/O, directory traversal, and filesystem stats.
 
 #use libc
+#use mem
 #use path
 #use str
 #use sys
@@ -340,9 +341,8 @@ size = path =>
 readlink_path: String => <String | >
 readlink_path = path =>
    buf = {1024}
-   n = readlink(path, &buf, 1024)
+   n = mem::write_tail(buf, 1024, (dst, avail => readlink(path, dst, avail)))
    n !> 0 |-->
-   ?buf = n
    <+ +buf +>
 
 path_exists: String => <>
@@ -399,7 +399,7 @@ read_to_string = path =>
    sz > 0
       |
          buf = {sz}
-         n = libc::read(fd, &buf, sz)
+         n = mem::write_tail(buf, sz, (dst, avail => libc::read(fd, dst, avail)))
          libc::close(fd)
          n
             [< 0]
@@ -407,21 +407,17 @@ read_to_string = path =>
             [0]
                <+ "" +>
             |
-               ?buf = n
                <+ +buf +>
       |
          out = {4096}
-         chunk = {4096}
          read_err' = <->
          0.. @
-            n = libc::read(fd, &chunk, 4096)
+            n = mem::write_tail(out, 4096, (dst, avail => libc::read(fd, dst, avail)))
             n < 0
                |
                   read_err' = <+>
                   -->
             n == 0 | -->
-            ?chunk = n
-            out += chunk(0..n)
          libc::close(fd)
          read_err'
             | <-->
@@ -580,9 +576,8 @@ format_time = ts =>
    res = localtime_r(&t_val, &tm_buf)
    res == sys::addr_null | --| "-"
    out_buf = {64}
-   len = strftime(&out_buf, 64, "%Y-%m-%d %H:%M", &tm_buf)
+   len = mem::write_tail(out_buf, 64, (dst, avail => strftime(dst, avail, "%Y-%m-%d %H:%M", &tm_buf)))
    len !> 0 | --| "-"
-   ?out_buf = len
    +out_buf
 
 format_number: Int => String
