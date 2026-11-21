@@ -32,8 +32,26 @@
          -1
       |
          base = &s
+         rem = ls - st
+         #arch ["x86_64", "aarch64", "riscv64"]
+            rem !> 64
+               |
+                  pat = u64(ch) * 0x0101010101010101u64
+                  p' = st
+                  0.. @
+                     p' + 8 > ls | -->
+                     w = @[base + p' u64]
+                     x = w .^. pat
+                     m = (x - 0x0101010101010101u64) .&. (.!. x) .&. 0x8080808080808080u64
+                     m != 0u64 | --| p' + Int(%ctz(m) .>. 3u64)
+                     p' = p' + 8
+                  0.. @
+                     p' !< ls | -->
+                     s(p') == ch | --| p'
+                     p' = p' + 1
+                  --| -1
          raw_base = Int(base) .&. 0xFFFFFFFFFFFF
-         hit = c_memchr(base + st, ch, ls - st)
+         hit = c_memchr(base + st, ch, rem)
          hit == Addr(0) | -1 | (Int(hit) - raw_base)
 
 #public
