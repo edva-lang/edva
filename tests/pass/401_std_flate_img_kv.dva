@@ -169,6 +169,22 @@ kv::close(db3)
 fs::write_file(kv_path, good_raw + "\xFF\xFF\xFF\xFF\x01\x01\x00\x00\x00\x01\x00\x00\x00ab")
 trimmed = kv::repair(kv_path)!!
 test::eq(trimmed, 15, "kv::repair trims corrupt trailing record")
+
+// Verify multi-chunk (> 4096 bytes) KV log reopens cleanly without truncation
+db_big = kv::open(kv_path)!!
+big_val = {2000}
+2000 @ big_val += 'X
+big_s = +big_val
+0..4 @ i =>
+   kv::put(db_big, "big_${i}", big_s) !| _
+big_size = kv::size(db_big)
+test::check(big_size > 8000, "multi-chunk KV log exceeds 8 KiB")
+kv::close(db_big)
+
+db_big2 = kv::open(kv_path)!!
+test::eq(kv::size(db_big2), big_size, "reopened >8 KiB KV log preserves exact size")
+test::eq(kv::get(db_big2, "big_3") | s => ?s | 0, 2000, "reopened >8 KiB KV log preserves last record")
+kv::close(db_big2)
 fs::remove(kv_path)
 
 test::finish!
