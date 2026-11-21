@@ -24,7 +24,7 @@
    find_byte_from: String, Int, Int => Int
    find_byte_from = s, ch, start =>
       ls = ?s
-      st = start < 0 | 0 | start
+      st = %clamp(start, 0, ls)
       (st !< ls || ch ![0..256]) | --| -1
       #arch ["wasm32", "wasm64", "wasm"]
          st..ls @ i =>
