@@ -10,6 +10,7 @@
 #foreign("LLVM-18")
    LLVMModuleCreateWithName: (ModuleID: String) => Addr
    LLVMDisposeModule: (M: Addr) => ()
+   LLVMAppendModuleInlineAsm: (M: Addr, Asm: String, Len: Int) => ()
    LLVMCreatePassBuilderOptions: () => Addr
    LLVMDisposePassBuilderOptions: (Options: Addr) => ()
    LLVMRunPasses: (M: Addr, Passes: String, TM: Addr, Options: Addr) => Addr

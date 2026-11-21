@@ -3351,5 +3351,59 @@ if [ "$(grep -c '^loop.header[.]' "$T65_DIR/eager.ir")" -ne 2 ] ||
 fi
 echo "PASS"
 
+# --- Test 66: linking arithmetic helpers in freestanding Wasm ---
+if command -v wasm-ld >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then
+    echo -n "Testing optimized freestanding Wasm arithmetic... "
+    T66_DIR="$TMPDIR/t66_wasm_arithmetic"
+    mkdir -p "$T66_DIR"
+    cat >"$T66_DIR/sum.dva" <<'DVA'
+#foreign
+   host_increment: (n: Int) => Int
+
+#export sum_to: Int => Int
+sum_to = n =>
+   (0, (n @> (x => x + 1))) @> (acc, x => acc + x)
+
+#export call_host: Int => Int
+call_host = n => host_increment(n)
+DVA
+    cat >"$T66_DIR/bare.dva" <<'DVA'
+#export sum_to: Int => Int
+sum_to = n =>
+   sum' = 0
+   n @ x =>
+      sum' = sum' + x + 1
+   sum'
+DVA
+    timeout 30 ./edva "$T66_DIR/sum.dva" -O2 --no-cache \
+        -target wasm32-unknown-unknown -o "$T66_DIR/sum.wasm" \
+        < /dev/null >"$T66_DIR/build.log" 2>&1
+    timeout 30 ./edva "$T66_DIR/bare.dva" -O2 --no-runtime --no-cache \
+        -target wasm32-unknown-unknown -o "$T66_DIR/bare.wasm" \
+        < /dev/null >"$T66_DIR/bare.log" 2>&1
+    timeout 10 node --disable-wasm-trap-handler -e '
+        const assert = require("node:assert/strict");
+        const {readFileSync} = require("node:fs");
+        const module = new WebAssembly.Module(readFileSync(process.argv[1]));
+        const bare = new WebAssembly.Module(readFileSync(process.argv[2]));
+        assert.deepEqual(WebAssembly.Module.imports(module), [
+            {module: "env", name: "host_increment", kind: "function"},
+        ]);
+        assert.deepEqual(WebAssembly.Module.imports(bare), []);
+        const normalExports = new WebAssembly.Instance(module, {
+            env: {host_increment: n => n + 1n},
+        }).exports;
+        const bareExports = new WebAssembly.Instance(bare).exports;
+        assert.equal(normalExports.call_host(41n), 42n);
+        for (const exports of [normalExports, bareExports]) {
+            assert.equal(exports.__multi3, undefined);
+            for (const n of [0n, 1n, 10n, 1_000_000n]) {
+                assert.equal(exports.sum_to(n), n * (n + 1n) / 2n);
+            }
+        }
+    ' "$T66_DIR/sum.wasm" "$T66_DIR/bare.wasm"
+    echo "PASS"
+fi
+
 echo "=== All driver tests PASSED ==="
 

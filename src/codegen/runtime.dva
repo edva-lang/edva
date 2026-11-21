@@ -2518,7 +2518,88 @@ write_verified_ir = cg, out_path =>
                unlink(tmp_out)
                cg.error = <+>
 
-// Finish: ret i32 0 or ret void in __dva_global_init, verify and print module.
+// LLVM can introduce __multi3 during machine lowering, even without i128 in
+// the input IR. Freestanding wasm32 toolchains may have no compiler-rt archive.
+// Keep the symbol local in its own section so wasm-ld can discard it when unused.
+emit_wasm_arithmetic_helpers: types::Cg => ()
+emit_wasm_arithmetic_helpers = cg =>
+   // The ABI passes a result pointer followed by the low and high i64 of each
+   // operand. For the high result word, combine the cross products with
+   // the carry from the low-word multiplication, computed in 32-bit limbs.
+   asm = """
+   .section .text.__multi3,"",@
+   .type __multi3,@function
+   __multi3:
+      .functype __multi3 (i32, i64, i64, i64, i64) -> ()
+      .local i64, i64, i64, i64, i64
+      # Store the low result word.
+      local.get 0
+      local.get 1
+      local.get 3
+      i64.mul
+      i64.store 0
+      # Split the low words into a0, a1, b0, b1 in locals 5 through 8.
+      local.get 1
+      i64.const 4294967295
+      i64.and
+      local.set 5
+      local.get 1
+      i64.const 32
+      i64.shr_u
+      local.set 6
+      local.get 3
+      i64.const 4294967295
+      i64.and
+      local.set 7
+      local.get 3
+      i64.const 32
+      i64.shr_u
+      local.set 8
+      # t = a1 * b0 + ((a0 * b0) >> 32).
+      local.get 6
+      local.get 7
+      i64.mul
+      local.get 5
+      local.get 7
+      i64.mul
+      i64.const 32
+      i64.shr_u
+      i64.add
+      local.set 9
+      # Add a1 * b1, t >> 32 and (a0 * b1 + low32(t)) >> 32.
+      local.get 0
+      local.get 6
+      local.get 8
+      i64.mul
+      local.get 9
+      i64.const 32
+      i64.shr_u
+      i64.add
+      local.get 5
+      local.get 8
+      i64.mul
+      local.get 9
+      i64.const 4294967295
+      i64.and
+      i64.add
+      i64.const 32
+      i64.shr_u
+      i64.add
+      # Add both cross products, then store the high result word.
+      local.get 2
+      local.get 3
+      i64.mul
+      i64.add
+      local.get 1
+      local.get 4
+      i64.mul
+      i64.add
+      i64.store 8
+      end_function
+   """
+   LLVMAppendModuleInlineAsm(cg.module, asm, ?asm)
+
+// Finish the entry point, then verify and print the module.
 codegen_finish: types::Cg, String => ()
 codegen_finish = cg, out_path =>
    is_wasm_fin = ast::triple_arch(cg.opts.target_triple) == "wasm32"
@@ -2545,7 +2626,11 @@ codegen_finish = cg, out_path =>
          cg.error = <+>
       |
          optimize_emitted_ir(cg)
-         !cg.error | write_verified_ir(cg, out_path)
+         !cg.error
+            |
+               ast::triple_arch(cg.opts.target_triple) ["wasm32", "wasm"]
+                  | emit_wasm_arithmetic_helpers(cg)
+               write_verified_ir(cg, out_path)
 
 // call void @dva_arena_destroy(ptr @global_arena) before a function returns.
 emit_arena_destroy: types::Cg => ()
