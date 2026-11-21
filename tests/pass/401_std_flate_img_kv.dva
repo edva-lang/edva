@@ -154,6 +154,21 @@ test::eq(all_k(0)!!, "alpha", "kv::keys sorted [0] == alpha")
 test::eq(all_k(1)!!, "beta", "kv::keys sorted [1] == beta")
 test::eq(all_k(2)!!, "user:42", "kv::keys sorted [2] == user:42")
 kv::close(db2)
+
+// Verify crash-tolerant torn trailing record recovery (truncated payload + corrupt tail)
+good_raw = fs::read_to_string(kv_path)!!
+torn_raw = good_raw + "\x01\x02\x03\x04\x01\x05\x00\x00\x00\x20\x00\x00\x00part"
+fs::write_file(kv_path, torn_raw)
+db3 = kv::open(kv_path)!!
+test::eq(kv::len(db3), 3, "kv::open recovers torn trailing record without losing valid keys")
+test::eq(kv::get(db3, "alpha") | s => s | "", "updated_first", "recovered alpha matches")
+test::eq(kv::size(db3), ?good_raw, "torn trailing bytes truncated back to valid boundary")
+kv::close(db3)
+
+// Verify kv::repair returns trimmed byte count on torn/corrupt tail
+fs::write_file(kv_path, good_raw + "\xFF\xFF\xFF\xFF\x01\x01\x00\x00\x00\x01\x00\x00\x00ab")
+trimmed = kv::repair(kv_path)!!
+test::eq(trimmed, 15, "kv::repair trims corrupt trailing record")
 fs::remove(kv_path)
 
 test::finish!
