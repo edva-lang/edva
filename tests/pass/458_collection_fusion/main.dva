@@ -1,0 +1,52 @@
+#use io
+#use ./pipeline
+
+::trace = 0
+
+mark: Int, Int => Int
+mark = value, digit =>
+   trace = trace * 10 + digit
+   value
+
+ordered_setup: Int => Int
+ordered_setup = n =>
+   trace = 0
+   total = (mark(0, 1), (mark(n, 2) @> (x => x + 1))) @> (a, v => a + v)
+   trace * 1000 + total
+
+effectful: Int => Int
+effectful = n =>
+   trace = 0
+   ys = (n @> (x => mark(x, 1))) @> (v => mark(v, 2))
+   trace * 10 + ?ys
+
+capture_mutation: Int => Int
+capture_mutation = base =>
+   offset' = base
+   ys = (3 @> (x => x + offset')) @> v =>
+      offset' = offset' + 1
+      v + offset'
+   (0, ys) @> (a, v => a + v)
+
+early_exit: Int => Int
+early_exit = n =>
+   (0, (n @> (x => x + 1))) @> a, v =>
+      v == 5 | -->
+      v == 2 | --^
+      a + v
+
+shared_slot: Int => Int
+shared_slot = x =>
+   ys = (x @> (x => x + 5)) @> (v => v * 2)
+   x * 100 + (ys(0) |_| 0)
+
+io::out $ pipeline::sum_chain(0)
+io::out $ pipeline::sum_chain(1)
+io::out $ pipeline::sum_chain(50)
+io::out $ pipeline::array_chain(100)
+io::out $ pipeline::sum_array(Int{}(3, 2, 9, 1))
+io::out $ ordered_setup(4)
+io::out $ effectful(3)
+io::out $ capture_mutation(10)
+io::out $ early_exit(7)
+io::out $ shared_slot(3)

@@ -157,15 +157,21 @@ read_all_file: String => String
 read_all_file = path =>
    fd = libc::open(path, 0)
    fd < 0 | --| ""
-   out = {4096}
-   chunk = {4096}
-   0.. @
-      n = libc::read(fd, &chunk, 4096)
+   fsize = libc::lseek(fd, 0, 2) // SEEK_END = 2
+   fsize !> 0
+      |
+         libc::close(fd)
+         --| ""
+   _p0 = libc::lseek(fd, 0, 0) // SEEK_SET = 0
+   out = {fsize}
+   got' = 0
+   (got' < fsize) @
+      n = libc::read(fd, &out + got', fsize - got')
       n < 0 && libc::errno! == 4 | --^
       n !> 0 | -->
-      ?chunk = n
-      out += +chunk
+      got' = got' + n
    libc::close(fd)
+   ?out = got'
    +out
 
 open_impl: String, <> => < (Store, Int) | Error >

@@ -2703,6 +2703,20 @@ is_fn_vt = vt => vt [Fn]
 
 // --- TypedExpr Lowering (Milestone 2 - Unification) --------------------------
 
+// Eager cycle lowering can reuse existing named slots. Removing those writes
+// is only valid for binders local to the pipeline.
+fuse_collection_block: types::Cg, tast::TypedExpr, tast::TypedExprs => tast::TypedExprs
+fuse_collection_block = cg, te, original =>
+   !cg.in_fn || cg.in_restore_scope > 0 || cg.opts.no_typed_opt || cg.opts.no_runtime
+      | --| original
+   typedopt::collection_fusion(te)
+      | plan =>
+         plan.1 @ name =>
+            types::var_has_storage(cg, name) || types::is_marked_global_name(cg, name)
+               | --| original
+         plan.0
+      | original
+
 codegen_typed_eval: types::Cg, tast::TypedExpr => (Addr, ast::ValueType)
 codegen_typed_eval = cg, te =>
    tail_k = types::g.unboxed_ret_tail
@@ -3105,9 +3119,10 @@ codegen_typed_eval = cg, te =>
          (lr.0, ast::ValueType(Fn))
       [Block exprs]
          types::g.stack_alloc_next = <->
+         body = fuse_collection_block(cg, te, exprs)
          can_tail
-            | stmt::codegen_typed_eval_block_tail(cg, exprs, tail_k)
-            | stmt::codegen_typed_eval_block(cg, exprs)
+            | stmt::codegen_typed_eval_block_tail(cg, body, tail_k)
+            | stmt::codegen_typed_eval_block(cg, body)
       [Assign a]
          !cg.in_fn && cg.opts.is_module && !types::name_is_in_current_module(cg, a.0)
             |

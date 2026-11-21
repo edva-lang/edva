@@ -85,6 +85,239 @@
             same_scalar_type(orig, value) | replace(orig, value) | fallback
          | fallback
 
+   // Annotation expands @> into an initializer, a cycle, and the resulting
+   // variable. Fuse this shape before lowering it, keeping the last stage's
+   // initializer and replacing each intermediate append with the next step.
+   #type Stage (
+      init: tast::TypedExpr, cycle: tast::TypedExpr, result: tast::TypedExpr,
+      iterable: tast::TypedExpr, lambda: tast::TypedExpr, params: ast::Names,
+      step: tast::TypedExpr, output: String, accumulator: String, collects: <>,
+      element: String, index: String
+   )
+
+   wide_int: tast::TypedExpr => <>
+   wide_int = e => is_int(e) && e.layout.size == 8
+
+   int_array: ast::TypeInfo => <>
+   int_array = ti => ti [Array a] (a.0 [Int]) && (a.1 [Prim p] (p [Int]) | <->) | <->
+
+   read_var: String, tast::TypedExpr, <> => tast::TypedExpr
+   read_var = name, e, mut => e(kind = tast::TypedExprKind(Var, (name, 0, mut)))
+
+   write_var: String, <>, tast::TypedExpr => tast::TypedExpr
+   write_var = name, mut, rhs =>
+      unit = tast::mk_lit_unit(0, 0)
+      tast::mk_typed_assign(name, mut, <->, <->, <->, rhs,
+         unit.ut, unit.ti, unit.layout, 0, 0)
+
+   read_stage: tast::TypedExpr => <Stage|>
+   read_stage = e =>
+      !(e.kind [Block]) | --| <-->
+      parts = e.kind [Block b] b | tast::TypedExprs()
+      ?parts != 3 | --| <-->
+      init = parts(0)!!
+      cycle = parts(1)!!
+      result = parts(2)!!
+      out = result.kind [Var v] v.0 | ""
+      out == "" | --| <-->
+      init_ok = init.kind [Assign a] a.0 == out && a.1 && !(a.2 || a.3 || a.4) | <->
+      !init_ok | --| <-->
+      initial = init.kind [Assign a] a.5 | init
+      collects = int_array(e.ti) && (initial.kind [ArrayNew])
+      expected_prefix = collects | "_map_out_" | "_fold_acc_"
+      !str::starts_with(out, expected_prefix) || (!collects && !wide_int(e)) | --| <-->
+      cycle.kind
+         [Cycle c]
+            (<>(c.2) || c.3) | --| <-->
+            c.1.kind
+               [Lambda lam]
+                  p0 = lam.0(0) | _ | ""
+                  p1 = lam.0(1) | _ | ""
+                  (p0 ["", "_i"]) || (p1 ["_", "_i"]) || p0 == p1 | --| <-->
+                  unpacked = collects
+                     | <+ (lam.1, "") +>
+                     |
+                        lam.1.kind
+                           [Block b]
+                              ?b != 2 | --| <-->
+                              bind = b(0)!!
+                              acc = bind.kind
+                                 [Assign a]
+                                    src = a.5.kind [Var v] v.0 | ""
+                                    a.1 && !(a.2 || a.3 || a.4) && src == out | a.0 | ""
+                                 | ""
+                              (acc ["", "_", "_i"]) || acc == p0 || acc == p1 | --| <-->
+                              <+ (b(1)!!, acc) +>
+                           | <-->
+                  unpacked $+> s => Stage(init, cycle, result, c.0, c.1, lam.0,
+                     s.0, out, s.1, collects, "#pipe_${out}_value", "#pipe_${out}_index")
+               | <-->
+         | <-->
+
+   bare_branch: tast::TypedBranch => <>
+   bare_branch = b =>
+      (b.kind [Bare]) && ?b.case_values == 0 && !<>(b.pred_fn) && ?b.variant_names == 0
+
+   // Whitelist scalar expressions with no calls, captures, writes, or exits.
+   // Constant positive divisors exclude both divide-by-zero and signed overflow.
+   stage_value: Stage, tast::TypedExpr => <tast::TypedExpr|>
+   stage_value = s, e =>
+      scalar = wide_int(e) || (e.ti [Prim p] (p [Flag]) | <->)
+      !scalar && !(e.ti [Ram]) | --| <-->
+      e.kind
+         [LitInt, LitFlag] <+ e +>
+         [Block es] (?es == 1 | stage_value(s, es(0)!!) | <-->)
+         [Var v]
+            p0 = s.params(0)!!
+            p1 = s.params(1) | _ | ""
+            v.0 == s.accumulator && s.accumulator != "" | --| <+ read_var(s.output, e, <+>) +>
+            v.0 [p0, "_"] | --| <+ read_var(s.element, e, <->) +>
+            v.0 [p1, "_i"] | --| <+ read_var(s.index, e, <+>) +>
+            <-->
+         [Bin b]
+            safe_div = (b.0 [Div, Mod]) && (b.2.kind [LitInt n] n > 0 | <->)
+            safe_op = b.0 [Add, Sub, Mul, BitAnd, BitOr, BitXor,
+               Gt, Lt, Eq, NotGt, NotLt, NotEq, And, Or]
+            !(safe_div || safe_op) | --| <-->
+            lhs = stage_value(s, b.1)
+            rhs = stage_value(s, b.2)
+            <>(lhs) && <>(rhs) | <+ e(kind = tast::TypedExprKind(Bin, (b.0, lhs!!, rhs!!))) +> | <-->
+         [Unary u]
+            u.0 ![Not, Neg, BitNot] | --| <-->
+            stage_value(s, u.1) $+> arg => e(kind = tast::TypedExprKind(Unary, (u.0, arg)))
+         [RamConstruct r]
+            !(r.0 [RamPN]) | --| <-->
+            r.2
+               | value =>
+                  !r.1 || !wide_int(value) | --| <-->
+                  stage_value(s, value)
+                     | v => <+ e(kind = tast::TypedExprKind(RamConstruct, (r.0, r.1, <+ v +>))) +>
+                     | <-->
+               | (!r.1 | <+ e +> | <-->)
+         [Choice c]
+            is_flag = c.0.ti [Prim p] (p [Flag]) | <->
+            !is_flag || ?c.1 != 2 | --| <-->
+            cond = stage_value(s, c.0)
+            !<>(cond) | --| <-->
+            branches = tast::TypedBranches()
+            c.1 @ b =>
+               !bare_branch(b) || ?b.bind_vars != 0 | --| <-->
+               body = stage_value(s, b.body)
+               !<>(body) | --| <-->
+               branches += b(body = body!!)
+            <+ e(kind = tast::TypedExprKind(Choice, (cond!!, branches))) +>
+         | <-->
+
+   replace_append: Stage, tast::TypedExpr, <Stage|>, <tast::TypedExpr|>, <> => <tast::TypedExpr|>
+   replace_append = s, step, next_stage, downstream, payload =>
+      step.kind
+         [Assign a]
+            (a.0 != s.output || a.1 || a.3 || a.4 || a.2 != s.collects || !wide_int(a.5))
+               | --| <-->
+            val = payload | <+ a.5 +> | stage_value(s, a.5)
+            !<>(val) | --| <-->
+            next_stage
+               | next =>
+                  idx = read_var(next.index, tast::mk_lit_int(0, 0, 0), <+>)
+                  one = tast::mk_lit_int(1, 0, 0)
+                  bump = idx(kind = tast::TypedExprKind(Bin, (ast::BinaryOp(Add), idx, one)))
+                  body = tast::TypedExprs()
+                  body += write_var(next.element, <->, val!!)
+                  body += downstream!!
+                  body += write_var(next.index, <->, bump)
+                  <+ step(kind = tast::TypedExprKind(Block, body)) +>
+               |
+                  <+ step(kind = tast::TypedExprKind(Assign,
+                     (a.0, a.1, a.2, a.3, a.4, val!!))) +>
+         [Choice c]
+            payload || ?c.1 != 1 | --| <-->
+            br = c.1(0)!!
+            !bare_branch(br) || ?br.bind_vars != 1 | --| <-->
+            // The generated branch passes the positive payload to the append.
+            br.body.kind
+               [Assign a]
+                  rhs = a.5.kind [Var v] v.0 | ""
+                  rhs != br.bind_vars(0)!! | --| <-->
+               | --| <-->
+            cond = stage_value(s, c.0)
+            body = replace_append(s, br.body, next_stage, downstream, <+>)
+            !<>(cond) || !<>(body) | --| <-->
+            branches = tast::TypedBranches()
+            branches += br(body = body!!)
+            <+ step(kind = tast::TypedExprKind(Choice, (cond!!, branches))) +>
+         | <-->
+
+   fusion_source: tast::TypedExpr => <>
+   fusion_source = e =>
+      e.kind
+         [Bin b] ((b.0 [Seq]) | (wide_int(b.1) && wide_int(b.2)) | wide_int(e))
+         | wide_int(e) || int_array(e.ti)
+
+   // The scope check runs before the initializer and source are emitted.
+   // These setup expressions cannot introduce cycle binder names at that point.
+   setup_has_no_bindings: tast::TypedExpr => <>
+   setup_has_no_bindings = e =>
+      e.kind
+         [LitInt, LitFlag, LitUnit, LitStr, LitFloat, LitRune, Var, ArrayNew] <+>
+         [Bin b] setup_has_no_bindings(b.1) && setup_has_no_bindings(b.2)
+         [Unary u] setup_has_no_bindings(u.1)
+         [Call c]
+            (c.1 | target => !setup_has_no_bindings(target) | <->) | --| <->
+            c.2 @ arg =>
+               !setup_has_no_bindings(arg) | --| <->
+            <+>
+         | <->
+
+   collect_binders: Stage, ast::Names => ()
+   collect_binders = stage, names =>
+      names += stage.output
+      stage.params @ name =>
+         name !["", "_", "_i"] | names += name
+      stage.accumulator != "" | names += stage.accumulator
+      stage.step.kind
+         [Choice c]
+            c.1 @ br =>
+               br.bind_vars @ name => names += name
+
+   fuse_pipeline: tast::TypedExpr => <(tast::TypedExprs, ast::Names)|>
+   fuse_pipeline = e =>
+      outer = read_stage(e)
+      !<>(outer) | --| <-->
+      current' = outer!!
+      step' = replace_append(current', current'.step, <-->, <-->, <->)
+      !<>(step') | --| <-->
+      initial = current'.init.kind [Assign a] a.5 | current'.init
+      !setup_has_no_bindings(initial) | --| <-->
+      prefix = tast::TypedExprs()
+      prefix += current'.init
+      binders = ast::Names()
+      collect_binders(current', binders)
+      depth' = 0
+      0.. @
+         candidate = read_stage(current'.iterable)
+         !<>(candidate) | -->
+         inner = candidate!!
+         !inner.collects | -->
+         lower = replace_append(inner, inner.step, <+ current' +>, step', <->)
+         !<>(lower) | -->
+         prefix += write_var(current'.index, <+>, tast::mk_lit_int(0, 0, 0))
+         collect_binders(inner, binders)
+         current' = inner
+         step' = lower
+         depth' = depth' + 1
+      depth' == 0 || !fusion_source(current'.iterable) ||
+         !setup_has_no_bindings(current'.iterable) | --| <-->
+      params = ast::Names()
+      params += current'.element
+      params += current'.index
+      body_fn = current'.lambda(kind = tast::TypedExprKind(Lambda,
+         (params, step'!!, tast::TypedCaptures())))
+      fused = current'.cycle(kind = tast::TypedExprKind(Cycle,
+         (current'.iterable, body_fn, <-->, <->)))
+      prefix += fused
+      prefix += outer!!.result
+      <+ (prefix, binders) +>
+
    rewrite: Context, tast::TypedExpr => tast::TypedExpr
 
    rewrite_list: Context, tast::TypedExprs => tast::TypedExprs
@@ -184,6 +417,9 @@
          | st
 
 #public
+   collection_fusion: tast::TypedExpr => <(tast::TypedExprs, ast::Names)|>
+   collection_fusion = e => fuse_pipeline(e)
+
    // Keep the original program for the diagnostic/raw-AST path. Every
    // downstream analysis is built from the returned tree, not reused.
    run: tast::TypedProgram => tast::TypedProgram

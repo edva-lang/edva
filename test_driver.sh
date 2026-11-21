@@ -3155,5 +3155,93 @@ if command -v wasm-ld >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then
 fi
 echo "PASS"
 
+# --- Test 63: Differential execution and allocation elimination for @> fusion ---
+echo -n "Testing collection pipeline fusion (-O0/-O2/Wasm)... "
+T63_DIR="$TMPDIR/t63_fusion"
+T63_SRC=tests/pass/458_collection_fusion
+mkdir -p "$T63_DIR"
+
+cat >"$T63_DIR/trap.dva" <<'DVA'
+#use io
+emit: Int => Int
+emit = x =>
+   io::out $ x
+   x + 1
+trap: Int => Int
+trap = limit =>
+   (0, (4 @> emit)) @> (a, v, i => a + v / (limit - i))
+io::out $ trap(2)
+DVA
+printf '0\n1\n2\n3\n' >"$T63_DIR/expected-prefix"
+
+for mode in eager fused; do
+    opts=()
+    if [ "$mode" = eager ]; then
+        opts+=(--no-typed-opt)
+    fi
+    for opt in -O0 -O2; do
+        timeout 30 ./edva "$T63_SRC/main.dva" "$opt" "${opts[@]}" --no-cache \
+            -o "$T63_DIR/native" < /dev/null >"$T63_DIR/native.log" 2>&1
+        timeout 10 "$T63_DIR/native" >"$T63_DIR/out"
+        diff -u "$T63_SRC.expected" "$T63_DIR/out"
+    done
+
+    timeout 30 ./edva "$T63_SRC/pipeline.dva" -O2 "${opts[@]}" --no-cache --ir \
+        -o "$T63_DIR/$mode.ll" < /dev/null >"$T63_DIR/ir.log" 2>&1
+    sed -n '/^define .* @sum_chain(/,/^}/p' "$T63_DIR/$mode.ll" >"$T63_DIR/$mode"
+
+    timeout 30 ./edva "$T63_DIR/trap.dva" -O2 "${opts[@]}" --no-cache \
+        -o "$T63_DIR/trap" < /dev/null >"$T63_DIR/trap.log" 2>&1
+    status=0
+    timeout 10 "$T63_DIR/trap" >"$T63_DIR/trap.$mode.out" 2>"$T63_DIR/trap.$mode.err" || status=$?
+    if [ "$status" -ne 1 ]; then
+        echo "FAILED: expected a division trap after eager producer effects ($mode, exit $status)"
+        exit 1
+    fi
+    diff -u "$T63_DIR/expected-prefix" "$T63_DIR/trap.$mode.out"
+
+    if command -v wasm-ld >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then
+        timeout 30 ./edva "$T63_SRC/pipeline.dva" -O2 "${opts[@]}" --no-cache \
+            -target wasm32-unknown-unknown -o "$T63_DIR/pipeline.wasm" \
+            < /dev/null >"$T63_DIR/wasm.log" 2>&1
+        timeout 10 node --disable-wasm-trap-handler -e '
+            const assert = require("node:assert/strict");
+            const bytes = require("node:fs").readFileSync(process.argv[1]);
+            let memory;
+            let heap;
+            const env = {
+                malloc(size) {
+                    const start = heap;
+                    heap += Math.ceil(Number(size) / 16) * 16;
+                    if (heap > memory.buffer.byteLength) {
+                        memory.grow(Math.ceil((heap - memory.buffer.byteLength) / 65536));
+                    }
+                    return start;
+                }
+            };
+            WebAssembly.instantiate(bytes, { env }).then(({ instance: { exports: e } }) => {
+                memory = e.memory;
+                heap = memory.buffer.byteLength;
+                assert.equal(e.fusion_probe(0n), 7n);
+                assert.equal(e.fusion_probe(1n), 7n);
+                assert.equal(e.fusion_probe(50n), 72816n);
+            }).catch(error => {
+                console.error(error);
+                process.exitCode = 1;
+            });
+        ' "$T63_DIR/pipeline.wasm"
+    fi
+done
+
+diff -u "$T63_DIR/trap.eager.err" "$T63_DIR/trap.fused.err"
+if [ "$(grep -c '^loop.header[.]' "$T63_DIR/eager")" -ne 3 ] ||
+   [ "$(grep -c '^loop.header[.]' "$T63_DIR/fused")" -ne 1 ] ||
+   ! grep -Fq 'call ptr @dva_arena_alloc' "$T63_DIR/eager" ||
+   grep -Fq 'call ptr @dva_arena_alloc' "$T63_DIR/fused"; then
+    echo "FAILED: expected one fused loop with no intermediate array allocations"
+    exit 1
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 
