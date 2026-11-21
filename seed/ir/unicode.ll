@@ -128,6 +128,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.unicode::decode_rune_builder" = global ptr null
 @clo.const.27 = internal constant { ptr, ptr } { ptr @"unicode::is_uax31_str", ptr null }
 @"var.unicode::is_uax31_str" = global ptr null
+@detached_builder = internal unnamed_addr constant [93 x i8] c"E4013: Builder buffer was detached by freeze. Append data or create a new Builder before &b\0A\00"
 @clo.const.29 = internal constant { ptr, ptr } { ptr @"unicode::is_uax31_builder", ptr null }
 @"var.unicode::is_uax31_builder" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_unicode, ptr null }]
@@ -1209,27 +1210,35 @@ entry:
   %cmptmp = icmp eq i64 %b.len1, 0
   br i1 %cmptmp, label %common.ret, label %choice.exit
 
-common.ret:                                       ; preds = %choice.exit44, %idx_ok34, %loop.header.43, %choice.exit11, %choice.exit, %entry
-  %common.ret.op = phi i1 [ false, %entry ], [ false, %choice.exit ], [ false, %choice.exit11 ], [ true, %loop.header.43 ], [ false, %idx_ok34 ], [ false, %choice.exit44 ]
+common.ret:                                       ; preds = %choice.exit45, %idx_ok35, %loop.header.43, %choice.exit12, %idx_ok, %entry
+  %common.ret.op = phi i1 [ false, %entry ], [ false, %idx_ok ], [ false, %choice.exit12 ], [ true, %loop.header.43 ], [ false, %idx_ok35 ], [ false, %choice.exit45 ]
   ret i1 %common.ret.op
 
 choice.exit:                                      ; preds = %entry
   %b.ptr = getelementptr inbounds { i64, ptr, i64 }, ptr %0, i32 0, i32 1
   %b.ptr4 = load ptr, ptr %b.ptr, align 8
+  %1 = icmp eq ptr %b.ptr4, null
+  br i1 %1, label %b.detached, label %idx_ok
+
+b.detached:                                       ; preds = %choice.exit
+  call void @dva_abort_detached_builder()
+  unreachable
+
+idx_ok:                                           ; preds = %choice.exit
   %s.byte = load i8, ptr %b.ptr4, align 1
   %s.byte.val = zext i8 %s.byte to i64
   %call.res = call i64 @"utf::seq_len"(i64 %s.byte.val)
-  %cmptmp9 = icmp sgt i64 %call.res, %b.len1
-  br i1 %cmptmp9, label %common.ret, label %choice.exit11
+  %cmptmp10 = icmp sgt i64 %call.res, %b.len1
+  br i1 %cmptmp10, label %common.ret, label %choice.exit12
 
-choice.exit11:                                    ; preds = %choice.exit
-  %call.res14 = call i32 @"utf::decode_rune_addr"(ptr %b.ptr4, i64 0)
-  %call.res16 = call i1 @"unicode::is_id_start"(i32 %call.res14)
-  %nottmp = xor i1 %call.res16, true
-  br i1 %nottmp, label %common.ret, label %choice.exit18
+choice.exit12:                                    ; preds = %idx_ok
+  %call.res15 = call i32 @"utf::decode_rune_addr"(ptr %b.ptr4, i64 0)
+  %call.res17 = call i1 @"unicode::is_id_start"(i32 %call.res15)
+  %nottmp = xor i1 %call.res17, true
+  br i1 %nottmp, label %common.ret, label %choice.exit19
 
-choice.exit18:                                    ; preds = %choice.exit11
-  %coerce.sext = sext i32 %call.res14 to i64
+choice.exit19:                                    ; preds = %choice.exit12
+  %coerce.sext = sext i32 %call.res15 to i64
   %r.cmp1 = icmp slt i64 %coerce.sext, 128
   %r.cmp2 = icmp slt i64 %coerce.sext, 2048
   %r.cmp3 = icmp slt i64 %coerce.sext, 65536
@@ -1238,48 +1247,56 @@ choice.exit18:                                    ; preds = %choice.exit11
   %r.width = select i1 %r.cmp1, i64 1, i64 %r.w2
   br label %loop.header.43
 
-loop.header.43:                                   ; preds = %choice.exit53, %choice.exit18
-  %"var.i'.0" = phi i64 [ %r.width, %choice.exit18 ], [ %addtmp64, %choice.exit53 ]
-  %loop.idx.43.0 = phi i64 [ 0, %choice.exit18 ], [ %loop.next, %choice.exit53 ]
-  %cmptmp23 = icmp sge i64 %"var.i'.0", %b.len1
-  br i1 %cmptmp23, label %common.ret, label %choice.exit25
+loop.header.43:                                   ; preds = %choice.exit54, %choice.exit19
+  %"var.i'.0" = phi i64 [ %r.width, %choice.exit19 ], [ %addtmp65, %choice.exit54 ]
+  %loop.idx.43.0 = phi i64 [ 0, %choice.exit19 ], [ %loop.next, %choice.exit54 ]
+  %cmptmp24 = icmp sge i64 %"var.i'.0", %b.len1
+  br i1 %cmptmp24, label %common.ret, label %choice.exit26
 
-choice.exit25:                                    ; preds = %loop.header.43
-  %b.read.len29 = load i64, ptr %0, align 8
-  %b.read.data31 = load ptr, ptr %b.ptr, align 8
-  %idx.oob33 = icmp uge i64 %"var.i'.0", %b.read.len29
-  br i1 %idx.oob33, label %idx_oob35, label %idx_ok34
+choice.exit26:                                    ; preds = %loop.header.43
+  %b.read.len30 = load i64, ptr %0, align 8
+  %b.read.data32 = load ptr, ptr %b.ptr, align 8
+  %idx.oob34 = icmp uge i64 %"var.i'.0", %b.read.len30
+  br i1 %idx.oob34, label %idx_oob36, label %idx_ok35
 
-idx_ok34:                                         ; preds = %choice.exit25
-  %s.byte.gep37 = getelementptr i8, ptr %b.read.data31, i64 %"var.i'.0"
-  %s.byte38 = load i8, ptr %s.byte.gep37, align 1
-  %s.byte.val39 = zext i8 %s.byte38 to i64
-  %call.res40 = call i64 @"utf::seq_len"(i64 %s.byte.val39)
-  %addtmp = add i64 %"var.i'.0", %call.res40
-  %cmptmp42 = icmp sgt i64 %addtmp, %b.len1
-  br i1 %cmptmp42, label %common.ret, label %choice.exit44
+idx_ok35:                                         ; preds = %choice.exit26
+  %s.byte.gep38 = getelementptr i8, ptr %b.read.data32, i64 %"var.i'.0"
+  %s.byte39 = load i8, ptr %s.byte.gep38, align 1
+  %s.byte.val40 = zext i8 %s.byte39 to i64
+  %call.res41 = call i64 @"utf::seq_len"(i64 %s.byte.val40)
+  %addtmp = add i64 %"var.i'.0", %call.res41
+  %cmptmp43 = icmp sgt i64 %addtmp, %b.len1
+  br i1 %cmptmp43, label %common.ret, label %choice.exit45
 
-idx_oob35:                                        ; preds = %choice.exit25
+idx_oob36:                                        ; preds = %choice.exit26
   call void @dva_abort_str_oob_msg()
   unreachable
 
-choice.exit44:                                    ; preds = %idx_ok34
-  %call.res48 = call i32 @"utf::decode_rune_addr"(ptr %b.ptr4, i64 %"var.i'.0")
-  %call.res50 = call i1 @"unicode::is_id_continue"(i32 %call.res48)
-  %nottmp51 = xor i1 %call.res50, true
-  br i1 %nottmp51, label %common.ret, label %choice.exit53
+choice.exit45:                                    ; preds = %idx_ok35
+  %call.res49 = call i32 @"utf::decode_rune_addr"(ptr %b.ptr4, i64 %"var.i'.0")
+  %call.res51 = call i1 @"unicode::is_id_continue"(i32 %call.res49)
+  %nottmp52 = xor i1 %call.res51, true
+  br i1 %nottmp52, label %common.ret, label %choice.exit54
 
-choice.exit53:                                    ; preds = %choice.exit44
-  %coerce.sext57 = sext i32 %call.res48 to i64
-  %r.cmp158 = icmp slt i64 %coerce.sext57, 128
-  %r.cmp259 = icmp slt i64 %coerce.sext57, 2048
-  %r.cmp360 = icmp slt i64 %coerce.sext57, 65536
-  %r.w361 = select i1 %r.cmp360, i64 3, i64 4
-  %r.w262 = select i1 %r.cmp259, i64 2, i64 %r.w361
-  %r.width63 = select i1 %r.cmp158, i64 1, i64 %r.w262
-  %addtmp64 = add i64 %"var.i'.0", %r.width63
+choice.exit54:                                    ; preds = %choice.exit45
+  %coerce.sext58 = sext i32 %call.res49 to i64
+  %r.cmp159 = icmp slt i64 %coerce.sext58, 128
+  %r.cmp260 = icmp slt i64 %coerce.sext58, 2048
+  %r.cmp361 = icmp slt i64 %coerce.sext58, 65536
+  %r.w362 = select i1 %r.cmp361, i64 3, i64 4
+  %r.w263 = select i1 %r.cmp260, i64 2, i64 %r.w362
+  %r.width64 = select i1 %r.cmp159, i64 1, i64 %r.w263
+  %addtmp65 = add i64 %"var.i'.0", %r.width64
   %loop.next = add i64 %loop.idx.43.0, 1
   br label %loop.header.43
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_detached_builder() #4 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @detached_builder, i64 92)
+  call void @exit(i32 1)
+  unreachable
 }
 
 attributes #0 = { alwaysinline "nounwind" }

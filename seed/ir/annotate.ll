@@ -10,6 +10,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.annotate::cur_expected_ut" = global { i1, i64 } zeroinitializer
 @stale_str_msg = internal unnamed_addr constant [46 x i8] c"E4010: stale String read after arena restore\0A\00"
 @b_byte_msg = internal unnamed_addr constant [58 x i8] c"E4007: Builder append byte out of range (must be 0..255)\0A\00"
+@detached_builder = internal unnamed_addr constant [93 x i8] c"E4013: Builder buffer was detached by freeze. Append data or create a new Builder before &b\0A\00"
 @clo.const = internal constant { ptr, ptr } { ptr @"annotate::#print", ptr null }
 @"var.annotate::#print" = global ptr null
 @str.0 = internal unnamed_addr constant [1 x i8] zeroinitializer
@@ -2147,19 +2148,8 @@ b.push_done:                                      ; preds = %b.nogrow, %b.new.bu
   %var.load51 = load ptr, ptr %var.b, align 8
   %b.ptr = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load51, i32 0, i32 1
   %b.ptr52 = load ptr, ptr %b.ptr, align 8
-  %addr.tag.int = ptrtoint ptr %b.ptr52 to i64
-  %addr.tag.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %addr.tag.shift = shl i64 %addr.tag.gen, 48
-  %addr.tagged = or i64 %addr.tag.int, %addr.tag.shift
-  %addr.tagged.ptr = inttoptr i64 %addr.tagged to ptr
-  %addr.ffi.int = ptrtoint ptr %addr.tagged.ptr to i64
-  %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
-  %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
-  %var.load53 = load ptr, ptr %var.b, align 8
-  %b.len54 = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load53, i32 0, i32 0
-  %b.len55 = load i64, ptr %b.len54, align 8
-  %call.res = call i64 @write(i32 1, ptr %addr.ffi.clean, i64 %b.len55)
-  ret i64 %call.res
+  %1 = icmp eq ptr %b.ptr52, null
+  br i1 %1, label %b.detached, label %b.writable
 
 b.new.buf.len44:                                  ; preds = %abort.dead46, %b.grow
   %arena.cur47 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -2179,6 +2169,28 @@ str_overflow_abort45:                             ; preds = %b.grow
 
 abort.dead46:                                     ; No predecessors!
   br label %b.new.buf.len44
+
+b.detached:                                       ; preds = %b.push_done
+  call void @dva_abort_detached_builder()
+  unreachable
+
+b.writable:                                       ; preds = %b.push_done
+  %addr.tag.int = ptrtoint ptr %b.ptr52 to i64
+  %addr.tag.gen = load i64, ptr @dva_active_gen_tls, align 8
+  %addr.tag.shift = shl i64 %addr.tag.gen, 48
+  %addr.tagged = or i64 %addr.tag.int, %addr.tag.shift
+  %addr.tagged.ptr = inttoptr i64 %addr.tagged to ptr
+  %addr.ffi.int = ptrtoint ptr %addr.tagged.ptr to i64
+  %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
+  %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
+  %var.load54 = load ptr, ptr %var.b, align 8
+  %b.len55 = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load54, i32 0, i32 0
+  %b.len56 = load i64, ptr %b.len55, align 8
+  %call.res = call i64 @write(i32 1, ptr %addr.ffi.clean, i64 %b.len56)
+  ret i64 %call.res
+
+abort.dead53:                                     ; No predecessors!
+  unreachable
 }
 
 ; Function Attrs: cold noinline
@@ -2228,6 +2240,17 @@ declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias
 define internal void @dva_abort_b_byte_msg() #6 {
 entry:
   %0 = call i64 @write(i32 2, ptr @b_byte_msg, i64 57)
+  call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_detached_builder() #6 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @detached_builder, i64 92)
   call void @exit(i32 1)
   unreachable
 

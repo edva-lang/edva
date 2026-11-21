@@ -410,7 +410,7 @@ read_to_string = path =>
                ?buf = n
                <+ +buf +>
       |
-         b' = ++""
+         out = {4096}
          chunk = {4096}
          read_err' = <->
          0.. @
@@ -421,11 +421,11 @@ read_to_string = path =>
                   -->
             n == 0 | -->
             ?chunk = n
-            b' = b' + (+chunk)
+            out += chunk(0..n)
          libc::close(fd)
          read_err'
             | <-->
-            | <+ b' +>
+            | <+ +out +>
 
 write_file: String, String => <>
 write_file = path, content =>

@@ -2466,7 +2466,8 @@ collect_link_libs = stmts =>
    fuzz_cov: <> = <->,
    timings: <> = <->,
    load_parse_ns: Int = 0,
-   no_typed_opt: <> = <->
+   no_typed_opt: <> = <->,
+   check_arena_escapes: <> = <->
 )
 
 init_opts: Int => CliOpts
@@ -2872,6 +2873,7 @@ build_cache_summary = opts, exports, dyn_mods =>
    b = {256}
    opts.fuzz_cov | b += "fuzz_cov=1\n"
    opts.no_typed_opt | b += "typed_opt=off\n"
+   opts.check_arena_escapes | b += "check_arena_escapes=1\n"
    opts.cflags @ cf => b += "cflag=${cf}\n"
    exports @ ex => b += "export=${ex}\n"
    dyn_mods @ dm => b += "dyn=${dm}\n"
@@ -2990,7 +2992,7 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
    cg_opts = codegen::CodegenOpts(opts.triple, opts.no_runtime, opts.no_main,
      dynamic_mods, dynamic_paths, opts.is_shared, compiler_exe_path,
      opts.is_module, opts.module_name, opts.fuzz_cov, opts.no_typed_opt,
-     opts.opt != "-O0")
+     opts.opt != "-O0", opts.check_arena_escapes)
    src_f = opts.target != "" | opts.target | "<eval>"
    annotate::set_source_file(src_f)
    annotate::set_target_triple(opts.triple)
@@ -4054,6 +4056,7 @@ compiler_cli_opts = !=>
       cli::opt("no-main", <->, "Emit main with internal linkage"),
       cli::opt("no-runtime", <->, "Omit standard runtime emission"),
       cli::opt("no-typed-opt", <->, "Skip pre-LLVM typed rewrites"),
+      cli::opt("check-arena-escapes", <->, "Check global stores for scoped-arena values"),
       cli::opt("import-map", "", "Path to package import map", not_flag),
       cli::opt("cache", "", "Compilation cache directory path"),
       cli::opt("no-cache", <->, "Disable compilation cache"),
@@ -4111,6 +4114,7 @@ parse_and_dispatch_cli = !=>
    opts.ir_only = cli::flag(res, "ir")
    opts.no_runtime = cli::flag(res, "no-runtime")
    opts.no_typed_opt = cli::flag(res, "no-typed-opt")
+   opts.check_arena_escapes = cli::flag(res, "check-arena-escapes")
    opts.no_main = cli::flag(res, "no-main")
    opts.repl_mode = cli::flag(res, "repl")
 

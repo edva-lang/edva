@@ -441,46 +441,56 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.119.struct = internal unnamed_addr constant { i64, ptr } { i64 47, ptr @str.119 }
 @clo.const.97 = internal constant { ptr, ptr } { ptr @"diag::E4008_builder_length_bounds", ptr null }
 @"var.diag::E4008_builder_length_bounds" = global ptr null
-@str.120 = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@str.120.struct = internal unnamed_addr constant { i64, ptr } { i64 37, ptr @str.120 }
-@clo.const.98 = internal constant { ptr, ptr } { ptr @"diag::runtime_error_format", ptr null }
+@str.120 = internal unnamed_addr constant [55 x i8] c"E4012: cannot store a scoped-arena value in a global; \00"
+@str.120.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.120 }
+@str.121 = internal unnamed_addr constant [51 x i8] c"allocate or copy it in the persistent arena first\0A\00"
+@str.121.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.121 }
+@clo.const.98 = internal constant { ptr, ptr } { ptr @"diag::E4012_scoped_global_store", ptr null }
+@"var.diag::E4012_scoped_global_store" = global ptr null
+@str.122 = internal unnamed_addr constant [93 x i8] c"E4013: Builder buffer was detached by freeze. Append data or create a new Builder before &b\0A\00"
+@str.122.struct = internal unnamed_addr constant { i64, ptr } { i64 92, ptr @str.122 }
+@clo.const.99 = internal constant { ptr, ptr } { ptr @"diag::E4013_detached_builder_addr", ptr null }
+@"var.diag::E4013_detached_builder_addr" = global ptr null
+@str.123 = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
+@str.123.struct = internal unnamed_addr constant { i64, ptr } { i64 37, ptr @str.123 }
+@clo.const.100 = internal constant { ptr, ptr } { ptr @"diag::runtime_error_format", ptr null }
 @"var.diag::runtime_error_format" = global ptr null
-@str.121 = internal unnamed_addr constant [83 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk \00"
-@str.121.struct = internal unnamed_addr constant { i64, ptr } { i64 82, ptr @str.121 }
-@str.122 = internal unnamed_addr constant [17 x i8] c"cap %llu bytes)\0A\00"
-@str.122.struct = internal unnamed_addr constant { i64, ptr } { i64 16, ptr @str.122 }
-@clo.const.99 = internal constant { ptr, ptr } { ptr @"diag::E4004_arena_allocation_too_large", ptr null }
+@str.124 = internal unnamed_addr constant [83 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk \00"
+@str.124.struct = internal unnamed_addr constant { i64, ptr } { i64 82, ptr @str.124 }
+@str.125 = internal unnamed_addr constant [17 x i8] c"cap %llu bytes)\0A\00"
+@str.125.struct = internal unnamed_addr constant { i64, ptr } { i64 16, ptr @str.125 }
+@clo.const.101 = internal constant { ptr, ptr } { ptr @"diag::E4004_arena_allocation_too_large", ptr null }
 @"var.diag::E4004_arena_allocation_too_large" = global ptr null
-@str.123 = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@str.123.struct = internal unnamed_addr constant { i64, ptr } { i64 57, ptr @str.123 }
-@clo.const.100 = internal constant { ptr, ptr } { ptr @"diag::E4003_arena_chunk_limit", ptr null }
+@str.126 = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
+@str.126.struct = internal unnamed_addr constant { i64, ptr } { i64 57, ptr @str.126 }
+@clo.const.102 = internal constant { ptr, ptr } { ptr @"diag::E4003_arena_chunk_limit", ptr null }
 @"var.diag::E4003_arena_chunk_limit" = global ptr null
-@str.124 = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@str.124.struct = internal unnamed_addr constant { i64, ptr } { i64 49, ptr @str.124 }
-@clo.const.101 = internal constant { ptr, ptr } { ptr @"diag::E4001_arena_exhausted", ptr null }
+@str.127 = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
+@str.127.struct = internal unnamed_addr constant { i64, ptr } { i64 49, ptr @str.127 }
+@clo.const.103 = internal constant { ptr, ptr } { ptr @"diag::E4001_arena_exhausted", ptr null }
 @"var.diag::E4001_arena_exhausted" = global ptr null
-@str.125 = internal unnamed_addr constant [36 x i8] c"E5012: Failed to write LLVM IR to '\00"
-@str.125.struct = internal unnamed_addr constant { i64, ptr } { i64 35, ptr @str.125 }
-@clo.const.102 = internal constant { ptr, ptr } { ptr @"diag::E5012_write_ir_prefix", ptr null }
+@str.128 = internal unnamed_addr constant [36 x i8] c"E5012: Failed to write LLVM IR to '\00"
+@str.128.struct = internal unnamed_addr constant { i64, ptr } { i64 35, ptr @str.128 }
+@clo.const.104 = internal constant { ptr, ptr } { ptr @"diag::E5012_write_ir_prefix", ptr null }
 @"var.diag::E5012_write_ir_prefix" = global ptr null
-@str.126 = internal unnamed_addr constant [51 x i8] c"Unterminated string literal -- missing closing '\22'\00"
-@str.126.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.126 }
-@clo.const.103 = internal constant { ptr, ptr } { ptr @"diag::E1008_string_unterminated", ptr null }
+@str.129 = internal unnamed_addr constant [51 x i8] c"Unterminated string literal -- missing closing '\22'\00"
+@str.129.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.129 }
+@clo.const.105 = internal constant { ptr, ptr } { ptr @"diag::E1008_string_unterminated", ptr null }
 @"var.diag::E1008_string_unterminated" = global ptr null
 @"var.diag::capture_enabled" = global i1 false
 @"var.diag::captured_diags" = global ptr null
-@clo.const.104 = internal constant { ptr, ptr } { ptr @"diag::enable_capture", ptr null }
+@clo.const.106 = internal constant { ptr, ptr } { ptr @"diag::enable_capture", ptr null }
 @"var.diag::enable_capture" = global ptr null
-@clo.const.105 = internal constant { ptr, ptr } { ptr @"diag::disable_capture", ptr null }
+@clo.const.107 = internal constant { ptr, ptr } { ptr @"diag::disable_capture", ptr null }
 @"var.diag::disable_capture" = global ptr null
-@clo.const.106 = internal constant { ptr, ptr } { ptr @"diag::is_capturing", ptr null }
+@clo.const.108 = internal constant { ptr, ptr } { ptr @"diag::is_capturing", ptr null }
 @"var.diag::is_capturing" = global ptr null
-@clo.const.107 = internal constant { ptr, ptr } { ptr @"diag::clear_captured", ptr null }
+@clo.const.109 = internal constant { ptr, ptr } { ptr @"diag::clear_captured", ptr null }
 @"var.diag::clear_captured" = global ptr null
 @arr_overflow_msg = internal unnamed_addr constant [26 x i8] c"E4002: capacity overflow\0A\00"
-@clo.const.108 = internal constant { ptr, ptr } { ptr @"diag::record_diag", ptr null }
+@clo.const.110 = internal constant { ptr, ptr } { ptr @"diag::record_diag", ptr null }
 @"var.diag::record_diag" = global ptr null
-@clo.const.109 = internal constant { ptr, ptr } { ptr @"diag::get_captured", ptr null }
+@clo.const.111 = internal constant { ptr, ptr } { ptr @"diag::get_captured", ptr null }
 @"var.diag::get_captured" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_diag, ptr null }]
 
@@ -624,12 +634,14 @@ entry:
   store ptr @clo.const.95, ptr @"var.diag::compile_time_parameter_suffix", align 8
   store ptr @clo.const.96, ptr @"var.diag::E3105_enum_label_ambiguous_suffix", align 8
   store ptr @clo.const.97, ptr @"var.diag::E4008_builder_length_bounds", align 8
-  store ptr @clo.const.98, ptr @"var.diag::runtime_error_format", align 8
-  store ptr @clo.const.99, ptr @"var.diag::E4004_arena_allocation_too_large", align 8
-  store ptr @clo.const.100, ptr @"var.diag::E4003_arena_chunk_limit", align 8
-  store ptr @clo.const.101, ptr @"var.diag::E4001_arena_exhausted", align 8
-  store ptr @clo.const.102, ptr @"var.diag::E5012_write_ir_prefix", align 8
-  store ptr @clo.const.103, ptr @"var.diag::E1008_string_unterminated", align 8
+  store ptr @clo.const.98, ptr @"var.diag::E4012_scoped_global_store", align 8
+  store ptr @clo.const.99, ptr @"var.diag::E4013_detached_builder_addr", align 8
+  store ptr @clo.const.100, ptr @"var.diag::runtime_error_format", align 8
+  store ptr @clo.const.101, ptr @"var.diag::E4004_arena_allocation_too_large", align 8
+  store ptr @clo.const.102, ptr @"var.diag::E4003_arena_chunk_limit", align 8
+  store ptr @clo.const.103, ptr @"var.diag::E4001_arena_exhausted", align 8
+  store ptr @clo.const.104, ptr @"var.diag::E5012_write_ir_prefix", align 8
+  store ptr @clo.const.105, ptr @"var.diag::E1008_string_unterminated", align 8
   store i1 false, ptr @"var.diag::capture_enabled", align 1
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %a.new = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
@@ -642,12 +654,12 @@ entry:
   %a.cap.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new, i32 0, i32 2
   store i64 16, ptr %a.cap.gep, align 8
   store ptr %a.new, ptr @"var.diag::captured_diags", align 8
-  store ptr @clo.const.104, ptr @"var.diag::enable_capture", align 8
-  store ptr @clo.const.105, ptr @"var.diag::disable_capture", align 8
-  store ptr @clo.const.106, ptr @"var.diag::is_capturing", align 8
-  store ptr @clo.const.107, ptr @"var.diag::clear_captured", align 8
-  store ptr @clo.const.108, ptr @"var.diag::record_diag", align 8
-  store ptr @clo.const.109, ptr @"var.diag::get_captured", align 8
+  store ptr @clo.const.106, ptr @"var.diag::enable_capture", align 8
+  store ptr @clo.const.107, ptr @"var.diag::disable_capture", align 8
+  store ptr @clo.const.108, ptr @"var.diag::is_capturing", align 8
+  store ptr @clo.const.109, ptr @"var.diag::clear_captured", align 8
+  store ptr @clo.const.110, ptr @"var.diag::record_diag", align 8
+  store ptr @clo.const.111, ptr @"var.diag::get_captured", align 8
   ret void
 }
 
@@ -3023,21 +3035,77 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
+define { i64, ptr } @"diag::E4012_scoped_global_store"() #3 {
+entry:
+  %concat.str = alloca { i64, ptr }, align 8
+  %concat.lhs = load i64, ptr @str.120.struct, align 8
+  %concat.lhs1 = and i64 %concat.lhs, 281474976710655
+  %concat.lhs2 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.120.struct, i32 0, i32 1), align 8
+  %concat.rhs = load i64, ptr @str.121.struct, align 8
+  %concat.rhs3 = and i64 %concat.rhs, 281474976710655
+  %concat.rhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.121.struct, i32 0, i32 1), align 8
+  %concat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1, i64 %concat.rhs3)
+  %sum = extractvalue { i64, i1 } %concat.sum.len, 0
+  %ovf = extractvalue { i64, i1 } %concat.sum.len, 1
+  br i1 %ovf, label %str_overflow_abort, label %concat.sum.len5
+
+concat.sum.len5:                                  ; preds = %abort.dead, %entry
+  %concat.tot.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum, i64 1)
+  %sum6 = extractvalue { i64, i1 } %concat.tot.len, 0
+  %ovf7 = extractvalue { i64, i1 } %concat.tot.len, 1
+  br i1 %ovf7, label %str_overflow_abort9, label %concat.tot.len8
+
+str_overflow_abort:                               ; preds = %entry
+  call void @dva_abort_str_overflow_msg()
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  br label %concat.sum.len5
+
+concat.tot.len8:                                  ; preds = %abort.dead10, %concat.sum.len5
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
+  %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur, i64 %sum6)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 %concat.lhs2, i64 %concat.lhs1, i1 false)
+  %concat.mid = getelementptr i8, ptr %concat.buf, i64 %concat.lhs1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid, ptr align 1 %concat.rhs4, i64 %concat.rhs3, i1 false)
+  %concat.nul = getelementptr i8, ptr %concat.buf, i64 %sum
+  store i8 0, ptr %concat.nul, align 1
+  %str.build.len.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 0
+  store i64 %sum, ptr %str.build.len.gep, align 8
+  %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
+  store ptr %concat.buf, ptr %str.build.data.gep, align 8
+  %ret.pack = load { i64, ptr }, ptr %concat.str, align 8
+  ret { i64, ptr } %ret.pack
+
+str_overflow_abort9:                              ; preds = %concat.sum.len5
+  call void @dva_abort_str_overflow_msg()
+  unreachable
+
+abort.dead10:                                     ; No predecessors!
+  br label %concat.tot.len8
+}
+
+define { i64, ptr } @"diag::E4013_detached_builder_addr"() #3 {
+entry:
+  %ret.pack = load { i64, ptr }, ptr @str.122.struct, align 8
+  ret { i64, ptr } %ret.pack
+}
+
 define { i64, ptr } @"diag::runtime_error_format"() #3 {
 entry:
-  %ret.pack = load { i64, ptr }, ptr @str.120.struct, align 8
+  %ret.pack = load { i64, ptr }, ptr @str.123.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
 define { i64, ptr } @"diag::E4004_arena_allocation_too_large"() #3 {
 entry:
   %concat.str = alloca { i64, ptr }, align 8
-  %concat.lhs = load i64, ptr @str.121.struct, align 8
+  %concat.lhs = load i64, ptr @str.124.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
-  %concat.lhs2 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.121.struct, i32 0, i32 1), align 8
-  %concat.rhs = load i64, ptr @str.122.struct, align 8
+  %concat.lhs2 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.124.struct, i32 0, i32 1), align 8
+  %concat.rhs = load i64, ptr @str.125.struct, align 8
   %concat.rhs3 = and i64 %concat.rhs, 281474976710655
-  %concat.rhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.122.struct, i32 0, i32 1), align 8
+  %concat.rhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.125.struct, i32 0, i32 1), align 8
   %concat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1, i64 %concat.rhs3)
   %sum = extractvalue { i64, i1 } %concat.sum.len, 0
   %ovf = extractvalue { i64, i1 } %concat.sum.len, 1
@@ -3081,25 +3149,25 @@ abort.dead10:                                     ; No predecessors!
 
 define { i64, ptr } @"diag::E4003_arena_chunk_limit"() #3 {
 entry:
-  %ret.pack = load { i64, ptr }, ptr @str.123.struct, align 8
+  %ret.pack = load { i64, ptr }, ptr @str.126.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
 define { i64, ptr } @"diag::E4001_arena_exhausted"() #3 {
 entry:
-  %ret.pack = load { i64, ptr }, ptr @str.124.struct, align 8
+  %ret.pack = load { i64, ptr }, ptr @str.127.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
 define { i64, ptr } @"diag::E5012_write_ir_prefix"() #3 {
 entry:
-  %ret.pack = load { i64, ptr }, ptr @str.125.struct, align 8
+  %ret.pack = load { i64, ptr }, ptr @str.128.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 
 define { i64, ptr } @"diag::E1008_string_unterminated"() #3 {
 entry:
-  %ret.pack = load { i64, ptr }, ptr @str.126.struct, align 8
+  %ret.pack = load { i64, ptr }, ptr @str.129.struct, align 8
   ret { i64, ptr } %ret.pack
 }
 

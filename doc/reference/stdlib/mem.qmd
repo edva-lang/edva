@@ -86,6 +86,13 @@ Every Edva thread has an implicit persistent global arena (`mem::global_arena!`)
 - **Scalars and bitfields** (`Int`, `i8`..`u64`, `Float`, `f32`, `Rune`, `<>`, `()`, fixed bitfields): passed and returned by value with no arena backing; safe to return across any `mem::with_value`, `mem::reset`, `mem::destroy`, or block restore boundary.
 - **Records, nested containers, and boxed unions**: allocated in the ambient arena at construction or growth time (array `+=` doubling, map rehash). A container created in the global arena that grows while a request arena `a` is ambient acquires backing buffers in `a` unless growth runs inside `mem::escape(...)`.
 - **Deep string copies (`++s`)**: always allocate a fresh `{ len, data }` string and byte buffer in the *current* ambient arena (stripping scope generation tags). To promote a `String` built inside a request arena `a` so it survives `mem::reset(a)` or `mem::destroy(a)`, copy it inside `mem::escape` or `mem::escape_value` (e.g. `mem::escape_value((!=> ++s))`).
+- **Module globals**: With `--check-arena-escapes`, a global assignment rejects
+  heap-backed values from live, separately managed arenas, even after switching
+  away from the arena.
+  Native builds report `E4012` and Wasm builds trap. Allocate or copy the value
+  on the main thread's persistent arena before assigning it. The check covers
+  the value and its backing storage. References inside records, collections,
+  and captures still need explicit lifetime management.
 - **Closures & asynchronous callbacks**:
   - Synchronous callbacks invoked strictly before the request arena resets may run inside `mem::with(req, ...)` and capture request-scoped values freely.
   - Deferred / asynchronous callbacks stored beyond `mem::reset(req)` or `mem::destroy(req)` must allocate both the closure environment and any captured strings/records in the persistent arena (construct or promote the callback and its captured values inside `mem::escape`).

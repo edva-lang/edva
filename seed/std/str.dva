@@ -24,16 +24,36 @@
    find_byte_from: String, Int, Int => Int
    find_byte_from = s, ch, start =>
       ls = ?s
-      st = start < 0 | 0 | start
+      st = %clamp(start, 0, ls)
       (st !< ls || ch ![0..256]) | --| -1
       #arch ["wasm32", "wasm64", "wasm"]
          st..ls @ i =>
             s(i) == ch | --| i
          -1
       |
+         rem = ls - st
+         #arch ["x86_64", "aarch64", "riscv64"]
+            rem !> 64
+               |
+                  pat = u64(ch) * 0x0101010101010101u64
+                  p' = st
+                  0.. @
+                     p' + 8 > ls | -->
+                     lo = u64(s(p')) .|. (u64(s(p' + 1)) .<. 8) .|. (u64(s(p' + 2)) .<. 16) .|. (u64(s(p' + 3)) .<. 24)
+                     hi = u64(s(p' + 4)) .|. (u64(s(p' + 5)) .<. 8) .|. (u64(s(p' + 6)) .<. 16) .|. (u64(s(p' + 7)) .<. 24)
+                     w = lo .|. (hi .<. 32)
+                     x = w .^. pat
+                     m = (x - 0x0101010101010101u64) .&. (.!. x) .&. 0x8080808080808080u64
+                     m != 0u64 | --| p' + Int(%ctz(m) .>. 3)
+                     p' = p' + 8
+                  0.. @
+                     p' !< ls | -->
+                     s(p') == ch | --| p'
+                     p' = p' + 1
+                  --| -1
          base = &s
          raw_base = Int(base) .&. 0xFFFFFFFFFFFF
-         hit = c_memchr(base + st, ch, ls - st)
+         hit = c_memchr(base + st, ch, rem)
          hit == Addr(0) | -1 | (Int(hit) - raw_base)
 
 #public

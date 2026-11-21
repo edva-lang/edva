@@ -56,6 +56,9 @@
    LLVMConstNull: (Ty: Addr) => Addr
    LLVMConstInt: (IntTy: Addr, N: Int, SignExtend: Int) => Addr
    LLVMIsConstant: (Val: Addr) => Int
+   LLVMIsAGlobalVariable: (Val: Addr) => Addr
+   LLVMBuildAtomicRMW: (B: Addr, Op: Int, Ptr: Addr, V: Addr, Order: Int, ST: Int) => Addr
+   LLVMSetOrdering: (Instruction: Addr, Ordering: Int) => ()
    LLVMConstIntGetZExtValue: (ConstantVal: Addr) => Int
    LLVMConstReal: (RealTy: Addr, N: Float) => Addr
    LLVMConstString: (Str: String, Length: Int, DontNullTerminate: Int) => Addr

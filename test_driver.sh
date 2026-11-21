@@ -2208,8 +2208,10 @@ lsp_frame() {
     printf 'Content-Length: %d\r\n\r\n%s' "${#body}" "$body"
 }
 LSP_URI="file://$TMPDIR/lsp_test.dva"
+# Cross the 4096-byte read buffer boundary within a single JSON-RPC frame.
+printf -v lsp_padding '%5000s' ''
 LSP_OUT=$( {
-    lsp_frame '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+    lsp_frame "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{${lsp_padding}}}"
     lsp_frame "{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didOpen\",\"params\":{\"textDocument\":{\"uri\":\"$LSP_URI\",\"languageId\":\"edva\",\"version\":1,\"text\":\"#use str\\n\\nshout = s =>\\n  str::upper(s)\\n\"}}}"
     lsp_frame "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"textDocument/hover\",\"params\":{\"textDocument\":{\"uri\":\"$LSP_URI\"},\"position\":{\"line\":2,\"character\":1}}}"
     lsp_frame "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"textDocument/inlayHint\",\"params\":{\"textDocument\":{\"uri\":\"$LSP_URI\"},\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":5,\"character\":0}}}}"
@@ -3404,6 +3406,104 @@ DVA
     ' "$T66_DIR/sum.wasm" "$T66_DIR/bare.wasm"
     echo "PASS"
 fi
+
+# --- Test 67: scoped values in globals and detached Builder addresses ---
+echo -n "Testing scoped global stores and detached Builder addresses... "
+T67_DIR="$TMPDIR/t67_arena_stores"
+mkdir -p "$T67_DIR"
+cat >"$T67_DIR/arena_store.dva" <<'DVA'
+#use io
+#use mem
+#use sys
+
+#type Pair (left: Int, right: Int)
+::text = "initial"
+::pair: Pair
+pair = Pair(0, 0)
+::items: Int{}
+items = Int{}()
+::lookup: String ^ Int
+lookup = ("key" ^= 0)
+::handler: < (Int => Int) | >
+handler = <-->
+::global_builder: Builder
+global_builder = {16}
+
+run: String => ()
+run = mode =>
+   ar = mem::arena(4096)
+   prev = mem::set_current(ar.raw)
+   mode
+      ["active"] ::text = ++"scoped"
+      ["switched"]
+         value = ++"scoped"
+         mem::set_current(prev)
+         text ::= value
+      ["record"] ::pair = Pair(1, 2)
+      ["array"] ::items = Int{}(1, 2)
+      ["map"] ::lookup = ("key" ^= 1)
+      ["global-builder"] ::global_builder = {16}
+      ["closure"]
+         offset = ?mode
+         callback: Int => Int
+         callback = x => x + offset
+         ::handler = <+ callback +>
+      ["backing"]
+         buffer = {16}
+         buffer += "scoped bytes"
+         view = mem::escape_value(!=> +buffer)
+         ::text = view
+      ["safe"]
+         literal = "literal"
+         ::text = literal
+         value = ++"request"
+         persistent = mem::escape_value(!=> ++value)
+         ::text = persistent
+      ["builder"]
+         builder = {16}
+         builder += "buffer"
+         alias = builder
+         frozen = +builder
+         _address = &alias
+         io::out $ frozen
+   mem::set_current(prev)
+   mem::destroy(ar)
+   io::out $ ::text
+   handler | cb => io::out $ cb(1)
+
+run(sys::argv(1) |_| "safe")
+DVA
+timeout 30 ./edva "$T67_DIR/arena_store.dva" -O2 --ir --cache "$T67_DIR/cache" \
+    -o "$T67_DIR/ordinary" < /dev/null >"$T67_DIR/cache.log" 2>&1
+timeout 30 ./edva "$T67_DIR/arena_store.dva" -O2 --ir --cache "$T67_DIR/cache" \
+    --check-arena-escapes -o "$T67_DIR/checked" < /dev/null >>"$T67_DIR/cache.log" 2>&1
+if grep -q '@dva_arena_check_global_store' "$T67_DIR/ordinary.ll" ||
+   ! grep -q 'call void @dva_arena_check_global_store' "$T67_DIR/checked.ll"; then
+    echo "FAILED: checked and ordinary arena stores shared the same cached IR"
+    exit 1
+fi
+for opt in -O0 -O2; do
+    timeout 30 ./edva "$T67_DIR/arena_store.dva" "$opt" --check-arena-escapes --no-cache \
+        -o "$T67_DIR/program" < /dev/null >"$T67_DIR/build.log" 2>&1
+    timeout 10 "$T67_DIR/program" safe >"$T67_DIR/out" 2>&1
+    if [ "$(cat "$T67_DIR/out")" != request ]; then
+        echo "FAILED: persistent global store did not survive scoped arena destruction"
+        cat "$T67_DIR/out"
+        exit 1
+    fi
+    for mode in active switched record array map global-builder closure backing builder; do
+        status=0
+        timeout 10 "$T67_DIR/program" "$mode" >"$T67_DIR/out" 2>&1 || status=$?
+        code=E4012
+        if [ "$mode" = builder ]; then code=E4013; fi
+        if [ "$status" -ne 1 ] || ! grep -q "^$code:" "$T67_DIR/out"; then
+            echo "FAILED: $mode under $opt did not report $code (exit $status)"
+            cat "$T67_DIR/out"
+            exit 1
+        fi
+    done
+done
+echo "PASS"
 
 echo "=== All driver tests PASSED ==="
 

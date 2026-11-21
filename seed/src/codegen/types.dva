@@ -150,7 +150,8 @@ empty_fndef = FnDef("", ast::Names(), ast::Expr(Var, ""))
    module_name: String,
    fuzz_cov: <> = <->,
    no_typed_opt: <> = <->,
-   optimize_closures: <> = <->
+   optimize_closures: <> = <->,
+   check_arena_escapes: <> = <->
 )
 
 default_codegen_opts: () => CodegenOpts
@@ -1071,7 +1072,7 @@ codegen_init = opts =>
    eff_opts = CodegenOpts(triple, opts.no_runtime, opts.no_main,
      opts.dynamic_modules, opts.dynamic_paths, opts.is_shared,
      opts.compiler_exe, opts.is_module, opts.module_name, opts.fuzz_cov,
-     opts.no_typed_opt, opts.optimize_closures)
+     opts.no_typed_opt, opts.optimize_closures, opts.check_arena_escapes)
    Cg(module, builder, tm, <-->, CgVars(), <->, st, ut, st2,
      <-->, <-->, <-->, <-->, <-->, <-->, <-->, <-->,
      0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", <-->,

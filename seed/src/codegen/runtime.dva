@@ -91,6 +91,271 @@ arena_type = cg =>
    tarr += sg_arr
    types::struct_type_n(cg, tarr, 8)
 
+// Reserve a 16-byte-aligned prefix on each chunk. The prefix is independent
+// of the arena descriptor and links only chunks owned by resettable arenas.
+arena_chunk_prefix_size = 32
+
+arena_chunk_prefix_type: () => Addr
+arena_chunk_prefix_type = !=>
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   fields = (i8p, i8p, LLVMInt64Type!)
+   LLVMStructType(&fields, 3, 0)
+
+emit_arena_registry_lock: types::Cg, Addr => ()
+emit_arena_registry_lock = cg, lock =>
+   !types::is_wasm_target(cg)
+      |
+         cur = LLVMGetInsertBlock(cg.builder)
+         fn = LLVMGetBasicBlockParent(cur)
+         acquire = LLVMAppendBasicBlock(fn, "registry.lock")
+         ready = LLVMAppendBasicBlock(fn, "registry.ready")
+         LLVMBuildBr(cg.builder, acquire)
+         LLVMPositionBuilderAtEnd(cg.builder, acquire)
+         i32t = LLVMInt32Type!
+         zero = LLVMConstInt(i32t, 0, 0)
+         old = LLVMBuildAtomicRMW(cg.builder, 0, lock, LLVMConstInt(i32t, 1, 0), 4, 0)
+         LLVMBuildCondBr(cg.builder, LLVMBuildICmp(cg.builder, 32, old, zero, ""),
+            ready, acquire)
+         LLVMPositionBuilderAtEnd(cg.builder, ready)
+
+emit_arena_registry_unlock: types::Cg, Addr => ()
+emit_arena_registry_unlock = cg, lock =>
+   !types::is_wasm_target(cg)
+      |
+         st = LLVMBuildStore(cg.builder, LLVMConstInt(LLVMInt32Type!, 0, 0), lock)
+         LLVMSetOrdering(st, 5)
+
+emit_arena_chunk_registry: types::Cg, Addr => (Addr, Addr, Addr)
+emit_arena_chunk_registry = cg, persistent =>
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   null = LLVMConstNull(i8p)
+   i64t = LLVMInt64Type!
+   zero = LLVMConstInt(i64t, 0, 0)
+   vt = LLVMVoidType!
+   prefix = arena_chunk_prefix_type!
+   head = LLVMAddGlobal(cg.module, i8p, "dva_scoped_arena_chunks")
+   LLVMSetLinkage(head, 8)
+   LLVMSetInitializer(head, null)
+   lock = LLVMAddGlobal(cg.module, LLVMInt32Type!, "dva_scoped_arena_chunks_lock")
+   LLVMSetLinkage(lock, 8)
+   LLVMSetInitializer(lock, LLVMConstInt(LLVMInt32Type!, 0, 0))
+
+   // A node's backlink points at the slot that points to the node.
+   link_ty = types::fn_type3(vt, i8p, i8p, i64t)
+   link = LLVMAddFunction(cg.module, "dva_arena_chunk_link", link_ty)
+   LLVMSetLinkage(link, 8)
+   LLVMPositionBuilderAtEnd(cg.builder, LLVMAppendBasicBlock(link, "entry"))
+   node = LLVMGetParam(link, 0)
+   back = LLVMBuildStructGEP2(cg.builder, prefix, node, 1, "backlink")
+   LLVMBuildStore(cg.builder, null, back)
+   add = LLVMAppendBasicBlock(link, "scoped")
+   add_back = LLVMAppendBasicBlock(link, "backlink")
+   add_end = LLVMAppendBasicBlock(link, "linked")
+   add_ret = LLVMAppendBasicBlock(link, "done")
+   is_persistent = LLVMBuildICmp(cg.builder, 32, LLVMGetParam(link, 1), persistent, "")
+   LLVMBuildCondBr(cg.builder, is_persistent, add_ret, add)
+   LLVMPositionBuilderAtEnd(cg.builder, add)
+   emit_arena_registry_lock(cg, lock)
+   old = LLVMBuildLoad2(cg.builder, i8p, head, "old.head")
+   next = LLVMBuildStructGEP2(cg.builder, prefix, node, 0, "next")
+   LLVMBuildStore(cg.builder, old, next)
+   LLVMBuildStore(cg.builder, head, back)
+   LLVMBuildStore(cg.builder, LLVMGetParam(link, 2),
+      LLVMBuildStructGEP2(cg.builder, prefix, node, 2, "size"))
+   arena_registry_publish(cg, node, head)
+   LLVMBuildCondBr(cg.builder, LLVMBuildICmp(cg.builder, 32, old, null, ""),
+      add_end, add_back)
+   LLVMPositionBuilderAtEnd(cg.builder, add_back)
+   LLVMBuildStore(cg.builder, next, LLVMBuildStructGEP2(cg.builder, prefix, old, 1, ""))
+   LLVMBuildBr(cg.builder, add_end)
+   LLVMPositionBuilderAtEnd(cg.builder, add_end)
+   emit_arena_registry_unlock(cg, lock)
+   LLVMBuildBr(cg.builder, add_ret)
+   LLVMPositionBuilderAtEnd(cg.builder, add_ret)
+   LLVMBuildRetVoid(cg.builder)
+
+   unlink_ty = types::fn_type1(vt, i8p)
+   unlink_chunk = LLVMAddFunction(cg.module, "dva_arena_chunk_unlink", unlink_ty)
+   LLVMSetLinkage(unlink_chunk, 8)
+   LLVMPositionBuilderAtEnd(cg.builder, LLVMAppendBasicBlock(unlink_chunk, "entry"))
+   emit_arena_registry_lock(cg, lock)
+   old_node = LLVMGetParam(unlink_chunk, 0)
+   old_back = LLVMBuildStructGEP2(cg.builder, prefix, old_node, 1, "backlink")
+   prev_slot = LLVMBuildLoad2(cg.builder, i8p, old_back, "prev.slot")
+   remove = LLVMAppendBasicBlock(unlink_chunk, "linked")
+   remove_back = LLVMAppendBasicBlock(unlink_chunk, "backlink")
+   remove_end = LLVMAppendBasicBlock(unlink_chunk, "done")
+   LLVMBuildCondBr(cg.builder, LLVMBuildICmp(cg.builder, 32, prev_slot, null, ""),
+      remove_end, remove)
+   LLVMPositionBuilderAtEnd(cg.builder, remove)
+   following = LLVMBuildLoad2(cg.builder, i8p,
+      LLVMBuildStructGEP2(cg.builder, prefix, old_node, 0, ""), "next")
+   arena_registry_publish(cg, following, prev_slot)
+   LLVMBuildStore(cg.builder, null, old_back)
+   LLVMBuildCondBr(cg.builder, LLVMBuildICmp(cg.builder, 32, following, null, ""),
+      remove_end, remove_back)
+   LLVMPositionBuilderAtEnd(cg.builder, remove_back)
+   LLVMBuildStore(cg.builder, prev_slot,
+      LLVMBuildStructGEP2(cg.builder, prefix, following, 1, ""))
+   LLVMBuildBr(cg.builder, remove_end)
+   LLVMPositionBuilderAtEnd(cg.builder, remove_end)
+   emit_arena_registry_unlock(cg, lock)
+   LLVMBuildRetVoid(cg.builder)
+
+   check_ty = types::fn_type1(vt, i8p)
+   check = LLVMAddFunction(cg.module, "dva_arena_check_global_store", check_ty)
+   LLVMPositionBuilderAtEnd(cg.builder, LLVMAppendBasicBlock(check, "entry"))
+   target_ptr = LLVMGetParam(check, 0)
+   current_head = LLVMBuildLoad2(cg.builder, i8p, head, "current.head")
+   !types::is_wasm_target(cg) | LLVMSetOrdering(current_head, 4)
+   has_chunks = LLVMBuildICmp(cg.builder, 33, current_head, null, "")
+   has_value = LLVMBuildICmp(cg.builder, 33, target_ptr, null, "")
+   should_scan = LLVMBuildAnd(cg.builder, has_chunks, has_value, "")
+   scan_start = LLVMAppendBasicBlock(check, "check")
+   done = LLVMAppendBasicBlock(check, "done")
+   LLVMBuildCondBr(cg.builder, should_scan, scan_start, done)
+   LLVMPositionBuilderAtEnd(cg.builder, scan_start)
+   emit_arena_registry_lock(cg, lock)
+   scan_entry = LLVMGetInsertBlock(cg.builder)
+   target = LLVMBuildPtrToInt(cg.builder, target_ptr, i64t, "address")
+   first = LLVMBuildLoad2(cg.builder, i8p, head, "head")
+   scan = LLVMAppendBasicBlock(check, "scan")
+   range = LLVMAppendBasicBlock(check, "range")
+   advance = LLVMAppendBasicBlock(check, "next")
+   reject = LLVMAppendBasicBlock(check, "scoped")
+   allow = LLVMAppendBasicBlock(check, "unlock")
+   LLVMBuildBr(cg.builder, scan)
+   LLVMPositionBuilderAtEnd(cg.builder, scan)
+   item = LLVMBuildPhi(cg.builder, i8p, "chunk")
+   stmt::llvm_add_incoming1(cg, item, first, scan_entry)
+   LLVMBuildCondBr(cg.builder, LLVMBuildICmp(cg.builder, 32, item, null, ""), allow, range)
+   LLVMPositionBuilderAtEnd(cg.builder, range)
+   start = LLVMBuildAdd(cg.builder, LLVMBuildPtrToInt(cg.builder, item, i64t, ""),
+      LLVMConstInt(i64t, arena_chunk_prefix_size, 0), "payload")
+   offset = LLVMBuildSub(cg.builder, target, start, "offset")
+   size = LLVMBuildLoad2(cg.builder, i64t,
+      LLVMBuildStructGEP2(cg.builder, prefix, item, 2, ""), "size")
+   LLVMBuildCondBr(cg.builder, LLVMBuildICmp(cg.builder, 36, offset, size, ""),
+      reject, advance)
+   LLVMPositionBuilderAtEnd(cg.builder, advance)
+   more = LLVMBuildLoad2(cg.builder, i8p,
+      LLVMBuildStructGEP2(cg.builder, prefix, item, 0, ""), "next.chunk")
+   stmt::llvm_add_incoming1(cg, item, more, advance)
+   LLVMBuildBr(cg.builder, scan)
+   LLVMPositionBuilderAtEnd(cg.builder, reject)
+   emit_arena_registry_unlock(cg, lock)
+   emit_abort_msg(cg, diag::E4012_scoped_global_store!, "scoped_global_store")
+   LLVMBuildUnreachable(cg.builder)
+   LLVMPositionBuilderAtEnd(cg.builder, allow)
+   emit_arena_registry_unlock(cg, lock)
+   LLVMBuildBr(cg.builder, done)
+   LLVMPositionBuilderAtEnd(cg.builder, done)
+   LLVMBuildRetVoid(cg.builder)
+   (link, link_ty, unlink_chunk)
+
+arena_registry_publish: types::Cg, Addr, Addr => ()
+arena_registry_publish = cg, value, slot =>
+   // The check's empty-list fast path reads the head without taking the lock.
+   st = LLVMBuildStore(cg.builder, value, slot)
+   !types::is_wasm_target(cg) | LLVMSetOrdering(st, 5)
+
+arena_chunk_header: types::Cg, Addr => Addr
+arena_chunk_header = cg, data =>
+   types::gep1(cg, LLVMInt8Type!, data,
+      LLVMConstInt(LLVMInt64Type!, 0 - arena_chunk_prefix_size, 0), "chunk.prefix")
+
+emit_arena_chunk_free: types::Cg, Addr, < Addr | >, Addr, Addr => ()
+emit_arena_chunk_free = cg, data, unlink_opt, free_ty, free_fn =>
+   header = unlink_opt
+      | unlink_chunk =>
+         prefix = arena_chunk_header(cg, data)
+         unlink_ty = types::fn_type1(LLVMVoidType!, LLVMTypeOf(prefix))
+         types::call1(cg, unlink_ty, unlink_chunk, prefix, "")
+         prefix
+      | data
+   types::call1(cg, free_ty, free_fn, header, "")
+
+global_store_ref_type: ast::ValueType => <>
+global_store_ref_type = [Str, Builder, Record, Slice, Map, Array, Fn, Ram, Enum, Error]
+
+check_global_ref: types::Cg, Addr, ast::ValueType => ()
+check_global_ref = cg, value, vt =>
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   check_ty = types::fn_type1(LLVMVoidType!, i8p)
+   check = LLVMGetNamedFunction(cg.module, "dva_arena_check_global_store")
+   types::call1(cg, check_ty, check, value, "")
+   // A persistent descriptor can refer to a scoped backing allocation.
+   fields = vt
+      [Str] <+ (cg.str_t, 1, 2) +>
+      [Builder, Array] <+ (main::builder_struct_type(cg), 1, 2) +>
+      [Slice] <+ (cg.slice_t, 0, 1) +>
+      [Fn] <+ (stmt::closure_struct_type(cg), 1, 2) +>
+      [Map] <+ (map_struct_type(cg), 2, 5) +>
+      | <-->
+   fields
+      | f =>
+         fn = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
+         data = LLVMAppendBasicBlock(fn, "global.backing")
+         done = LLVMAppendBasicBlock(fn, "global.store")
+         missing = LLVMBuildICmp(cg.builder, 32, value, LLVMConstNull(i8p), "")
+         LLVMBuildCondBr(cg.builder, missing, done, data)
+         LLVMPositionBuilderAtEnd(cg.builder, data)
+         f.1..f.2 @ index =>
+            ref = LLVMBuildLoad2(cg.builder, i8p,
+               LLVMBuildStructGEP2(cg.builder, f.0, value, index, ""), "backing")
+            types::call1(cg, check_ty, check, ref, "")
+         LLVMBuildBr(cg.builder, done)
+         LLVMPositionBuilderAtEnd(cg.builder, done)
+
+check_unboxed_global_ram: types::Cg, Addr, ast::TypeInfo => ()
+check_unboxed_global_ram = cg, value, ti =>
+   types::ctfe_canonical_ti(cg, ti) [Ram slots]
+      pos = types::slot_payload_type(cg, slots.0)
+      neg = types::slot_payload_type(cg, slots.1)
+      pos_ref = slots.0.has_payload && global_store_ref_type(pos)
+      neg_ref = slots.1.has_payload && global_store_ref_type(neg)
+      pos_ref || neg_ref
+         |
+            active = LLVMBuildExtractValue(cg.builder, value, 0, "global.ram.tag")
+            payload = LLVMBuildExtractValue(cg.builder, value, 1, "global.ram.payload")
+            i8p = LLVMPointerType(LLVMInt8Type!, 0)
+            ref = LLVMBuildIntToPtr(cg.builder, payload, i8p, "global.ram.ref")
+            fn = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
+            done = LLVMAppendBasicBlock(fn, "global.ram.store")
+            pos_bb = pos_ref | LLVMAppendBasicBlock(fn, "global.ram.pos") | done
+            neg_bb = neg_ref | LLVMAppendBasicBlock(fn, "global.ram.neg") | done
+            LLVMBuildCondBr(cg.builder, active, pos_bb, neg_bb)
+            pos_ref
+               |
+                  LLVMPositionBuilderAtEnd(cg.builder, pos_bb)
+                  check_global_ref(cg, ref, pos)
+                  LLVMBuildBr(cg.builder, done)
+            neg_ref
+               |
+                  LLVMPositionBuilderAtEnd(cg.builder, neg_bb)
+                  check_global_ref(cg, ref, neg)
+                  LLVMBuildBr(cg.builder, done)
+            LLVMPositionBuilderAtEnd(cg.builder, done)
+
+check_global_store: types::Cg, Addr, Addr, ast::ValueType, ast::TypeInfo => ()
+check_global_store = cg, slot, value, vt, ti =>
+   cg.opts.check_arena_escapes && !cg.opts.no_runtime && !cg.error &&
+     global_store_ref_type(vt) &&
+     LLVMIsAGlobalVariable(slot) != sys::addr_null && LLVMIsConstant(value) == 0
+      |
+         kind = LLVMGetTypeKind(LLVMTypeOf(value))
+         kind
+            [12]
+               actual_vt = vt [Ram]
+                  |
+                     niche = types::is_niche_ram_ti(cg, ti)
+                     niche.0 | niche.2 | vt
+                  | vt
+               check_global_ref(cg, value, actual_vt)
+            [10]
+               (vt [Ram]) && LLVMTypeOf(value) == match::unboxed_ram_struct_t(cg)
+                  | check_unboxed_global_ram(cg, value, ti)
+
 // A NUL-terminated unnamed_addr constant string global.
 const_string_global: types::Cg, String, String => Addr
 const_string_global = cg, msg, name =>
@@ -353,6 +618,9 @@ codegen_emit_runtime_module = cg =>
    adopt_t = stmt::fn_type_n(cg, LLVMVoidType!, adopt_params, 2)
    d_adopt = LLVMAddFunction(cg.module, "dva_arena_adopt", adopt_t)
    mark_nounwind(cg, d_adopt)
+   cg.opts.check_arena_escapes
+      | LLVMAddFunction(cg.module, "dva_arena_check_global_store",
+         types::fn_type1(LLVMVoidType!, i8p))
 
    hash_params = types::Addrs()
    hash_params += i8p
@@ -413,6 +681,10 @@ codegen_emit_runtime_full = cg =>
    LLVMSetThreadLocal(active_arena_tls, 1)
    LLVMSetInitializer(garena, LLVMConstNull(at))
    LLVMSetInitializer(active_arena_tls, garena)
+   registry = cg.opts.check_arena_escapes
+      | <+ emit_arena_chunk_registry(cg, garena) +>
+      | <-->
+   unlink_chunk = registry $+> (.2)
 
    // dva_arena_current()
    cur_t = types::fn_type0(LLVMPointerType(at, 0))
@@ -574,13 +846,23 @@ codegen_emit_runtime_full = cg =>
    emit_abort_msg(cg, diag::E4003_arena_chunk_limit!, "arena_chunklimit_msg")
    LLVMBuildRet(cg.builder, LLVMConstNull(i8p))
    LLVMPositionBuilderAtEnd(cg.builder, al_m)
-   chunk_v = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, cap_phi, "chunk")
-   chunk_n = LLVMBuildICmp(cg.builder, 32, chunk_v, LLVMConstNull(i8p), "malloc_null")
+   prefix_size = LLVMConstInt(i64t, arena_chunk_prefix_size, 0)
+   bytes = cg.opts.check_arena_escapes
+      | LLVMBuildAdd(cg.builder, cap_phi, prefix_size, "chunk.bytes")
+      | cap_phi
+   header = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, bytes, "chunk")
+   chunk_n = LLVMBuildICmp(cg.builder, 32, header, LLVMConstNull(i8p), "malloc_null")
    LLVMBuildCondBr(cg.builder, chunk_n, al_o, al_s)
    LLVMPositionBuilderAtEnd(cg.builder, al_o)
    emit_abort_msg(cg, diag::E4001_arena_exhausted!, "arena_oom_msg")
    LLVMBuildRet(cg.builder, LLVMConstNull(i8p))
    LLVMPositionBuilderAtEnd(cg.builder, al_s)
+   chunk_v = registry
+      | r =>
+         link_args = (header, a1, cap_phi)
+         LLVMBuildCall2(cg.builder, r.1, r.0, &link_args, 3, "")
+         types::gep1(cg, LLVMInt8Type!, header, prefix_size, "chunk.data")
+      | header
    chunks_new = LLVMBuildStructGEP2(cg.builder, at, a1, 3, "chunks_new")
    new_slot = types::gep2(cg, chunks_arr, chunks_new, zero, nc_vl, "chunk_slot")
    LLVMBuildStore(cg.builder, chunk_v, new_slot)
@@ -721,7 +1003,8 @@ codegen_emit_runtime_full = cg =>
    r_chunks = LLVMBuildStructGEP2(cg.builder, at, a3, 3, "chunks_gep")
    r_slot = types::gep2(cg, chunks_arr, r_chunks, zero, free_i, "chunk_slot")
    r_chunk = LLVMBuildLoad2(cg.builder, i8p, r_slot, "chunk_ptr")
-   types::call1(cg, free_t, LLVMGetNamedFunction(cg.module, "free"), r_chunk, "")
+   emit_arena_chunk_free(cg, r_chunk, unlink_chunk, free_t,
+      LLVMGetNamedFunction(cg.module, "free"))
    free_next = LLVMBuildAdd(cg.builder, free_i, one, "free_i_next")
    free_more = LLVMBuildICmp(cg.builder, 40, free_next, r_nc, "free_more")
    stmt::llvm_add_incoming1(cg, free_i, free_next, rs_l)
@@ -862,7 +1145,8 @@ codegen_emit_runtime_full = cg =>
    d_chunks = LLVMBuildStructGEP2(cg.builder, at, a4, 3, "chunks_gep")
    d_slot = types::gep2(cg, chunks_arr, d_chunks, zero, d_i, "chunk_slot")
    d_chunk = LLVMBuildLoad2(cg.builder, i8p, d_slot, "chunk_ptr")
-   types::call1(cg, free_t, LLVMGetNamedFunction(cg.module, "free"), d_chunk, "")
+   emit_arena_chunk_free(cg, d_chunk, unlink_chunk, free_t,
+      LLVMGetNamedFunction(cg.module, "free"))
    d_next = LLVMBuildAdd(cg.builder, d_i, one, "free_i_next")
    d_more = LLVMBuildICmp(cg.builder, 40, d_next, d_nc, "free_more")
    stmt::llvm_add_incoming1(cg, d_i, d_next, ds_l)
@@ -973,11 +1257,23 @@ codegen_emit_runtime_full = cg =>
    ad_dst_slot = types::gep2(cg, chunks_arr, ad_p_chunks, zero, ad_dst_idx,
      "dst_slot")
    LLVMBuildStore(cg.builder, ad_c_chunk, ad_dst_slot)
+   unlink_chunk
+      | unlink_fn =>
+         ad_promote = LLVMAppendBasicBlock(adopt_fn, "promote")
+         ad_next = LLVMAppendBasicBlock(adopt_fn, "next")
+         persistent = LLVMBuildICmp(cg.builder, 32, ad_parent, garena, "parent.persistent")
+         LLVMBuildCondBr(cg.builder, persistent, ad_promote, ad_next)
+         LLVMPositionBuilderAtEnd(cg.builder, ad_promote)
+         types::call1(cg, types::fn_type1(LLVMVoidType!, i8p), unlink_fn,
+            arena_chunk_header(cg, ad_c_chunk), "")
+         LLVMBuildBr(cg.builder, ad_next)
+         LLVMPositionBuilderAtEnd(cg.builder, ad_next)
+   ad_end = LLVMGetInsertBlock(cg.builder)
    ad_j_next = LLVMBuildAdd(cg.builder, ad_j, one, "ad_j_next")
    ad_more = LLVMBuildICmp(cg.builder, 40, ad_j_next, ad_c_nc,
      "ad_more")
-   stmt::llvm_add_incoming1(cg, ad_start_idx, ad_start_idx, ad_l)
-   stmt::llvm_add_incoming1(cg, ad_j, ad_j_next, ad_l)
+   stmt::llvm_add_incoming1(cg, ad_start_idx, ad_start_idx, ad_end)
+   stmt::llvm_add_incoming1(cg, ad_j, ad_j_next, ad_end)
    LLVMBuildCondBr(cg.builder, ad_more, ad_l, ad_c)
    LLVMPositionBuilderAtEnd(cg.builder, ad_c)
    ad_new_nc = LLVMBuildAdd(cg.builder, ad_p_nc, ad_c_nc, "new_p_nc")
@@ -1772,6 +2068,7 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
    store_v = types::llvm_val_opt(ev.0) | _ | LLVMConstNull(llvm_type)
    // Generic bodies produce heap unions, but global storage remains typed.
    stored = abi_global_ram | match::coerce_ram_repr(cg, store_v, target_ti) | store_v
+   check_global_store(cg, slot, stored, ev.1, target_ti)
    LLVMBuildStore(cg.builder, stored, slot)
    // A heap ram keeps the declared-type name (its payload type resolves from
    // it); an unwrapped scalar does not — the last_type may name an unrelated

@@ -2976,7 +2976,7 @@ codegen_eval_unary = cg, t =>
            ast::ValueType(Str))
       [AddrOf]
          ptr_opt = ev.1
-            [Builder] <+ main::builder_data(cg, ev.0, "b.ptr") +>
+            [Builder] <+ main::builder_writable_addr(cg, ev.0) +>
             [Str] <+ codegen_string_data(cg, ev.0, "s.ptr") +>
             [Record, Array, Slice, Fn] <+ ev.0 +>
             |
@@ -6527,7 +6527,7 @@ codegen_typed_unary_ready = cg, op, operand, ut, ti, ev, heap_only =>
                (freeze_res, ast::ValueType(Str))
             [AddrOf]
                ptr_opt = ev.1
-                  [Builder] <+ main::builder_data(cg, ev.0, "b.ptr") +>
+                  [Builder] <+ main::builder_writable_addr(cg, ev.0) +>
                   [Str] <+ codegen_string_data(cg, ev.0, "s.ptr") +>
                   [Record, Array, Slice, Fn] <+ ev.0 +>
                   |

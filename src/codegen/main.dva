@@ -109,6 +109,23 @@ builder_data = cg, b, name =>
              bv, 1, name), name)
       | LLVMConstNull(i8p)
 
+builder_writable_addr: types::Cg, Addr => Addr
+builder_writable_addr = cg, b =>
+   data = builder_data(cg, b, "b.ptr")
+   !cg.error && !cg.opts.no_runtime
+      |
+         i8p = LLVMPointerType(LLVMInt8Type!, 0)
+         parent = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
+         detached = LLVMAppendBasicBlock(parent, "b.detached")
+         ready = LLVMAppendBasicBlock(parent, "b.writable")
+         missing = LLVMBuildICmp(cg.builder, 32, data, LLVMConstNull(i8p), "")
+         LLVMBuildCondBr(cg.builder, missing, detached, ready)
+         LLVMPositionBuilderAtEnd(cg.builder, detached)
+         runtime::emit_abort_msg(cg, diag::E4013_detached_builder_addr!, "detached_builder")
+         LLVMBuildUnreachable(cg.builder)
+         LLVMPositionBuilderAtEnd(cg.builder, ready)
+   data
+
 builder_set_len: types::Cg, Addr, Addr => Addr
 builder_set_len = cg, b, len_val =>
    i8p = LLVMPointerType(LLVMInt8Type!, 0)

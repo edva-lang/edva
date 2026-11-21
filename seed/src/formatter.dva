@@ -745,7 +745,7 @@ read_stdin_all = !=>
       n = libc::read(0, &chunk, 4096)
       n !> 0 | -->
       ?chunk = n
-      b += +chunk
+      b += chunk(0..n)
    +b
 
 write_stdout: String => ()

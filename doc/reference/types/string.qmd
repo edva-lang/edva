@@ -75,6 +75,10 @@ io::out $ doc
 | **Deep copy** | `++s` / `++b` | `String` / `Builder` | Same | Allocates an independent arena copy of the buffer |
 | **Freeze Builder** | `+b` | `Builder` | `String` | Writes trailing `\0`, transfers buffer to `String` in $O(1)$, and resets `b` (and any aliases) to `{0, null, 0}` |
 
+Taking `&b` after a freeze reports `E4013` on native builds and traps on Wasm
+until an append creates a fresh buffer. This also applies to aliases of the
+detached Builder.
+
 ```{.dva .run}
 #use io
 

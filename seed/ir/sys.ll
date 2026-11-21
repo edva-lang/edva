@@ -20,6 +20,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.sys::argv_matches" = global ptr null
 @str.0 = internal unnamed_addr constant [1 x i8] zeroinitializer
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 0, ptr @str.0 }
+@detached_builder = internal unnamed_addr constant [93 x i8] c"E4013: Builder buffer was detached by freeze. Append data or create a new Builder before &b\0A\00"
 @clo.const.3 = internal constant { ptr, ptr } { ptr @"sys::c_str", ptr null }
 @"var.sys::c_str" = global ptr null
 @clo.const.4 = internal constant { ptr, ptr } { ptr @"sys::argv_string", ptr null }
@@ -301,22 +302,8 @@ b.buf.len4:                                       ; preds = %abort.dead, %choice
   %var.load6 = load ptr, ptr %var.b, align 8
   %b.ptr = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load6, i32 0, i32 1
   %b.ptr7 = load ptr, ptr %b.ptr, align 8
-  %var.load8 = load ptr, ptr %var.raw, align 8
-  %var.load9 = load i64, ptr %var.len, align 8
-  %addtmp10 = add i64 %var.load9, 1
-  %raw.int = ptrtoint ptr %b.ptr7 to i64
-  %raw.clean.int = and i64 %raw.int, 281474976710655
-  %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %raw.int11 = ptrtoint ptr %var.load8 to i64
-  %raw.clean.int12 = and i64 %raw.int11, 281474976710655
-  %raw.clean.ptr13 = inttoptr i64 %raw.clean.int12 to ptr
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %raw.clean.ptr, ptr align 1 %raw.clean.ptr13, i64 %addtmp10, i1 false)
-  %var.load14 = load i64, ptr %var.len, align 8
-  %b.load = load ptr, ptr %var.b, align 8
-  %b.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 2
-  %b.cap15 = load i64, ptr %b.cap, align 8
-  %b.len.neg = icmp slt i64 %var.load14, 0
-  br i1 %b.len.neg, label %b.len_oob, label %b.len_big_check
+  %1 = icmp eq ptr %b.ptr7, null
+  br i1 %1, label %b.detached, label %b.writable
 
 str_overflow_abort:                               ; preds = %choice.else
   call void @dva_abort_str_overflow_msg()
@@ -325,29 +312,54 @@ str_overflow_abort:                               ; preds = %choice.else
 abort.dead:                                       ; No predecessors!
   br label %b.buf.len4
 
-b.len_big_check:                                  ; preds = %b.buf.len4
-  %b.len.big = icmp sgt i64 %var.load14, %b.cap15
+b.detached:                                       ; preds = %b.buf.len4
+  call void @dva_abort_detached_builder()
+  unreachable
+
+b.writable:                                       ; preds = %b.buf.len4
+  %var.load9 = load ptr, ptr %var.raw, align 8
+  %var.load10 = load i64, ptr %var.len, align 8
+  %addtmp11 = add i64 %var.load10, 1
+  %raw.int = ptrtoint ptr %b.ptr7 to i64
+  %raw.clean.int = and i64 %raw.int, 281474976710655
+  %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
+  %raw.int12 = ptrtoint ptr %var.load9 to i64
+  %raw.clean.int13 = and i64 %raw.int12, 281474976710655
+  %raw.clean.ptr14 = inttoptr i64 %raw.clean.int13 to ptr
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %raw.clean.ptr, ptr align 1 %raw.clean.ptr14, i64 %addtmp11, i1 false)
+  %var.load15 = load i64, ptr %var.len, align 8
+  %b.load = load ptr, ptr %var.b, align 8
+  %b.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 2
+  %b.cap16 = load i64, ptr %b.cap, align 8
+  %b.len.neg = icmp slt i64 %var.load15, 0
+  br i1 %b.len.neg, label %b.len_oob, label %b.len_big_check
+
+abort.dead8:                                      ; No predecessors!
+  unreachable
+
+b.len_big_check:                                  ; preds = %b.writable
+  %b.len.big = icmp sgt i64 %var.load15, %b.cap16
   br i1 %b.len.big, label %b.len_oob, label %b.len_ok
 
-b.len_ok:                                         ; preds = %abort.dead16, %b.len_big_check
-  %b.len.gep17 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 0
-  store i64 %var.load14, ptr %b.len.gep17, align 8
-  %var.load18 = load ptr, ptr %var.b, align 8
-  %b.freeze.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load18, i32 0, i32 0
-  %b.freeze.len19 = load i64, ptr %b.freeze.len, align 8
-  %b.freeze.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load18, i32 0, i32 1
-  %b.freeze.data20 = load ptr, ptr %b.freeze.data, align 8
+b.len_ok:                                         ; preds = %abort.dead17, %b.len_big_check
+  %b.len.gep18 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 0
+  store i64 %var.load15, ptr %b.len.gep18, align 8
+  %var.load19 = load ptr, ptr %var.b, align 8
+  %b.freeze.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load19, i32 0, i32 0
+  %b.freeze.len20 = load i64, ptr %b.freeze.len, align 8
+  %b.freeze.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load19, i32 0, i32 1
+  %b.freeze.data21 = load ptr, ptr %b.freeze.data, align 8
   %b.freeze.arena = load ptr, ptr @dva_active_arena_tls, align 8
   %b.freeze.nc.gep = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %b.freeze.arena, i32 0, i32 1
   %b.freeze.nc = load i64, ptr %b.freeze.nc.gep, align 8
   %b.freeze.has.chunk = icmp sgt i64 %b.freeze.nc, 0
   br i1 %b.freeze.has.chunk, label %b.freeze.check, label %b.freeze.done
 
-b.len_oob:                                        ; preds = %b.len_big_check, %b.buf.len4
+b.len_oob:                                        ; preds = %b.len_big_check, %b.writable
   call void @dva_abort_builder_len_oob_msg()
   unreachable
 
-abort.dead16:                                     ; No predecessors!
+abort.dead17:                                     ; No predecessors!
   br label %b.len_ok
 
 b.freeze.check:                                   ; preds = %b.len_ok
@@ -361,35 +373,46 @@ b.freeze.check:                                   ; preds = %b.len_ok
   %b.freeze.cap.gep = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %b.freeze.arena, i32 0, i32 0
   %b.freeze.cap = load i64, ptr %b.freeze.cap.gep, align 8
   %b.freeze.chunk.end = getelementptr i8, ptr %b.freeze.last.chunk, i64 %b.freeze.cap
-  %b.freeze.ge.chunk = icmp uge ptr %b.freeze.data20, %b.freeze.last.chunk
-  %b.freeze.lt.end = icmp ult ptr %b.freeze.data20, %b.freeze.chunk.end
+  %b.freeze.ge.chunk = icmp uge ptr %b.freeze.data21, %b.freeze.last.chunk
+  %b.freeze.lt.end = icmp ult ptr %b.freeze.data21, %b.freeze.chunk.end
   %b.freeze.in.chunk = and i1 %b.freeze.ge.chunk, %b.freeze.lt.end
-  %b.freeze.ge.bump = icmp uge ptr %b.freeze.data20, %b.freeze.bump
+  %b.freeze.ge.bump = icmp uge ptr %b.freeze.data21, %b.freeze.bump
   %b.freeze.reaped = and i1 %b.freeze.in.chunk, %b.freeze.ge.bump
   br i1 %b.freeze.reaped, label %b.freeze.copy, label %b.freeze.done
 
 b.freeze.copy:                                    ; preds = %b.freeze.check
-  %b.freeze.alen = add i64 %b.freeze.len19, 1
-  %arena.cur21 = load ptr, ptr @dva_active_arena_tls, align 8
-  %b.freeze.fresh = call ptr @dva_arena_alloc(ptr %arena.cur21, i64 %b.freeze.alen)
-  call void @llvm.memmove.p0.p0.i64(ptr align 1 %b.freeze.fresh, ptr align 1 %b.freeze.data20, i64 %b.freeze.len19, i1 false)
-  %b.freeze.nul = getelementptr i8, ptr %b.freeze.fresh, i64 %b.freeze.len19
+  %b.freeze.alen = add i64 %b.freeze.len20, 1
+  %arena.cur22 = load ptr, ptr @dva_active_arena_tls, align 8
+  %b.freeze.fresh = call ptr @dva_arena_alloc(ptr %arena.cur22, i64 %b.freeze.alen)
+  call void @llvm.memmove.p0.p0.i64(ptr align 1 %b.freeze.fresh, ptr align 1 %b.freeze.data21, i64 %b.freeze.len20, i1 false)
+  %b.freeze.nul = getelementptr i8, ptr %b.freeze.fresh, i64 %b.freeze.len20
   store i8 0, ptr %b.freeze.nul, align 1
   br label %b.freeze.done
 
 b.freeze.done:                                    ; preds = %b.freeze.copy, %b.freeze.check, %b.len_ok
-  %b.freeze.data22 = phi ptr [ %b.freeze.data20, %b.len_ok ], [ %b.freeze.data20, %b.freeze.check ], [ %b.freeze.fresh, %b.freeze.copy ]
+  %b.freeze.data23 = phi ptr [ %b.freeze.data21, %b.len_ok ], [ %b.freeze.data21, %b.freeze.check ], [ %b.freeze.fresh, %b.freeze.copy ]
   %str.build.len.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 0
-  store i64 %b.freeze.len19, ptr %str.build.len.gep, align 8
+  store i64 %b.freeze.len20, ptr %str.build.len.gep, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
-  store ptr %b.freeze.data22, ptr %str.build.data.gep, align 8
-  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load18, i32 0, i32 0
+  store ptr %b.freeze.data23, ptr %str.build.data.gep, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load19, i32 0, i32 0
   store i64 0, ptr %b.freeze.rst.len, align 8
-  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load18, i32 0, i32 1
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load19, i32 0, i32 1
   store ptr null, ptr %b.freeze.rst.data, align 8
-  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load18, i32 0, i32 2
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load19, i32 0, i32 2
   store i64 0, ptr %b.freeze.rst.cap, align 8
   br label %choice.exit
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_detached_builder() #5 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @detached_builder, i64 92)
+  call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
 }
 
 ; Function Attrs: cold noinline noreturn

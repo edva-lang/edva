@@ -41,6 +41,7 @@ edva lsp
 | `--typed-ast-tree` | — | `<->` | Elaborate, verify, and dump typed AST tree |
 | `--no-main` | — | `<->` | Emit `main` with internal linkage |
 | `--no-runtime` | — | `<->` | Omit standard runtime emission |
+| `--check-arena-escapes` | — | `<->` | Check global stores for values owned by scoped arenas |
 | `--import-map` | `<str>` | `""` | Path to package import map (`.edva/imports.ccl`) |
 | `--cache` | `<str>` | `~/.cache/edva/ir` | Compilation cache directory path |
 | `--no-cache` | — | `<->` | Disable compilation cache |
@@ -54,6 +55,9 @@ edva lsp
 Use `--no-typed-opt` to skip typed rewrites for differential testing. It leaves
 LLVM optimization flags in effect. Builds with `--no-runtime` skip typed rewrites
 to preserve diagnostics for operations that require the runtime.
+
+With separate compilation, pass `--check-arena-escapes` when compiling the
+program entry and each module to be checked.
 
 The standard library is discovered beside the executable or under the
 installation prefix in `lib/edva/std` or `share/edva/std`. The compiler uses

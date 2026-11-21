@@ -156,7 +156,7 @@ read_exact_bytes = count =>
             err' = <+>
             -->
       ?chunk = n
-      out += +chunk
+      out += chunk(0..n)
       rem' = rem' - n
    err' | <--> | <+ +out +>
 

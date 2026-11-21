@@ -446,7 +446,7 @@ load = path =>
             -->
       n == 0 | -->
       ?chunk = n
-      out += +chunk
+      out += chunk(0..n)
    libc::close(fd)
    err'
       | <- img_err("failed to read image file: " + path, 0) +>

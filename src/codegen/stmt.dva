@@ -8363,6 +8363,7 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti, new_local =>
                         | s => s
                         | types::create_slot(cg, name,
                           types::llvm_type_of_vt(ast::ValueType(Fn)), cg.in_fn)
+               runtime::check_global_store(cg, slot', lr.0, ast::ValueType(Fn), ti)
                LLVMBuildStore(cg.builder, lr.0, slot')
                cg.vars += types::CgVar(name, ast::ValueType(Fn), <->, "", <-->,
                  ast::Names(), <+ slot' +>, cg.in_fn, <->, ast::VTypes(), <-->)
@@ -8484,6 +8485,7 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti, new_local =>
                                          (LLVMTypeOf(store_val) == llvm_ty) &&
                                          !(cg.opts.is_module && types::is_external_module_name(cg, name))
                                          | LLVMSetInitializer(slot', store_val)
+                                       runtime::check_global_store(cg, slot', store_val, vt, eff_ti)
                                        LLVMBuildStore(cg.builder, store_val,
                                          slot')
                                        rec_fvs = ast::VTypes()

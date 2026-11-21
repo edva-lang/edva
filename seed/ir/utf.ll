@@ -19,6 +19,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @clo.const.5 = internal constant { ptr, ptr } { ptr @"utf::decode_rune_addr", ptr null }
 @"var.utf::decode_rune_addr" = global ptr null
 @str_oob_msg = internal unnamed_addr constant [40 x i8] c"E4006: string byte index out of bounds\0A\00"
+@detached_builder = internal unnamed_addr constant [93 x i8] c"E4013: Builder buffer was detached by freeze. Append data or create a new Builder before &b\0A\00"
 @clo.const.6 = internal constant { ptr, ptr } { ptr @"utf::decode_rune_builder", ptr null }
 @"var.utf::decode_rune_builder" = global ptr null
 @clo.const.7 = internal constant { ptr, ptr } { ptr @"utf::decode_str_at", ptr null }
@@ -1370,18 +1371,40 @@ choice.exit15:                                    ; preds = %ret.dead16, %idx_ok
   %var.load17 = load ptr, ptr %var.b, align 8
   %b.ptr = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load17, i32 0, i32 1
   %b.ptr18 = load ptr, ptr %b.ptr, align 8
-  %var.load19 = load i64, ptr %var.i, align 8
-  %call.res20 = call i32 @"utf::decode_rune_addr"(ptr %b.ptr18, i64 %var.load19)
-  ret i32 %call.res20
+  %2 = icmp eq ptr %b.ptr18, null
+  br i1 %2, label %b.detached, label %b.writable
 
 ret.dead16:                                       ; No predecessors!
   br label %choice.exit15
+
+b.detached:                                       ; preds = %choice.exit15
+  call void @dva_abort_detached_builder()
+  unreachable
+
+b.writable:                                       ; preds = %choice.exit15
+  %var.load20 = load i64, ptr %var.i, align 8
+  %call.res21 = call i32 @"utf::decode_rune_addr"(ptr %b.ptr18, i64 %var.load20)
+  ret i32 %call.res21
+
+abort.dead19:                                     ; No predecessors!
+  unreachable
 }
 
 ; Function Attrs: cold noinline noreturn
 define internal void @dva_abort_str_oob_msg() #4 {
 entry:
   %0 = call i64 @write(i32 2, ptr @str_oob_msg, i64 39)
+  call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_detached_builder() #4 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @detached_builder, i64 92)
   call void @exit(i32 1)
   unreachable
 
