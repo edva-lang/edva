@@ -943,9 +943,9 @@ entry:
   %var.total_size = alloca i64, align 8
   %var.f_align = alloca i64, align 8
   %var.flay = alloca ptr, align 8
-  %var._46 = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.f = alloca ptr, align 8
+  %var._46 = alloca ptr, align 8
   %loop.step.149 = alloca i64, align 8
   %loop.idx.149 = alloca i64, align 8
   %"var.max_align'" = alloca i64, align 8
@@ -1096,7 +1096,6 @@ a.after:                                          ; preds = %a.create, %choice.c
   %arr.cycle.data = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2, i32 0, i32 1
   %arr.cycle.data45 = load ptr, ptr %arr.cycle.data, align 8
   store i64 0, ptr %loop.idx.149, align 8
-  %cycle.prev.u = load ptr, ptr %var._39, align 8
   br label %loop.header.149
 
 loop.header.149:                                  ; preds = %loop.latch.149, %a.after
@@ -1110,9 +1109,9 @@ loop.body.149:                                    ; preds = %loop.header.149
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data45, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store ptr %slot.i2p, ptr %var._46, align 8
   store ptr %slot.i2p, ptr %var.f, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load47 = load ptr, ptr %var.ctx, align 8
   %var.load48 = load ptr, ptr %var.f, align 8
   %fld.gep = getelementptr inbounds { ptr, ptr, ptr }, ptr %var.load48, i32 0, i32 1
@@ -1148,7 +1147,6 @@ loop.latch.149:                                   ; preds = %loop.body.149
   br label %loop.header.149
 
 loop.exit.149:                                    ; preds = %loop.exit.nat.149
-  store ptr %cycle.prev.u, ptr %var._39, align 8
   %var.load62 = load i64, ptr %"var.cur_off'", align 8
   %var.load63 = load i64, ptr %"var.max_align'", align 8
   %call.res64 = call i64 @"layout::align_up"(i64 %var.load62, i64 %var.load63)

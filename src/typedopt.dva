@@ -271,8 +271,6 @@
    collect_binders: Stage, ast::Names => ()
    collect_binders = stage, names =>
       names += stage.output
-      stage.params @ name =>
-         name !["", "_", "_i"] | names += name
       stage.accumulator != "" | names += stage.accumulator
       stage.step.kind
          [Choice c]
@@ -397,9 +395,10 @@
          [Assign a]
             e(kind = tast::TypedExprKind(Assign, (a.0, a.1, a.2, a.3, a.4, rewrite(ctx, a.5))))
          [Cycle c]
-            body = rewrite(Context(<-->, ctx.in_fn), c.1)
+            cycle_ctx = Context(<-->, ctx.in_fn)
+            body = rewrite(cycle_ctx, c.1)
             e(kind = tast::TypedExprKind(Cycle, (rewrite(ctx, c.0), body,
-               rewrite_optional(ctx, c.2), c.3)))
+               rewrite_optional(cycle_ctx, c.2), c.3)))
          [RamConstruct r]
             e(kind = tast::TypedExprKind(RamConstruct, (r.0, r.1, rewrite_optional(ctx, r.2))))
          [EnumConstruct r]

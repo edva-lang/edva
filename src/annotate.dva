@@ -2231,6 +2231,9 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
    elem_ti = iter_elem_ti(ctx, iter_te.ti, elem_ut)
    ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
    key_ut' = c_iter [Map m] m.key | unify::prim_int!
+   // A module root prefers qualified globals to bare root bindings.
+   module_scope = env.cur_scope == 0 && env.current_module != ""
+   module_scope | type_env::enter_scope(env)
    prev_u = type_env::lookup_binding_exact(env, "_")
    prev_ui = type_env::lookup_binding_exact(env, "_i")
    p0_saved = c.body_fn
@@ -2357,12 +2360,14 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
       |
          prev_p1
             | pp1 => type_env::bind_local(env, p1_saved, pp1.ut, pp1.ti, pp1.is_mut)
+            | type_env::unbind_local(env, p1_saved)
    prev_u
       | pu => type_env::bind_local(env, "_", pu.ut, pu.ti, pu.is_mut)
       | type_env::unbind_local(env, "_")
    prev_ui
       | pui => type_env::bind_local(env, "_i", pui.ut, pui.ti, pui.is_mut)
       | type_env::unbind_local(env, "_i")
+   module_scope | type_env::leave_scope(env)
    esc_opt
       | esc_te =>
          ram_ut = unify::ram_pn(esc_te.ut)
@@ -2490,6 +2495,9 @@ annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
    acc_name = "_fold_acc_" + str::from_int(fold_id)
    val_name = "_fold_v_" + str::from_int(fold_id)
    step_el_name = "_fold_el_" + str::from_int(fold_id)
+   // A module root prefers qualified globals to bare root bindings.
+   module_scope = env.cur_scope == 0 && env.current_module != ""
+   module_scope | type_env::enter_scope(env)
    prev_u = type_env::lookup_binding_exact(env, "_")
    prev_ui = type_env::lookup_binding_exact(env, "_i")
    step_info = c.body_fn
@@ -2593,6 +2601,7 @@ annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
    prev_ui
       | pui => type_env::bind_local(env, "_i", pui.ut, pui.ti, pui.is_mut)
       | type_env::unbind_local(env, "_i")
+   module_scope | type_env::leave_scope(env)
    env.discard_result = saved_disc
    fe_body_te = step_info.0
    p_acc_name = step_info.1
@@ -2688,6 +2697,9 @@ annotate_unseeded_cycle_expr = ctx, env, c, iter_te, saved_disc, seed_opt, want_
    map_id = map_v [Var id] id | 0
    out_name = "_map_out_" + str::from_int(map_id)
    val_name = "_map_v_" + str::from_int(map_id)
+   // A module root prefers qualified globals to bare root bindings.
+   module_scope = env.cur_scope == 0 && env.current_module != ""
+   module_scope | type_env::enter_scope(env)
    prev_u = type_env::lookup_binding_exact(env, "_")
    prev_ui = type_env::lookup_binding_exact(env, "_i")
    step_info = c.body_fn
@@ -2746,6 +2758,7 @@ annotate_unseeded_cycle_expr = ctx, env, c, iter_te, saved_disc, seed_opt, want_
    prev_ui
       | pui => type_env::bind_local(env, "_i", pui.ut, pui.ti, pui.is_mut)
       | type_env::unbind_local(env, "_i")
+   module_scope | type_env::leave_scope(env)
    env.discard_result = saved_disc
    fe_body_te = step_info.0
    loop_params = step_info.1

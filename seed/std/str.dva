@@ -191,22 +191,27 @@
    to_int: String => Digits
    to_int = s =>
       val' = 0
-      s @ b, i =>
+      consumed' = 0
+      s @ b =>
          !str::is_digit(b) | -->
          val' = val' * 10 + (b - '0)
-      i [0] --| Digits(<-->)
-      Digits(<+ (val', s(i..)) +>)
+         consumed' = consumed' + 1
+      consumed' [0] --| Digits(<-->)
+      Digits(<+ (val', s(consumed'..)) +>)
 
    // Consume leading hex digits (0-9, a-f, A-F); the payload is (value, rest).
    to_hex: String => Digits
    to_hex = s =>
       val' = 0
-      s @ b, i =>
+      consumed' = 0
+      s @ b =>
          ascii::hex_value(b)
-            | d => val' = val' * 16 + d
+            | d =>
+               val' = val' * 16 + d
+               consumed' = consumed' + 1
             | -->
-      i [0] --| Digits(<-->)
-      Digits(<+ (val', s(i..)) +>)
+      consumed' [0] --| Digits(<-->)
+      Digits(<+ (val', s(consumed'..)) +>)
 
    // Int to base-16 hex ASCII string (uppercase, "0x" prefix). Digits are
    // pushed LSD-first into a Builder, the "x"/"0" prefix appended last, then

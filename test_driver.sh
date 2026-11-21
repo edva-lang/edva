@@ -3243,5 +3243,65 @@ if [ "$(grep -c '^loop.header[.]' "$T63_DIR/eager")" -ne 3 ] ||
 fi
 echo "PASS"
 
+# --- Test 64: Lexical cycle binders, range facts, and shadowed pipeline inputs ---
+echo -n "Testing cycle binder scopes and fusion under shadowing... "
+T64_DIR="$TMPDIR/t64_cycle_binders"
+T64_SRC=tests/pass/459_cycle_binders
+mkdir -p "$T64_DIR"
+
+cat >"$T64_DIR/unbound.dva" <<'DVA'
+#use io
+2 @ value, idx => io::out $ value + idx
+io::out $ idx
+DVA
+if timeout 30 ./edva check "$T64_DIR/unbound.dva" < /dev/null >"$T64_DIR/unbound.log" 2>&1 ||
+   ! grep -Eq 'E3004: Undefined.*idx' "$T64_DIR/unbound.log"; then
+    echo "FAILED: a cycle index is visible after its scope"
+    cat "$T64_DIR/unbound.log"
+    exit 1
+fi
+
+cat >"$T64_DIR/bounds.dva" <<'DVA'
+#use io
+read_shadow: String => Int
+read_shadow = text =>
+   sum' = 0
+   empty = String{}("")
+   0..?text @ i =>
+      empty @ text => sum' = sum' + text(i)
+   sum'
+io::out $ read_shadow("x")
+DVA
+
+for mode in eager fused; do
+    opts=()
+    if [ "$mode" = eager ]; then
+        opts+=(--no-typed-opt)
+    fi
+    for opt in -O0 -O2; do
+        timeout 30 ./edva "$T64_SRC/main.dva" "$opt" "${opts[@]}" --no-cache \
+            -o "$T64_DIR/$mode" < /dev/null >"$T64_DIR/$mode.log" 2>&1
+        timeout 10 "$T64_DIR/$mode" >"$T64_DIR/out"
+        diff -u "$T64_SRC.expected" "$T64_DIR/out"
+    done
+    sed -n '/^define .* @dva_shadow_fusion(/,/^}/p' "$T64_DIR/$mode.ll" >"$T64_DIR/$mode.ir"
+    timeout 30 ./edva "$T64_DIR/bounds.dva" -O2 "${opts[@]}" --no-cache \
+        -o "$T64_DIR/bounds" < /dev/null >"$T64_DIR/build-bounds.log" 2>&1
+    status=0
+    timeout 10 "$T64_DIR/bounds" >"$T64_DIR/bounds.log" 2>&1 || status=$?
+    if [ "$status" -ne 1 ] || ! grep -Fiq 'out of bounds' "$T64_DIR/bounds.log"; then
+        echo "FAILED: the outer string bound was reused for a shadowed string"
+        cat "$T64_DIR/bounds.log"
+        exit 1
+    fi
+done
+
+if [ "$(grep -c '^loop.header[.]' "$T64_DIR/eager.ir")" -ne 2 ] ||
+   [ "$(grep -c '^loop.header[.]' "$T64_DIR/fused.ir")" -ne 1 ]; then
+    echo "FAILED: a shadowed cycle binder prevented pipeline fusion"
+    exit 1
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

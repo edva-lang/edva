@@ -1,0 +1,5 @@
+#use io
+#public
+   word = "outside"
+2 @ word =>
+   io::out $ word

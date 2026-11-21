@@ -164,6 +164,9 @@ Cycles iterate at LBP 10, RBP 20 without keywords. `@` and `@@` are statement-va
 | Record `Type` (`#members`) | `#members T @ f => body` | `f =>` (field descriptor) | — | Compile-time unrolled over `0..#arity T` (`f.name`, `f.type`, `f.idx`) |
 | Enum `Type` (`#members`) | `#members T @ v => body` | `v =>` (variant descriptor) | — | Compile-time unrolled over `0..#arity T` (`v.name`, `v.type`, `v.idx`) |
 
+Element, index, and key binders shadow enclosing names for the cycle body and its
+`>--` escape branch. The escape branch sees the values from the iteration that broke.
+
 ### Expression-valued cycles (`@>`, `@@>`): Map, Filter-Map, Builder & Seeded Fold
 
 | Form | Syntax | Result Type | Semantics |

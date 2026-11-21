@@ -1,0 +1,71 @@
+#use io
+#use ./shadow
+
+::shared = 90
+
+statement: Int, Int => Int
+statement = x, idx =>
+   total' = 0
+   5..8 @ x, idx =>
+      total' = total' + x * 10 + idx
+   total' + x * 1000 + idx * 100
+
+global_binder: Int => Int
+global_binder = n =>
+   total' = 0
+   n @ shared => total' = total' + shared
+   total' + shared * 10
+
+nested: Int => Int
+nested = n =>
+   total' = 0
+   n @ x, idx =>
+      9..11 @ x, idx =>
+         total' = total' + x * 10 + idx
+      total' = total' + x * 10 + idx
+   total'
+
+map_escape: Int => Int
+map_escape = outside =>
+   m = (7 ^= 3)
+   k = outside
+   x = 100
+   hit = m @ x, k =>
+      -->
+   >-- x * 10 + k + _ * 100 + _i * 1000
+   (hit |_| 0) + x + k
+
+range_escape: Int => Int
+range_escape = idx =>
+   hit = 6..9 @ x, idx =>
+      x [7] -->
+   >-- x * 10 + idx + _ * 100 + _i * 1000
+   (hit |_| 0) + idx
+
+fold: Int, Int => Int
+fold = value, idx =>
+   total = (0, 3..6) @> (acc, value, idx => acc + value + idx)
+   total * 100 + value * 10 + idx
+
+#export("dva_shadow_fusion") fused: Int => Int
+fused = x =>
+   ys = (x @> (x => x + 5)) @> (v => v * 2)
+   x * 100 + (ys(0) |_| 0)
+
+io::out $ statement(2, 4)
+io::out $ global_binder(4)
+io::out $ nested(2)
+io::out $ map_escape(80)
+io::out $ range_escape(90)
+io::out $ fold(7, 8)
+io::out $ fused(3)
+
+label = "outside"
+ix = 50
+total' = 0
+3 @ label, ix => total' = total' + label * 10 + ix
+io::out $ label
+io::out $ ix
+io::out $ total'
+
+io::out $ shadow::word

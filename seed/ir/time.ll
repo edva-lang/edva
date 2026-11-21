@@ -4664,8 +4664,8 @@ entry:
   %var.h12 = alloca i64, align 8
   %var.spec = alloca i64, align 8
   %var.ch = alloca i64, align 8
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
+  %var._ = alloca i64, align 8
   %loop.step.84 = alloca i64, align 8
   %loop.idx.84 = alloca i64, align 8
   %"var.i'" = alloca i64, align 8
@@ -4721,8 +4721,8 @@ loop.header.84:                                   ; preds = %loop.latch.84, %b.b
 loop.body.84:                                     ; preds = %loop.header.84
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.84, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load6 = load i64, ptr %"var.i'", align 8
   %var.load7 = load i64, ptr %var.len, align 8
   %cmptmp = icmp sge i64 %var.load6, %var.load7
@@ -6885,9 +6885,9 @@ define internal ptr @"time::parse_tm_os$Rec(time::#TimeOsTarget:posix:Int,tag:In
 entry:
   %var.end = alloca ptr, align 8
   %"var.tm'" = alloca ptr, align 8
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
   %var.ch_ = alloca i64, align 8
+  %var._ = alloca i64, align 8
   %loop.step.93 = alloca i64, align 8
   %loop.idx.93 = alloca i64, align 8
   %var.fmt_pat = alloca ptr, align 8
@@ -6914,9 +6914,9 @@ loop.body.93:                                     ; preds = %loop.header.93
   %s.byte.gep = getelementptr i8, ptr %s.read.data3, i64 %counter.load
   %s.byte = load i8, ptr %s.byte.gep, align 1
   %s.byte.val = zext i8 %s.byte to i64
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %s.byte.val, ptr %var._, align 8
   store i64 %s.byte.val, ptr %var.ch_, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load4 = load i64, ptr %var.ch_, align 8
   %cmptmp = icmp eq i64 %var.load4, 0
   br i1 %cmptmp, label %choice.then, label %choice.exit

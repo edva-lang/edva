@@ -33,15 +33,16 @@ io::out $ (h | (_.0) | -1)
 hx = str::to_hex("Zz")
 io::out $ (hx | (_.0) | -1)
 
-// "string @ ..." iterates through the bytes: 1 param = byte, 2 params =
-// (byte, index); the index persists after a break as the bytes consumed.
+// String cycles yield bytes and an optional index. Use the escape branch to
+// carry the consumed byte count out of a cycle that breaks early.
 sum' = 0
 "hi!" @ b => sum' = sum' + b
 io::out $ sum'
 s = "123abc"
-s @ b, i =>
+cut = s @ b, i =>
    !str::is_digit(b) | -->
-io::out $ i
+>-- i
+io::out $ (cut |_| ?s)
 s @ b => io::out $ b
 s @
    io::out $ _

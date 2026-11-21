@@ -1657,8 +1657,8 @@ declare i64 @llvm.smax.i64(i64, i64) #0
 
 define i64 @"utf::prev_start"(ptr %0, i64 %1) #3 {
 entry:
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
+  %var._ = alloca i64, align 8
   %loop.step.20 = alloca i64, align 8
   %loop.idx.20 = alloca i64, align 8
   %"var.p'" = alloca i64, align 8
@@ -1696,8 +1696,8 @@ loop.header.20:                                   ; preds = %loop.latch.20, %cho
 loop.body.20:                                     ; preds = %loop.header.20
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.20, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load5 = load i64, ptr %"var.p'", align 8
   %cmptmp6 = icmp sle i64 %var.load5, 0
   br i1 %cmptmp6, label %choice.then7, label %choice.exit8

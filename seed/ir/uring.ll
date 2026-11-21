@@ -1589,8 +1589,8 @@ entry:
   %var.c = alloca ptr, align 8
   %var._3 = alloca ptr, align 8
   %var.opt = alloca ptr, align 8
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
+  %var._ = alloca i64, align 8
   %loop.step.32 = alloca i64, align 8
   %loop.idx.32 = alloca i64, align 8
   %"var.cqes'" = alloca ptr, align 8
@@ -1617,8 +1617,8 @@ loop.header.32:                                   ; preds = %loop.latch.32, %ent
 loop.body.32:                                     ; preds = %loop.header.32
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.32, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load = load ptr, ptr %var.ring, align 8
   %call.res = call ptr @"uring::peek_cqe"(ptr %var.load)
   store ptr %call.res, ptr %var.opt, align 8
@@ -1789,14 +1789,14 @@ entry:
   %var.nb = alloca i64, align 8
   %var.idx = alloca i64, align 8
   %var.cqe = alloca ptr, align 8
-  %var._102 = alloca i64, align 8
-  %var._i101 = alloca i64, align 8
+  %var._i102 = alloca i64, align 8
+  %var._101 = alloca i64, align 8
   %loop.step.36 = alloca i64, align 8
   %loop.idx.36 = alloca i64, align 8
   %var.fd = alloca i64, align 8
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
   %var.i = alloca i64, align 8
+  %var._ = alloca i64, align 8
   %loop.step.34 = alloca i64, align 8
   %loop.idx.34 = alloca i64, align 8
   %"var.active'" = alloca i64, align 8
@@ -1919,9 +1919,9 @@ loop.header.34:                                   ; preds = %loop.latch.34, %b.b
 loop.body.34:                                     ; preds = %loop.header.34
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.34, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
   store i64 %counter.load, ptr %var.i, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %a.load29 = load ptr, ptr %"var.outs'", align 8
   %a.null30 = icmp eq ptr %a.load29, null
   br i1 %a.null30, label %a.create31, label %a.after32
@@ -2146,8 +2146,8 @@ loop.header.36:                                   ; preds = %loop.latch.36, %loo
 loop.body.36:                                     ; preds = %loop.header.36
   %loop.rel.i100 = sub i64 %counter.load99, 0
   store i64 1, ptr %loop.step.36, align 8
-  store i64 %loop.rel.i100, ptr %var._i101, align 8
-  store i64 %counter.load99, ptr %var._102, align 8
+  store i64 %counter.load99, ptr %var._101, align 8
+  store i64 %loop.rel.i100, ptr %var._i102, align 8
   %var.load103 = load i64, ptr %"var.active'", align 8
   %cmptmp104 = icmp sle i64 %var.load103, 0
   br i1 %cmptmp104, label %choice.then105, label %choice.exit106

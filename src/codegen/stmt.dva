@@ -8765,6 +8765,23 @@ codegen_typed_eval_cycle = cg, iterable, body_fn, esc_opt, is_rune, ti =>
    cy_has_restore | types::g.validated_str_vals = types::Addrs()
    res
 
+// Cycle aliases live in the current frame, including in the top-level entry.
+bind_cycle_value: types::Cg, String, String, Addr, Addr, ast::ValueType, ast::TypeInfo => ()
+bind_cycle_value = cg, implicit, named, ty, value, vt, ti =>
+   meta = (vt [Record]) | runtime::record_meta_from_ti(cg, ti) | <-->
+   rt = meta | m => <+ m.0 +> | <-->
+   fields = meta | m => m.1 | ast::Names()
+   slot = types::hoisted_alloca(cg, ty, "var.${implicit}")
+   LLVMBuildStore(cg.builder, value, slot)
+   cv = types::CgVar(implicit, vt, types::is_ptrish_vt(vt), "", rt, fields,
+      <+ slot +>, <+>, <->, ast::VTypes(), <+ value +>)
+   cg.vars += cv
+   named !["", "_", "_i"]
+      |
+         named_slot = types::hoisted_alloca(cg, ty, "var.${named}")
+         LLVMBuildStore(cg.builder, value, named_slot)
+         cg.vars += cv(name = named, slot = <+ named_slot +>, direct = <-->)
+
 codegen_typed_eval_indexed_cycle: types::Cg, tast::TypedExpr, tast::TypedExpr,
   <tast::TypedExpr|>, <>, ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
@@ -8872,39 +8889,6 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
       [Array a] a.1
       [Rec r] (?r.0 > 0 | r.0(0)!!.rec_type | ast::TypeInfo(Prim, elem_vt))
       | ast::TypeInfo(Prim, elem_vt)
-   elem_is_rec0 = elem_vt [Record]
-   elem_rm0 = elem_is_rec0
-      | runtime::record_meta_from_ti(cg, elem_ti0)
-      | <-->
-   elem_rm0_opt = elem_rm0 | m => <+ m.0 +> | <-->
-   elem_rm0_fn = elem_rm0 | m => m.1 | ast::Names()
-   p0 != "" && p0 != "_"
-      |
-         has_s0 = <>(types::var_slot(cg, p0))
-         (!has_s0 || elem_is_rec0)
-            |
-               s0 = types::create_slot(cg, p0, elem_ty, cg.in_fn)
-               cg.vars += types::CgVar(p0, elem_vt, types::is_ptrish_vt(elem_vt), "",
-                 elem_rm0_opt, elem_rm0_fn, <+ s0 +>, cg.in_fn, <->,
-                 ast::VTypes(), <-->)
-   p1 != "" && p1 != "_"
-      |
-         has_s1 = <>(types::var_slot(cg, p1))
-         !has_s1
-            |
-               s1 = types::create_slot(cg, p1, i64t, cg.in_fn)
-               LLVMBuildStore(cg.builder, start_val, s1)
-               cg.vars += types::CgVar(p1, ast::ValueType(Int), <->, "",
-                 <-->, ast::Names(), <+ s1 +>, cg.in_fn, <->,
-                 ast::VTypes(), <-->)
-   prev_slot_u_opt = types::var_slot(cg, "_")
-   prev_u_val_opt = prev_slot_u_opt
-      | pu => <+ LLVMBuildLoad2(cg.builder, elem_ty, pu, "cycle.prev.u") +>
-      | <-->
-   prev_slot_i_opt = types::var_slot(cg, "_i")
-   prev_i_val_opt = prev_slot_i_opt
-      | pi => <+ LLVMBuildLoad2(cg.builder, i64t, pi, "cycle.prev.i") +>
-      | <-->
    header = LLVMAppendBasicBlock(cg.current_fn, "loop.header." + sc)
    body = LLVMAppendBasicBlock(cg.current_fn, "loop.body." + sc)
    exit_nat = LLVMAppendBasicBlock(cg.current_fn, "loop.exit.nat." + sc)
@@ -8938,13 +8922,6 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
          LLVMBuildCondBr(cg.builder, cond, body, exit_nat)
       | branch_to(cg, body)
    LLVMPositionBuilderAtEnd(cg.builder, exit_nat)
-   p1 != "" && p1 != "_"
-      |
-         types::var_slot(cg, p1)
-            | s =>
-               rel_end = LLVMBuildSub(cg.builder, curr_i, start_val,
-                 "loop.rel.end")
-               LLVMBuildStore(cg.builder, rel_end, s)
    branch_to(cg, done)
    LLVMPositionBuilderAtEnd(cg.builder, body)
    types::emit_cov_edge(cg)
@@ -9019,37 +8996,21 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                                          rec_elem_ll, rec_slot, "rec.elem.val")
                               | curr_i
    saved_body_vars = ?cg.vars
-   s_i = types::create_slot(cg, "_i", i64t, cg.in_fn)
-   cg.vars += types::CgVar("_i", ast::ValueType(Int), <->, "", <-->,
-     ast::Names(), <+ s_i +>, cg.in_fn, <->, ast::VTypes(), <-->)
-   LLVMBuildStore(cg.builder, rel_i, s_i)
-   s_u = types::create_slot(cg, "_", elem_ty, cg.in_fn)
-   cg.vars += types::CgVar("_", elem_vt, types::is_ptrish_vt(elem_vt), "", elem_rm0_opt,
-     elem_rm0_fn, <+ s_u +>, cg.in_fn, <->, ast::VTypes(), <+ elem_val +>)
-   c_elem_val = types::is_int_vt(elem_vt)
-      | coerce_int(cg, elem_val, elem_ty)
-      | elem_val
-   LLVMBuildStore(cg.builder, c_elem_val, s_u)
-   p0 != "" && p0 != "_"
-      |
-         types::var_slot(cg, p0)
-            | s => LLVMBuildStore(cg.builder, c_elem_val, s)
-   p1 != "" && p1 != "_"
-      |
-         types::var_slot(cg, p1)
-            | s => LLVMBuildStore(cg.builder, rel_i, s)
-   saved_vra_locs = ?types::vra.locals
-   saved_vra_bnds = ?types::vra.bounded_idxs
-   lam_params = bfn.kind [Lambda lam] lam.0 | ast::Names()
-   types::vra_push_cycle_bounds(cg, iterable, is_rune, lam_params, <->)
+   c_elem_val = types::is_int_vt(elem_vt) | coerce_int(cg, elem_val, elem_ty) | elem_val
+   bind_cycle_value(cg, "_", p0, elem_ty, c_elem_val, elem_vt, elem_ti0)
+   int_vt = ast::ValueType(Int)
+   bind_cycle_value(cg, "_i", p1, i64t, rel_i, int_vt, ast::TypeInfo(Prim, int_vt))
+   saved_cycle_vars = ?cg.vars
+   params = bfn.kind [Lambda lam] lam.0 | ast::Names()
+   saved_ranges = types::vra_enter_cycle(params)
+   types::vra_push_cycle_bounds(cg, iterable, is_rune, params, <->)
    bfn.kind
       [Lambda lam]
          main::codegen_typed_eval(cg, lam.1)
       |
          main::codegen_typed_eval(cg, bfn)
-   types::vra_truncate_locals(saved_vra_locs)
-   types::vra_truncate_bounded(saved_vra_bnds)
-   cg.vars = truncate_vars(cg.vars, saved_body_vars)
+   types::vra_leave_cycle(saved_ranges)
+   cg.vars = truncate_vars(cg.vars, saved_cycle_vars)
    branch_to(cg, latch)
    LLVMPositionBuilderAtEnd(cg.builder, latch)
    step_val = LLVMBuildLoad2(cg.builder, i64t, step_alloca, "step.val")
@@ -9060,31 +9021,15 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
    cg.cycle_breaks = cycle_trunc(cg.cycle_breaks, nb - 1)
    cg.cycle_conts = cycle_trunc(cg.cycle_conts, nb - 1)
    LLVMPositionBuilderAtEnd(cg.builder, done)
-   prev_u_val_opt
-      | pu =>
-         pu_val = types::is_int_vt(elem_vt)
-            | coerce_int(cg, pu, elem_ty)
-            | pu
-         LLVMBuildStore(cg.builder, pu_val, prev_slot_u_opt!!)
-   prev_i_val_opt
-      | pi => LLVMBuildStore(cg.builder, pi, prev_slot_i_opt!!)
-   esc_blocks
+   result = esc_blocks
       | eb =>
          branch_to(cg, eb.1)
          LLVMPositionBuilderAtEnd(cg.builder, eb.0)
-         prev_u_val_opt
-            | pu =>
-               pu_val = types::is_int_vt(elem_vt)
-                  | coerce_int(cg, pu, elem_ty)
-                  | pu
-               LLVMBuildStore(cg.builder, pu_val, prev_slot_u_opt!!)
-         prev_i_val_opt
-            | pi => LLVMBuildStore(cg.builder, pi, prev_slot_i_opt!!)
          esc_te = esc_opt!!
-         saved_esc_vars = ?cg.vars
+         esc_ranges = types::vra_enter_cycle(params)
          u_some = codegen_typed_cycle_escape_construct(cg, <+>,
            <+ esc_te +>, ti)
-         cg.vars = truncate_vars(cg.vars, saved_esc_vars)
+         types::vra_leave_cycle(esc_ranges)
          LLVMBuildStore(cg.builder, u_some, eb.2)
          branch_to(cg, eb.1)
          LLVMPositionBuilderAtEnd(cg.builder, eb.1)
@@ -9092,6 +9037,8 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
            "escape.res")
          (res_val, b_vt)
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
+   cg.vars = truncate_vars(cg.vars, saved_body_vars)
+   result
 
 codegen_typed_eval_map_cycle: types::Cg, tast::TypedExpr, tast::TypedExpr,
   <tast::TypedExpr|>, ast::TypeInfo => (Addr, ast::ValueType)
@@ -9137,38 +9084,6 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
       [Lambda lam]
          ?lam.0 > 1 | (lam.0(1) | _ | "") | ""
       | ""
-   p0 != "" && p0 != "_"
-      |
-         has_s0 = <>(types::var_slot(cg, p0))
-         !has_s0
-            |
-               s0 = types::create_slot(cg, p0, val_ll, cg.in_fn)
-               elem_is_rec0 = val_vt [Record]
-               elem_rm0 = elem_is_rec0
-                  | runtime::record_meta_from_ti(cg, val_ti)
-                  | <-->
-               elem_rm0_opt = elem_rm0 | m => <+ m.0 +> | <-->
-               elem_rm0_fn = elem_rm0 | m => m.1 | ast::Names()
-               cg.vars += types::CgVar(p0, val_vt, types::is_ptrish_vt(val_vt), "",
-                 elem_rm0_opt, elem_rm0_fn, <+ s0 +>, cg.in_fn, <->,
-                 ast::VTypes(), <-->)
-   p1 != "" && p1 != "_"
-      |
-         has_s1 = <>(types::var_slot(cg, p1))
-         !has_s1
-            |
-               s1 = types::create_slot(cg, p1, key_ll, cg.in_fn)
-               cg.vars += types::CgVar(p1, key_vt, types::is_ptrish_vt(key_vt), "",
-                 <-->, ast::Names(), <+ s1 +>, cg.in_fn, <->,
-                 ast::VTypes(), <-->)
-   prev_slot_u_opt = types::var_slot(cg, "_")
-   prev_u_val_opt = prev_slot_u_opt
-      | pu => <+ LLVMBuildLoad2(cg.builder, val_ll, pu, "mcycle.prev.u") +>
-      | <-->
-   prev_slot_i_opt = types::var_slot(cg, "_i")
-   prev_i_val_opt = prev_slot_i_opt
-      | pi => <+ LLVMBuildLoad2(cg.builder, key_ll, pi, "mcycle.prev.i") +>
-      | <-->
    header = LLVMAppendBasicBlock(cg.current_fn, "loop.mheader." + sc)
    body = LLVMAppendBasicBlock(cg.current_fn, "loop.mbody." + sc)
    live_bb = LLVMAppendBasicBlock(cg.current_fn, "loop.mlive." + sc)
@@ -9230,30 +9145,18 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
             | coerce_int_ext(cg, key_raw, key_ll, types::is_unsigned_vt(key_vt))
 
    saved_body_vars = ?cg.vars
-   s_v = types::create_slot(cg, "_", val_ll, cg.in_fn)
-   cg.vars += types::CgVar("_", val_vt, types::is_ptrish_vt(val_vt), "", <-->,
-     ast::Names(), <+ s_v +>, cg.in_fn, <->, ast::VTypes(), <+ val_val +>)
-   LLVMBuildStore(cg.builder, val_val, s_v)
-
-   s_k = types::create_slot(cg, "_i", key_ll, cg.in_fn)
-   cg.vars += types::CgVar("_i", key_vt, types::is_ptrish_vt(key_vt), "", <-->,
-     ast::Names(), <+ s_k +>, cg.in_fn, <->, ast::VTypes(), <+ key_val +>)
-   LLVMBuildStore(cg.builder, key_val, s_k)
-
-   p0 != "" && p0 != "_"
-      |
-         types::var_slot(cg, p0)
-            | s => LLVMBuildStore(cg.builder, val_val, s)
-   p1 != "" && p1 != "_"
-      |
-         types::var_slot(cg, p1)
-            | s => LLVMBuildStore(cg.builder, key_val, s)
+   bind_cycle_value(cg, "_", p0, val_ll, val_val, val_vt, val_ti)
+   bind_cycle_value(cg, "_i", p1, key_ll, key_val, key_vt, ast::TypeInfo(Prim, key_vt))
+   saved_cycle_vars = ?cg.vars
+   params = body_fn.kind [Lambda lam] lam.0 | ast::Names()
+   saved_ranges = types::vra_enter_cycle(params)
    body_fn.kind
       [Lambda lam]
          main::codegen_typed_eval(cg, lam.1)
       |
          main::codegen_typed_eval(cg, body_fn)
-   cg.vars = truncate_vars(cg.vars, saved_body_vars)
+   types::vra_leave_cycle(saved_ranges)
+   cg.vars = truncate_vars(cg.vars, saved_cycle_vars)
    branch_to(cg, latch)
    LLVMPositionBuilderAtEnd(cg.builder, latch)
    loaded_i = LLVMBuildLoad2(cg.builder, i64t, counter_alloca, "m.it.c")
@@ -9265,23 +9168,15 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
    cg.cycle_breaks = cycle_trunc(cg.cycle_breaks, nb - 1)
    cg.cycle_conts = cycle_trunc(cg.cycle_conts, nb - 1)
    LLVMPositionBuilderAtEnd(cg.builder, done)
-   prev_u_val_opt
-      | pu => LLVMBuildStore(cg.builder, pu, prev_slot_u_opt!!)
-   prev_i_val_opt
-      | pi => LLVMBuildStore(cg.builder, pi, prev_slot_i_opt!!)
-   esc_blocks
+   result = esc_blocks
       | eb =>
          branch_to(cg, eb.1)
          LLVMPositionBuilderAtEnd(cg.builder, eb.0)
-         prev_u_val_opt
-            | pu => LLVMBuildStore(cg.builder, pu, prev_slot_u_opt!!)
-         prev_i_val_opt
-            | pi => LLVMBuildStore(cg.builder, pi, prev_slot_i_opt!!)
          esc_te = esc_opt!!
-         saved_esc_vars = ?cg.vars
+         esc_ranges = types::vra_enter_cycle(params)
          u_some = codegen_typed_cycle_escape_construct(cg, <+>,
            <+ esc_te +>, ti)
-         cg.vars = truncate_vars(cg.vars, saved_esc_vars)
+         types::vra_leave_cycle(esc_ranges)
          LLVMBuildStore(cg.builder, u_some, eb.2)
          branch_to(cg, eb.1)
          LLVMPositionBuilderAtEnd(cg.builder, eb.1)
@@ -9289,6 +9184,8 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
            "escape.res")
          (res_val, b_vt)
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
+   cg.vars = truncate_vars(cg.vars, saved_body_vars)
+   result
 
 codegen_typed_eval_cycle_jump: types::Cg, <>, Int => (Addr, ast::ValueType)
 codegen_typed_eval_cycle_jump = cg, is_break, level =>

@@ -1428,7 +1428,7 @@ sig_name_matches = sig_name, fn_name =>
 // bare name resolve to current_module::name (or its private #name spelling).
 has_local_var: Cg, String => <>
 has_local_var = cg, name =>
-   cg.in_fn && has_local_var_at(cg, name, ?cg.vars - 1, cg.fn_var_start)
+   has_local_var_at(cg, name, ?cg.vars - 1, cg.fn_var_start)
 
 has_local_var_at: Cg, String, Int, Int => <>
 has_local_var_at = cg, name, i, start =>
@@ -6074,6 +6074,39 @@ vra_finalize_anon_merges = !=>
                      vra.anon_idx ^? ak
                         | vra_join_slot(vra.anon_idx, vra.anon_rngs, ak, fr)
 
+#type VraCycleScope (locals: VraLocals, bounds: BoundedStrIdxs, lengths: LenVarEntries)
+
+vra_cycle_shadows: ast::Names, String => <>
+vra_cycle_shadows = params, name => name ["_", "_i"] || has_str(params, name)
+
+// A bound depends on both the index and the collection it describes.
+vra_enter_cycle: ast::Names => VraCycleScope
+vra_enter_cycle = params =>
+   saved = VraCycleScope(vra.locals, vra.bounded_idxs, vra.len_vars)
+   vra.enabled
+      |
+         locals = VraLocals()
+         saved.locals @ e =>
+            !vra_cycle_shadows(params, e.name) | locals += e
+         bounds = BoundedStrIdxs()
+         saved.bounds @ e =>
+            !(vra_cycle_shadows(params, e.idx_var) || vra_cycle_shadows(params, e.str_var))
+               | bounds += e
+         lengths = LenVarEntries()
+         saved.lengths @ e =>
+            !(vra_cycle_shadows(params, e.len_var) || vra_cycle_shadows(params, e.str_var))
+               | lengths += e
+         vra.locals = locals
+         vra.bounded_idxs = bounds
+         vra.len_vars = lengths
+   saved
+
+vra_leave_cycle: VraCycleScope => ()
+vra_leave_cycle = saved =>
+   vra.locals = saved.locals
+   vra.bounded_idxs = saved.bounds
+   vra.len_vars = saved.lengths
+
 vra_truncate_locals: Int => ()
 vra_truncate_locals = n =>
    ?vra.locals > n
@@ -6816,17 +6849,21 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
                | vra_bot!
                | (has_bare' || nb == 2) | res_r' | vra_top!
       [Cycle cy]
-         saved_c_locs = ?vra.locals
-         saved_c_bnds = ?vra.bounded_idxs
          lam_params = cy.1.kind [Lambda lam] lam.0 | ast::Names()
-         vra_push_cycle_bounds_in(cg, cy.0, cy.3, lam_params, rec_eff, fn_names)
+         saved_ranges = vra_enter_cycle(lam_params)
+         (cy.0.ti [Map, Ram])
+            | _ignored = vra_walk_expr(cg, cy.0, rec_eff, fn_names)
+            | vra_push_cycle_bounds_in(cg, cy.0, cy.3, lam_params, rec_eff, fn_names)
          cy.1.kind
             [Lambda lam]
                vra_walk_expr(cg, lam.1, rec_eff, fn_names)
             | vra_walk_expr(cg, cy.1, rec_eff, fn_names)
-         vra_truncate_locals(saved_c_locs)
-         vra_truncate_bounded(saved_c_bnds)
-         cy.2 | esc => vra_walk_expr(cg, esc, rec_eff, fn_names)
+         vra_leave_cycle(saved_ranges)
+         cy.2
+            | esc =>
+               esc_ranges = vra_enter_cycle(lam_params)
+               vra_walk_expr(cg, esc, rec_eff, fn_names)
+               vra_leave_cycle(esc_ranges)
          vra_top!
       [Lambda lam]
          saved_locs = vra.locals

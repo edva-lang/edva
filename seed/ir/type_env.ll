@@ -1409,9 +1409,9 @@ a.store:                                          ; preds = %a.grow, %a.check
 
 define i1 @"type_env::is_generic_binding"(ptr %0, ptr %1) #3 {
 entry:
-  %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.n = alloca ptr, align 8
+  %var._ = alloca ptr, align 8
   %loop.step.174 = alloca i64, align 8
   %loop.idx.174 = alloca i64, align 8
   %var.priv = alloca ptr, align 8
@@ -1647,9 +1647,9 @@ loop.body.174:                                    ; preds = %loop.header.174
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data88, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store ptr %slot.i2p, ptr %var._, align 8
   store ptr %slot.i2p, ptr %var.n, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load89 = load i1, ptr %var.has_mod, align 1
   br i1 %var.load89, label %choice.then90, label %choice.else91
 
@@ -1960,9 +1960,9 @@ a.store:                                          ; preds = %a.grow, %a.check
 define i1 @"type_env::is_marked_global"(ptr %0, ptr %1) #3 {
 entry:
   %var.match = alloca i1, align 1
-  %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.n = alloca ptr, align 8
+  %var._ = alloca ptr, align 8
   %loop.step.177 = alloca i64, align 8
   %loop.idx.177 = alloca i64, align 8
   %var.private_name = alloca ptr, align 8
@@ -2248,9 +2248,9 @@ loop.body.177:                                    ; preds = %loop.header.177
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data126, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store ptr %slot.i2p, ptr %var._, align 8
   store ptr %slot.i2p, ptr %var.n, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load127 = load i1, ptr %var.has_mod, align 1
   br i1 %var.load127, label %choice.then128, label %choice.else129
 
@@ -5708,8 +5708,8 @@ entry:
   %var.sc = alloca ptr, align 8
   %var._47 = alloca ptr, align 8
   %var._44 = alloca ptr, align 8
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
+  %var._ = alloca i64, align 8
   %loop.step.189 = alloca i64, align 8
   %loop.idx.189 = alloca i64, align 8
   %var.max_iters = alloca i64, align 8
@@ -5768,8 +5768,8 @@ loop.header.189:                                  ; preds = %loop.latch.189, %a.
 loop.body.189:                                    ; preds = %loop.header.189
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.189, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load9 = load i64, ptr %"var.curr'", align 8
   %var.load10 = load i64, ptr %var.min_scope, align 8
   %cmptmp = icmp slt i64 %var.load9, %var.load10
@@ -5948,9 +5948,9 @@ define ptr @"type_env::lookup_binding_exact"(ptr %0, ptr %1) #3 {
 entry:
   %var.b = alloca ptr, align 8
   %var.i = alloca i64, align 8
-  %var._9 = alloca i64, align 8
   %var._i = alloca i64, align 8
   %var.k = alloca i64, align 8
+  %var._9 = alloca i64, align 8
   %loop.step.190 = alloca i64, align 8
   %loop.idx.190 = alloca i64, align 8
   %"var.g_found'" = alloca ptr, align 8
@@ -6018,9 +6018,9 @@ loop.header.190:                                  ; preds = %loop.latch.190, %a.
 loop.body.190:                                    ; preds = %loop.header.190
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.190, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._9, align 8
   store i64 %counter.load, ptr %var.k, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load10 = load ptr, ptr %var.gls, align 8
   %a.load11 = load ptr, ptr %var.gls, align 8
   %a.null12 = icmp eq ptr %a.load11, null
@@ -6542,9 +6542,9 @@ choice.exit8:                                     ; preds = %choice.else, %choic
 define { i64, ptr } @"type_env::drop_last_dot"(ptr %0) #3 {
 entry:
   %builder.freeze = alloca { i64, ptr }, align 8
-  %var._12 = alloca i64, align 8
   %var._i = alloca i64, align 8
   %var.i = alloca i64, align 8
+  %var._12 = alloca i64, align 8
   %loop.step.194 = alloca i64, align 8
   %loop.idx.194 = alloca i64, align 8
   %var.b = alloca ptr, align 8
@@ -6629,9 +6629,9 @@ loop.header.194:                                  ; preds = %loop.latch.194, %b.
 loop.body.194:                                    ; preds = %loop.header.194
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.194, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._12, align 8
   store i64 %counter.load, ptr %var.i, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %b.load = load ptr, ptr %var.b, align 8
   %var.load13 = load ptr, ptr %var.s, align 8
   %s.read.len = getelementptr inbounds { i64, ptr }, ptr %var.load13, i32 0, i32 0
@@ -6764,9 +6764,9 @@ abort.dead:                                       ; No predecessors!
 
 define i1 @"type_env::init_has_name"(ptr %0, ptr %1) #3 {
 entry:
-  %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.n = alloca ptr, align 8
+  %var._ = alloca ptr, align 8
   %loop.step.195 = alloca i64, align 8
   %loop.idx.195 = alloca i64, align 8
   %var.s = alloca ptr, align 8
@@ -6812,9 +6812,9 @@ loop.body.195:                                    ; preds = %loop.header.195
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data4, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store ptr %slot.i2p, ptr %var._, align 8
   store ptr %slot.i2p, ptr %var.n, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load5 = load ptr, ptr %var.n, align 8
   %var.load6 = load ptr, ptr %var.s, align 8
   %eq.lhs.len = getelementptr inbounds { i64, ptr }, ptr %var.load5, i32 0, i32 0
@@ -7302,9 +7302,9 @@ choice.exit10:                                    ; preds = %choice.else9, %choi
 
 define i1 @"type_env::init_has_subpath"(ptr %0, ptr %1) #3 {
 entry:
-  %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.w = alloca ptr, align 8
+  %var._ = alloca ptr, align 8
   %loop.step.196 = alloca i64, align 8
   %loop.idx.196 = alloca i64, align 8
   %"var.has'" = alloca i1, align 1
@@ -7407,9 +7407,9 @@ loop.body.196:                                    ; preds = %loop.header.196
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data21, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store ptr %slot.i2p, ptr %var._, align 8
   store ptr %slot.i2p, ptr %var.w, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load22 = load ptr, ptr %var.w, align 8
   %str.len.query23 = getelementptr inbounds { i64, ptr }, ptr %var.load22, i32 0, i32 0
   %str.len.query24 = load i64, ptr %str.len.query23, align 8
@@ -7538,21 +7538,21 @@ or.199.exit:                                      ; preds = %or.199.else, %or.19
 
 define ptr @"type_env::init_snapshot"(ptr %0) #3 {
 entry:
-  %var._93 = alloca ptr, align 8
-  %var._i92 = alloca i64, align 8
+  %var._i93 = alloca i64, align 8
   %var.p = alloca ptr, align 8
+  %var._92 = alloca ptr, align 8
   %loop.step.202 = alloca i64, align 8
   %loop.idx.202 = alloca i64, align 8
   %var.wr = alloca ptr, align 8
-  %var._39 = alloca ptr, align 8
-  %var._i38 = alloca i64, align 8
+  %var._i39 = alloca i64, align 8
   %var.w = alloca ptr, align 8
+  %var._38 = alloca ptr, align 8
   %loop.step.201 = alloca i64, align 8
   %loop.idx.201 = alloca i64, align 8
   %var.wh = alloca ptr, align 8
-  %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.t = alloca ptr, align 8
+  %var._ = alloca ptr, align 8
   %loop.step.200 = alloca i64, align 8
   %loop.idx.200 = alloca i64, align 8
   %var.tr = alloca ptr, align 8
@@ -7591,9 +7591,9 @@ loop.body.200:                                    ; preds = %loop.header.200
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data4, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store ptr %slot.i2p, ptr %var._, align 8
   store ptr %slot.i2p, ptr %var.t, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load5 = load ptr, ptr %var.t, align 8
   %a.load = load ptr, ptr %var.tr, align 8
   %a.null = icmp eq ptr %a.load, null
@@ -7685,9 +7685,9 @@ loop.body.201:                                    ; preds = %loop.header.201
   %arr.elem.gep35 = getelementptr i64, ptr %arr.cycle.data31, i64 %counter.load32
   %arr.elem.raw36 = load i64, ptr %arr.elem.gep35, align 8
   %slot.i2p37 = inttoptr i64 %arr.elem.raw36 to ptr
-  store i64 %loop.rel.i34, ptr %var._i38, align 8
-  store ptr %slot.i2p37, ptr %var._39, align 8
+  store ptr %slot.i2p37, ptr %var._38, align 8
   store ptr %slot.i2p37, ptr %var.w, align 8
+  store i64 %loop.rel.i34, ptr %var._i39, align 8
   %var.load40 = load ptr, ptr %var.w, align 8
   %a.load41 = load ptr, ptr %var.wh, align 8
   %a.null42 = icmp eq ptr %a.load41, null
@@ -7779,9 +7779,9 @@ loop.body.202:                                    ; preds = %loop.header.202
   %arr.elem.gep89 = getelementptr i64, ptr %arr.cycle.data85, i64 %counter.load86
   %arr.elem.raw90 = load i64, ptr %arr.elem.gep89, align 8
   %slot.i2p91 = inttoptr i64 %arr.elem.raw90 to ptr
-  store i64 %loop.rel.i88, ptr %var._i92, align 8
-  store ptr %slot.i2p91, ptr %var._93, align 8
+  store ptr %slot.i2p91, ptr %var._92, align 8
   store ptr %slot.i2p91, ptr %var.p, align 8
+  store i64 %loop.rel.i88, ptr %var._i93, align 8
   %var.load94 = load ptr, ptr %var.p, align 8
   %a.load95 = load ptr, ptr %var.wr, align 8
   %a.null96 = icmp eq ptr %a.load95, null
@@ -7916,21 +7916,21 @@ a.after155:                                       ; preds = %a.create154, %a.aft
 
 define ptr @"type_env::init_snapshot_of"(ptr %0) #3 {
 entry:
-  %var._90 = alloca ptr, align 8
-  %var._i89 = alloca i64, align 8
+  %var._i90 = alloca i64, align 8
   %var.p = alloca ptr, align 8
+  %var._89 = alloca ptr, align 8
   %loop.step.205 = alloca i64, align 8
   %loop.idx.205 = alloca i64, align 8
   %var.wr = alloca ptr, align 8
-  %var._37 = alloca ptr, align 8
-  %var._i36 = alloca i64, align 8
+  %var._i37 = alloca i64, align 8
   %var.w = alloca ptr, align 8
+  %var._36 = alloca ptr, align 8
   %loop.step.204 = alloca i64, align 8
   %loop.idx.204 = alloca i64, align 8
   %var.wh = alloca ptr, align 8
-  %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.t = alloca ptr, align 8
+  %var._ = alloca ptr, align 8
   %loop.step.203 = alloca i64, align 8
   %loop.idx.203 = alloca i64, align 8
   %var.tr = alloca ptr, align 8
@@ -7968,9 +7968,9 @@ loop.body.203:                                    ; preds = %loop.header.203
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data3, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store ptr %slot.i2p, ptr %var._, align 8
   store ptr %slot.i2p, ptr %var.t, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load4 = load ptr, ptr %var.t, align 8
   %a.load = load ptr, ptr %var.tr, align 8
   %a.null = icmp eq ptr %a.load, null
@@ -8061,9 +8061,9 @@ loop.body.204:                                    ; preds = %loop.header.204
   %arr.elem.gep33 = getelementptr i64, ptr %arr.cycle.data29, i64 %counter.load30
   %arr.elem.raw34 = load i64, ptr %arr.elem.gep33, align 8
   %slot.i2p35 = inttoptr i64 %arr.elem.raw34 to ptr
-  store i64 %loop.rel.i32, ptr %var._i36, align 8
-  store ptr %slot.i2p35, ptr %var._37, align 8
+  store ptr %slot.i2p35, ptr %var._36, align 8
   store ptr %slot.i2p35, ptr %var.w, align 8
+  store i64 %loop.rel.i32, ptr %var._i37, align 8
   %var.load38 = load ptr, ptr %var.w, align 8
   %a.load39 = load ptr, ptr %var.wh, align 8
   %a.null40 = icmp eq ptr %a.load39, null
@@ -8154,9 +8154,9 @@ loop.body.205:                                    ; preds = %loop.header.205
   %arr.elem.gep86 = getelementptr i64, ptr %arr.cycle.data82, i64 %counter.load83
   %arr.elem.raw87 = load i64, ptr %arr.elem.gep86, align 8
   %slot.i2p88 = inttoptr i64 %arr.elem.raw87 to ptr
-  store i64 %loop.rel.i85, ptr %var._i89, align 8
-  store ptr %slot.i2p88, ptr %var._90, align 8
+  store ptr %slot.i2p88, ptr %var._89, align 8
   store ptr %slot.i2p88, ptr %var.p, align 8
+  store i64 %loop.rel.i85, ptr %var._i90, align 8
   %var.load91 = load ptr, ptr %var.p, align 8
   %a.load92 = load ptr, ptr %var.wr, align 8
   %a.null93 = icmp eq ptr %a.load92, null
@@ -8304,26 +8304,26 @@ entry:
 
 define ptr @"type_env::init_merge_two"(ptr %0, ptr %1) #3 {
 entry:
-  %var._157 = alloca ptr, align 8
-  %var._i156 = alloca i64, align 8
+  %var._i157 = alloca i64, align 8
   %var.path = alloca ptr, align 8
+  %var._156 = alloca ptr, align 8
   %loop.step.209 = alloca i64, align 8
   %loop.idx.209 = alloca i64, align 8
   %var.wr = alloca ptr, align 8
-  %var._97 = alloca ptr, align 8
-  %var._i96 = alloca i64, align 8
+  %var._i97 = alloca i64, align 8
   %var.name = alloca ptr, align 8
+  %var._96 = alloca ptr, align 8
   %loop.step.208 = alloca i64, align 8
   %loop.idx.208 = alloca i64, align 8
   %var.wh = alloca ptr, align 8
-  %var._30 = alloca ptr, align 8
-  %var._i29 = alloca i64, align 8
+  %var._i30 = alloca i64, align 8
   %var.t2 = alloca ptr, align 8
+  %var._29 = alloca ptr, align 8
   %loop.step.207 = alloca i64, align 8
   %loop.idx.207 = alloca i64, align 8
-  %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.t = alloca ptr, align 8
+  %var._ = alloca ptr, align 8
   %loop.step.206 = alloca i64, align 8
   %loop.idx.206 = alloca i64, align 8
   %var.tr = alloca ptr, align 8
@@ -8363,9 +8363,9 @@ loop.body.206:                                    ; preds = %loop.header.206
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data3, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store ptr %slot.i2p, ptr %var._, align 8
   store ptr %slot.i2p, ptr %var.t, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load4 = load ptr, ptr %var.t, align 8
   %a.load = load ptr, ptr %var.tr, align 8
   %a.null = icmp eq ptr %a.load, null
@@ -8445,9 +8445,9 @@ loop.body.207:                                    ; preds = %loop.header.207
   %arr.elem.gep26 = getelementptr i64, ptr %arr.cycle.data22, i64 %counter.load23
   %arr.elem.raw27 = load i64, ptr %arr.elem.gep26, align 8
   %slot.i2p28 = inttoptr i64 %arr.elem.raw27 to ptr
-  store i64 %loop.rel.i25, ptr %var._i29, align 8
-  store ptr %slot.i2p28, ptr %var._30, align 8
+  store ptr %slot.i2p28, ptr %var._29, align 8
   store ptr %slot.i2p28, ptr %var.t2, align 8
+  store i64 %loop.rel.i25, ptr %var._i30, align 8
   %var.load31 = load ptr, ptr %var.tr, align 8
   %a.load32 = load ptr, ptr %var.tr, align 8
   %a.null33 = icmp eq ptr %a.load32, null
@@ -8568,9 +8568,9 @@ loop.body.208:                                    ; preds = %loop.header.208
   %arr.elem.gep93 = getelementptr i64, ptr %arr.cycle.data89, i64 %counter.load90
   %arr.elem.raw94 = load i64, ptr %arr.elem.gep93, align 8
   %slot.i2p95 = inttoptr i64 %arr.elem.raw94 to ptr
-  store i64 %loop.rel.i92, ptr %var._i96, align 8
-  store ptr %slot.i2p95, ptr %var._97, align 8
+  store ptr %slot.i2p95, ptr %var._96, align 8
   store ptr %slot.i2p95, ptr %var.name, align 8
+  store i64 %loop.rel.i92, ptr %var._i97, align 8
   %var.load98 = load ptr, ptr %var.b, align 8
   %fld.gep99 = getelementptr inbounds { ptr, ptr, ptr }, ptr %var.load98, i32 0, i32 1
   %fld.load100 = load ptr, ptr %fld.gep99, align 8
@@ -8672,9 +8672,9 @@ loop.body.209:                                    ; preds = %loop.header.209
   %arr.elem.gep153 = getelementptr i64, ptr %arr.cycle.data149, i64 %counter.load150
   %arr.elem.raw154 = load i64, ptr %arr.elem.gep153, align 8
   %slot.i2p155 = inttoptr i64 %arr.elem.raw154 to ptr
-  store i64 %loop.rel.i152, ptr %var._i156, align 8
-  store ptr %slot.i2p155, ptr %var._157, align 8
+  store ptr %slot.i2p155, ptr %var._156, align 8
   store ptr %slot.i2p155, ptr %var.path, align 8
+  store i64 %loop.rel.i152, ptr %var._i157, align 8
   %var.load158 = load ptr, ptr %var.b, align 8
   %fld.gep159 = getelementptr inbounds { ptr, ptr, ptr }, ptr %var.load158, i32 0, i32 2
   %fld.load160 = load ptr, ptr %fld.gep159, align 8
@@ -8822,9 +8822,9 @@ define i1 @"type_env::init_is_fully_init"(ptr %0, ptr %1, ptr %2) #3 {
 entry:
   %var.path = alloca ptr, align 8
   %concat.str = alloca { i64, ptr }, align 8
-  %var._13 = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.f = alloca ptr, align 8
+  %var._13 = alloca ptr, align 8
   %loop.step.211 = alloca i64, align 8
   %loop.idx.211 = alloca i64, align 8
   %"var.all_wr'" = alloca i1, align 1
@@ -8914,7 +8914,6 @@ a.after:                                          ; preds = %a.create, %choice.c
   %arr.cycle.data = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2, i32 0, i32 1
   %arr.cycle.data12 = load ptr, ptr %arr.cycle.data, align 8
   store i64 0, ptr %loop.idx.211, align 8
-  %cycle.prev.u = load ptr, ptr %var._, align 8
   br label %loop.header.211
 
 loop.header.211:                                  ; preds = %loop.latch.211, %a.after
@@ -8928,9 +8927,9 @@ loop.body.211:                                    ; preds = %loop.header.211
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data12, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store ptr %slot.i2p, ptr %var._13, align 8
   store ptr %slot.i2p, ptr %var.f, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load14 = load ptr, ptr %var.f, align 8
   %fld.gep15 = getelementptr inbounds { ptr, ptr, ptr }, ptr %var.load14, i32 0, i32 0
   %fld.load16 = load ptr, ptr %fld.gep15, align 8
@@ -8952,7 +8951,6 @@ loop.latch.211:                                   ; preds = %choice.exit22
   br label %loop.header.211
 
 loop.exit.211:                                    ; preds = %choice.then59, %loop.exit.nat.211
-  store ptr %cycle.prev.u, ptr %var._, align 8
   %var.load61 = load i1, ptr %"var.all_wr'", align 1
   br label %choice.exit7
 
@@ -9177,9 +9175,9 @@ define { i1, i64 } @"type_env::lookup_generic_exact"(ptr %0, ptr %1) #3 {
 entry:
   %var.g = alloca ptr, align 8
   %var.i = alloca i64, align 8
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
   %var.k = alloca i64, align 8
+  %var._ = alloca i64, align 8
   %loop.step.214 = alloca i64, align 8
   %loop.idx.214 = alloca i64, align 8
   %"var.res'" = alloca { i1, i64 }, align 8
@@ -9204,9 +9202,9 @@ loop.header.214:                                  ; preds = %loop.latch.214, %en
 loop.body.214:                                    ; preds = %loop.header.214
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.214, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
   store i64 %counter.load, ptr %var.k, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load2 = load ptr, ptr %var.env, align 8
   %fld.gep3 = getelementptr inbounds { ptr, i64, i64, ptr, { ptr, ptr, ptr }, ptr, ptr, ptr, ptr, i1, i1, i1, i1, ptr, ptr, { i1, i64 }, ptr }, ptr %var.load2, i32 0, i32 5
   %fld.load4 = load ptr, ptr %fld.gep3, align 8
@@ -9954,9 +9952,9 @@ define ptr @"type_env::lookup_user_type_exact"(ptr %0, ptr %1) #3 {
 entry:
   %var.u = alloca ptr, align 8
   %var.i = alloca i64, align 8
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
   %var.k = alloca i64, align 8
+  %var._ = alloca i64, align 8
   %loop.step.219 = alloca i64, align 8
   %loop.idx.219 = alloca i64, align 8
   %"var.res'" = alloca ptr, align 8
@@ -9981,9 +9979,9 @@ loop.header.219:                                  ; preds = %loop.latch.219, %en
 loop.body.219:                                    ; preds = %loop.header.219
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.219, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
   store i64 %counter.load, ptr %var.k, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load2 = load ptr, ptr %var.env, align 8
   %fld.gep3 = getelementptr inbounds { ptr, i64, i64, ptr, { ptr, ptr, ptr }, ptr, ptr, ptr, ptr, i1, i1, i1, i1, ptr, ptr, { i1, i64 }, ptr }, ptr %var.load2, i32 0, i32 6
   %fld.load4 = load ptr, ptr %fld.gep3, align 8

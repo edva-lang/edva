@@ -340,8 +340,8 @@ entry:
   %var.w = alloca i64, align 8
   %var.buf_addr = alloca ptr, align 8
   %var.rem = alloca i64, align 8
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
+  %var._ = alloca i64, align 8
   %loop.step.58 = alloca i64, align 8
   %loop.idx.58 = alloca i64, align 8
   %"var.off'" = alloca i64, align 8
@@ -392,8 +392,8 @@ loop.header.58:                                   ; preds = %loop.latch.58, %cho
 loop.body.58:                                     ; preds = %loop.header.58
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.58, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load4 = load i64, ptr %"var.off'", align 8
   %var.load5 = load i64, ptr %var.total, align 8
   %cmptmp = icmp sge i64 %var.load4, %var.load5
@@ -564,8 +564,8 @@ entry:
   %var.p2 = alloca ptr, align 8
   %var.p1 = alloca ptr, align 8
   %var.rem1 = alloca i64, align 8
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
+  %var._ = alloca i64, align 8
   %loop.step.59 = alloca i64, align 8
   %loop.idx.59 = alloca i64, align 8
   %"var.off'" = alloca i64, align 8
@@ -641,8 +641,8 @@ loop.header.59:                                   ; preds = %loop.latch.59, %cho
 loop.body.59:                                     ; preds = %loop.header.59
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.59, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load17 = load i64, ptr %"var.off'", align 8
   %var.load18 = load i64, ptr %var.total, align 8
   %cmptmp = icmp sge i64 %var.load17, %var.load18
@@ -852,8 +852,8 @@ entry:
   %var.errno_val = alloca i64, align 8
   %var.n = alloca i64, align 8
   %var.cur = alloca i64, align 8
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
+  %var._ = alloca i64, align 8
   %loop.step.60 = alloca i64, align 8
   %loop.idx.60 = alloca i64, align 8
   %"var.n'" = alloca i64, align 8
@@ -984,8 +984,8 @@ loop.header.60:                                   ; preds = %loop.latch.60, %cho
 loop.body.60:                                     ; preds = %loop.header.60
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.60, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load48 = load ptr, ptr %var.buf, align 8
   %b.len49 = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load48, i32 0, i32 0
   %b.len50 = load i64, ptr %b.len49, align 8
@@ -1404,8 +1404,8 @@ entry:
   %var.cur = alloca i64, align 8
   %var.to_read = alloca i64, align 8
   %var.rem = alloca i64, align 8
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
+  %var._ = alloca i64, align 8
   %loop.step.62 = alloca i64, align 8
   %loop.idx.62 = alloca i64, align 8
   %var.chunk = alloca i64, align 8
@@ -1609,8 +1609,8 @@ loop.header.62:                                   ; preds = %loop.latch.62, %cho
 loop.body.62:                                     ; preds = %loop.header.62
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.62, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load56 = load i64, ptr %var.max, align 8
   %var.load57 = load ptr, ptr %var.res_b, align 8
   %b.len58 = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load57, i32 0, i32 0
@@ -1923,9 +1923,9 @@ entry:
   %builder.freeze320 = alloca { i64, ptr }, align 8
   %var.has_delim = alloca i1, align 1
   %builder.freeze148 = alloca { i64, ptr }, align 8
-  %var._51 = alloca i64, align 8
-  %var._i50 = alloca i64, align 8
+  %var._i51 = alloca i64, align 8
   %var.i = alloca i64, align 8
+  %var._50 = alloca i64, align 8
   %loop.step.65 = alloca i64, align 8
   %loop.idx.65 = alloca i64, align 8
   %"var.found_idx'" = alloca i64, align 8
@@ -1934,8 +1934,8 @@ entry:
   %builder.freeze = alloca { i64, ptr }, align 8
   %var.rem_budget = alloca i64, align 8
   %var.n = alloca i64, align 8
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
+  %var._ = alloca i64, align 8
   %loop.step.64 = alloca i64, align 8
   %loop.idx.64 = alloca i64, align 8
   %var.out = alloca ptr, align 8
@@ -1997,8 +1997,8 @@ loop.header.64:                                   ; preds = %loop.latch.64, %b.b
 loop.body.64:                                     ; preds = %loop.header.64
   %loop.rel.i = sub i64 %counter.load, 0
   store i64 1, ptr %loop.step.64, align 8
-  store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
   %var.load4 = load ptr, ptr %var.r, align 8
   %fld.gep = getelementptr inbounds { i64, ptr, i64, i64, i64, i1 }, ptr %var.load4, i32 0, i32 2
   %fld.load = load i64, ptr %fld.gep, align 8
@@ -2146,8 +2146,6 @@ choice.exit44:                                    ; preds = %choice.else43, %cho
   store i64 -1, ptr %"var.found_idx'", align 8
   %var.load47 = load i64, ptr %var.scan_count, align 8
   store i64 0, ptr %loop.idx.65, align 8
-  %cycle.prev.u = load i64, ptr %var._, align 8
-  %cycle.prev.i = load i64, ptr %var._i, align 8
   br label %loop.header.65
 
 loop.header.65:                                   ; preds = %loop.latch.65, %choice.exit44
@@ -2158,9 +2156,9 @@ loop.header.65:                                   ; preds = %loop.latch.65, %cho
 loop.body.65:                                     ; preds = %loop.header.65
   %loop.rel.i49 = sub i64 %counter.load48, 0
   store i64 1, ptr %loop.step.65, align 8
-  store i64 %loop.rel.i49, ptr %var._i50, align 8
-  store i64 %counter.load48, ptr %var._51, align 8
+  store i64 %counter.load48, ptr %var._50, align 8
   store i64 %counter.load48, ptr %var.i, align 8
+  store i64 %loop.rel.i49, ptr %var._i51, align 8
   %var.load52 = load ptr, ptr %var.r, align 8
   %fld.gep53 = getelementptr inbounds { i64, ptr, i64, i64, i64, i1 }, ptr %var.load52, i32 0, i32 1
   %fld.load54 = load ptr, ptr %fld.gep53, align 8
@@ -2186,8 +2184,6 @@ loop.latch.65:                                    ; preds = %choice.exit65
   br label %loop.header.65
 
 loop.exit.65:                                     ; preds = %choice.then64, %loop.exit.nat.65
-  store i64 %cycle.prev.u, ptr %var._, align 8
-  store i64 %cycle.prev.i, ptr %var._i, align 8
   %var.load67 = load i64, ptr %"var.found_idx'", align 8
   %cmptmp68 = icmp sge i64 %var.load67, 0
   br i1 %cmptmp68, label %choice.then69, label %choice.else70
