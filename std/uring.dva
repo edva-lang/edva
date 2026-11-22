@@ -370,9 +370,8 @@
       n == 0 | --| <+ outs' ->
       scratch = {n * 4096}
       active' = 0
-      n @ i =>
+      fds @ fd, i =>
          outs' += ""
-         fd = fds(i)!!
          fd !< 0
             |
                prep_pipe_read(ring, fd, &scratch + i * 4096, 4096, i)
@@ -392,9 +391,10 @@
                         %memcpy(dst, &scratch + idx * 4096, avail)
                         avail
                      ))
-                     prev = outs'(idx)!!
+                     prev = outs'(idx) |_| ""
                      outs'(idx) = prev + (+b)
-                     fd = fds(idx)!!
+                     fd = fds(idx) |_| -1
+                     fd < 0 | --| <- "Missing pipe descriptor" +>
                      prep_pipe_read(ring, fd, &scratch + idx * 4096, 4096, idx)
                   | active' = active' - 1
       <+ outs' ->

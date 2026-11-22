@@ -4987,9 +4987,26 @@ codegen_typed_build_union = cg, tid, pay_opt, alloc_name =>
          LLVMBuildStore(cg.builder, LLVMConstNull(i8p), pgep)
    up
 
+// A nonempty address must be distinguishable from the empty niche.
+check_present_addr: types::Cg, Addr => ()
+check_present_addr = cg, value =>
+   zero = LLVMConstNull(LLVMTypeOf(value))
+   value == zero
+      |
+         types::init_error(cg, "E3178", "Null Addr cannot be present. Use <-->.", 0, 0)
+         --|
+   fail = LLVMAppendBasicBlock(cg.current_fn, "addr.null")
+   present = LLVMAppendBasicBlock(cg.current_fn, "addr.present")
+   is_null = LLVMBuildICmp(cg.builder, 32, value, zero, "addr.is.null")
+   LLVMBuildCondBr(cg.builder, is_null, fail, present)
+   LLVMPositionBuilderAtEnd(cg.builder, fail)
+   runtime::emit_abort_msg(cg, "E4014: null Addr in a present optional address\n", "null_addr")
+   LLVMBuildUnreachable(cg.builder)
+   LLVMPositionBuilderAtEnd(cg.builder, present)
+
 codegen_niche_ram_construct: types::Cg, <>, <>,
-  <tast::TypedExpr|> => (Addr, ast::ValueType)
-codegen_niche_ram_construct = cg, is_pos, is_pn, pay_opt =>
+  ast::ValueType, <tast::TypedExpr|> => (Addr, ast::ValueType)
+codegen_niche_ram_construct = cg, is_pos, is_pn, payload_vt, pay_opt =>
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    is_same = is_pos == is_pn
    is_same
@@ -5001,6 +5018,7 @@ codegen_niche_ram_construct = cg, is_pos, is_pn, pay_opt =>
                   | pv => LLVMBuildPointerCast(cg.builder, pv,
                     i8p, "niche.ptr")
                   | LLVMConstNull(i8p)
+               payload_vt [RawPtr] | check_present_addr(cg, ptr_val)
                (ptr_val, ast::ValueType(Ram))
             | (LLVMConstNull(i8p), ast::ValueType(Ram))
       | (LLVMConstNull(i8p), ast::ValueType(Ram))

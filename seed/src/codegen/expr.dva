@@ -1250,12 +1250,15 @@ codegen_materialize_zero = cg, ti =>
          !slots.0.has_payload && !slots.1.has_payload
             | (LLVMConstInt(LLVMInt1Type!, 0, 0), ast::ValueType(Flag))
             |
-               is_np = !slots.0.has_payload && slots.1.has_payload
-               tag = is_np | 1 | 3
-               u' = types::codegen_build_union(cg, tag, ast::Exprs(),
-                 "zero.ram")
-               tname != "" | cg.last_type = tname
-               (u', ast::ValueType(Ram))
+               niche = types::is_niche_ram_ti(cg, ti)
+               niche.0 && niche.1 && (niche.2 [RawPtr])
+                  | (LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0)), ast::ValueType(Ram))
+                  |
+                     is_np = !slots.0.has_payload && slots.1.has_payload
+                     tag = is_np | 1 | 3
+                     u' = types::codegen_build_union(cg, tag, ast::Exprs(), "zero.ram")
+                     tname != "" | cg.last_type = tname
+                     (u', ast::ValueType(Ram))
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 codegen_materialize_ti: types::Cg, ast::TypeInfo, String => < (Addr, ast::ValueType) | >
@@ -7389,7 +7392,9 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
             arg_e' = args(j) | _ | tast::mk_lit_unit(0, 0)
             aev' = eval_call_arg_sync_clo(cg, rname, r_i, arg_e')
             is_str' = is_for' && types::is_str_vt(aev'.1)
-            is_ptr' = is_for' && types::is_ptr_vt(aev'.1)
+            optional_addr = types::is_niche_ram_ti(cg, arg_e'.ti)
+            is_ptr' = is_for' && (types::is_ptr_vt(aev'.1) ||
+               (optional_addr.0 && (optional_addr.2 [RawPtr])))
             a0' = is_str'
                | codegen_ensure_nul_terminated(cg, aev'.0, "arg.str.ptr")
                | (is_ptr' | clean_untagged_addr(cg, aev'.0) | aev'.0)
@@ -7465,7 +7470,9 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
             arg_e' = args(j) | _ | tast::mk_lit_unit(0, 0)
             aev' = eval_call_arg_sync_clo(cg, rname, j, arg_e')
             is_str' = is_for' && types::is_str_vt(aev'.1)
-            is_ptr' = is_for' && types::is_ptr_vt(aev'.1)
+            optional_addr = types::is_niche_ram_ti(cg, arg_e'.ti)
+            is_ptr' = is_for' && (types::is_ptr_vt(aev'.1) ||
+               (optional_addr.0 && (optional_addr.2 [RawPtr])))
             a0' = is_str'
                | codegen_ensure_nul_terminated(cg, aev'.0, "arg.str.ptr")
                | (is_ptr' | clean_untagged_addr(cg, aev'.0) | aev'.0)

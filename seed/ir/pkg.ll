@@ -13,7 +13,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.pkg::hex_digits" = global ptr null
 @"var.version::VERSION" = external global ptr
 @"var.version::COMMIT_HASH" = external global ptr
-@str.0 = internal unnamed_addr constant [20 x i8] c"1.6.3+3237d0a-dirty\00"
+@str.0 = internal unnamed_addr constant [20 x i8] c"1.6.3+8c6371a-dirty\00"
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 19, ptr @str.0 }
 @"var.pkg::lang_version" = global ptr null
 @b_byte_msg = internal unnamed_addr constant [58 x i8] c"E4007: Builder append byte out of range (must be 0..255)\0A\00"
@@ -1465,9 +1465,9 @@ nulcopy:                                          ; preds = %str_ok
 nulmerge:                                         ; preds = %str_ok, %nulcopy.len6
   %arg.str.ptr7 = phi ptr [ %nulcopy.buf, %nulcopy.len6 ], [ %arg.str.ptr1, %str_ok ]
   %call.res = call ptr @getenv(ptr %arg.str.ptr7)
-  %call.res8 = call { i1, i64 } @"sys::addr_opt"(ptr %call.res)
-  %ram.tag = extractvalue { i1, i64 } %call.res8, 0
-  br i1 %ram.tag, label %choice.then, label %choice.exit
+  %call.res8 = call ptr @"sys::addr_opt"(ptr %call.res)
+  %niche.ne.null = icmp ne ptr %call.res8, null
+  br i1 %niche.ne.null, label %choice.then, label %choice.exit
 
 nulcopy.len6:                                     ; preds = %nulcopy
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
@@ -1482,9 +1482,7 @@ str_overflow_abort:                               ; preds = %nulcopy
   unreachable
 
 choice.then:                                      ; preds = %nulmerge
-  %ram.pay = extractvalue { i1, i64 } %call.res8, 1
-  %pay.ptr = inttoptr i64 %ram.pay to ptr
-  %call.res10 = call { i64, ptr } @"sys::c_str"(ptr %pay.ptr)
+  %call.res10 = call { i64, ptr } @"sys::c_str"(ptr %call.res8)
   %arena.cur11 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc = call ptr @dva_arena_alloc(ptr %arena.cur11, i64 16)
   store { i64, ptr } %call.res10, ptr %ret.ub.alloc, align 8
@@ -1527,7 +1525,7 @@ entry:
   unreachable
 }
 
-declare { i1, i64 } @"sys::addr_opt"(ptr) #3
+declare ptr @"sys::addr_opt"(ptr) #3
 
 declare { i64, ptr } @"sys::c_str"(ptr) #3
 

@@ -27,56 +27,59 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.mem::is_aligned" = global ptr null
 @clo.const.10 = internal constant { ptr, ptr } { ptr @"mem::current", ptr null }
 @"var.mem::current" = global ptr null
-@clo.const.11 = internal constant { ptr, ptr } { ptr @"mem::set_current", ptr null }
+@clo.const.11 = internal constant { ptr, ptr } { ptr @"mem::set_global", ptr null }
+@null_addr = internal unnamed_addr constant [48 x i8] c"E4014: null Addr in a present optional address\0A\00"
+@clo.const.12 = internal constant { ptr, ptr } { ptr @"mem::set_current", ptr null }
 @"var.mem::set_current" = global ptr null
-@clo.const.12 = internal constant { ptr, ptr } { ptr @"mem::save", ptr null }
+@"var.mem::set_global" = global ptr null
+@clo.const.13 = internal constant { ptr, ptr } { ptr @"mem::save", ptr null }
 @"var.mem::save" = global ptr null
-@clo.const.13 = internal constant { ptr, ptr } { ptr @"mem::restore_to", ptr null }
+@clo.const.14 = internal constant { ptr, ptr } { ptr @"mem::restore_to", ptr null }
 @"var.mem::restore_to" = global ptr null
-@clo.const.14 = internal constant { ptr, ptr } { ptr @"mem::arena", ptr null }
+@clo.const.15 = internal constant { ptr, ptr } { ptr @"mem::arena", ptr null }
 @"var.mem::arena" = global ptr null
-@clo.const.15 = internal constant { ptr, ptr } { ptr @"mem::arena_default", ptr null }
+@clo.const.16 = internal constant { ptr, ptr } { ptr @"mem::arena_default", ptr null }
 @"var.mem::arena_default" = global ptr null
-@clo.const.16 = internal constant { ptr, ptr } { ptr @"mem::alloc", ptr null }
+@clo.const.17 = internal constant { ptr, ptr } { ptr @"mem::alloc", ptr null }
 @"var.mem::alloc" = global ptr null
-@clo.const.17 = internal constant { ptr, ptr } { ptr @"mem::reset", ptr null }
+@clo.const.18 = internal constant { ptr, ptr } { ptr @"mem::reset", ptr null }
 @"var.mem::reset" = global ptr null
-@clo.const.18 = internal constant { ptr, ptr } { ptr @"mem::release", ptr null }
+@clo.const.19 = internal constant { ptr, ptr } { ptr @"mem::release", ptr null }
 @"var.mem::release" = global ptr null
-@clo.const.19 = internal constant { ptr, ptr } { ptr @"mem::destroy", ptr null }
+@clo.const.20 = internal constant { ptr, ptr } { ptr @"mem::destroy", ptr null }
 @"var.mem::destroy" = global ptr null
-@clo.const.20 = internal constant { ptr, ptr } { ptr @"mem::stats", ptr null }
+@clo.const.21 = internal constant { ptr, ptr } { ptr @"mem::stats", ptr null }
 @"var.mem::stats" = global ptr null
 @stale_addr_msg = internal unnamed_addr constant [51 x i8] c"E4011: stale Addr dereference after arena restore\0A\00"
-@clo.const.21 = internal constant { ptr, ptr } { ptr @"mem::global_arena", ptr null }
+@clo.const.22 = internal constant { ptr, ptr } { ptr @"mem::global_arena", ptr null }
 @"var.mem::global_arena" = global ptr null
-@clo.const.22 = internal constant { ptr, ptr } { ptr @"mem::provenance", ptr null }
+@clo.const.23 = internal constant { ptr, ptr } { ptr @"mem::provenance", ptr null }
 @"var.mem::provenance" = global ptr null
-@clo.const.23 = internal constant { ptr, ptr } { ptr @"mem::current_provenance", ptr null }
+@clo.const.24 = internal constant { ptr, ptr } { ptr @"mem::current_provenance", ptr null }
 @"var.mem::current_provenance" = global ptr null
-@clo.const.24 = internal constant { ptr, ptr } { ptr @"mem::owns_addr", ptr null }
+@clo.const.25 = internal constant { ptr, ptr } { ptr @"mem::owns_addr", ptr null }
 @"var.mem::owns_addr" = global ptr null
-@clo.const.25 = internal constant { ptr, ptr } { ptr @"mem::with", ptr null }
+@clo.const.26 = internal constant { ptr, ptr } { ptr @"mem::with", ptr null }
 @"var.mem::with" = global ptr null
-@clo.const.26 = internal constant { ptr, ptr } { ptr @"mem::escape", ptr null }
+@clo.const.27 = internal constant { ptr, ptr } { ptr @"mem::escape", ptr null }
 @"var.mem::escape" = global ptr null
-@clo.const.27 = internal constant { ptr, ptr } { ptr @"mem::pool", ptr null }
+@clo.const.28 = internal constant { ptr, ptr } { ptr @"mem::pool", ptr null }
 @"var.mem::pool" = global ptr null
-@clo.const.28 = internal constant { ptr, ptr } { ptr @"mem::pool_count", ptr null }
+@clo.const.29 = internal constant { ptr, ptr } { ptr @"mem::pool_count", ptr null }
 @"var.mem::pool_count" = global ptr null
-@clo.const.29 = internal constant { ptr, ptr } { ptr @"mem::pool_capacity", ptr null }
+@clo.const.30 = internal constant { ptr, ptr } { ptr @"mem::pool_capacity", ptr null }
 @"var.mem::pool_capacity" = global ptr null
-@clo.const.30 = internal constant { ptr, ptr } { ptr @"mem::pool_alloc", ptr null }
+@clo.const.31 = internal constant { ptr, ptr } { ptr @"mem::pool_alloc", ptr null }
 @"var.mem::pool_alloc" = global ptr null
 @div_zero_msg = internal unnamed_addr constant [33 x i8] c"E4012: integer division by zero\0A\00"
 @div_ovf_msg = internal unnamed_addr constant [56 x i8] c"E4013: signed integer division overflow (INT_MIN / -1)\0A\00"
-@clo.const.31 = internal constant { ptr, ptr } { ptr @"mem::pool_free", ptr null }
+@clo.const.32 = internal constant { ptr, ptr } { ptr @"mem::pool_free", ptr null }
 @"var.mem::pool_free" = global ptr null
-@clo.const.32 = internal constant { ptr, ptr } { ptr @"mem::pool_destroy", ptr null }
+@clo.const.33 = internal constant { ptr, ptr } { ptr @"mem::pool_destroy", ptr null }
 @"var.mem::pool_destroy" = global ptr null
-@clo.const.33 = internal constant { ptr, ptr } { ptr @"mem::pool_for_each", ptr null }
+@clo.const.34 = internal constant { ptr, ptr } { ptr @"mem::pool_for_each", ptr null }
 @"var.mem::pool_for_each" = global ptr null
-@clo.const.34 = internal constant { ptr, ptr } { ptr @"mem::index_byte", ptr null }
+@clo.const.35 = internal constant { ptr, ptr } { ptr @"mem::index_byte", ptr null }
 @"var.mem::index_byte" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_mem, ptr null }]
 
@@ -158,30 +161,31 @@ entry:
   store ptr @clo.const.8, ptr @"var.mem::align_forward", align 8
   store ptr @clo.const.9, ptr @"var.mem::is_aligned", align 8
   store ptr @clo.const.10, ptr @"var.mem::current", align 8
-  store ptr @clo.const.11, ptr @"var.mem::set_current", align 8
-  store ptr @clo.const.12, ptr @"var.mem::save", align 8
-  store ptr @clo.const.13, ptr @"var.mem::restore_to", align 8
-  store ptr @clo.const.14, ptr @"var.mem::arena", align 8
-  store ptr @clo.const.15, ptr @"var.mem::arena_default", align 8
-  store ptr @clo.const.16, ptr @"var.mem::alloc", align 8
-  store ptr @clo.const.17, ptr @"var.mem::reset", align 8
-  store ptr @clo.const.18, ptr @"var.mem::release", align 8
-  store ptr @clo.const.19, ptr @"var.mem::destroy", align 8
-  store ptr @clo.const.20, ptr @"var.mem::stats", align 8
-  store ptr @clo.const.21, ptr @"var.mem::global_arena", align 8
-  store ptr @clo.const.22, ptr @"var.mem::provenance", align 8
-  store ptr @clo.const.23, ptr @"var.mem::current_provenance", align 8
-  store ptr @clo.const.24, ptr @"var.mem::owns_addr", align 8
-  store ptr @clo.const.25, ptr @"var.mem::with", align 8
-  store ptr @clo.const.26, ptr @"var.mem::escape", align 8
-  store ptr @clo.const.27, ptr @"var.mem::pool", align 8
-  store ptr @clo.const.28, ptr @"var.mem::pool_count", align 8
-  store ptr @clo.const.29, ptr @"var.mem::pool_capacity", align 8
-  store ptr @clo.const.30, ptr @"var.mem::pool_alloc", align 8
-  store ptr @clo.const.31, ptr @"var.mem::pool_free", align 8
-  store ptr @clo.const.32, ptr @"var.mem::pool_destroy", align 8
-  store ptr @clo.const.33, ptr @"var.mem::pool_for_each", align 8
-  store ptr @clo.const.34, ptr @"var.mem::index_byte", align 8
+  store ptr @clo.const.12, ptr @"var.mem::set_current", align 8
+  store ptr @clo.const.11, ptr @"var.mem::set_global", align 8
+  store ptr @clo.const.13, ptr @"var.mem::save", align 8
+  store ptr @clo.const.14, ptr @"var.mem::restore_to", align 8
+  store ptr @clo.const.15, ptr @"var.mem::arena", align 8
+  store ptr @clo.const.16, ptr @"var.mem::arena_default", align 8
+  store ptr @clo.const.17, ptr @"var.mem::alloc", align 8
+  store ptr @clo.const.18, ptr @"var.mem::reset", align 8
+  store ptr @clo.const.19, ptr @"var.mem::release", align 8
+  store ptr @clo.const.20, ptr @"var.mem::destroy", align 8
+  store ptr @clo.const.21, ptr @"var.mem::stats", align 8
+  store ptr @clo.const.22, ptr @"var.mem::global_arena", align 8
+  store ptr @clo.const.23, ptr @"var.mem::provenance", align 8
+  store ptr @clo.const.24, ptr @"var.mem::current_provenance", align 8
+  store ptr @clo.const.25, ptr @"var.mem::owns_addr", align 8
+  store ptr @clo.const.26, ptr @"var.mem::with", align 8
+  store ptr @clo.const.27, ptr @"var.mem::escape", align 8
+  store ptr @clo.const.28, ptr @"var.mem::pool", align 8
+  store ptr @clo.const.29, ptr @"var.mem::pool_count", align 8
+  store ptr @clo.const.30, ptr @"var.mem::pool_capacity", align 8
+  store ptr @clo.const.31, ptr @"var.mem::pool_alloc", align 8
+  store ptr @clo.const.32, ptr @"var.mem::pool_free", align 8
+  store ptr @clo.const.33, ptr @"var.mem::pool_destroy", align 8
+  store ptr @clo.const.34, ptr @"var.mem::pool_for_each", align 8
+  store ptr @clo.const.35, ptr @"var.mem::index_byte", align 8
   ret void
 }
 
@@ -296,11 +300,37 @@ entry:
 
 define ptr @"mem::set_current"(ptr %0) #0 {
 entry:
-  %addr.ffi.int = ptrtoint ptr %0 to i64
-  %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
+  %coerce.ptr2int = ptrtoint ptr %0 to i64
+  %cmptmp = icmp eq i64 %coerce.ptr2int, 0
+  br i1 %cmptmp, label %choice.then, label %addr.present
+
+choice.then:                                      ; preds = %entry
+  %call.res = call ptr @"mem::set_global"()
+  br label %choice.exit
+
+choice.exit:                                      ; preds = %addr.present, %choice.then
+  %choice.res = phi ptr [ %call.res, %choice.then ], [ %call.res2, %addr.present ]
+  ret ptr %choice.res
+
+addr.present:                                     ; preds = %entry
+  %addr.ffi.masked = and i64 %coerce.ptr2int, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
-  %call.res = call ptr @dva_arena_set_current(ptr %addr.ffi.clean)
+  %call.res2 = call ptr @dva_arena_set_current(ptr %addr.ffi.clean)
+  br label %choice.exit
+}
+
+define ptr @"mem::set_global"() #0 {
+entry:
+  %call.res = call ptr @dva_arena_set_current(ptr null)
   ret ptr %call.res
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_null_addr() #6 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @null_addr, i64 47)
+  call void @exit(i32 1)
+  unreachable
 }
 
 define i64 @"mem::save"(ptr %0) #0 {
@@ -444,7 +474,7 @@ choice.exit:                                      ; preds = %entry, %choice.then
 
 define { ptr, i64 } @"mem::global_arena"() #0 {
 entry:
-  %call.res = call ptr @"mem::set_current"(ptr null)
+  %call.res = call ptr @"mem::set_global"()
   %call.res1 = call ptr @"mem::current"()
   %call.res2 = call ptr @"mem::set_current"(ptr %call.res)
   %raw.int = ptrtoint ptr %call.res1 to i64
@@ -475,7 +505,7 @@ tag.slow_check:                                   ; preds = %entry
 }
 
 ; Function Attrs: cold noinline
-define internal void @dva_validate_tag_or_abort_stale_addr_msg(i64 %0) #6 {
+define internal void @dva_validate_tag_or_abort_stale_addr_msg(i64 %0) #7 {
 entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %0)
@@ -490,7 +520,7 @@ stale:                                            ; preds = %entry
 }
 
 ; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_stale_addr_msg() #7 {
+define internal void @dva_abort_stale_addr_msg() #6 {
 entry:
   %0 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
   call void @exit(i32 1)
@@ -697,7 +727,7 @@ clo.merge:                                        ; preds = %clo.plain, %clo.cap
 
 define void @"mem::escape"(ptr %0) #0 {
 entry:
-  %call.res = call ptr @"mem::set_current"(ptr null)
+  %call.res = call ptr @"mem::set_global"()
   %clo.env.gep = getelementptr inbounds { ptr, ptr }, ptr %0, i32 0, i32 1
   %clo.fn.load = load ptr, ptr %0, align 8
   %clo.env.load = load ptr, ptr %clo.env.gep, align 8
@@ -800,7 +830,7 @@ entry:
   ret i64 %fld.load
 }
 
-define { i1, i64 } @"mem::pool_alloc"(ptr %0) #0 {
+define ptr @"mem::pool_alloc"(ptr %0) #0 {
 entry:
   %fld.gep = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load = load ptr, ptr %fld.gep, align 8
@@ -811,9 +841,9 @@ entry:
   %cmptmp = icmp eq i64 %raw.load, 0
   br i1 %cmptmp, label %common.ret, label %choice.exit
 
-common.ret:                                       ; preds = %entry, %choice.exit
-  %common.ret.op = phi { i1, i64 } [ %ram.pay, %choice.exit ], [ zeroinitializer, %entry ]
-  ret { i1, i64 } %common.ret.op
+common.ret:                                       ; preds = %choice.exit, %entry
+  %common.ret.op = phi ptr [ null, %entry ], [ %ptr.res59, %choice.exit ]
+  ret ptr %common.ret.op
 
 choice.exit:                                      ; preds = %entry
   %subtmp = sub nuw i64 %raw.load, 1
@@ -856,8 +886,13 @@ choice.exit:                                      ; preds = %entry
   %multmp56 = mul i64 %raw.load17, %fld.load55
   %ptr.int.l57 = ptrtoint ptr %fld.load51 to i64
   %addtmp58 = add i64 %ptr.int.l57, %multmp56
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %addtmp58, 1
-  br label %common.ret
+  %ptr.res59 = inttoptr i64 %addtmp58 to ptr
+  %addr.is.null = icmp eq ptr %ptr.res59, null
+  br i1 %addr.is.null, label %addr.null, label %common.ret
+
+addr.null:                                        ; preds = %choice.exit
+  call void @dva_abort_null_addr()
+  unreachable
 }
 
 define i1 @"mem::pool_free"(ptr %0, ptr %1) #0 {
@@ -969,7 +1004,7 @@ choice.exit42:                                    ; preds = %choice.exit33
 }
 
 ; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_div_zero_msg() #7 {
+define internal void @dva_abort_div_zero_msg() #6 {
 entry:
   %0 = call i64 @write(i32 2, ptr @div_zero_msg, i64 32)
   call void @exit(i32 1)
@@ -977,7 +1012,7 @@ entry:
 }
 
 ; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_div_ovf_msg() #7 {
+define internal void @dva_abort_div_ovf_msg() #6 {
 entry:
   %0 = call i64 @write(i32 2, ptr @div_ovf_msg, i64 55)
   call void @exit(i32 1)
@@ -1074,11 +1109,11 @@ choice.exit:                                      ; preds = %entry
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
   %bandtmp = and i64 %1, 255
   %call.res = call ptr @memchr(ptr %addr.ffi.clean, i64 %bandtmp, i64 %2)
+  %niche.ne.null = icmp ne ptr %call.res, null
   %ptr.int.l = ptrtoint ptr %call.res to i64
-  %cmptmp5 = icmp eq i64 %ptr.int.l, 0
   %subtmp = sub i64 %ptr.int.l, %addr.ffi.int
   %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %subtmp, 1
-  %choice.res = select i1 %cmptmp5, { i1, i64 } zeroinitializer, { i1, i64 } %ram.pay
+  %choice.res = select i1 %niche.ne.null, { i1, i64 } %ram.pay, { i1, i64 } zeroinitializer
   br label %common.ret
 }
 
@@ -1088,5 +1123,5 @@ attributes #2 = { noinline "nounwind" }
 attributes #3 = { cold noreturn "nounwind" }
 attributes #4 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
 attributes #5 = { nocallback nofree nounwind willreturn memory(argmem: write) }
-attributes #6 = { cold noinline "nounwind" }
-attributes #7 = { cold noinline noreturn "nounwind" }
+attributes #6 = { cold noinline noreturn "nounwind" }
+attributes #7 = { cold noinline "nounwind" }

@@ -99,6 +99,7 @@ set_target_triple = t =>
    in_comma_list: <>,
    is_explicit_private: <>,
    skip_next_mark: <>,
+   warned_unwrap: <> = <->,
 )
 
 // A binary operator's binding powers + node op, from the precedence tower.
@@ -237,6 +238,17 @@ parser_error = p, code, msg =>
          fn = p.source_file != "" | p.source_file + ":" | ""
          log::error $ fn + str::from_int(p.curr.line) + ":" + str::from_int(p.curr.col) +
            ": E" + str::from_int(code) + ": " + msg
+
+warn_forced_unwrap: Parser => ()
+warn_forced_unwrap = p =>
+   p.warned_unwrap | --|
+   p.warned_unwrap = <+>
+   msg = "'!!' is deprecated. Use --!, |_|, a choice, or expect::some/expect::ok with a reason."
+   diag::is_capturing!
+      | diag::record_diag(3177, p.source_file, p.curr.line, p.curr.col, msg, <+>)
+      |
+         file = p.source_file != "" | "${p.source_file}:" | ""
+         log::warn $ "${file}${p.curr.line}:${p.curr.col}: W3177: ${msg}"
 
 // --- precedence (binary operators) ----------------------------------------
 
@@ -6408,6 +6420,7 @@ parse_postfix_calls = p, lhs =>
             ["!!"]
                !p.curr.lead
                   |
+                     warn_forced_unwrap(p)
                      parser_advance(p)
                      u = ast::Expr(Unary, (ast::UnaryOp(Unwrap), lhs))
                      pp_member(p, u)

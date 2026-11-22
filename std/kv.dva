@@ -32,14 +32,14 @@
 
 new_keydir: () => KeyDir
 new_keydir = !=>
-   prev = mem::set_current(Addr(0))
+   prev = mem::set_global!
    kd = KeyDir()
    mem::set_current(prev)
    kd
 
 put_keydir: KeyDir, String, Int, Int => ()
 put_keydir = kdir, key, off, vlen =>
-   prev = mem::set_current(Addr(0))
+   prev = mem::set_global!
    hkey = ++key
    kdir ^ hkey = EntryLoc(off, vlen)
    mem::set_current(prev)
@@ -172,7 +172,7 @@ open_impl = path, recover_crc =>
    existing = read_all_file(path)
    fd = libc::open_mode(path, open_rdwr_creat_append!, 0o644)
    fd < 0 | --| <- kv_err("failed to open KV store file: " + path, 0) +>
-   prev = mem::set_current(Addr(0))
+   prev = mem::set_global!
    hpath = ++path
    kdir = KeyDir()
    db = Store(hpath, fd, 0, kdir)

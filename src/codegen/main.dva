@@ -3391,7 +3391,7 @@ codegen_typed_eval = cg, te =>
                      rc.2 | pay_te =>
                         (pay_te.kind [Record, Call, Choice])
                            | (types::g.stack_alloc_next = <+>)
-               nres = match::codegen_niche_ram_construct(cg, is_pos, niche.1, rc.2)
+               nres = match::codegen_niche_ram_construct(cg, is_pos, niche.1, niche.2, rc.2)
                types::g.unboxed_ret_tail = 0
                types::g.stack_alloc_next = <->
                nres

@@ -58,12 +58,12 @@ compute_prim_layout = p =>
             | tast::layout_aggregate(56, 8)
       | tast::layout_scalar(ptr_sz, ptr_align)
 
-is_niche_utype: unify::Ctx, unify::UType => <>
-is_niche_utype = ctx, ut =>
+is_niche_utype: unify::Ctx, unify::UType, <> => <>
+is_niche_utype = ctx, ut, positive =>
    c = unify::canon(ctx, ut)
    c
       [Prim p]
-         p [Str, Error]
+         p [Str, Error] || (positive && (p [RawPtr]))
       [Rec r]
          ?r > 0
       | <->
@@ -112,7 +112,7 @@ compute_layout = ctx, ut =>
          tast::layout_record(fin_size, max_align')
       [Ram r]
          classify_ram_layout(r.pos.has_payload, r.neg.has_payload,
-           is_niche_utype(ctx, r.pos.ut), is_niche_utype(ctx, r.neg.ut))
+           is_niche_utype(ctx, r.pos.ut, <+>), is_niche_utype(ctx, r.neg.ut, <->))
       [Enum] tast::TypedLayout(ptr_sz * 2, ptr_align, tast::LayoutKind(Enum))
       [Array]
          tast::TypedLayout(

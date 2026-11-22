@@ -1,0 +1,22 @@
+// Explicit assertions for invariants whose failure must terminate the process.
+#use io
+#use sys
+
+#public
+   some: #param T: Type, < T | >, String => T
+   some = #param T, value, reason =>
+      value
+         | payload => payload
+         |
+            io::err("expect: ${reason}")
+            sys::exit(1)
+            #zero T
+
+   ok: #param T: Type, #param E: Type, < T | E >, String => T
+   ok = #param T, #param E, value, reason =>
+      value
+         | payload => payload
+         |
+            io::err("expect: ${reason}")
+            sys::exit(1)
+            #zero T

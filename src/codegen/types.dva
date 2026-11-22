@@ -2226,7 +2226,8 @@ classify_ti_ram_layout = cg, ti =>
       [Ram slots]
          s0 = slots.0
          s1 = slots.1
-         pos_niche = s0.has_payload && is_niche_payload_vt(slot_payload_type(cg, s0))
+         pos_vt = slot_payload_type(cg, s0)
+         pos_niche = s0.has_payload && (is_niche_payload_vt(pos_vt) || (pos_vt [RawPtr]))
          neg_niche = s1.has_payload && is_niche_payload_vt(slot_payload_type(cg, s1))
          layout::classify_ram_layout(s0.has_payload, s1.has_payload, pos_niche, neg_niche)
       [TypeVar name]
@@ -2594,7 +2595,7 @@ codegen_type_size = cg, vt, ti =>
          !has0 && !has1
             | 1
             |
-               is_n0 = has0 && !has1 && (r.0.payload_type [Str, Record, Error])
+               is_n0 = has0 && !has1 && (slot_payload_type(cg, r.0) [Str, Record, Error, RawPtr])
                is_n1 = !has0 && has1 && (r.1.payload_type [Str, Record, Error])
                is_n0 || is_n1 | ptr_sz | ptr_sz * 2
       |

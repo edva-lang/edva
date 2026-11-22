@@ -1300,7 +1300,7 @@ annotate_type_size = env, vt, ti =>
          !has0 && !has1
             | 1
             |
-               is_niche0 = has0 && !has1 && (s0.payload_type [Str, Record, Error])
+               is_niche0 = has0 && !has1 && (s0.payload_type [Str, Record, Error, RawPtr])
                is_niche1 = !has0 && has1 && (s1.payload_type [Str, Record, Error])
                is_niche0 || is_niche1 | ptr_sz | min_sz
       |
@@ -8731,7 +8731,7 @@ check_ground = ctx, env, exprs, name =>
 
 register_foreign_decl: type_env::TypeEnv, ast::ForeignFnDecl => ()
 register_foreign_decl = env, f =>
-   is_ret_rec = f.return_type [Record]
+   is_ret_rec = f.return_type [Record, Ram]
    is_ret_unit = f.return_type [Unit]
    ret_ut0 = is_ret_unit | unify::prim_unit! |
       unify::UType(Prim, unify::vt_to_uprim(f.return_type))
@@ -8748,7 +8748,7 @@ register_foreign_decl = env, f =>
             p = f.params(i) | _ | ast::ForeignFnParam("",
               ast::ValueType(Unknown),
               ast::TypeInfo(Prim, ast::ValueType(Unknown)))
-            is_rec = p.param_type [Record, Fn]
+            is_rec = p.param_type [Record, Fn, Ram]
             is_rec | utype_from_ti_env(env, p.record_info) |
                unify::UType(Prim, unify::vt_to_uprim(p.param_type))
          fn_ut = unify::UType(Fn, unify::UFn(param_uts, ret_ut))

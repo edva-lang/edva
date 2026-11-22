@@ -143,9 +143,9 @@ append_bytes = b, src, n =>
                first_ptr == sys::addr_null | -->
                entry = sys::c_str(first_ptr)
                parts = str::split(entry, "=")
-               ?parts > 0 && ?(parts(0)!!) > 0
-                  | c_unsetenv(parts(0)!!)
-                  | -->
+               name = parts(0) |_| ""
+               ?name == 0 | -->
+               c_unsetenv(name)
       opts.env @ kv =>
          c_setenv(kv.key, kv.val, 1i32)
       <+>
@@ -168,9 +168,9 @@ append_bytes = b, src, n =>
       prog_c = cstr_in_arena(ar, prog)
       argv_ptr = mem::alloc(ar, (n + 2) * 8)
       @[argv_ptr] = prog_c
-      n @ i =>
+      args @ arg, i =>
          off = (i + 1) * 8
-         @[argv_ptr + off] = cstr_in_arena(ar, args(i)!!)
+         @[argv_ptr + off] = cstr_in_arena(ar, arg)
       end_off = (n + 1) * 8
       @[argv_ptr + end_off] = sys::addr_null
       (prog_c, argv_ptr)

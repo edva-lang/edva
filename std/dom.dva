@@ -154,7 +154,7 @@ reply_enter = !=>
    reply_depth ::= reply_depth + 1
    index == ?replies
       |
-         prev = mem::set_current(Addr(0))
+         prev = mem::set_global!
          replies += Reply(0, 0, 0.0, 0.0, 0.0, 0.0)
          mem::set_current(prev)
    replies(index)!!
@@ -188,7 +188,7 @@ cache_row = id =>
    caches ^ id
       | row => row
       |
-         prev = mem::set_current(Addr(0))
+         prev = mem::set_global!
          row = free_count > 0
             |
                free_count ::= free_count - 1
@@ -206,7 +206,7 @@ property = id, op, key =>
    row.properties @ p, i =>
       i !< row.used | -->
       p.op == op && owned_equal(p.key, key) | --| p
-   prev = mem::set_current(Addr(0))
+   prev = mem::set_global!
    row.used == ?row.properties
       | row.properties += Property(op, empty_owned!, empty_owned!, 0, <->)
    p = row.properties(row.used)!!
@@ -225,7 +225,7 @@ property_owned = id, op, key =>
       same = p.key.length == key.length &&
          (key.length == 0 || memcmp(p.key.data, key.data, key.length) == 0)
       p.op == op && same | --| p
-   prev = mem::set_current(Addr(0))
+   prev = mem::set_global!
    row.used == ?row.properties
       | row.properties += Property(op, empty_owned!, empty_owned!, 0, <->)
    p = row.properties(row.used)!!
@@ -420,7 +420,7 @@ serialize = commands, count, wire =>
 command_slot: Commands, Int => Command
 command_slot = commands, i =>
    i < ?commands | --| commands(i)!!
-   prev = mem::set_current(Addr(0))
+   prev = mem::set_global!
    command = Command(0, 0, 0, 0, empty_owned!, empty_owned!)
    commands += command
    mem::set_current(prev)
@@ -462,7 +462,7 @@ queue = batch, op, element, b, c, key, value =>
 #public
 batch: () => Batch
 batch = !=>
-   prev = mem::set_current(Addr(0))
+   prev = mem::set_global!
    result = Batch(Commands(), 0, empty_owned!, <->)
    mem::set_current(prev)
    result
@@ -509,7 +509,7 @@ flush = batch =>
 
 measurements: () => Measurements
 measurements = !=>
-   prev = mem::set_current(Addr(0))
+   prev = mem::set_global!
    result = Measurements(Commands(), 0, empty_owned!, MeasurementResults(), <->)
    mem::set_current(prev)
    result
@@ -527,7 +527,7 @@ request = measurements, op, element, key =>
    i = measurements.count
    i !< ?measurements.results
       |
-         prev = mem::set_current(Addr(0))
+         prev = mem::set_global!
          measurements.results += MeasurementResult(op, Rect(0.0, 0.0, 0.0, 0.0),
             empty_owned!, <->)
          mem::set_current(prev)
@@ -752,7 +752,7 @@ register = element, kind, selector, options, callback =>
          |
             index' = i
             -->
-   prev = mem::set_current(Addr(0))
+   prev = mem::set_global!
    index' == ?callbacks | callbacks += CallbackSlot(<-->, <->)
    mem::set_current(prev)
    slot = callbacks(index')!!

@@ -14,11 +14,11 @@
    runtime_arena_destroy = dva_arena_destroy: (arena: Addr) => ()
    runtime_arena_save = dva_arena_save: (arena: Addr) => Int
    runtime_arena_current = dva_arena_current: () => Addr
-   runtime_arena_set_current = dva_arena_set_current: (arena: Addr) => Addr
+   runtime_arena_set_current = dva_arena_set_current: (arena: <Addr | >) => Addr
    runtime_builder_truncate = dva_builder_truncate: (b: Builder, n: Int) => ()
    runtime_builder_zero = dva_builder_zero: (n: Int) => Builder
    runtime_builder_write_tail = dva_builder_write_tail: (b: Builder, max_n: Int, fill: (Addr, Int => Int)) => Int
-   c_memchr = memchr: (ptr: Addr, ch: Int, n: Int) => Addr
+   c_memchr = memchr: (ptr: Addr, ch: Int, n: Int) => <Addr | >
 
 #public
    #type Arena (raw: Addr, cap: Int)
@@ -70,13 +70,16 @@
 
    // --- Regional Bump Arenas -------------------------------------------------
 
-   // Returns the active arena descriptor (the global arena when no scoped
-   // arena is selected). Addr(0) selects the global arena in set_current.
+   // Returns the active arena descriptor, including the default arena.
    current: () => Addr
    current = !=> runtime_arena_current!
 
    set_current: Addr => Addr
-   set_current = raw => runtime_arena_set_current(raw)
+   set_current = raw =>
+      Int(raw) == 0 | set_global! | runtime_arena_set_current(<+ raw +>)
+
+   set_global: () => Addr
+   set_global = !=> runtime_arena_set_current(<-->)
 
    save: Arena => Int
    save = a => runtime_arena_save(a.raw)
@@ -120,7 +123,7 @@
    // Returns the persistent thread-default global arena descriptor.
    global_arena: () => Arena
    global_arena = !=>
-      prev = set_current(Addr(0))
+      prev = set_global!
       g_raw = current!
       set_current(prev)
       cap = @[g_raw Int]
@@ -177,13 +180,13 @@
 
    escape: (() => ()) => ()
    escape = action =>
-      prev = set_current(Addr(0))
+      prev = set_global!
       action!
       set_current(prev)
 
    escape_value: #param T: Type, (() => T) => T
    escape_value = #param T, action =>
-      prev = set_current(Addr(0))
+      prev = set_global!
       result = action!
       set_current(prev)
       result
@@ -260,5 +263,5 @@
    index_byte: Addr, Int, Int => < Int | >
    index_byte = p, byte, len =>
       len !> 0 | --| <-->
-      r = c_memchr(p, byte .&. 0xFF, len)
-      r == Addr(0) | <--> | <+ Int(r - p) +>
+      c_memchr(p, byte .&. 0xFF, len)
+         | hit => <+ Int(hit - p) +>

@@ -12089,7 +12089,7 @@ entry:
   %var.load3 = load ptr, ptr %var.filename, align 8
   call void @"parser::parser_set_file"(ptr %var.load2, ptr %var.load3)
   %var.load4 = load ptr, ptr %var.ppr, align 8
-  %fld.gep = getelementptr inbounds { { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, ptr, i64, i64 }, { ptr, i64, i64, i64, i64, i1, i1, ptr }, i64, i64, i64, i64, i64, i64, i64, ptr, ptr, ptr, i1, i1, i1, i1, i1, ptr, ptr, ptr, ptr, i64, i64, i1, i1, i1, ptr, i1, ptr, ptr, ptr, ptr, i1, i1, i1 }, ptr %var.load4, i32 0, i32 16
+  %fld.gep = getelementptr inbounds { { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, ptr, i64, i64 }, { ptr, i64, i64, i64, i64, i1, i1, ptr }, i64, i64, i64, i64, i64, i64, i64, ptr, ptr, ptr, i1, i1, i1, i1, i1, ptr, ptr, ptr, ptr, i64, i64, i1, i1, i1, ptr, i1, ptr, ptr, ptr, ptr, i1, i1, i1, i1 }, ptr %var.load4, i32 0, i32 16
   store i1 true, ptr %fld.gep, align 1
   %var.load5 = load ptr, ptr %var.ppr, align 8
   %call.res6 = call { i1, i64 } @"parser::parse_program"(ptr %var.load5)

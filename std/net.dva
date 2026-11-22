@@ -202,12 +202,10 @@
       !has_digit' |-->
       parts += cur'
       ?parts != 4 |-->
-      b0 = parts(0)!!
-      b1 = parts(1)!!
-      b2 = parts(2)!!
-      b3 = parts(3)!!
-      (b0 > 255 || b1 > 255 || b2 > 255 || b3 > 255) |-->
-      <+ b0 .|. (b1 .<. 8) .|. (b2 .<. 16) .|. (b3 .<. 24) +>
+      ip' = 0
+      parts @ byte, i =>
+         ip' = ip' .|. (byte .<. (i * 8))
+      <+ ip' +>
 
    // Open a TCP client socket connected to host:port. Host may be a numeric IP
    // or a DNS name (resolved via getaddrinfo).

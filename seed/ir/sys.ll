@@ -24,6 +24,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.sys::c_str" = global ptr null
 @clo.const.4 = internal constant { ptr, ptr } { ptr @"sys::argv_string", ptr null }
 @"var.sys::argv_string" = global ptr null
+@null_addr = internal unnamed_addr constant [48 x i8] c"E4014: null Addr in a present optional address\0A\00"
 @clo.const.5 = internal constant { ptr, ptr } { ptr @"sys::addr_opt", ptr null }
 @"var.sys::addr_opt" = global ptr null
 @clo.const.6 = internal constant { ptr, ptr } { ptr @"sys::argv", ptr null }
@@ -415,7 +416,7 @@ entry:
   ret { i64, ptr } %ret.pack
 }
 
-define { i1, i64 } @"sys::addr_opt"(ptr %0) #3 {
+define ptr @"sys::addr_opt"(ptr %0) #3 {
 entry:
   %var.a = alloca ptr, align 8
   store ptr %0, ptr %var.a, align 8
@@ -428,16 +429,36 @@ entry:
 
 choice.then:                                      ; preds = %entry
   %var.load2 = load ptr, ptr %var.a, align 8
-  %ptr.to.i64 = ptrtoint ptr %var.load2 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
-  br label %choice.exit
+  %addr.is.null = icmp eq ptr %var.load2, null
+  br i1 %addr.is.null, label %addr.null, label %addr.present
 
 choice.else:                                      ; preds = %entry
   br label %choice.exit
 
-choice.exit:                                      ; preds = %choice.else, %choice.then
-  %choice.res = phi { i1, i64 } [ %ram.pay, %choice.then ], [ zeroinitializer, %choice.else ]
-  ret { i1, i64 } %choice.res
+choice.exit:                                      ; preds = %choice.else, %addr.present
+  %choice.res = phi ptr [ %var.load2, %addr.present ], [ null, %choice.else ]
+  ret ptr %choice.res
+
+addr.null:                                        ; preds = %choice.then
+  call void @dva_abort_null_addr()
+  unreachable
+
+addr.present:                                     ; preds = %choice.then
+  br label %choice.exit
+
+abort.dead:                                       ; No predecessors!
+  unreachable
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_null_addr() #5 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @null_addr, i64 47)
+  call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
 }
 
 define { i64, ptr } @"sys::argv"(i64 %0) #3 {
@@ -448,15 +469,13 @@ entry:
   store i64 %0, ptr %var.n, align 8
   %var.load = load i64, ptr %var.n, align 8
   %call.res = call ptr @"sys::raw_argv"(i64 %var.load)
-  %call.res1 = call { i1, i64 } @"sys::addr_opt"(ptr %call.res)
-  %ram.tag = extractvalue { i1, i64 } %call.res1, 0
-  br i1 %ram.tag, label %choice.then, label %choice.else
+  %call.res1 = call ptr @"sys::addr_opt"(ptr %call.res)
+  %niche.ne.null = icmp ne ptr %call.res1, null
+  br i1 %niche.ne.null, label %choice.then, label %choice.else
 
 choice.then:                                      ; preds = %entry
-  %ram.pay = extractvalue { i1, i64 } %call.res1, 1
-  %pay.ptr = inttoptr i64 %ram.pay to ptr
-  store ptr %pay.ptr, ptr %var._, align 8
-  store ptr %pay.ptr, ptr %var.raw, align 8
+  store ptr %call.res1, ptr %var._, align 8
+  store ptr %call.res1, ptr %var.raw, align 8
   %var.load2 = load ptr, ptr %var.raw, align 8
   %call.res3 = call { i64, ptr } @"sys::c_str"(ptr %var.load2)
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8

@@ -3943,5 +3943,102 @@ JS
 fi
 echo "PASS"
 
+# --- Test 72: explicit expectations and the nullable address ABI ---
+echo -n "Testing explicit expectations and nullable C addresses... "
+T72_DIR="$TMPDIR/t72_expect_addr"
+mkdir -p "$T72_DIR"
+cat >"$T72_DIR/expect_check.dva" <<'DVA'
+#use expect
+#use io
+#use sys
+
+maybe: Int => <Int | >
+maybe = n => n > 0 | <+ n +> | <-->
+
+result: Int => <Int | String>
+result = n => n > 0 | <+ n -> | <- "not positive" +>
+
+mode = sys::argv(1) |_| ""
+mode ["some"] | io::out $ expect::some(maybe(0), "required optional value")
+mode ["ok"] | io::out $ expect::ok(result(0), "required result value")
+io::out $ expect::some(maybe(42), "expected positive number")
+io::out $ expect::ok(result(7), "expected successful operation")
+io::out $ maybe(9)!!
+DVA
+timeout 30 ./edva "$T72_DIR/expect_check.dva" --no-cache -o "$T72_DIR/expect_check" \
+    < /dev/null >"$T72_DIR/build.log" 2>&1
+grep -Eq 'expect_check.dva:[0-9]+:[0-9]+: W3177:.*deprecated' "$T72_DIR/build.log"
+timeout 10 "$T72_DIR/expect_check" < /dev/null >"$T72_DIR/out"
+printf '42\n7\n9\n' >"$T72_DIR/expected"
+diff -u "$T72_DIR/expected" "$T72_DIR/out"
+for mode in some ok; do
+    status=0
+    timeout 10 "$T72_DIR/expect_check" "$mode" < /dev/null >"$T72_DIR/out" 2>&1 || status=$?
+    [ "$status" -eq 1 ]
+    reason="required optional value"
+    if [ "$mode" = ok ]; then reason="required result value"; fi
+    grep -Fxq "expect: $reason" "$T72_DIR/out"
+done
+
+cat >"$T72_DIR/addr.c" <<'C'
+static char octet = 42;
+void *fixture_addr(long long present) { return present ? &octet : 0; }
+void *fixture_echo(void *ptr) { return ptr; }
+C
+cat >"$T72_DIR/addr.dva" <<'DVA'
+#use io
+#use mem
+#use sys
+
+#foreign("c")
+   fixture_addr: (present: Int) => < Addr | >
+   fixture_echo: (value: < Addr | >) => < Addr | >
+
+#type Nullable < Addr | >
+
+present: Int => Nullable
+present = word => <+ Addr(word) +>
+
+read: Nullable => Int
+read = opt =>
+   opt | p => Int(@[p u8]) | -1
+
+sys::argc > 1 | io::out $ read(present(sys::argc - 2))
+io::out $ #size Nullable
+io::out $ read(fixture_echo(fixture_addr(1)))
+io::out $ read(fixture_echo(fixture_addr(0)))
+io::out $ read(#zero Nullable)
+a = mem::arena(4096)
+previous = mem::set_current(a.raw)
+restored = mem::set_global!
+io::out $ restored == a.raw && mem::current! == previous
+mem::destroy(a)
+DVA
+timeout 10 clang -c "$T72_DIR/addr.c" -o "$T72_DIR/addr.o" < /dev/null
+printf '8\n42\n-1\n-1\n<+>\n' >"$T72_DIR/expected"
+for opt in -O0 -O2; do
+    timeout 30 ./edva "$T72_DIR/addr.dva" "$opt" --no-cache --cflag "$T72_DIR/addr.o" \
+        -o "$T72_DIR/addr" < /dev/null >"$T72_DIR/build.log" 2>&1
+    timeout 10 "$T72_DIR/addr" < /dev/null >"$T72_DIR/out"
+    diff -u "$T72_DIR/expected" "$T72_DIR/out"
+    status=0
+    timeout 10 "$T72_DIR/addr" zero < /dev/null >"$T72_DIR/out" 2>&1 || status=$?
+    [ "$status" -eq 1 ]
+    grep -q 'E4014:' "$T72_DIR/out"
+done
+timeout 30 ./edva "$T72_DIR/addr.dva" -O2 --no-cache --ir -target wasm32-unknown-unknown \
+    -o "$T72_DIR/wasm" < /dev/null >"$T72_DIR/wasm.log" 2>&1
+grep -Eq '^declare ptr @fixture_echo\(ptr\)' "$T72_DIR/wasm.ll"
+cat >"$T72_DIR/null_present.dva" <<'DVA'
+bad: () => < Addr | >
+bad = !=> <+ Addr(0) +>
+DVA
+status=0
+timeout 30 ./edva "$T72_DIR/null_present.dva" --ir --no-cache < /dev/null \
+    >"$T72_DIR/bad.log" 2>&1 || status=$?
+[ "$status" -eq 1 ]
+grep -q 'E3178:' "$T72_DIR/bad.log"
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

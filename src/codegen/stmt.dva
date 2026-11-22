@@ -4409,8 +4409,17 @@ is_darwin_triple: String => <>
 is_darwin_triple = triple =>
    ast::triple_os(triple) == "darwin"
 
+validate_foreign_ram: types::Cg, ast::ValueType, ast::TypeInfo => ()
+validate_foreign_ram = cg, vt, ti =>
+   vt ![Ram] | --|
+   niche = types::is_niche_ram_ti(cg, ti)
+   !(niche.0 && niche.1 && (niche.2 [RawPtr]))
+      | types::init_error(cg, "E3179", "C ramification types must be < Addr | >.", 0, 0)
+
 collect_if_foreign_fn: types::Cg, ast::ForeignFnDecl => ()
 collect_if_foreign_fn = cg, f =>
+   validate_foreign_ram(cg, f.return_type, f.ret_record_info)
+   f.params @ p => validate_foreign_ram(cg, p.param_type, p.record_info)
    f.is_variable
       | codegen_emit_foreign_var(cg, f)
       |
@@ -8721,7 +8730,7 @@ codegen_typed_cycle_escape_construct: types::Cg, <>, <tast::TypedExpr|>, ast::Ty
 codegen_typed_cycle_escape_construct = cg, is_pos, pay_opt, ti =>
    niche = types::is_niche_ram_ti(cg, ti)
    niche.0
-      | match::codegen_niche_ram_construct(cg, is_pos, niche.1, pay_opt).0
+      | match::codegen_niche_ram_construct(cg, is_pos, niche.1, niche.2, pay_opt).0
       |
          types::is_unboxed_ram_ti(cg, ti)
             | match::codegen_unboxed_ram_construct(cg, is_pos, pay_opt, ti).0
