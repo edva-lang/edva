@@ -704,14 +704,14 @@ operators:
     operands: "Address [, T]"
     result: "bare pointer / typed volatile load / store"
     desc: "@[addr] is a bare pointer; @[addr T] is a volatile typed load; @[addr] = v stores at v's own width."
-  - symbol: "!!"
+  - symbol: '.expect("reason")'
     tier: postfix / apply
     kind: null
     kind_self: null
     assoc: left
-    operands: "retired"
-    result: "compile error E3177"
-    desc: "Retired postfix unwrap. Use propagation, fallback, choice, or a reason-bearing expect."
+    operands: "RamPP <A | B> or RamPN <A | >"
+    result: "A (positive payload)"
+    desc: "Extracts the positive payload or aborts with the provided reason. The retired !! operator is a compile error (E3177)."
   - symbol: "--!"
     tier: postfix / apply
     kind: null
