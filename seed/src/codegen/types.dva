@@ -225,8 +225,14 @@ param_clo_tys: Addrs,
   fn_var_start: Int,
   fn_binding_start: Int,
   opts: CodegenOpts,
-   has_closure_dispatch: <> = <->
+   has_closure_dispatch: <> = <->,
+   has_string_params: <> = <->,
+   string_views: Addrs = Addrs(),
+   record_string_fields: RecordStringFields = RecordStringFields()
 )
+
+#type RecordStringField (allocation: Addr, stores: Addrs)
+#type RecordStringFields RecordStringField{}
 
 #type Flags <>{}
 #type FnValueMeta (found: <>, declared: <>, generic: <>, value_safe: <>)

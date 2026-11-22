@@ -74,6 +74,8 @@ empty_fndef = FnDef("", ast::Names(), ast::Expr(Var, ""))
 
 // --- Module Implementation -------------------------------------------------
 
+default_arena_capacity = 67108864
+
 arena_type: types::Cg => Addr
 arena_type = cg =>
    i64t = LLVMInt64Type!
@@ -684,7 +686,7 @@ codegen_emit_runtime_full = cg =>
    sg_arr = LLVMArrayType(i64t, 64)
    zero = LLVMConstInt(i64t, 0, 0)
    one = LLVMConstInt(i64t, 1, 0)
-   cap_v = LLVMConstInt(i64t, 67108864, 0)
+   cap_v = LLVMConstInt(i64t, default_arena_capacity, 0)
    maxc = LLVMConstInt(i64t, 16384, 0)
 
    const_string_global(cg, diag::runtime_error_format!, "fmt_error")
@@ -2829,22 +2831,209 @@ prune_write_only_globals = cg =>
             use == sys::addr_null | -->
             LLVMInstructionEraseFromParent(LLVMGetUser(use))
 
+// Keep the pointer-shaped record boundary on every target. A restore-free
+// internal function can move an unobserved view header into the record's tail.
+can_embed_string_view: types::Cg => <>
+can_embed_string_view = cg =>
+   cg.opts.optimize_closures && !cg.opts.no_typed_opt && !cg.opts.no_runtime &&
+     cg.in_fn && ?cg.cycle_breaks == 0 && cg.in_restore_scope == 0 &&
+     !types::g.current_fn_has_restore &&
+     LLVMGetLinkage(cg.current_fn) == 8
+
+string_view_metadata_kind: () => Int
+string_view_metadata_kind = !=>
+   name = "dva.string.view"
+   LLVMGetMDKindIDInContext(LLVMGetGlobalContext!, name, ?name)
+
+mark_string_view: types::Cg, Addr => ()
+mark_string_view = cg, view =>
+   ctx = LLVMGetGlobalContext!
+   md = LLVMMDNodeInContext2(ctx, sys::addr_null, 0)
+   LLVMSetMetadata(view, string_view_metadata_kind!, LLVMMetadataAsValue(ctx, md))
+   cg.string_views += view
+
+#type EmbeddedString (
+   field_store: Addr,
+   view: Addr,
+   len_store: Addr,
+   len_gep: Addr,
+   data_store: Addr,
+   data_gep: Addr
+)
+#type EmbeddedStrings EmbeddedString{}
+
+string_header_field: types::Cg, Addr, Addr, Int => <>
+string_header_field = cg, address, header, index =>
+   LLVMIsAGetElementPtrInst(address) != sys::addr_null &&
+     LLVMGetNumOperands(address) == 3 &&
+     LLVMGetGEPSourceElementType(address) == cg.str_t &&
+     LLVMGetOperand(address, 0) == header &&
+     LLVMIsAConstantInt(LLVMGetOperand(address, 1)) != sys::addr_null &&
+     LLVMConstIntGetZExtValue(LLVMGetOperand(address, 1)) == 0 &&
+     LLVMIsAConstantInt(LLVMGetOperand(address, 2)) != sys::addr_null &&
+     LLVMConstIntGetZExtValue(LLVMGetOperand(address, 2)) == index
+
+single_store_into: Addr => Addr
+single_store_into = address =>
+   first = LLVMGetFirstUse(address)
+   first == sys::addr_null || LLVMGetNextUse(first) != sys::addr_null
+      | --| sys::addr_null
+   user = LLVMGetUser(first)
+   LLVMIsAStoreInst(user) != sys::addr_null && LLVMGetOperand(user, 1) == address &&
+     LLVMGetVolatile(user) == 0 && LLVMGetOrdering(user) == 0
+      | user
+      | sys::addr_null
+
+find_embeddable_string: types::Cg, Addr, Int => <EmbeddedString|>
+find_embeddable_string = cg, field_store, md_kind =>
+   view = LLVMGetOperand(field_store, 0)
+   LLVMIsACallInst(view) == sys::addr_null ||
+     LLVMGetMetadata(view, md_kind) == sys::addr_null | --| <-->
+   len_store' = sys::addr_null
+   len_gep' = sys::addr_null
+   data_store' = sys::addr_null
+   data_gep' = sys::addr_null
+   use' = LLVMGetFirstUse(view)
+   0.. @
+      use' == sys::addr_null | -->
+      user = LLVMGetUser(use')
+      use' = LLVMGetNextUse(use')
+      user == field_store | --^
+      string_header_field(cg, user, view, 0) && len_store' == sys::addr_null
+         |
+            len_gep' = user
+            len_store' = single_store_into(user)
+            len_store' == sys::addr_null | --| <-->
+            --^
+      string_header_field(cg, user, view, 1) && data_store' == sys::addr_null
+         |
+            data_gep' = user
+            data_store' = single_store_into(user)
+            data_store' == sys::addr_null | --| <-->
+            --^
+      LLVMIsAStoreInst(user) != sys::addr_null && len_store' == sys::addr_null &&
+        LLVMGetOperand(user, 1) == view && LLVMTypeOf(LLVMGetOperand(user, 0)) == LLVMInt64Type! &&
+        LLVMGetVolatile(user) == 0 && LLVMGetOrdering(user) == 0
+         |
+            len_store' = user
+            --^
+      --| <-->
+   len_store' != sys::addr_null && data_store' != sys::addr_null
+      | <+ EmbeddedString(field_store, view, len_store', len_gep', data_store', data_gep') +>
+      | <-->
+
+// Tiny arenas may admit each allocation separately but not the combined
+// record. Retain a slow path with the original per-header allocation size.
+record_string_slot: types::Cg, Addr => Addr
+record_string_slot = cg, fty =>
+   name = "dva_record_string_slot"
+   existing = LLVMGetNamedFunction(cg.module, name)
+   existing != sys::addr_null | --| existing
+   fn = LLVMAddFunction(cg.module, name, fty)
+   LLVMSetLinkage(fn, 8)
+   mark_nounwind(cg, fn)
+   mark_fn_enum_attr(cg, fn, "alwaysinline")
+   entry = LLVMAppendBasicBlock(fn, "entry")
+   embedded = LLVMAppendBasicBlock(fn, "embedded")
+   separate = LLVMAppendBasicBlock(fn, "separate")
+   LLVMPositionBuilderAtEnd(cg.builder, entry)
+   LLVMBuildCondBr(cg.builder, LLVMGetParam(fn, 2), embedded, separate)
+   LLVMPositionBuilderAtEnd(cg.builder, embedded)
+   LLVMBuildRet(cg.builder, LLVMGetParam(fn, 1))
+   LLVMPositionBuilderAtEnd(cg.builder, separate)
+   sp = expr::codegen_call_arena_alloc_in(cg, LLVMGetParam(fn, 0),
+      LLVMConstInt(LLVMInt64Type!, 16, 0), "separate.header")
+   LLVMBuildRet(cg.builder, sp)
+   fn
+
+embed_record_strings: types::Cg, types::RecordStringField, Int, types::Addrs => ()
+embed_record_strings = cg, group, md_kind, merged =>
+   fields = EmbeddedStrings()
+   group.stores @ st =>
+      find_embeddable_string(cg, st, md_kind) | item => fields += item
+   count = ?fields
+   count == 0 | --|
+   rec = group.allocation
+   arena = LLVMGetOperand(rec, 0)
+   original = LLVMGetOperand(rec, 1)
+   i64t = LLVMInt64Type!
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   fty = types::fn_type3(i8p, LLVMTypeOf(arena), i8p, LLVMInt1Type!)
+   slot_fn = record_string_slot(cg, fty)
+   LLVMPositionBuilderBefore(cg.builder, rec)
+   // Keep the record prefix ABI and attach descriptors at aligned offsets.
+   // The function's arena effect summary guarantees the same active arena
+   // throughout construction. Cycles are excluded when recording candidates.
+   rounded = LLVMBuildAdd(cg.builder, original, LLVMConstInt(i64t, 15, 0), "record.round")
+   tail = LLVMBuildAnd(cg.builder, rounded, LLVMConstInt(i64t, -16, 0), "record.tail")
+   total = LLVMBuildAdd(cg.builder, tail, LLVMConstInt(i64t, count * 16, 0), "record.bytes")
+   cap_ptr = LLVMBuildStructGEP2(cg.builder, arena_type(cg), arena, 0, "arena.capacity")
+   cap = LLVMBuildLoad2(cg.builder, i64t, cap_ptr, "arena.cap")
+   lazy = LLVMBuildICmp(cg.builder, 32, cap, LLVMConstInt(i64t, 0, 0), "arena.lazy")
+   actual_cap = LLVMBuildSelect(cg.builder, lazy, LLVMConstInt(i64t, default_arena_capacity, 0),
+      cap, "arena.effective.cap")
+   fits = LLVMBuildICmp(cg.builder, 37, total, actual_cap, "record.can.embed")
+   bytes = LLVMBuildSelect(cg.builder, fits, total, original, "record.alloc.size")
+   LLVMSetOperand(rec, 1, bytes)
+   fields @ item, i =>
+      LLVMPositionBuilderBefore(cg.builder, item.field_store)
+      offset = LLVMBuildAdd(cg.builder, tail, LLVMConstInt(i64t, i * 16, 0), "header.offset")
+      in_record = types::gep1(cg, LLVMInt8Type!, rec, offset, "record.header")
+      args = (arena, in_record, fits)
+      header = LLVMBuildCall2(cg.builder, fty, slot_fn, &args, 3, "field.header")
+      // Copy the original tagged length and the same byte pointer.
+      data_gep = LLVMBuildStructGEP2(cg.builder, cg.str_t, header, 1, "field.header.data")
+      LLVMBuildStore(cg.builder, LLVMGetOperand(item.len_store, 0), header)
+      LLVMBuildStore(cg.builder, LLVMGetOperand(item.data_store, 0), data_gep)
+      LLVMSetOperand(item.field_store, 0, header)
+      LLVMInstructionEraseFromParent(item.len_store)
+      LLVMInstructionEraseFromParent(item.data_store)
+      item.len_gep != sys::addr_null | LLVMInstructionEraseFromParent(item.len_gep)
+      LLVMInstructionEraseFromParent(item.data_gep)
+      merged += item.view
+
+optimize_string_fields: types::Cg => ()
+optimize_string_fields = cg =>
+   ?cg.string_views == 0 | --|
+   md_kind = string_view_metadata_kind!
+   merged = types::Addrs()
+   ?cg.record_string_fields > 0
+      |
+         // Promote local pointer slots first. This pass leaves the heap
+         // allocations and their field stores available for inspection.
+         run_ir_passes(cg, "function(mem2reg)")
+         !cg.error
+            | cg.record_string_fields @ group => embed_record_strings(cg, group, md_kind, merged)
+   cg.string_views @ view =>
+      LLVMSetMetadata(view, md_kind, sys::addr_null)
+   merged @ view => LLVMInstructionEraseFromParent(view)
+   ?merged > 0 | verify_emitted_ir(cg)
+
 optimize_emitted_ir: types::Cg => ()
 optimize_emitted_ir = cg =>
    prune_write_only_globals(cg)
+   optimize_string_fields(cg)
+   cg.error | --|
    // Scalarize local closures, then expose the fields of read-only closure
    // parameters of internal functions to interprocedural constant propagation.
    // LLVM bounds specialization and reuses a clone for identical arguments.
    // After devirtualization, a second promotion can turn by-reference captures
    // into scalar arguments, allowing SROA to release the stack environment.
-   // Externally visible signatures retain the closure ABI.
+   // Argument promotion also lowers read-only String descriptors at direct
+   // internal call sites. Externally visible signatures keep their ABI.
    passes = cg.opts.optimize_closures && cg.has_closure_dispatch
       |
          "globaldce,function(sroa,early-cse,simplifycfg),cgscc(argpromotion)," +
            "function(sroa,early-cse),ipsccp<func-spec>," +
            "function(simplifycfg)," +
            "cgscc(argpromotion),function(sroa,dce),globaldce"
-      | "globaldce"
+      | cg.has_string_params
+         | "globaldce,function(sroa,early-cse,simplifycfg),cgscc(argpromotion),globaldce"
+         | "globaldce"
+   run_ir_passes(cg, passes)
+
+run_ir_passes: types::Cg, String => ()
+run_ir_passes = cg, passes =>
    options = LLVMCreatePassBuilderOptions!
    err = LLVMRunPasses(cg.module, passes, cg.target_machine, options)
    LLVMDisposePassBuilderOptions(options)
@@ -2971,6 +3160,16 @@ codegen_finish = cg, out_path =>
          codegen_register_global_ctor(cg, mfn)
       |
          LLVMBuildRet(cg.builder, LLVMConstInt(LLVMInt32Type!, 0, 0))
+   verify_emitted_ir(cg)
+   cg.error | --|
+   optimize_emitted_ir(cg)
+   cg.error | --|
+   ast::triple_arch(cg.opts.target_triple) ["wasm32", "wasm"]
+      | emit_wasm_arithmetic_helpers(cg)
+   write_verified_ir(cg, out_path)
+
+verify_emitted_ir: types::Cg => ()
+verify_emitted_ir = cg =>
    v_err_out = (sys::addr_null, sys::addr_null)
    v_res = LLVMVerifyModule(cg.module, 2, &v_err_out)
    v_res != 0
@@ -2984,13 +3183,6 @@ codegen_finish = cg, out_path =>
             |
                log::error $ "E5011: LLVM module verification failed"
          cg.error = <+>
-      |
-         optimize_emitted_ir(cg)
-         !cg.error
-            |
-               ast::triple_arch(cg.opts.target_triple) ["wasm32", "wasm"]
-                  | emit_wasm_arithmetic_helpers(cg)
-               write_verified_ir(cg, out_path)
 
 // call void @dva_arena_destroy(ptr @global_arena) before a function returns.
 emit_arena_destroy: types::Cg => ()

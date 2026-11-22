@@ -23,7 +23,13 @@
    LLVMGetNextUse: (Use: Addr) => Addr
    LLVMGetUser: (Use: Addr) => Addr
    LLVMIsAStoreInst: (Val: Addr) => Addr
+   LLVMIsACallInst: (Val: Addr) => Addr
+   LLVMIsAGetElementPtrInst: (Val: Addr) => Addr
+   LLVMIsAConstantInt: (Val: Addr) => Addr
+   LLVMGetGEPSourceElementType: (GEP: Addr) => Addr
    LLVMGetOperand: (Val: Addr, Index: Int) => Addr
+   LLVMGetNumOperands: (Val: Addr) => Int
+   LLVMSetOperand: (Val: Addr, Index: Int, Operand: Addr) => ()
    LLVMGetVolatile: (Inst: Addr) => Int
    LLVMGetOrdering: (Inst: Addr) => Int
    LLVMInstructionEraseFromParent: (Inst: Addr) => ()
@@ -262,3 +268,4 @@
    LLVMMDNodeInContext2: (C: Addr, MDs: Addr, Count: Int) => Addr
    LLVMMetadataAsValue: (C: Addr, MD: Addr) => Addr
    LLVMSetMetadata: (Val: Addr, KindID: Int, Node: Addr) => ()
+   LLVMGetMetadata: (Val: Addr, KindID: Int) => Addr

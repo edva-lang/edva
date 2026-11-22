@@ -3591,5 +3591,177 @@ for target in native wasm; do
 done
 echo "PASS"
 
+# --- Test 69: internal String descriptors and record-owned view headers ---
+echo -n "Testing internal String descriptors and record-owned view headers... "
+T69_DIR="$TMPDIR/t69_str_descriptors"
+mkdir -p "$T69_DIR"
+cat >"$T69_DIR/check.dva" <<'DVA'
+#use io
+#use mem
+#use sys
+
+#type Request (kind: String, path: String, suffix: String)
+
+measure: String, Int => Int
+measure = s, i => ?s + s(i)
+
+parse: String => <Request|>
+parse = s =>
+   kind = s(0..3)
+   path = s(4..9)
+   suffix = s(10..)
+   <+ Request(kind, path, suffix) +>
+
+shared_view: String => <Request|>
+shared_view = s =>
+   view = s(1..)
+   <+ Request(view, view, view) +>
+
+#export read_shared: String => Int
+read_shared = s =>
+   req = shared_view(s)!!
+   ?req.kind + ?req.path + ?req.suffix
+
+#export inspect: String, Int => Int
+inspect = s, i => ?s + s(i)
+
+#export read_request: String, Int => Int
+read_request = s, i =>
+   req = parse(s)!!
+   measure(req.kind, i) + measure(req.path, i) + measure(req.suffix, i)
+
+tiny: () => Int
+tiny = !=>
+   a = mem::arena(32)
+   prev = mem::set_current(a.raw)
+   result = read_request("GET /path HTTP", 1)
+   mem::set_current(prev)
+   mem::destroy(a)
+   result
+
+#export check_default: () => Int
+check_default = !=> read_request("GET /path HTTP", 1)
+
+#export check_tiny: () => Int
+check_tiny = !=> tiny!
+
+#type Kept <Request|>
+::kept: Kept
+kept = <-->
+
+retain: () => ()
+retain = !=>
+   a = mem::arena(4096)
+   prev = mem::set_current(a.raw)
+   req = parse("GET /path HTTP")
+   mem::set_current(prev)
+   ::kept = req
+   mem::destroy(a)
+
+mode = sys::argv(1) |_| ""
+mode == "retain" | retain!
+io::out $ check_default!
+io::out $ check_tiny!
+io::out $ inspect("GET", 1)
+io::out $ #size Request
+io::out $ read_shared("prefix")
+DVA
+printf '277\n277\n72\n48\n15\n' >"$T69_DIR/expected"
+for opt in -O0 -O2; do
+    timeout 30 ./edva "$T69_DIR/check.dva" "$opt" --check-arena-escapes --no-cache \
+        -o "$T69_DIR/program" < /dev/null >"$T69_DIR/build.log" 2>&1
+    timeout 10 "$T69_DIR/program" >"$T69_DIR/out"
+    diff -u "$T69_DIR/expected" "$T69_DIR/out"
+    status=0
+    timeout 10 "$T69_DIR/program" retain >"$T69_DIR/out" 2>&1 || status=$?
+    if [ "$status" -ne 1 ] || ! grep -q '^E4012:' "$T69_DIR/out"; then
+        echo "FAILED: retaining the scoped record lost its diagnostic under $opt"
+        cat "$T69_DIR/out"
+        exit 1
+    fi
+done
+for target in native wasm; do
+    args=()
+    if [ "$target" = wasm ]; then args+=(-target wasm32-unknown-unknown); fi
+    timeout 30 ./edva "$T69_DIR/check.dva" -O2 --ir --no-cache "${args[@]}" \
+        -o "$T69_DIR/$target" < /dev/null >"$T69_DIR/ir.log" 2>&1
+    ir="$T69_DIR/$target.ll"
+    sed -n '/^define .* @parse(/,/^}/p' "$ir" >"$T69_DIR/parse.ir"
+    sed -n '/^define .* @shared_view(/,/^}/p' "$ir" >"$T69_DIR/shared.ir"
+    if ! grep -Eq '^define internal i64 @measure\(i64 [^,]+, ptr [^,]+, i64' "$ir" ||
+       ! grep -Fq 'define i64 @inspect(ptr ' "$ir" ||
+       [ "$(grep -c 'call ptr @dva_record_string_slot' "$T69_DIR/parse.ir")" -ne 3 ] ||
+       grep -Eq 'str\.view.* = call ptr @dva_arena_alloc' "$T69_DIR/parse.ir" ||
+       ! grep -Eq 'str\.view.* = call ptr @dva_arena_alloc' "$T69_DIR/shared.ir"; then
+        echo "FAILED: unexpected String descriptor representation on $target"
+        exit 1
+    fi
+done
+timeout 30 ./edva "$T69_DIR/check.dva" -O2 --no-typed-opt --ir --no-cache \
+    -o "$T69_DIR/legacy" < /dev/null >"$T69_DIR/legacy.log" 2>&1
+if grep -q 'record.can.embed' "$T69_DIR/legacy.ll"; then
+    echo "FAILED: record descriptors were merged with typed optimization disabled"
+    exit 1
+fi
+cat >"$T69_DIR/views.dva" <<'DVA'
+#public
+   #type Fields (name: String, value: String)
+
+#private
+   split: String => <Fields|>
+   split = s =>
+      a = s(0..3)
+      b = s(4..)
+      <+ Fields(a, b) +>
+
+#public
+   pair: String => <Fields|>
+   pair = s => split(s)
+DVA
+cat >"$T69_DIR/caller.dva" <<'DVA'
+#use ./views
+
+#foreign("c")
+   exit: (code: i32) => ()
+
+pair = views::pair("one:two")!!
+!(pair.name == "one" && pair.value == "two") | exit(i32(1))
+DVA
+timeout 30 ./edva "$T69_DIR/views.dva" -O2 -c --module views --no-cache \
+    -o "$T69_DIR/views.o" < /dev/null >"$T69_DIR/module.log" 2>&1
+timeout 30 ./edva "$T69_DIR/caller.dva" -O2 -c --entry --no-cache \
+    -o "$T69_DIR/caller.o" < /dev/null >>"$T69_DIR/module.log" 2>&1
+timeout 30 clang -Qunused-arguments -Wno-unused-command-line-argument \
+    "$T69_DIR/views.o" "$T69_DIR/caller.o" -o "$T69_DIR/modular"
+timeout 10 "$T69_DIR/modular"
+if command -v wasm-ld >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then
+    timeout 30 ./edva "$T69_DIR/check.dva" -O2 --no-cache -target wasm32-unknown-unknown \
+        -o "$T69_DIR/check.wasm" < /dev/null >"$T69_DIR/wasm.log" 2>&1
+    timeout 10 node --disable-wasm-trap-handler - "$T69_DIR/check.wasm" <<'JS'
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const moduleBytes = fs.readFileSync(process.argv[2]);
+const wasm = new WebAssembly.Module(moduleBytes);
+const env = {};
+for (const {name} of WebAssembly.Module.imports(wasm)) {
+    env[name] = () => { throw Error("unexpected import " + name); };
+}
+let heap;
+env.malloc = size => {
+    const ptr = heap;
+    heap = Math.ceil((heap + Number(size)) / 16) * 16;
+    const bytes = memory.buffer.byteLength;
+    if (heap > bytes) memory.grow(Math.ceil((heap - bytes) / 65536));
+    return ptr;
+};
+env.free = () => {};
+const {memory, __heap_base, check_default, check_tiny} = new WebAssembly.Instance(wasm, {env}).exports;
+heap = __heap_base.value;
+assert.equal(check_default(), 277n);
+assert.equal(check_tiny(), 277n);
+JS
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

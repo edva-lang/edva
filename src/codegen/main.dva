@@ -3298,6 +3298,9 @@ codegen_typed_eval = cg, te =>
                      rec_ptr = can_rec_stack
                         | types::hoisted_alloca(cg, st', "rec.salloc")
                         | expr::codegen_call_arena_alloc(cg, sz_c', "rec.alloc")
+                     embed_views = !can_rec_stack && !is_packed &&
+                       runtime::can_embed_string_view(cg)
+                     string_stores = types::Addrs()
                      nf @ j =>
                         fgep' = LLVMBuildStructGEP2(cg.builder, st', rec_ptr, j,
                           "rec.fld")
@@ -3309,7 +3312,12 @@ codegen_typed_eval = cg, te =>
                               inner_sz' = LLVMSizeOf(fld_ty)
                               LLVMBuildMemCpy(cg.builder, fgep', 1, fval_j, 1,
                                 inner_sz', 0)
-                           | LLVMBuildStore(cg.builder, fval_j, fgep')
+                           |
+                              store = LLVMBuildStore(cg.builder, fval_j, fgep')
+                              embed_views && (fvts'(j)!! [Str])
+                                 | string_stores += store
+                     ?string_stores > 0
+                        | cg.record_string_fields += types::RecordStringField(rec_ptr, string_stores)
                      (rec_ptr, ast::ValueType(Record))
       [Lambda lam]
          anon_name = "$anon_fn." + str::from_int(?cg.fninfos)

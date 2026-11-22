@@ -9487,6 +9487,14 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    is_pub_mod = cg.opts.is_module && !is_anon && !types::has_dollar(name) &&
      !types::name_is_private(name) && types::name_is_in_current_module(cg, name)
    LLVMSetLinkage(fn, (is_exp || is_dyn_m || is_pub_mod) | 0 | 8)
+   cg.opts.optimize_closures && !cg.opts.no_typed_opt && !cg.opts.no_runtime &&
+     LLVMGetLinkage(fn) == 8 && !cg.has_string_params
+      |
+         param_types @ vt =>
+            vt [Str]
+               |
+                  cg.has_string_params = <+>
+                  -->
    is_module_dynamic(cg, name)
       |
          get_or_create_dyn_fn_ptr(cg, name, <+ fn +>)

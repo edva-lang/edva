@@ -9140,6 +9140,8 @@ codegen_typed_eval_index = cg, target, index, ti =>
                      types::g.stack_alloc_next = saved_sa
                      sp_res = codegen_string_build(cg, clamped'.1, view_data',
                        "str.view")
+                     is_str && !saved_sa && runtime::can_embed_string_view(cg)
+                        | runtime::mark_string_view(cg, sp_res)
                      types::g.stack_alloc_next = <->
                      (sp_res, ast::ValueType(Str))
                   |
