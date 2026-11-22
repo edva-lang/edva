@@ -4,7 +4,7 @@
 #use io
 #use str
 
-pbuf = libc::malloc(8)
+pbuf = libc::malloc(8).expect("could not allocate I/O buffer")
 libc::pipe(pbuf)
 rfd = Int(@[pbuf + 0 i32])
 wfd = Int(@[pbuf + 4 i32])

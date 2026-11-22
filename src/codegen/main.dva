@@ -662,9 +662,9 @@ codegen_builder_ensure_cap = cg, b, needed =>
    one = LLVMConstInt(i64t, 1, 0)
    cap = builder_cap(cg, b, "b.cap")
    need_grow = LLVMBuildICmp(cg.builder, 40, cap, needed, "b.need.grow")
-   grow_bb = LLVMAppendBasicBlock(cg.current_fn, "b.grow2")
-   nogrow_bb = LLVMAppendBasicBlock(cg.current_fn, "b.nogrow2")
-   done_bb = LLVMAppendBasicBlock(cg.current_fn, "b.grow_done")
+   grow_bb = LLVMAppendBasicBlock(types::current_function(cg), "b.grow2")
+   nogrow_bb = LLVMAppendBasicBlock(types::current_function(cg), "b.nogrow2")
+   done_bb = LLVMAppendBasicBlock(types::current_function(cg), "b.grow_done")
    LLVMBuildCondBr(cg.builder, need_grow, grow_bb, nogrow_bb)
 
    LLVMPositionBuilderAtEnd(cg.builder, grow_bb)
@@ -763,7 +763,7 @@ codegen_builder_append_rune = cg, b, rune_val =>
          dst = types::gep1(cg, i8t, bdata, cur_len, "b.rn.dst")
          sc = str::from_int(types::g.tmpc)
          types::g.tmpc = types::g.tmpc + 1
-         cur_fn = cg.current_fn
+         cur_fn = types::current_function(cg)
          b1_bb = LLVMAppendBasicBlock(cur_fn, "br.b1." + sc)
          check2_bb = LLVMAppendBasicBlock(cur_fn, "br.c2." + sc)
          b2_bb = LLVMAppendBasicBlock(cur_fn, "br.b2." + sc)
@@ -1078,10 +1078,10 @@ codegen_builder_freeze = cg, b, name =>
          has_chunk = LLVMBuildICmp(cg.builder, 38, nchunks, zero,
            "b.freeze.has.chunk")
          entry_bb = LLVMGetInsertBlock(cg.builder)
-         check_bb = LLVMAppendBasicBlock(cg.current_fn,
+         check_bb = LLVMAppendBasicBlock(types::current_function(cg),
            "b.freeze.check")
-         copy_bb = LLVMAppendBasicBlock(cg.current_fn, "b.freeze.copy")
-         done_bb = LLVMAppendBasicBlock(cg.current_fn, "b.freeze.done")
+         copy_bb = LLVMAppendBasicBlock(types::current_function(cg), "b.freeze.copy")
+         done_bb = LLVMAppendBasicBlock(types::current_function(cg), "b.freeze.done")
          LLVMBuildCondBr(cg.builder, has_chunk, check_bb, done_bb)
 
          LLVMPositionBuilderAtEnd(cg.builder, check_bb)
@@ -1200,8 +1200,8 @@ codegen_array_var_value_local = cg, name, lname =>
          cur = LLVMBuildLoad2(cg.builder, i8p, slot, lname)
          is_null = LLVMBuildICmp(cg.builder, 32, cur,
            LLVMConstNull(i8p), "a.null")
-         create_bb = LLVMAppendBasicBlock(cg.current_fn, "a.create")
-         after_bb = LLVMAppendBasicBlock(cg.current_fn, "a.after")
+         create_bb = LLVMAppendBasicBlock(types::current_function(cg), "a.create")
+         after_bb = LLVMAppendBasicBlock(types::current_function(cg), "a.after")
          LLVMBuildCondBr(cg.builder, is_null, create_bb, after_bb)
          LLVMPositionBuilderAtEnd(cg.builder, create_bb)
          dt = types::var_dtype(cg, name)
@@ -1894,8 +1894,8 @@ get_or_emit_array_grow = cg =>
    fn_opt
       | _
       |
-         saved_fn = cg.current_fn
-         saved_bb_opt = types::llvm_val_opt(LLVMGetInsertBlock(cg.builder))
+         saved_fn = cg.active_fn
+         saved_bb_opt = LLVMGetInsertBlockNullable(cg.builder)
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
          i64t = LLVMInt64Type!
          one = LLVMConstInt(i64t, 1, 0)
@@ -1904,7 +1904,7 @@ get_or_emit_array_grow = cg =>
          fn = LLVMAddFunction(cg.module, grow_name, grow_ty)
          LLVMSetLinkage(fn, 8)
          runtime::mark_nounwind(cg, fn)
-         cg.current_fn = fn
+         cg.active_fn = <+ fn +>
          entry = LLVMAppendBasicBlock(fn, "entry")
          LLVMPositionBuilderAtEnd(cg.builder, entry)
          a = LLVMGetParam(fn, 0)
@@ -1933,7 +1933,7 @@ get_or_emit_array_grow = cg =>
            LLVMBuildStructGEP2(cg.builder, b_ty, a, 2,
              "a.new.cap.gep"))
          LLVMBuildRetVoid(cg.builder)
-         cg.current_fn = saved_fn
+         cg.active_fn = saved_fn
          saved_bb_opt | saved_bb => LLVMPositionBuilderAtEnd(cg.builder, saved_bb)
          fn
 
@@ -2408,7 +2408,7 @@ codegen_array_box_payload = cg, union_ptr, elem_val, elem_type =>
 codegen_emit_thread_wrapper: types::Cg, Addr, Addr, Int, types::Addrs, ast::ValueType,
   <> => Addr
 codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
-   saved_fn = cg.current_fn
+   saved_fn = cg.active_fn
    saved_bb = LLVMGetInsertBlock(cg.builder)
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    fty = types::fn_type1(i8p, i8p)
@@ -2419,7 +2419,7 @@ codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
    runtime::mark_nounwind(cg, wrapper)
    entry = LLVMAppendBasicBlock(wrapper, "entry")
    LLVMPositionBuilderAtEnd(cg.builder, entry)
-   cg.current_fn = wrapper
+   cg.active_fn = <+ wrapper +>
    rec_t = codegen_ensure_pthread(cg)
    rec = LLVMBuildPointerCast(cg.builder, LLVMGetParam(wrapper, 0),
      LLVMPointerType(rec_t, 0), "rec")
@@ -2487,7 +2487,7 @@ codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
    LLVMBuildStore(cg.builder, LLVMConstInt(LLVMInt64Type!, 0, 0), active_gen_tls)
    LLVMBuildRet(cg.builder, LLVMConstNull(i8p))
    LLVMPositionBuilderAtEnd(cg.builder, saved_bb)
-   cg.current_fn = saved_fn
+   cg.active_fn = saved_fn
    wrapper
 
 // Whether a variable is a partially-initialized composite (a forward
@@ -2896,7 +2896,7 @@ codegen_destroy: types::Cg => ()
 codegen_destroy = cg =>
    types::llvm_val_opt(cg.builder) | b => LLVMDisposeBuilder(b)
    types::llvm_val_opt(cg.module) | m => LLVMDisposeModule(m)
-   types::llvm_val_opt(cg.target_machine) | tm => LLVMDisposeTargetMachine(tm)
+   cg.target_machine | tm => LLVMDisposeTargetMachine(tm)
 
 is_fn_vt: ast::ValueType => <>
 is_fn_vt = vt => vt [Fn]
@@ -3233,7 +3233,7 @@ codegen_typed_eval = cg, te =>
                   tf_is_rec = (tf.val.kind [Record, Call]) &&
                     types::is_record_vt(tf_vt) &&
                     cg.in_fn && ?cg.cycle_breaks == 0 && cg.in_restore_scope == 0
-                  tf_is_str = (types::g.inline_ret_bb != sys::addr_null) &&
+                  tf_is_str = <>(types::g.inline_ret_bb) &&
                     want_rec_stack && types::is_str_vt(tf_vt) &&
                     cg.in_fn && cg.in_restore_scope == 0
                   tf_stack = tf_is_rec || tf_is_str
@@ -3481,7 +3481,7 @@ codegen_typed_eval = cg, te =>
                      (typed_ptr, ast::ValueType(Record))
                   |
                      rm'.1
-                        [Unknown] (ptr_val, ast::ValueType(RawPtr))
+                        [Unknown] (ptr_val, ast::ValueType(NullablePtr))
                         [Record] (ptr_val, ast::ValueType(Record))
                         |
                            elem_ty = types::llvm_type_of_vt(rm'.1)
@@ -3492,6 +3492,7 @@ codegen_typed_eval = cg, te =>
                            loaded = LLVMBuildLoad2(cg.builder,
                              elem_ty, elem_ptr, "raw.load")
                            LLVMSetVolatile(loaded, 1)
+                           rm'.1 [RawPtr] | match::check_nonnull_addr(cg, loaded, <->)
                            (loaded, rm'.1)
             | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       [RawMemoryWrite rmw]
@@ -3570,10 +3571,10 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
    stmt::run_typed_fn_summaries(cg, optimized)
    types::run_typed_vra(cg, optimized)
    t_ana_end = time::mono_ns!
-   cg.current_fn = (cg.main_fn | _ | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0)))
+   cg.active_fn = cg.main_fn
    cg.current_module = ""
    cg.in_fn = <->
-   main_entry = LLVMGetEntryBasicBlock(cg.current_fn)
+   main_entry = LLVMGetEntryBasicBlock(types::current_function(cg))
    LLVMPositionBuilderAtEnd(cg.builder, main_entry)
    codegen_typed_emit_stmts(cg, optimized)
    cg.opts.is_module

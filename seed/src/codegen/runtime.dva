@@ -343,7 +343,7 @@ check_global_store: types::Cg, Addr, Addr, ast::ValueType, ast::TypeInfo => ()
 check_global_store = cg, slot, value, vt, ti =>
    cg.opts.check_arena_escapes && !cg.opts.no_runtime && !cg.error &&
      global_store_ref_type(vt) &&
-     LLVMIsAGlobalVariable(slot) != sys::addr_null && LLVMIsConstant(value) == 0
+     <>(LLVMIsAGlobalVariable(slot)) && LLVMIsConstant(value) == 0
       |
          kind = LLVMGetTypeKind(LLVMTypeOf(value))
          kind
@@ -463,7 +463,7 @@ emit_abort_msg = cg, msg, gname =>
          saved = LLVMGetInsertBlock(cg.builder)
          ft = types::fn_type0(LLVMVoidType!)
          name = "dva_abort_${gname}"
-         fn = types::llvm_val_opt(LLVMGetNamedFunction(cg.module, name))
+         fn = LLVMGetNamedFunctionNullable(cg.module, name)
             | f => f
             |
                f = LLVMAddFunction(cg.module, name, ft)
@@ -1362,7 +1362,7 @@ codegen_emit_runtime_full = cg =>
    res_ret = LLVMBuildRet(cg.builder, h_phi)
 
    // Safe Builder runtime helpers (backing std/mem clear, truncate, zero_buf, write_tail).
-   saved_cfn = cg.current_fn
+   saved_cfn = cg.active_fn
 
    bt_params = types::Addrs()
    bt_params += i8p
@@ -1370,7 +1370,7 @@ codegen_emit_runtime_full = cg =>
    btrunc_fn = LLVMAddFunction(cg.module, "dva_builder_truncate",
      stmt::fn_type_n(cg, LLVMVoidType!, bt_params, 2))
    mark_nounwind(cg, btrunc_fn)
-   cg.current_fn = btrunc_fn
+   cg.active_fn = <+ btrunc_fn +>
    LLVMPositionBuilderAtEnd(cg.builder, LLVMAppendBasicBlock(btrunc_fn, "entry"))
    _bt_r = main::codegen_builder_truncate(cg, LLVMGetParam(btrunc_fn, 0), LLVMGetParam(btrunc_fn, 1))
    LLVMBuildRetVoid(cg.builder)
@@ -1380,7 +1380,7 @@ codegen_emit_runtime_full = cg =>
    bzero_fn = LLVMAddFunction(cg.module, "dva_builder_zero",
      stmt::fn_type_n(cg, i8p, bz_params, 1))
    mark_nounwind(cg, bzero_fn)
-   cg.current_fn = bzero_fn
+   cg.active_fn = <+ bzero_fn +>
    LLVMPositionBuilderAtEnd(cg.builder, LLVMAppendBasicBlock(bzero_fn, "entry"))
    bz_res = main::codegen_builder_zero(cg, LLVMGetParam(bzero_fn, 0))
    LLVMBuildRet(cg.builder, bz_res)
@@ -1392,13 +1392,13 @@ codegen_emit_runtime_full = cg =>
    bwtail_fn = LLVMAddFunction(cg.module, "dva_builder_write_tail",
      stmt::fn_type_n(cg, i64t, bw_params, 3))
    mark_nounwind(cg, bwtail_fn)
-   cg.current_fn = bwtail_fn
+   cg.active_fn = <+ bwtail_fn +>
    LLVMPositionBuilderAtEnd(cg.builder, LLVMAppendBasicBlock(bwtail_fn, "entry"))
    bw_res = main::codegen_builder_write_tail(cg, LLVMGetParam(bwtail_fn, 0),
      LLVMGetParam(bwtail_fn, 1), LLVMGetParam(bwtail_fn, 2))
    LLVMBuildRet(cg.builder, bw_res)
 
-   cg.current_fn = saved_cfn
+   cg.active_fn = saved_cfn
 
    // Built-in 64 KB edge/branch coverage bitmap and sanitizer-coverage hooks
    i8t = LLVMInt8Type!
@@ -2297,7 +2297,7 @@ codegen_check_rebind_type = cg, name, rhs_vt, is_gmut, rhs_expr =>
          prev_vt != ast::ValueType(Unknown) && rhs_vt != ast::ValueType(Unknown)
             |
                intish_ok = types::is_int_vt(prev_vt) &&
-                 (types::is_int_vt(rhs_vt) || (rhs_vt [RawPtr]))
+                 (types::is_int_vt(rhs_vt) || types::is_ptr_vt(rhs_vt))
                ram_ok = prev_vt [Ram] &&
                  (types::is_int_vt(rhs_vt) || (rhs_vt [Ram]) || types::is_record_vt(rhs_vt))
                same = prev_vt == rhs_vt || intish_ok || ram_ok
@@ -2566,7 +2566,7 @@ codegen_emit_raw_assign_pointer_value: types::Cg,
   (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo),
   ast::RawMemoryExpr, (Addr, ast::ValueType) => ()
 codegen_emit_raw_assign_pointer_value = cg, t, rm, ev =>
-   ev.1 [Float, F32, Str, RawPtr, Error] codegen_emit_raw_assign_value(cg, t, rm, ev)
+   ev.1 [Float, F32, Str, RawPtr, NullablePtr, Error] codegen_emit_raw_assign_value(cg, t, rm, ev)
       | types::init_error(cg, "E3142", diag::E3142_raw_write_type!, 0, 0)
 
 codegen_emit_raw_assign_value: types::Cg,
@@ -2584,7 +2584,7 @@ codegen_emit_raw_assign_value = cg, t, rm, ev =>
 
 raw_store_elem_type: ast::ValueType, Addr => Addr
 raw_store_elem_type = vt, i8p =>
-   vt [Str, RawPtr, Error] i8p | types::llvm_type_of_vt(vt)
+   vt [Str, RawPtr, NullablePtr, Error] i8p | types::llvm_type_of_vt(vt)
 
 codegen_emit_record_assign: types::Cg,
   (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo),
@@ -2735,7 +2735,7 @@ codegen_emit_exit = cg, e =>
                LLVMBuildStore(cg.builder, tr, code_g)
                LLVMBuildUnreachable(cg.builder)
                cg.exited = <+>
-               dead' = LLVMAppendBasicBlock(cg.current_fn, "exit.halt")
+               dead' = LLVMAppendBasicBlock(types::current_function(cg), "exit.halt")
                LLVMPositionBuilderAtEnd(cg.builder, dead')
             |
                emit_arena_destroy(cg)
@@ -2743,7 +2743,7 @@ codegen_emit_exit = cg, e =>
                types::call1(cg, ef.0, ef.1, tr, "")
                LLVMBuildUnreachable(cg.builder)
                cg.exited = <+>
-               dead' = LLVMAppendBasicBlock(cg.current_fn, "exit.done")
+               dead' = LLVMAppendBasicBlock(types::current_function(cg), "exit.done")
                LLVMPositionBuilderAtEnd(cg.builder, dead')
       |
          types::init_error(cg, "E3172", diag::E3172_exit_status_integerish!, 0, 0)
@@ -2825,46 +2825,45 @@ write_only_global: Addr => <>
 write_only_global = gv =>
    LLVMGetLinkage(gv) != 8 | --| <->
    use' = LLVMGetFirstUse(gv)
-   use' == sys::addr_null | --| <->
+   !<>(use') | --| <->
    0.. @
-      use' == sys::addr_null | --| <+>
-      user = LLVMGetUser(use')
-      LLVMIsAStoreInst(user) == sys::addr_null | --| <->
+      current = use' | value => value | --| <+>
+      user = LLVMGetUser(current)
+      !<>(LLVMIsAStoreInst(user)) | --| <->
       LLVMGetOperand(user, 1) != gv || LLVMGetOperand(user, 0) == gv ||
          LLVMGetVolatile(user) != 0 || LLVMGetOrdering(user) != 0 | --| <->
-      use' = LLVMGetNextUse(use')
+      use' = LLVMGetNextUse(current)
    <->
 
 prune_write_only_globals: types::Cg => ()
 prune_write_only_globals = cg =>
    gv' = LLVMGetFirstGlobal(cg.module)
    0.. @
-      gv' == sys::addr_null | -->
-      gv = gv'
+      gv = gv' | value => value | -->
       gv' = LLVMGetNextGlobal(gv)
       write_only_global(gv) |
          0.. @
-            use = LLVMGetFirstUse(gv)
-            use == sys::addr_null | -->
-            LLVMInstructionEraseFromParent(LLVMGetUser(use))
+            LLVMGetFirstUse(gv)
+               | current => LLVMInstructionEraseFromParent(LLVMGetUser(current))
+               | -->
 
 // The compiler emitted this allocation solely to hold a constant aggregate.
 // Discard its initialization only when no use observes the allocated storage.
 prune_constant_record_copy: types::ConstantRecordCopy => ()
 prune_constant_record_copy = copy =>
-   store' = sys::addr_null
+   store' = <-->
    use' = LLVMGetFirstUse(copy.allocation)
    0.. @
-      use' == sys::addr_null | -->
-      user = LLVMGetUser(use')
-      use' = LLVMGetNextUse(use')
+      current = use' | value => value | -->
+      user = LLVMGetUser(current)
+      use' = LLVMGetNextUse(current)
       user == copy.init | --^
-      store' != sys::addr_null || LLVMIsAStoreInst(user) == sys::addr_null ||
+      <>(store') || !<>(LLVMIsAStoreInst(user)) ||
         LLVMGetOperand(user, 0) != copy.allocation | --|
       slot = LLVMGetOperand(user, 1)
-      LLVMIsAGlobalVariable(slot) == sys::addr_null || !write_only_global(slot) | --|
-      store' = user
-   store' != sys::addr_null | LLVMInstructionEraseFromParent(store')
+      !<>(LLVMIsAGlobalVariable(slot)) || !write_only_global(slot) | --|
+      store' = <+ user +>
+   store' | store => LLVMInstructionEraseFromParent(store)
    LLVMInstructionEraseFromParent(copy.init)
    LLVMInstructionEraseFromParent(copy.allocation)
 
@@ -2875,7 +2874,7 @@ can_embed_string_view = cg =>
    cg.opts.optimize_closures && !cg.opts.no_typed_opt && !cg.opts.no_runtime &&
      cg.in_fn && ?cg.cycle_breaks == 0 && cg.in_restore_scope == 0 &&
      !types::g.current_fn_has_restore &&
-     LLVMGetLinkage(cg.current_fn) == 8
+     LLVMGetLinkage(types::current_function(cg)) == 8
 
 string_view_metadata_kind: () => Int
 string_view_metadata_kind = !=>
@@ -2885,15 +2884,15 @@ string_view_metadata_kind = !=>
 mark_string_view: types::Cg, Addr => ()
 mark_string_view = cg, view =>
    ctx = LLVMGetGlobalContext!
-   md = LLVMMDNodeInContext2(ctx, sys::addr_null, 0)
-   LLVMSetMetadata(view, string_view_metadata_kind!, LLVMMetadataAsValue(ctx, md))
+   md = LLVMMDNodeInContext2(ctx, <-->, 0)
+   LLVMSetMetadata(view, string_view_metadata_kind!, <+ LLVMMetadataAsValue(ctx, md) +>)
    cg.string_views += view
 
 #type EmbeddedString (
    field_store: Addr,
    view: Addr,
    len_store: Addr,
-   len_gep: Addr,
+   len_gep: < Addr | >,
    data_store: Addr,
    data_gep: Addr
 )
@@ -2901,71 +2900,68 @@ mark_string_view = cg, view =>
 
 string_header_field: types::Cg, Addr, Addr, Int => <>
 string_header_field = cg, address, header, index =>
-   LLVMIsAGetElementPtrInst(address) != sys::addr_null &&
+   <>(LLVMIsAGetElementPtrInst(address)) &&
      LLVMGetNumOperands(address) == 3 &&
      LLVMGetGEPSourceElementType(address) == cg.str_t &&
      LLVMGetOperand(address, 0) == header &&
-     LLVMIsAConstantInt(LLVMGetOperand(address, 1)) != sys::addr_null &&
+     <>(LLVMIsAConstantInt(LLVMGetOperand(address, 1))) &&
      LLVMConstIntGetZExtValue(LLVMGetOperand(address, 1)) == 0 &&
-     LLVMIsAConstantInt(LLVMGetOperand(address, 2)) != sys::addr_null &&
+     <>(LLVMIsAConstantInt(LLVMGetOperand(address, 2))) &&
      LLVMConstIntGetZExtValue(LLVMGetOperand(address, 2)) == index
 
-single_store_into: Addr => Addr
+single_store_into: Addr => < Addr | >
 single_store_into = address =>
-   first = LLVMGetFirstUse(address)
-   first == sys::addr_null || LLVMGetNextUse(first) != sys::addr_null
-      | --| sys::addr_null
+   first = LLVMGetFirstUse(address) | current => current | --| <-->
+   <>(LLVMGetNextUse(first)) | --| <-->
    user = LLVMGetUser(first)
-   LLVMIsAStoreInst(user) != sys::addr_null && LLVMGetOperand(user, 1) == address &&
+   <>(LLVMIsAStoreInst(user)) && LLVMGetOperand(user, 1) == address &&
      LLVMGetVolatile(user) == 0 && LLVMGetOrdering(user) == 0
-      | user
-      | sys::addr_null
+      | <+ user +>
 
 find_embeddable_string: types::Cg, Addr, Int => <EmbeddedString|>
 find_embeddable_string = cg, field_store, md_kind =>
    view = LLVMGetOperand(field_store, 0)
-   LLVMIsACallInst(view) == sys::addr_null ||
-     LLVMGetMetadata(view, md_kind) == sys::addr_null | --| <-->
-   len_store' = sys::addr_null
-   len_gep' = sys::addr_null
-   data_store' = sys::addr_null
-   data_gep' = sys::addr_null
+   !<>(LLVMIsACallInst(view)) || !<>(LLVMGetMetadata(view, md_kind)) | --| <-->
+   len_store' = <-->
+   len_gep' = <-->
+   data_store' = <-->
+   data_gep' = <-->
    use' = LLVMGetFirstUse(view)
    0.. @
-      use' == sys::addr_null | -->
-      user = LLVMGetUser(use')
-      use' = LLVMGetNextUse(use')
+      current = use' | value => value | -->
+      user = LLVMGetUser(current)
+      use' = LLVMGetNextUse(current)
       user == field_store | --^
-      string_header_field(cg, user, view, 0) && len_store' == sys::addr_null
+      string_header_field(cg, user, view, 0) && !<>(len_store')
          |
-            len_gep' = user
+            len_gep' = <+ user +>
             len_store' = single_store_into(user)
-            len_store' == sys::addr_null | --| <-->
+            !<>(len_store') | --| <-->
             --^
-      string_header_field(cg, user, view, 1) && data_store' == sys::addr_null
+      string_header_field(cg, user, view, 1) && !<>(data_store')
          |
-            data_gep' = user
+            data_gep' = <+ user +>
             data_store' = single_store_into(user)
-            data_store' == sys::addr_null | --| <-->
+            !<>(data_store') | --| <-->
             --^
-      LLVMIsAStoreInst(user) != sys::addr_null && len_store' == sys::addr_null &&
+      <>(LLVMIsAStoreInst(user)) && !<>(len_store') &&
         LLVMGetOperand(user, 1) == view && LLVMTypeOf(LLVMGetOperand(user, 0)) == LLVMInt64Type! &&
         LLVMGetVolatile(user) == 0 && LLVMGetOrdering(user) == 0
          |
-            len_store' = user
+            len_store' = <+ user +>
             --^
       --| <-->
-   len_store' != sys::addr_null && data_store' != sys::addr_null
-      | <+ EmbeddedString(field_store, view, len_store', len_gep', data_store', data_gep') +>
-      | <-->
+   len_store = len_store' | store => store | --| <-->
+   data_store = data_store' | store => store | --| <-->
+   data_gep = data_gep' | gep => gep | --| <-->
+   <+ EmbeddedString(field_store, view, len_store, len_gep', data_store, data_gep) +>
 
 // Tiny arenas may admit each allocation separately but not the combined
 // record. Retain a slow path with the original per-header allocation size.
 record_string_slot: types::Cg, Addr => Addr
 record_string_slot = cg, fty =>
    name = "dva_record_string_slot"
-   existing = LLVMGetNamedFunction(cg.module, name)
-   existing != sys::addr_null | --| existing
+   LLVMGetNamedFunctionNullable(cg.module, name) | existing => --| existing
    fn = LLVMAddFunction(cg.module, name, fty)
    LLVMSetLinkage(fn, 8)
    mark_nounwind(cg, fn)
@@ -3025,7 +3021,7 @@ embed_record_strings = cg, group, md_kind, merged =>
       LLVMSetOperand(item.field_store, 0, header)
       LLVMInstructionEraseFromParent(item.len_store)
       LLVMInstructionEraseFromParent(item.data_store)
-      item.len_gep != sys::addr_null | LLVMInstructionEraseFromParent(item.len_gep)
+      item.len_gep | gep => LLVMInstructionEraseFromParent(gep)
       LLVMInstructionEraseFromParent(item.data_gep)
       merged += item.view
 
@@ -3042,7 +3038,7 @@ optimize_string_fields = cg =>
          !cg.error
             | cg.record_string_fields @ group => embed_record_strings(cg, group, md_kind, merged)
    cg.string_views @ view =>
-      LLVMSetMetadata(view, md_kind, sys::addr_null)
+      LLVMSetMetadata(view, md_kind, <-->)
    merged @ view => LLVMInstructionEraseFromParent(view)
    ?merged > 0 | verify_emitted_ir(cg)
 
@@ -3084,8 +3080,8 @@ run_ir_passes = cg, passes =>
    options = LLVMCreatePassBuilderOptions!
    err = LLVMRunPasses(cg.module, passes, cg.target_machine, options)
    LLVMDisposePassBuilderOptions(options)
-   err != sys::addr_null |
-      msg = LLVMGetErrorMessage(err)
+   err | failure =>
+      msg = LLVMGetErrorMessage(failure)
       detail = c_str(msg)
       log::error $ "E5011: LLVM IR optimization failed: ${detail}"
       LLVMDisposeErrorMessage(msg)
@@ -3094,12 +3090,12 @@ run_ir_passes = cg, passes =>
 // Print only after LLVM has verified the original module and pruned dead IR.
 write_verified_ir: types::Cg, String => ()
 write_verified_ir = cg, out_path =>
-   err_out = (sys::addr_null, sys::addr_null)
+   err_out = (ptr(0), ptr(0))
    tmp_out = "${out_path}.tmp"
    p_res = LLVMPrintModuleToFile(cg.module, tmp_out, &err_out)
    p_res != 0
       |
-         err_msg_opt = types::llvm_val_opt(err_out.0)
+         err_msg_opt = sys::addr_opt(err_out.0)
          err_msg_opt
             | err_msg =>
                detail = c_str(err_msg)
@@ -3217,11 +3213,11 @@ codegen_finish = cg, out_path =>
 
 verify_emitted_ir: types::Cg => ()
 verify_emitted_ir = cg =>
-   v_err_out = (sys::addr_null, sys::addr_null)
+   v_err_out = (ptr(0), ptr(0))
    v_res = LLVMVerifyModule(cg.module, 2, &v_err_out)
    v_res != 0
       |
-         v_msg_opt = types::llvm_val_opt(v_err_out.0)
+         v_msg_opt = sys::addr_opt(v_err_out.0)
          v_msg_opt
             | v_msg =>
                v_str = c_str(v_msg)
@@ -3326,7 +3322,7 @@ codegen_map_hash = cg, key_val, key_vt =>
    is_int
       | codegen_mix_int64(cg, key_val)
       |
-         is_ptr = key_vt [RawPtr]
+         is_ptr = types::is_ptr_vt(key_vt)
          is_ptr
             |
                i64t' = LLVMInt64Type!
@@ -3354,9 +3350,9 @@ codegen_map_string_key_equal = cg, slot, key_val =>
    new_len = expr::codegen_string_len(cg, key_val, "mk.nlen")
    lengths_equal = LLVMBuildICmp(cg.builder, 32, stored_len, new_len,
      "mk.lenseq")
-   eq_bb = LLVMAppendBasicBlock(cg.current_fn, "mk.eq.then")
-   neq_bb = LLVMAppendBasicBlock(cg.current_fn, "mk.eq.else")
-   merge_bb = LLVMAppendBasicBlock(cg.current_fn, "mk.eq.merge")
+   eq_bb = LLVMAppendBasicBlock(types::current_function(cg), "mk.eq.then")
+   neq_bb = LLVMAppendBasicBlock(types::current_function(cg), "mk.eq.else")
+   merge_bb = LLVMAppendBasicBlock(types::current_function(cg), "mk.eq.merge")
    LLVMBuildCondBr(cg.builder, lengths_equal, eq_bb, neq_bb)
    LLVMPositionBuilderAtEnd(cg.builder, eq_bb)
    stored_data = expr::codegen_string_data(cg, stored, "mk.sdata")
@@ -3384,7 +3380,7 @@ codegen_map_key_equal = cg, slot, key_val, key_vt =>
          stored' = LLVMBuildLoad2(cg.builder, i64t', slot, "mk.stored")
          LLVMBuildICmp(cg.builder, 32, stored', key_val, "mk.eq")
       |
-         is_ptr = key_vt [RawPtr]
+         is_ptr = types::is_ptr_vt(key_vt)
          is_ptr
             |
                i64t' = LLVMInt64Type!
@@ -3414,14 +3410,14 @@ codegen_map_insert_raw = cg, m, key_val, val_val, key_vt, allow_grow =>
    capm1 = LLVMBuildSub(cg.builder, mf.0, one, "m.capm1")
    idx0 = LLVMBuildAnd(cg.builder, hash, capm1, "m.idx0")
    cur = LLVMGetInsertBlock(cg.builder)
-   loop = LLVMAppendBasicBlock(cg.current_fn, "m.loop")
-   check_tomb_bb = LLVMAppendBasicBlock(cg.current_fn, "m.check.tomb")
-   tomb_bb = LLVMAppendBasicBlock(cg.current_fn, "m.tomb")
-   occ_bb = LLVMAppendBasicBlock(cg.current_fn, "m.found")
-   overwrite = LLVMAppendBasicBlock(cg.current_fn, "m.overwrite")
-   next = LLVMAppendBasicBlock(cg.current_fn, "m.next")
-   empty_bb = LLVMAppendBasicBlock(cg.current_fn, "m.empty")
-   done = LLVMAppendBasicBlock(cg.current_fn, "m.done")
+   loop = LLVMAppendBasicBlock(types::current_function(cg), "m.loop")
+   check_tomb_bb = LLVMAppendBasicBlock(types::current_function(cg), "m.check.tomb")
+   tomb_bb = LLVMAppendBasicBlock(types::current_function(cg), "m.tomb")
+   occ_bb = LLVMAppendBasicBlock(types::current_function(cg), "m.found")
+   overwrite = LLVMAppendBasicBlock(types::current_function(cg), "m.overwrite")
+   next = LLVMAppendBasicBlock(types::current_function(cg), "m.next")
+   empty_bb = LLVMAppendBasicBlock(types::current_function(cg), "m.empty")
+   done = LLVMAppendBasicBlock(types::current_function(cg), "m.done")
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, loop)
    idx_phi = LLVMBuildPhi(cg.builder, i64t, "m.idx")
@@ -3482,8 +3478,8 @@ codegen_map_insert_raw = cg, m, key_val, val_val, key_vt, allow_grow =>
          rhs0 = LLVMBuildMul(cg.builder, mf.0,
            LLVMConstInt(i64t, 3, 0), "m.c.rhs")
          need0 = LLVMBuildICmp(cg.builder, 38, lhs0, rhs0, "m.need.grow")
-         grow_bb = LLVMAppendBasicBlock(cg.current_fn, "m.grow")
-         ins_bb = LLVMAppendBasicBlock(cg.current_fn, "m.ins.slot")
+         grow_bb = LLVMAppendBasicBlock(types::current_function(cg), "m.grow")
+         ins_bb = LLVMAppendBasicBlock(types::current_function(cg), "m.ins.slot")
          LLVMBuildCondBr(cg.builder, need0, grow_bb, ins_bb)
 
          LLVMPositionBuilderAtEnd(cg.builder, grow_bb)
@@ -3565,10 +3561,10 @@ codegen_map_grow = cg, m, key_vt =>
    LLVMBuildStore(cg.builder, zero,
      LLVMBuildStructGEP2(cg.builder, mt, m, 5, "m.tombs.gep"))
    start = LLVMGetInsertBlock(cg.builder)
-   loop = LLVMAppendBasicBlock(cg.current_fn, "m.re.loop")
-   body = LLVMAppendBasicBlock(cg.current_fn, "m.re.body")
-   cont = LLVMAppendBasicBlock(cg.current_fn, "m.re.cont")
-   done = LLVMAppendBasicBlock(cg.current_fn, "m.re.done")
+   loop = LLVMAppendBasicBlock(types::current_function(cg), "m.re.loop")
+   body = LLVMAppendBasicBlock(types::current_function(cg), "m.re.body")
+   cont = LLVMAppendBasicBlock(types::current_function(cg), "m.re.cont")
+   done = LLVMAppendBasicBlock(types::current_function(cg), "m.re.done")
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, loop)
    i = LLVMBuildPhi(cg.builder, i64t, "m.re.i")
@@ -3581,7 +3577,7 @@ codegen_map_grow = cg, m, key_vt =>
      "m.re.state")
    occupied = LLVMBuildICmp(cg.builder, 32, state,
      LLVMConstInt(LLVMInt8Type!, 1, 0), "m.re.occ")
-   ins = LLVMAppendBasicBlock(cg.current_fn, "m.re.ins")
+   ins = LLVMAppendBasicBlock(types::current_function(cg), "m.re.ins")
    LLVMBuildCondBr(cg.builder, occupied, ins, cont)
    LLVMPositionBuilderAtEnd(cg.builder, ins)
    key_slot = types::gep1(cg, i64t, old_keys, i, "m.re.key.slot")
@@ -3678,12 +3674,12 @@ codegen_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
    capm1 = LLVMBuildSub(cg.builder, cap, one, "m.capm1")
    idx0 = LLVMBuildAnd(cg.builder, hash, capm1, "m.idx0")
    cur = LLVMGetInsertBlock(cg.builder)
-   loop = LLVMAppendBasicBlock(cg.current_fn, "m.rd.loop")
-   probe = LLVMAppendBasicBlock(cg.current_fn, "m.rd.probe")
-   found_bb = LLVMAppendBasicBlock(cg.current_fn, "m.rd.found")
-   next = LLVMAppendBasicBlock(cg.current_fn, "m.rd.next")
-   miss_bb = LLVMAppendBasicBlock(cg.current_fn, "m.rd.miss")
-   done = LLVMAppendBasicBlock(cg.current_fn, "m.rd.done")
+   loop = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.loop")
+   probe = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.probe")
+   found_bb = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.found")
+   next = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.next")
+   miss_bb = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.miss")
+   done = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.done")
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, loop)
    idx_phi = LLVMBuildPhi(cg.builder, i64t, "m.rd.idx")
@@ -3705,7 +3701,7 @@ codegen_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
    LLVMPositionBuilderAtEnd(cg.builder, found_bb)
    key_slot = types::gep1(cg, i64t, keys, idx_phi, "m.rd.key.slot")
    eq = codegen_map_key_equal(cg, key_slot, key_val, key_vt)
-   hit = LLVMAppendBasicBlock(cg.current_fn, "m.rd.hit")
+   hit = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.hit")
    LLVMBuildCondBr(cg.builder, eq, hit, next)
    LLVMPositionBuilderAtEnd(cg.builder, next)
    idx_next = LLVMBuildAnd(cg.builder,
@@ -3784,12 +3780,12 @@ codegen_map_membership = cg, m, key_val, key_vt =>
    capm1 = LLVMBuildSub(cg.builder, cap, one, "m.capm1")
    idx0 = LLVMBuildAnd(cg.builder, hash, capm1, "m.idx0")
    cur = LLVMGetInsertBlock(cg.builder)
-   loop = LLVMAppendBasicBlock(cg.current_fn, "m.mem.loop")
-   probe = LLVMAppendBasicBlock(cg.current_fn, "m.mem.probe")
-   found = LLVMAppendBasicBlock(cg.current_fn, "m.mem.found")
-   next = LLVMAppendBasicBlock(cg.current_fn, "m.mem.next")
-   miss_bb = LLVMAppendBasicBlock(cg.current_fn, "m.mem.miss")
-   done = LLVMAppendBasicBlock(cg.current_fn, "m.mem.done")
+   loop = LLVMAppendBasicBlock(types::current_function(cg), "m.mem.loop")
+   probe = LLVMAppendBasicBlock(types::current_function(cg), "m.mem.probe")
+   found = LLVMAppendBasicBlock(types::current_function(cg), "m.mem.found")
+   next = LLVMAppendBasicBlock(types::current_function(cg), "m.mem.next")
+   miss_bb = LLVMAppendBasicBlock(types::current_function(cg), "m.mem.miss")
+   done = LLVMAppendBasicBlock(types::current_function(cg), "m.mem.done")
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, loop)
    idx_phi = LLVMBuildPhi(cg.builder, i64t, "m.mem.idx")
@@ -3811,7 +3807,7 @@ codegen_map_membership = cg, m, key_val, key_vt =>
    LLVMPositionBuilderAtEnd(cg.builder, found)
    key_slot = types::gep1(cg, i64t, keys, idx_phi, "m.mem.key.slot")
    eq = codegen_map_key_equal(cg, key_slot, key_val, key_vt)
-   hit = LLVMAppendBasicBlock(cg.current_fn, "m.mem.hit")
+   hit = LLVMAppendBasicBlock(types::current_function(cg), "m.mem.hit")
    LLVMBuildCondBr(cg.builder, eq, hit, next)
    LLVMPositionBuilderAtEnd(cg.builder, next)
    idx_next = LLVMBuildAnd(cg.builder,
@@ -3851,13 +3847,13 @@ codegen_map_delete = cg, m, key_val, key_vt =>
    capm1 = LLVMBuildSub(cg.builder, cap, one, "m.del.capm1")
    idx0 = LLVMBuildAnd(cg.builder, hash, capm1, "m.del.idx0")
    cur = LLVMGetInsertBlock(cg.builder)
-   loop = LLVMAppendBasicBlock(cg.current_fn, "m.del.loop")
-   probe = LLVMAppendBasicBlock(cg.current_fn, "m.del.probe")
-   found = LLVMAppendBasicBlock(cg.current_fn, "m.del.found")
-   next = LLVMAppendBasicBlock(cg.current_fn, "m.del.next")
-   hit = LLVMAppendBasicBlock(cg.current_fn, "m.del.hit")
-   miss_bb = LLVMAppendBasicBlock(cg.current_fn, "m.del.miss")
-   done = LLVMAppendBasicBlock(cg.current_fn, "m.del.done")
+   loop = LLVMAppendBasicBlock(types::current_function(cg), "m.del.loop")
+   probe = LLVMAppendBasicBlock(types::current_function(cg), "m.del.probe")
+   found = LLVMAppendBasicBlock(types::current_function(cg), "m.del.found")
+   next = LLVMAppendBasicBlock(types::current_function(cg), "m.del.next")
+   hit = LLVMAppendBasicBlock(types::current_function(cg), "m.del.hit")
+   miss_bb = LLVMAppendBasicBlock(types::current_function(cg), "m.del.miss")
+   done = LLVMAppendBasicBlock(types::current_function(cg), "m.del.done")
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, loop)
    idx_phi = LLVMBuildPhi(cg.builder, i64t, "m.del.idx")

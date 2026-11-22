@@ -32,7 +32,7 @@ Edva is statically typed with zero runtime type information (RTTI). All types ar
 | **Hash map** | `K ^ V` | 8B handle (`ptr`) | `ptr` (arena hash table) | [Arrays, Slices & Maps](array.qmd) |
 | **Function / closure** | `A, B => R` | 16B (align 8) | `{ ptr fn_ptr, ptr env_ptr }` | [Functions & Closures](functions.qmd) |
 | **Compile-time type** | `Type` (`#param`) | 0B (erased before codegen) | *Erased* | [Compile-Time (`#`) & `Type` Reflection](type.qmd) |
-| **Raw pointer** | `Addr` (`ptr`) | 8B on 64-bit, 4B on 32-bit | `ptr` | [Memory, Arenas, `Addr` & FFI](addr.qmd) |
+| **Address and raw pointer** | `Addr`, `ptr` | 8B on 64-bit, 4B on 32-bit | `ptr` | [Memory, Arenas, `Addr` & FFI](addr.qmd) |
 
 ## Integer scalars (`Int`, `i8`..`i64`, `u8`..`u64`)
 

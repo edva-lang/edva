@@ -55,6 +55,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.json::#parse_surrogate_pair" = global ptr null
 @clo.const.11 = internal constant { ptr, ptr } { ptr @"json::#is_digit_at", ptr null }
 @"var.json::#is_digit_at" = global ptr null
+@null_addr_cast = internal unnamed_addr constant [40 x i8] c"E4015: cannot construct Addr from zero\0A\00"
 @clo.const.12 = internal constant { ptr, ptr } { ptr @"json::#scan_plain_ascii_end", ptr null }
 @"var.json::#scan_plain_ascii_end" = global ptr null
 @clo.const.13 = internal constant { ptr, ptr } { ptr @"json::#parse_string_escaped", ptr null }
@@ -1388,6 +1389,14 @@ choice.exit13:                                    ; preds = %loop.header.104
   %ptr.int.l = ptrtoint ptr %s.ptr7 to i64
   %addtmp16 = add i64 %ptr.int.l, %"var.k'.1"
   %ptr.res = inttoptr i64 %addtmp16 to ptr
+  %addr.is.null = icmp eq ptr %ptr.res, null
+  br i1 %addr.is.null, label %addr.null, label %addr.present
+
+addr.null:                                        ; preds = %choice.exit13
+  call void @dva_abort_null_addr_cast()
+  unreachable
+
+addr.present:                                     ; preds = %choice.exit13
   %raw.clean.int = and i64 %addtmp16, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
@@ -1411,19 +1420,19 @@ common.ret:                                       ; preds = %and.107.exit, %loop
   %common.ret.op = phi i64 [ %addtmp42, %choice.then38 ], [ %"var.k'.2", %loop.header.105 ], [ %"var.k'.2", %and.107.exit ]
   ret i64 %common.ret.op
 
-choice.then38:                                    ; preds = %choice.exit13
+choice.then38:                                    ; preds = %addr.present
   %cttz = call i64 @llvm.cttz.i64(i64 %bandtmp35, i1 false)
   %shrtmp = lshr i64 %cttz, 3
   %addtmp42 = add i64 %"var.k'.1", %shrtmp
   br label %common.ret
 
-choice.exit39:                                    ; preds = %choice.exit13
+choice.exit39:                                    ; preds = %addr.present
   %loop.next = add i64 %loop.idx.104.0, 1
   br label %loop.header.104
 
-loop.header.105:                                  ; preds = %choice.then69, %choice.exit
-  %loop.idx.105.0 = phi i64 [ 0, %choice.exit ], [ %loop.next74, %choice.then69 ]
-  %"var.k'.2" = phi i64 [ %"var.k'.0", %choice.exit ], [ %addtmp72, %choice.then69 ]
+loop.header.105:                                  ; preds = %choice.then70, %choice.exit
+  %loop.idx.105.0 = phi i64 [ 0, %choice.exit ], [ %loop.next75, %choice.then70 ]
+  %"var.k'.2" = phi i64 [ %"var.k'.0", %choice.exit ], [ %addtmp73, %choice.then70 ]
   %cmptmp51 = icmp sge i64 %"var.k'.2", %str.len.query3
   br i1 %cmptmp51, label %common.ret, label %choice.exit53
 
@@ -1439,9 +1448,9 @@ idx_ok:                                           ; preds = %choice.exit53
   %s.byte.gep = getelementptr i8, ptr %s.read.data57, i64 %"var.k'.2"
   %s.byte = load i8, ptr %s.byte.gep, align 1
   %s.byte.val = zext i8 %s.byte to i64
-  %cmptmp61 = icmp sge i64 %s.byte.val, 32
-  %cmptmp62 = icmp sle i64 %s.byte.val, 127
-  %and.106.phi = select i1 %cmptmp61, i1 %cmptmp62, i1 false
+  %cmptmp62 = icmp sge i64 %s.byte.val, 32
+  %cmptmp63 = icmp sle i64 %s.byte.val, 127
+  %and.106.phi = select i1 %cmptmp62, i1 %cmptmp63, i1 false
   %choice.res = select i1 %and.106.phi, i1 true, i1 false
   br i1 %choice.res, label %and.107.then, label %and.107.exit
 
@@ -1459,12 +1468,20 @@ and.107.then:                                     ; preds = %idx_ok
 
 and.107.exit:                                     ; preds = %idx_ok, %and.107.then
   %and.107.phi = phi i1 [ %nottmp, %and.107.then ], [ %choice.res, %idx_ok ]
-  br i1 %and.107.phi, label %choice.then69, label %common.ret
+  br i1 %and.107.phi, label %choice.then70, label %common.ret
 
-choice.then69:                                    ; preds = %and.107.exit
-  %addtmp72 = add i64 %"var.k'.2", 1
-  %loop.next74 = add i64 %loop.idx.105.0, 1
+choice.then70:                                    ; preds = %and.107.exit
+  %addtmp73 = add i64 %"var.k'.2", 1
+  %loop.next75 = add i64 %loop.idx.105.0, 1
   br label %loop.header.105
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_null_addr_cast() #4 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @null_addr_cast, i64 39)
+  call void @exit(i32 1)
+  unreachable
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)

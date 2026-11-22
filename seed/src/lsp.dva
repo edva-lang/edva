@@ -252,6 +252,7 @@ format_value_type =
    [Flag] "<>"
    [Unit] "()"
    [RawPtr] "Addr"
+   [NullablePtr] "ptr"
    [Builder] "Builder"
    [Error] "Error"
    [Type] "Type"

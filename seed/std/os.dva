@@ -8,7 +8,7 @@
 #use sys
 
 #foreign
-   environ: Addr
+   environ: < Addr | >
 
 #foreign("c")
    c_getenv      = getenv:      (name: String) => < Addr | >
@@ -20,7 +20,7 @@
    c_getppid     = getppid:     () => i32
    c_popen       = popen:       (command: String, mode: String) => < Addr | >
    c_pclose      = pclose:      (stream: Addr) => i32
-   spawn_posix = posix_spawn: (pid: Addr, path: String, acts: < Addr | >, attr: < Addr | >, argv: Addr, envp: Addr) => Int
+   spawn_posix = posix_spawn: (pid: Addr, path: String, acts: < Addr | >, attr: < Addr | >, argv: Addr, envp: < Addr | >) => Int
    c_fread       = fread:       (ptr: Addr, size: Int, nmemb: Int, stream: Addr) => Int
    c_fork        = fork:        () => i32
    c_execvp      = execvp:      (file: Addr, argv: Addr) => i32
@@ -139,9 +139,8 @@ append_bytes = b, src, n =>
       opts.clear_env
          |
             0.. @
-               environ == sys::addr_null | -->
-               first_ptr = @[environ Addr]
-               first_ptr == sys::addr_null | -->
+               envp = environ | raw => raw | -->
+               first_ptr = sys::addr_opt(@[envp ptr]) | raw => raw | -->
                entry = sys::c_str(first_ptr)
                parts = str::split(entry, "=")
                name = parts(0) |_| ""
@@ -173,7 +172,7 @@ append_bytes = b, src, n =>
          off = (i + 1) * 8
          @[argv_ptr + off] = cstr_in_arena(ar, arg)
       end_off = (n + 1) * 8
-      @[argv_ptr + end_off] = sys::addr_null
+      @[argv_ptr + end_off] = ptr(0)
       (prog_c, argv_ptr)
 
 #public

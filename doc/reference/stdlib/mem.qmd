@@ -45,10 +45,12 @@ within an arena are freed simultaneously when the arena is reset or destroyed.
 | Function | Signature | Description |
 |---|---|---|
 | `mem::arena` | `Int => Arena` | Creates an arena with initial chunk capacity (bytes) |
+| `mem::try_arena` | `Int => < Arena | >` | Creates an arena or returns `<-->` when allocation fails |
 | `mem::arena_default` | `() => Arena` | Creates an arena with default 64 MB chunk capacity |
 | `mem::global_arena` | `() => Arena` | Returns the persistent thread-default global arena descriptor |
 | `mem::current` | `() => Addr` | Returns the active arena descriptor (global arena when no scoped arena is selected) |
-| `mem::set_current` | `Addr => Addr` | Selects an arena and returns the previously active descriptor; `Addr(0)` selects the global arena |
+| `mem::set_current` | `Addr => Addr` | Selects an arena and returns the previously active descriptor |
+| `mem::set_global` | `() => Addr` | Selects the current thread’s global arena and returns the previous descriptor |
 | `mem::save` | `Arena => Int` | Saves an allocation mark in the given arena |
 | `mem::restore_to` | `Arena, Int => ()` | Restores the arena to a mark returned by `save` |
 | `mem::alloc` | `Arena, Int => Addr` | Allocates uninitialized memory of given byte size |
@@ -125,7 +127,7 @@ mem::destroy(req)
 Concurrent execution with `task::spawn` and `task::join` enforces strict per-thread arena isolation:
 
 - **Thread-default base arenas**: On the main thread, `@global_arena` serves as the persistent fallback base arena. Each `task::spawn` worker receives its own heap-allocated child `Arena`, installed as both its ambient arena (`@dva_arena_tls`) and its thread-local base arena (`@dva_arena_base_tls`).
-- **`mem::escape` & `mem::global_arena!` inside tasks**: Calling `mem::global_arena!`, `mem::escape`, `mem::escape_value`, or `mem::set_current(Addr(0))` inside a worker resolves to that worker thread's own base arena (`@dva_arena_base_tls`), never the main thread's `@global_arena`. Scoped `mem::with(req, ...)` paired with `mem::escape(...)` inside parallel workers therefore runs lock-free without data races.
+- **`mem::escape` & `mem::global_arena!` inside tasks**: Calling `mem::global_arena!`, `mem::escape`, `mem::escape_value`, or `mem::set_global!` inside a worker resolves to that worker thread's own base arena (`@dva_arena_base_tls`), never the main thread's `@global_arena`. Scoped `mem::with(req, ...)` paired with `mem::escape(...)` inside parallel workers therefore runs lock-free without data races.
 - **Handoff & adoption on `task::join`**: `task::spawn` deep-copies arguments and captured closure environments into the worker's child arena before launching the thread. `task::join` waits on the worker (`pthread_join`), deep-copies the returned value (or `Error`) into the joining thread's ambient arena, adopts any surviving chunks from the worker's base arena via `dva_arena_adopt`, and frees the worker's descriptor.
 - **Explicit handle ownership & synchronization**: `Arena` and `Pool` descriptors contain unsynchronized mutable metadata (`offset`, `num_chunks`, `free_stack`, generation stacks). An explicit `Arena` or `Pool` must be owned by one thread at a time or protected with external synchronization if shared across threads.
 

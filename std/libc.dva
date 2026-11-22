@@ -6,16 +6,17 @@
     open_mode = open: (path: String, flags: Int, mode: Int) => Int
     creat     : (path: String, mode: Int) => Int
     close     : (fd: Int) => Int
-    posix_spawn : (pid: Addr, path: String, acts: Addr, attr: Addr, argv: Addr, envp: Addr) => Int
-    posix_spawnp : (pid: Addr, file: String, acts: Addr, attr: Addr, argv: Addr, envp: Addr) => Int
+    posix_spawn : (pid: Addr, path: String, acts: < Addr | >, attr: < Addr | >, argv: Addr, envp: < Addr | >) => Int
+    posix_spawnp : (pid: Addr, file: String, acts: < Addr | >, attr: < Addr | >, argv: Addr, envp: < Addr | >) => Int
     waitpid     : (pid: Int, status_ptr: Addr, options: Int) => Int
+    waitpid_optional = waitpid: (pid: Int, status_ptr: < Addr | >, options: Int) => Int
     read      : (fd: Int, buf: Addr, count: Int) => Int
     lseek     : (fd: Int, offset: Int, whence: Int) => Int
     write     : (fd: Int, buf: String, count: Int) => Int
     write_ptr = write: (fd: Int, buf: Addr, count: Int) => Int
     writev    : (fd: Int, iov: Addr, iovcnt: Int) => Int
     ioctl     : (fd: Int, request: Int, arg: Int) => Int
-    malloc    : (size: Int) => Addr
+    malloc    : (size: Int) => < Addr | >
     free      : (Addr: Addr) => ()
     exit      : (code: Int) => ()
     htons     : (hostshort: Int) => Int
@@ -27,11 +28,11 @@
     connect   : (sockfd: Int, addr: Addr, addrlen: Int) => Int
     bind      : (sockfd: Int, addr: Addr, addrlen: Int) => Int
     listen    : (sockfd: Int, backlog: Int) => Int
-    accept    : (sockfd: Int, addr: Addr, addrlen_ptr: Addr) => Int
+    accept    : (sockfd: Int, addr: < Addr | >, addrlen_ptr: < Addr | >) => Int
     send      : (sockfd: Int, buf: String, len: Int, flags: Int) => Int
     recv      : (sockfd: Int, buf: Addr, len: Int, flags: Int) => Int
     sendto    : (sockfd: Int, buf: String, len: Int, flags: Int, addr: Addr, addrlen: Int) => Int
-    recvfrom  : (sockfd: Int, buf: Addr, len: Int, flags: Int, addr: Addr, addrlen: Addr) => Int
+    recvfrom  : (sockfd: Int, buf: Addr, len: Int, flags: Int, addr: < Addr | >, addrlen: < Addr | >) => Int
     setsockopt : (sockfd: Int, level: Int, optname: Int, optval: Addr, optlen: Int) => Int
     getsockopt : (sockfd: Int, level: Int, optname: Int, optval: Addr, optlen: Addr) => Int
     getpeername : (sockfd: Int, addr: Addr, addrlen_ptr: Addr) => Int
@@ -44,8 +45,8 @@
     freeifaddrs : (ifa: Addr) => ()
     memset    : (Addr: Addr, val: Int, size: Int) => Addr
     atoi      : (s: String) => Int
-    opendir   : (name: String) => Addr
-    readdir   : (dirp: Addr) => Addr
+    opendir   : (name: String) => < Addr | >
+    readdir   : (dirp: Addr) => < Addr | >
     closedir  : (dirp: Addr) => Int
     strlen    : (s: Addr) => Int
     strcmp    : (s1: Addr, s2: String) => Int
@@ -57,25 +58,26 @@
     unlink    : (path: String) => Int
     pipe      : (pipefd: Addr) => Int
     __errno_location : () => Addr
-    mmap      : (a: Addr, l: Int, p: Int, f: Int, fd: Int, off: Int) => Addr
+    mmap      : (a: < Addr | >, l: Int, p: Int, f: Int, fd: Int, off: Int) => Addr
     munmap    : (a: Addr, l: Int) => Int
-    syscall   : (Int, Addr, Addr, Addr, Addr, Addr, Addr) => Int
-    dlopen    : (path: String, flags: Int) => Addr
-    dlsym     : (handle: Addr, symbol: String) => Addr
+    syscall   : (Int, ptr, ptr, ptr, ptr, ptr, ptr) => Int
+    dlopen    : (path: String, flags: Int) => < Addr | >
+    dlsym     : (handle: Addr, symbol: String) => < Addr | >
     dlclose   : (handle: Addr) => Int
-    dlerror   : () => Addr
+    dlerror   : () => < Addr | >
     system    : (command: String) => Int
-    realpath  : (path: String, resolved: Addr) => Addr
+    realpath  : (path: String, resolved: < Addr | >) => < Addr | >
     isatty    : (fd: Int) => Int
     tcgetattr : (fd: Int, termios_p: Addr) => Int
     tcsetattr : (fd: Int, optional_actions: Int, termios_p: Addr) => Int
     cfmakeraw : (termios_p: Addr) => ()
     poll      : (fds: Addr, nfds: Int, timeout: Int) => Int
+    poll_optional = poll: (fds: < Addr | >, nfds: Int, timeout: Int) => Int
     epoll_create1 : (flags: Int) => Int
     epoll_ctl     : (epfd: Int, op: Int, fd: Int, event: Addr) => Int
     epoll_wait    : (epfd: Int, events: Addr, maxevents: Int, timeout: Int) => Int
-    time      : (tloc: Addr) => Int
-    signal    : (sig: Int, handler: Addr) => Addr
+    time      : (tloc: < Addr | >) => Int
+    signal    : (sig: Int, handler: < Addr | >) => < Addr | >
     raise     : (sig: Int) => Int
     getrlimit : (resource: Int, rlim: Addr) => Int
     setrlimit : (resource: Int, rlim: Addr) => Int
@@ -84,3 +86,9 @@
 #public
     errno: () => Int
     errno = !=> Int(@[__errno_location! i32])
+
+    waitpid_no_status: Int, Int => Int
+    waitpid_no_status = pid, options => waitpid_optional(pid, <-->, options)
+
+    poll_sleep: Int => Int
+    poll_sleep = timeout => poll_optional(<-->, 0, timeout)

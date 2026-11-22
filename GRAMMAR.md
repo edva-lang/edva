@@ -1227,7 +1227,8 @@ the LLVM lowercase scalar type names (`i8`/`u8`..`i64`/`u64`, `f32`, `void`,
 | `f32` | single-precision float |
 | `String` | an immutable, length-prefixed, NUL-reserved byte string (fat `{ len, data }` pointer, §3.6) |
 | `Builder` | a uniquely-owned growable byte buffer (`{ len, data, capacity }`), writable; the only mutable string type, §3.7 |
-| `Addr` (`ptr`) | raw pointer |
+| `Addr` | Non-null address |
+| `ptr` | Raw pointer-sized value that can be zero |
 | `Type` | a compile-time-only type value naming a type; **erased** at runtime (§2.14). Never a runtime value. |
 | function type | a first-class function value (a `{ fn_ptr, env_ptr }` closure pointer); the full signature (params + return) is a `.Function` type carried like a ram's slot layout. Written flat: `Int, Int => Float` (§2.8) |
 | record | named/positional tuple schema; concrete `#type` records are nominal (`#type B A` aliases `A`), while anonymous records validate explicit field names |
@@ -1323,9 +1324,9 @@ the truth values `<+>` (positive) and `<->` (negative).
 | `?r` | String/Builder/Array/Map/Record/Slice | `Int` — length/count (bytes for String/Builder; compile-time for records, runtime for slices) |
 | `.` | record, field | field value |
 | `::` | module, name | module binding |
-| `@[expr]` | `Addr` | bare pointer (`Addr`/`RawPtr`), no memory access |
-| `@[expr T]` | `Addr`, `T` | volatile typed load of primitive `T` (i8..u64/Int/Rune/Float/Addr); zero-copy record view when `T` is a RecordType |
-| `@[expr] = v` | `Addr`, value | volatile store at `v`'s own width (integerish or pointer-shaped) |
+| `@[expr]` | `Addr`, `ptr`, or integer | raw `ptr`, no memory access |
+| `@[expr T]` | address expression, `T` | volatile typed load or zero-copy record view |
+| `@[expr] = v` | address expression, value | volatile store at `v`'s own width (integerish or pointer-shaped) |
 | `{N}` (postfix) | expr, `Int` literal | record of N copies |
 | `{expr}` (prefix) | integerish expr | `Builder` — new Builder with capacity = expr (§3.7) |
 | `-->`/`--^` | — | cycle jump (see §2.11) |

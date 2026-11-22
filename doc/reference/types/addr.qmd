@@ -8,13 +8,13 @@ meta:
 
 # Memory, Arenas, `Addr` and FFI
 
-Edva executes without a garbage collector or runtime type headers. Memory is managed deterministically through stack values, scoped bump arenas, explicit `Builder` buffers, and raw `Addr` pointers for low-level systems and C FFI interoperability.
+Edva executes without a garbage collector or runtime type headers. Memory is managed deterministically through stack values, scoped bump arenas, explicit `Builder` buffers, and `Addr` and `ptr` values for low-level systems and C FFI interoperability.
 
 ## Runtime value and memory model
 
 | Category | Types | Allocation & Passing Model |
 |---|---|---|
-| **Immediate register values** | `Int`, `i8`..`u64`, `Float`, `f32`, `Rune`, `<>`, `Addr`, `()` | Held directly in CPU/SIMD registers and stack slots; zero heap allocation |
+| **Immediate register values** | `Int`, `i8`..`u64`, `Float`, `f32`, `Rune`, `<>`, `Addr`, `ptr`, `()` | Held directly in CPU/SIMD registers and stack slots; zero heap allocation |
 | **Unboxed descriptors / pairs** | `String` (16B), `T[]` (16B), `A => B` (16B), `RamPP` `{ i1, i64 }` (16B), `Enum` `{ i64, ptr }` (16B) | Descriptors pass by value in registers; pointed-to payload bytes live in the active arena |
 | **Growable arena containers** | `Builder` (24B), `T{}` (24B), `K ^ V` (`ptr`) | Backing buffers allocate and double in the active arena |
 | **Deep copy (`++x`)** | `String`, `Builder`, `Record`, `T{}`, `T[]` | Allocates a fresh copy in the current arena (use before arena scope exit to promote values) |
@@ -33,21 +33,24 @@ probe = !=>
 io::out $ probe!   // 15
 ```
 
-## Raw pointers (`Addr`), `&`, and volatile memory (`@[...]`)
+## Addresses, raw pointers, and volatile memory
 
-`Addr` (alias `ptr`) is an untyped raw memory address (8 bytes on 64-bit targets, 4 bytes on 32-bit targets, lowered to LLVM `ptr`).
+`Addr` is a non-null address. `ptr` holds a raw pointer-sized value and
+allows zero. Both lower to LLVM `ptr` with the target’s pointer width.
+Use `< Addr | >` for an address that may be absent. It uses zero for
+`<-->` and occupies the same space as `Addr`.
 
 | Operation | Syntax | Operand / Result Types | Rules & Diagnostics |
 |---|---|---|---|
-| **Null / integer cast** | `Addr(0)`, `Addr(0x1000)`, `Int(p)` | `Int` (`i8`..`u64`) $\leftrightarrow$ `Addr` | Bidirectional between integerish scalars and `Addr`. Casting records/arrays/functions via `Addr(rec)` emits `E3084` (use `&rec`) |
+| **Pointer casts** | `Addr(value)`, `ptr(value)`, `Int(p)` | integers, `Addr`, and `ptr` | `Addr(0)` and `#zero Addr` report E3180. A dynamic zero cast to `Addr` traps with E4015. `ptr(0)` represents a raw zero. Use `&rec` for a record address. |
 | **String / Builder data ptr** | `&s`, `&b` | `String` / `Builder` $\to$ `Addr` | No space after `&`. `&s` points to NUL-terminated UTF-8 bytes; `&b` points to writable buffer |
 | **Composite address** | `&rec` | `Record` / tuple $\to$ `Addr` | Pointer to record storage |
 | **Scalar out-parameter** | `libc::fn(fd, &len')` | Scalar variable $\to$ `Addr` | Permitted **strictly in downward call-argument position**; storing `p = &len'` emits `E3078` |
-| **Pointer arithmetic** | `p + offset`, `p - offset` | `Addr`, `Int` $\to$ `Addr` | Byte-offset pointer arithmetic |
+| **Pointer arithmetic** | `p + offset`, `p - offset` | `Addr`, `Int` $\to$ `Addr` | Byte-offset pointer arithmetic. An `Addr` result of zero traps. |
 | **Pointer comparison** | `p1 == p2`, `p1 < p2`, `p1 !< p2` | `Addr`, `Addr` $\to$ `<>` | Unsigned address comparison |
 | **Provenance bitmask** | `%ptrmask(p, mask)` | `Addr`, `Int` $\to$ `Addr` | Masks pointer bits (e.g. `0b1{48}`) while preserving LLVM pointer provenance |
-| **Volatile typed load** | `@[addr T]` | `Addr`, `Type` $\to$ `T` | Reads value of type `T` from `addr` (or zero-copy record view when `T` is a `#type(packed)` record) |
-| **Volatile untyped store** | `@[addr] = val` | `Addr`, `val: T` $\to$ `()` | Stores `val` at `addr` using the width of `val`. Writing `@[addr T] = val` emits `E2093` |
+| **Volatile typed load** | `@[addr T]` | address expression, `Type` $\to$ `T` | Reads value of type `T` from `addr` (or zero-copy record view when `T` is a `#type(packed)` record) |
+| **Volatile untyped store** | `@[addr] = val` | address expression, `val: T` $\to$ `()` | Stores `val` at `addr` using the width of `val`. Writing `@[addr T] = val` emits `E2093` |
 
 ```{.dva .run}
 #use io
@@ -61,7 +64,17 @@ b = mem::zero_buf(4)
 io::out $ +b   // Edva
 ```
 
+An integer address such as `@[0 u8]` can access offset zero on targets
+that provide memory there. Use `@[location ptr]` to load a possibly
+zero raw pointer from memory or `@[location Addr]` to require a
+non-null value.
+
 ## C FFI (`#foreign`, `#export`) and ABI conventions
+
+Use `< Addr | >` for a C pointer argument or result that allows
+`NULL`. A bare `Addr` in the declaration promises a non-null value.
+Use `ptr` for raw ABI words, such as syscall arguments that carry
+integers or pointers.
 
 | FFI Feature | Syntax & Convention | Specification |
 |---|---|---|

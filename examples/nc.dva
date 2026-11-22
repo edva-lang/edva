@@ -27,7 +27,7 @@ sock
       bytes_sent = net::send_str(fd, request)
       io::out(("Sent bytes:", bytes_sent))
 
-      buf = libc::malloc(4096)
+      buf = libc::malloc(4096).expect("could not allocate I/O buffer")
       bytes_recvd = net::recv_buf(fd, buf, 4096)
       io::out(("Received bytes:", bytes_recvd))
 

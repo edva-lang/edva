@@ -13,45 +13,39 @@
    STDOUT = 1
    STDERR = 2
 
-   addr_null = ptr(0)
+   addr_is_null: ptr => <>
+   addr_is_null = a => Int(a) == 0
 
-   addr_is_null: Addr => <>
-   addr_is_null = a => a == addr_null
-
-   raw_argv: Int => Addr
+   raw_argv: Int => < Addr | >
    raw_argv = n =>
-      n !< 0 && n < argc
-         | @[argv_ptr + n * 8 Addr]
-         | addr_null
+      n [0..argc] | addr_opt(@[argv_ptr + n * #size Addr ptr])
 
    argv_matches: Int, String => <>
    argv_matches = n, s =>
-      raw = raw_argv(n)
-      raw != addr_null && (libc::strcmp(raw, s) == 0)
+      raw_argv(n)
+         | raw => libc::strcmp(raw, s) == 0
+         | <->
 
    c_str: Addr => String
    c_str = raw =>
-      raw == addr_null
-         | ""
-         |
-            len = libc::strlen(raw)
-            b = {len}
-            mem::write_tail(b, len, (dst, n =>
-               %memcpy(dst, raw, n)
-               n
-            ))
-            +b
+      len = libc::strlen(raw)
+      b = {len}
+      mem::write_tail(b, len, (dst, n =>
+         %memcpy(dst, raw, n)
+         n
+      ))
+      +b
 
    argv_string: Int => String
    argv_string = n =>
-      c_str $ raw_argv(n)
+      raw_argv(n) | raw => c_str(raw) | ""
 
-   addr_opt: Addr => <Addr | >
-   addr_opt = a => a != addr_null | <+ a +> | <-->
+   addr_opt: ptr => <Addr | >
+   addr_opt = a => Int(a) != 0 | <+ Addr(a) +>
 
    argv: Int => <String | >
    argv = n =>
-      sys::addr_opt(raw_argv(n))
+      raw_argv(n)
          | raw => <+ c_str(raw) +>
          | <-->
 

@@ -33,7 +33,7 @@
 #public
 
 #foreign("LLVM-18")
-   llvm_get_default_triple = LLVMGetDefaultTargetTriple: () => Addr
+   llvm_get_default_triple = LLVMGetDefaultTargetTriple: () => < Addr | >
    llvm_dispose_message = LLVMDisposeMessage: (msg: Addr) => ()
 
 #foreign("c")
@@ -2335,7 +2335,7 @@ build_argv = a, args, i, n, buf =>
          build_argv(a, args, i + 1, n, buf)
 
 #foreign
-   environ: Addr
+   environ: < Addr | >
 
 waitpid_loop: Int, Addr => Int
 waitpid_loop = pid, status_buf =>
@@ -2357,10 +2357,10 @@ run_cmd = args =>
          cmd_a = mem::arena(4096)
          argv_buf = mem::alloc(cmd_a, (n + 1) * 8)
          build_argv(cmd_a, args, 0, n, argv_buf)
-         @[argv_buf + n * 8] = sys::addr_null
+         @[argv_buf + n * 8] = ptr(0)
          pid_raw' = 0i32
          file = args(0) | _ | ""
-         ret = libc::posix_spawnp(&pid_raw', file, sys::addr_null, sys::addr_null,
+         ret = libc::posix_spawnp(&pid_raw', file, <-->, <-->,
            argv_buf, environ)
          ret != 0
             |
@@ -2388,7 +2388,7 @@ run_cmd = args =>
 
 get_default_target_triple: Int => String
 get_default_target_triple = ignored =>
-   sys::addr_opt(llvm_get_default_triple!)
+   llvm_get_default_triple!
       | t =>
          s = sys::c_str(t)
          llvm_dispose_message(t)
@@ -2514,7 +2514,7 @@ c_type_of_ti = vt, ti =>
             [U8] "uint8_t"
             [Float] "double"
             [F32] "float"
-            [RawPtr] "void*"
+            [RawPtr, NullablePtr] "void*"
             [Str] "const char*"
             [Flag] "bool"
             [Unit] "void"

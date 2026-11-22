@@ -531,7 +531,8 @@ type_name_to_uprim =
    ["f32"] <+ unify::UPrim(F32) +>
    ["String"] <+ unify::UPrim(Str) +>
    ["void"] <+ unify::UPrim(Unit) +>
-   ["Addr", "ptr"] <+ unify::UPrim(RawPtr) +>
+   ["Addr"] <+ unify::UPrim(RawPtr) +>
+   ["ptr"] <+ unify::UPrim(NullablePtr) +>
    ["Builder"] <+ unify::UPrim(Builder) +>
    ["Error"] <+ unify::UPrim(Error) +>
    ["Type"] <+ unify::UPrim(Type) +>
@@ -547,7 +548,7 @@ is_uprim_flag: unify::UPrim => <>
 is_uprim_flag = [Flag]
 
 is_uprim_ptr: unify::UPrim => <>
-is_uprim_ptr = [RawPtr]
+is_uprim_ptr = [RawPtr, NullablePtr]
 
 is_uprim_str: unify::UPrim => <>
 is_uprim_str = [Str]
@@ -570,7 +571,8 @@ cast_name_to_uprim =
    ["Float", "f64"] <+ unify::UPrim(Float) +>
    ["f32"] <+ unify::UPrim(F32) +>
    ["String"] <+ unify::UPrim(Str) +>
-   ["Addr", "ptr"] <+ unify::UPrim(RawPtr) +>
+   ["Addr"] <+ unify::UPrim(RawPtr) +>
+   ["ptr"] <+ unify::UPrim(NullablePtr) +>
    | <-->
 
 check_addr_target: unify::Ctx, String, <>, unify::UType => ()
@@ -1228,7 +1230,7 @@ annotate_type_align = env, vt, ti =>
             [I16, U16] 2
             [I32, U32, F32, Rune] 4
             [Record] ptr_al
-            [RawPtr, Fn, Str, Slice, Map, Builder] ptr_al
+            [RawPtr, NullablePtr, Fn, Str, Slice, Map, Builder] ptr_al
             [Error] 8
             | ptr_al
 
@@ -1309,7 +1311,7 @@ annotate_type_size = env, vt, ti =>
             [I16, U16] 2
             [I32, U32, F32, Rune] 4
             [Int, I64, U64, Float] 8
-            [RawPtr] ptr_sz
+            [RawPtr, NullablePtr] ptr_sz
             [Str, Slice, Map] ptr_sz * 2
             [Builder] ptr_sz * 3
             [Error] err_sz
@@ -1324,12 +1326,12 @@ is_int_or_ptr_ut: unify::Ctx, unify::UType => <>
 is_int_or_ptr_ut = ctx, ut =>
    c = unify::canon(ctx, ut)
    c [Prim p] (p [Int, Rune, I8, I16, I32, I64,
-     U8, U16, U32, U64, RawPtr]) | <->
+     U8, U16, U32, U64, RawPtr, NullablePtr]) | <->
 
 is_ptr_ut: unify::Ctx, unify::UType => <>
 is_ptr_ut = ctx, ut =>
    c = unify::canon(ctx, ut)
-   c [Prim p] (p [RawPtr]) | <->
+   c [Prim p] (p [RawPtr, NullablePtr]) | <->
 
 is_builder_ut: unify::Ctx, unify::UType => <>
 is_builder_ut = ctx, ut =>
@@ -1618,7 +1620,7 @@ eval_utype_predicate = ctx, pred, ut =>
    is_unit_prim = c [Prim p] (p [Unit]) | <->
    is_flag_prim = c [Prim p] (p [Flag]) | <->
    is_str_prim = c [Prim p] (p [Str]) | <->
-   is_ptr_prim = c [Prim p] (p [RawPtr]) | <->
+   is_ptr_prim = c [Prim p] (p [RawPtr, NullablePtr]) | <->
    is_int = is_integerish_ut(ctx, c)
    is_flt = is_float_ut(ctx, c)
    is_coll = c [Array, Slice, Map]
@@ -4301,9 +4303,9 @@ annotate_expr = ctx, env, expr =>
                tast::mk_typed_raw_memory(addr_te, rm.load_type, ut, ti,
                  lay, 0, 0)
             |
-               ut = is_unk | unify::prim_rawptr! |
+               ut = is_unk | unify::prim_nullable_ptr! |
                   unify::UType(Prim, unify::vt_to_uprim(rm.load_type))
-               ti = is_unk | ast::TypeInfo(Prim, ast::ValueType(RawPtr)) |
+               ti = is_unk | ast::TypeInfo(Prim, ast::ValueType(NullablePtr)) |
                   ast::TypeInfo(Prim, rm.load_type)
                lay = layout::compute_layout(ctx, ut)
                tast::mk_typed_raw_memory(addr_te, rm.load_type, ut, ti,
@@ -4614,7 +4616,7 @@ annotate_unary_op = ctx, env, op, t, operand_expr =>
             [Prim p]
                p
                   [Builder, Str] unify::prim_rawptr!
-                  [Int, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Rune, Flag, RawPtr]
+                  [Int, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Rune, Flag, RawPtr, NullablePtr]
                      operand_expr
                         [Var]
                            !cur_is_call_arg
@@ -5603,6 +5605,12 @@ check_intrin_arg = ctx, name, ok =>
          unify::add_error(ctx, 3084,
            "Invalid operand type for intrinsic '" + name + "'")
 
+memory_intrinsic_ret: unify::Ctx, unify::UType => unify::UType
+memory_intrinsic_ret = ctx, ut =>
+   c_ut = unify::canon(ctx, ut)
+   is_nonnull = c_ut [Prim p] (p [RawPtr, Builder, Str]) | <->
+   is_nonnull | unify::prim_rawptr! | unify::prim_nullable_ptr!
+
 compute_intrinsic_ret_ut: unify::Ctx, String, tast::TypedExprs,
   tast::TypedExpr, tast::TypedExpr, tast::TypedExpr => unify::UType
 compute_intrinsic_ret_ut = ctx, name, args, a0, a1, a2 =>
@@ -5616,11 +5624,11 @@ compute_intrinsic_ret_ut = ctx, name, args, a0, a1, a2 =>
          ok0 = is_int_or_ptr_ut(ctx, a0.ut) || is_str_ut(ctx, a0.ut) || is_builder_ut(ctx, a0.ut)
          ok1 = is_int_or_ptr_ut(ctx, a1.ut) || is_str_ut(ctx, a1.ut) || is_builder_ut(ctx, a1.ut)
          check_intrin_arg(ctx, name, ok0 && ok1 && is_integerish_ut(ctx, a2.ut))
-         unify::prim_rawptr!
+         memory_intrinsic_ret(ctx, a0.ut)
       ["%memset"]
          ok0 = is_int_or_ptr_ut(ctx, a0.ut) || is_builder_ut(ctx, a0.ut)
          check_intrin_arg(ctx, name, ok0 && is_integerish_ut(ctx, a1.ut) && is_integerish_ut(ctx, a2.ut))
-         unify::prim_rawptr!
+         memory_intrinsic_ret(ctx, a0.ut)
       ["%all", "%any"]
          ok_flg = is_cmp_rec(ctx, a0.ut) && is_flag_ut(ctx, rec_elem(ctx, a0.ut))
          check_intrin_arg(ctx, name, ok_flg)
@@ -5927,6 +5935,7 @@ uprim_to_cast_name =
    [F32] "f32"
    [Str] "String"
    [RawPtr] "Addr"
+   [NullablePtr] "ptr"
    [Builder] "Builder"
    [Error] "Error"
    [Unit] "void"
@@ -6461,7 +6470,7 @@ annotate_record_ctor = ctx, env, ce, udef, flds =>
                c_a0
                   [Prim p]
                      p
-                        [RawPtr]
+                        [RawPtr, NullablePtr]
                            is_raw_cast' = <+>
                            raw_te' = a0_te
                         [Int, I8, I16, I32, I64, U8, U16, U32, U64]
@@ -8477,7 +8486,7 @@ annotate_raw_write = ctx, env, rm, val_expr =>
    c_rhs
       [Prim p]
          p
-            [Int, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Rune, Str, RawPtr, Error]
+            [Int, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Rune, Str, RawPtr, NullablePtr, Error]
                ok_w = <+>
    !ok_w
       |
@@ -9535,6 +9544,7 @@ utype_type_key = ctx, env, ut, ti, dtype =>
             [Str] "String"
             [Builder] "Builder"
             [RawPtr] "Addr"
+            [NullablePtr] "ptr"
             [Flag] "Flag"
             [Error] "Error"
             [Unit] "Unit"

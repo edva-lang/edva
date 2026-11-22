@@ -509,19 +509,19 @@ choice.exit:                                      ; preds = %entry
   %call.res3.fca.1.extract = extractvalue { i64, ptr } %call.res3, 1
   %str.len.query7 = and i64 %call.res3.fca.0.extract, 281474976710655
   %cmptmp8 = icmp sgt i64 %str.len.query7, 0
-  br i1 %cmptmp8, label %and.118.then, label %choice.exit15
+  br i1 %cmptmp8, label %and.119.then, label %choice.exit15
 
-and.118.then:                                     ; preds = %choice.exit
+and.119.then:                                     ; preds = %choice.exit
   %eq.len = icmp eq i64 %str.len.query7, 1
   br i1 %eq.len, label %str.eq.then, label %str.eq.merge
 
-str.eq.then:                                      ; preds = %and.118.then
+str.eq.then:                                      ; preds = %and.119.then
   %eq.memcmp = call i32 @memcmp(ptr %call.res3.fca.1.extract, ptr @str.12, i64 %str.len.query7)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br label %str.eq.merge
 
-str.eq.merge:                                     ; preds = %and.118.then, %str.eq.then
-  %str.eq.result = phi i1 [ %eq.cmp.zero, %str.eq.then ], [ false, %and.118.then ]
+str.eq.merge:                                     ; preds = %and.119.then, %str.eq.then
+  %str.eq.result = phi i1 [ %eq.cmp.zero, %str.eq.then ], [ false, %and.119.then ]
   %str.neq = xor i1 %str.eq.result, true
   br i1 %str.neq, label %common.ret, label %choice.exit15
 
@@ -744,8 +744,8 @@ entry:
   %cmptmp = icmp eq i64 %str.len.query2, 0
   br i1 %cmptmp, label %common.ret, label %choice.exit
 
-common.ret:                                       ; preds = %loop.body.119, %loop.body.119, %loop.body.119, %loop.body.119, %loop.body.119, %loop.body.119, %loop.header.119, %entry
-  %common.ret.op = phi i1 [ true, %entry ], [ false, %loop.header.119 ], [ true, %loop.body.119 ], [ true, %loop.body.119 ], [ true, %loop.body.119 ], [ true, %loop.body.119 ], [ true, %loop.body.119 ], [ true, %loop.body.119 ]
+common.ret:                                       ; preds = %loop.body.120, %loop.body.120, %loop.body.120, %loop.body.120, %loop.body.120, %loop.body.120, %loop.header.120, %entry
+  %common.ret.op = phi i1 [ true, %entry ], [ false, %loop.header.120 ], [ true, %loop.body.120 ], [ true, %loop.body.120 ], [ true, %loop.body.120 ], [ true, %loop.body.120 ], [ true, %loop.body.120 ], [ true, %loop.body.120 ]
   ret i1 %common.ret.op
 
 choice.exit:                                      ; preds = %entry
@@ -753,15 +753,15 @@ choice.exit:                                      ; preds = %entry
   %str.len5 = and i64 %str.len4, 281474976710655
   %s.read.data = getelementptr inbounds { i64, ptr }, ptr %0, i32 0, i32 1
   %s.read.data6 = load ptr, ptr %s.read.data, align 8
-  br label %loop.header.119
+  br label %loop.header.120
 
-loop.header.119:                                  ; preds = %choice.exit19, %choice.exit
-  %loop.idx.119.0 = phi i64 [ 0, %choice.exit ], [ %loop.next, %choice.exit19 ]
-  %loop.cond = icmp slt i64 %loop.idx.119.0, %str.len5
-  br i1 %loop.cond, label %loop.body.119, label %common.ret
+loop.header.120:                                  ; preds = %choice.exit19, %choice.exit
+  %loop.idx.120.0 = phi i64 [ 0, %choice.exit ], [ %loop.next, %choice.exit19 ]
+  %loop.cond = icmp slt i64 %loop.idx.120.0, %str.len5
+  br i1 %loop.cond, label %loop.body.120, label %common.ret
 
-loop.body.119:                                    ; preds = %loop.header.119
-  %s.byte.gep = getelementptr i8, ptr %s.read.data6, i64 %loop.idx.119.0
+loop.body.120:                                    ; preds = %loop.header.120
+  %s.byte.gep = getelementptr i8, ptr %s.read.data6, i64 %loop.idx.120.0
   %s.byte = load i8, ptr %s.byte.gep, align 1
   %s.byte.val = zext i8 %s.byte to i64
   switch i64 %s.byte.val, label %choice.exit19 [
@@ -773,9 +773,9 @@ loop.body.119:                                    ; preds = %loop.header.119
     i64 9, label %common.ret
   ]
 
-choice.exit19:                                    ; preds = %loop.body.119
-  %loop.next = add i64 %loop.idx.119.0, 1
-  br label %loop.header.119
+choice.exit19:                                    ; preds = %loop.body.120
+  %loop.next = add i64 %loop.idx.120.0, 1
+  br label %loop.header.120
 }
 
 define internal { i64, ptr } @"log::#quote_value"(ptr %0) #3 {
@@ -806,7 +806,7 @@ b.buf.len5:                                       ; preds = %choice.exit
   %b.buf = call ptr @dva_arena_alloc(ptr %arena.cur, i64 %sum)
   store i8 0, ptr %b.buf, align 1
   %b.need.grow = icmp slt i64 %addtmp, 1
-  br i1 %b.need.grow, label %b.grow2, label %br.b1.120
+  br i1 %b.need.grow, label %b.grow2, label %br.b1.121
 
 str_overflow_abort:                               ; preds = %choice.exit
   call void @dva_abort_str_overflow_msg()
@@ -826,13 +826,13 @@ b.new.buf.len217:                                 ; preds = %b.grow2
   %b.new.buf2 = call ptr @dva_arena_alloc(ptr %arena.cur20, i64 %sum15)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %b.new.buf2, ptr align 1 %b.buf, i64 0, i1 false)
   store i8 0, ptr %b.new.buf2, align 1
-  br label %br.b1.120
+  br label %br.b1.121
 
 str_overflow_abort18:                             ; preds = %b.grow2
   call void @dva_abort_str_overflow_msg()
   unreachable
 
-br.b1.120:                                        ; preds = %b.new.buf.len217, %b.buf.len5
+br.b1.121:                                        ; preds = %b.new.buf.len217, %b.buf.len5
   %builder.new.salloc.sroa.54.0 = phi i64 [ %b.cap.grow, %b.new.buf.len217 ], [ %addtmp, %b.buf.len5 ]
   %builder.new.salloc.sroa.27.0 = phi ptr [ %b.new.buf2, %b.new.buf.len217 ], [ %b.buf, %b.buf.len5 ]
   store i8 34, ptr %builder.new.salloc.sroa.27.0, align 1
@@ -842,18 +842,18 @@ br.b1.120:                                        ; preds = %b.new.buf.len217, %
   %str.len25 = and i64 %str.len24, 281474976710655
   %s.read.data = getelementptr inbounds { i64, ptr }, ptr %0, i32 0, i32 1
   %s.read.data26 = load ptr, ptr %s.read.data, align 8
-  br label %loop.header.121
+  br label %loop.header.122
 
-loop.header.121:                                  ; preds = %choice.exit28, %br.b1.120
-  %builder.new.salloc.sroa.54.1 = phi i64 [ %builder.new.salloc.sroa.54.0, %br.b1.120 ], [ %builder.new.salloc.sroa.54.2, %choice.exit28 ]
-  %builder.new.salloc.sroa.27.1 = phi ptr [ %builder.new.salloc.sroa.27.0, %br.b1.120 ], [ %builder.new.salloc.sroa.27.2, %choice.exit28 ]
-  %builder.new.salloc.sroa.0.0 = phi i64 [ 1, %br.b1.120 ], [ %builder.new.salloc.sroa.0.1, %choice.exit28 ]
-  %loop.idx.121.0 = phi i64 [ 0, %br.b1.120 ], [ %loop.next, %choice.exit28 ]
-  %loop.cond = icmp slt i64 %loop.idx.121.0, %str.len25
-  br i1 %loop.cond, label %loop.body.121, label %loop.exit.121
+loop.header.122:                                  ; preds = %choice.exit28, %br.b1.121
+  %builder.new.salloc.sroa.54.1 = phi i64 [ %builder.new.salloc.sroa.54.0, %br.b1.121 ], [ %builder.new.salloc.sroa.54.2, %choice.exit28 ]
+  %builder.new.salloc.sroa.27.1 = phi ptr [ %builder.new.salloc.sroa.27.0, %br.b1.121 ], [ %builder.new.salloc.sroa.27.2, %choice.exit28 ]
+  %builder.new.salloc.sroa.0.0 = phi i64 [ 1, %br.b1.121 ], [ %builder.new.salloc.sroa.0.1, %choice.exit28 ]
+  %loop.idx.122.0 = phi i64 [ 0, %br.b1.121 ], [ %loop.next, %choice.exit28 ]
+  %loop.cond = icmp slt i64 %loop.idx.122.0, %str.len25
+  br i1 %loop.cond, label %loop.body.122, label %loop.exit.122
 
-loop.body.121:                                    ; preds = %loop.header.121
-  %s.byte.gep = getelementptr i8, ptr %s.read.data26, i64 %loop.idx.121.0
+loop.body.122:                                    ; preds = %loop.header.122
+  %s.byte.gep = getelementptr i8, ptr %s.read.data26, i64 %loop.idx.122.0
   %s.byte = load i8, ptr %s.byte.gep, align 1
   %s.byte.val = zext i8 %s.byte to i64
   switch i64 %s.byte.val, label %b.byte_ok [
@@ -864,7 +864,7 @@ loop.body.121:                                    ; preds = %loop.header.121
     i64 9, label %choice.case203
   ]
 
-loop.exit.121:                                    ; preds = %loop.header.121
+loop.exit.122:                                    ; preds = %loop.header.122
   %b.rn.new.len271 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 1)
   %sum272 = extractvalue { i64, i1 } %b.rn.new.len271, 0
   %ovf273 = extractvalue { i64, i1 } %b.rn.new.len271, 1
@@ -874,10 +874,10 @@ choice.exit28:                                    ; preds = %b.push_done, %b.gro
   %builder.new.salloc.sroa.54.2 = phi i64 [ %builder.new.salloc.sroa.54.3, %b.grow_done42 ], [ %builder.new.salloc.sroa.54.4, %b.grow_done85 ], [ %builder.new.salloc.sroa.54.5, %b.grow_done131 ], [ %builder.new.salloc.sroa.54.6, %b.grow_done177 ], [ %builder.new.salloc.sroa.54.7, %b.grow_done223 ], [ %builder.new.salloc.sroa.54.8, %b.push_done ]
   %builder.new.salloc.sroa.27.2 = phi ptr [ %builder.new.salloc.sroa.27.3, %b.grow_done42 ], [ %builder.new.salloc.sroa.27.4, %b.grow_done85 ], [ %builder.new.salloc.sroa.27.5, %b.grow_done131 ], [ %builder.new.salloc.sroa.27.6, %b.grow_done177 ], [ %builder.new.salloc.sroa.27.7, %b.grow_done223 ], [ %builder.new.salloc.sroa.27.8, %b.push_done ]
   %builder.new.salloc.sroa.0.1 = phi i64 [ %sum32, %b.grow_done42 ], [ %sum75, %b.grow_done85 ], [ %sum121, %b.grow_done131 ], [ %sum167, %b.grow_done177 ], [ %sum213, %b.grow_done223 ], [ %b.next.len, %b.push_done ]
-  %loop.next = add i64 %loop.idx.121.0, 1
-  br label %loop.header.121
+  %loop.next = add i64 %loop.idx.122.0, 1
+  br label %loop.header.122
 
-choice.case:                                      ; preds = %loop.body.121
+choice.case:                                      ; preds = %loop.body.122
   %b.app.new.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 2)
   %sum32 = extractvalue { i64, i1 } %b.app.new.len, 0
   %ovf33 = extractvalue { i64, i1 } %b.app.new.len, 1
@@ -923,7 +923,7 @@ str_overflow_abort56:                             ; preds = %b.grow240
   call void @dva_abort_str_overflow_msg()
   unreachable
 
-choice.case65:                                    ; preds = %loop.body.121
+choice.case65:                                    ; preds = %loop.body.122
   %b.app.new.len74 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 2)
   %sum75 = extractvalue { i64, i1 } %b.app.new.len74, 0
   %ovf76 = extractvalue { i64, i1 } %b.app.new.len74, 1
@@ -969,7 +969,7 @@ str_overflow_abort99:                             ; preds = %b.grow283
   call void @dva_abort_str_overflow_msg()
   unreachable
 
-choice.case111:                                   ; preds = %loop.body.121
+choice.case111:                                   ; preds = %loop.body.122
   %b.app.new.len120 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 2)
   %sum121 = extractvalue { i64, i1 } %b.app.new.len120, 0
   %ovf122 = extractvalue { i64, i1 } %b.app.new.len120, 1
@@ -1015,7 +1015,7 @@ str_overflow_abort145:                            ; preds = %b.grow2129
   call void @dva_abort_str_overflow_msg()
   unreachable
 
-choice.case157:                                   ; preds = %loop.body.121
+choice.case157:                                   ; preds = %loop.body.122
   %b.app.new.len166 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 2)
   %sum167 = extractvalue { i64, i1 } %b.app.new.len166, 0
   %ovf168 = extractvalue { i64, i1 } %b.app.new.len166, 1
@@ -1061,7 +1061,7 @@ str_overflow_abort191:                            ; preds = %b.grow2175
   call void @dva_abort_str_overflow_msg()
   unreachable
 
-choice.case203:                                   ; preds = %loop.body.121
+choice.case203:                                   ; preds = %loop.body.122
   %b.app.new.len212 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 2)
   %sum213 = extractvalue { i64, i1 } %b.app.new.len212, 0
   %ovf214 = extractvalue { i64, i1 } %b.app.new.len212, 1
@@ -1107,7 +1107,7 @@ str_overflow_abort237:                            ; preds = %b.grow2221
   call void @dva_abort_str_overflow_msg()
   unreachable
 
-b.byte_ok:                                        ; preds = %loop.body.121
+b.byte_ok:                                        ; preds = %loop.body.122
   %b.needs.grow = icmp eq i64 %builder.new.salloc.sroa.0.0, %builder.new.salloc.sroa.54.1
   br i1 %b.needs.grow, label %b.grow, label %b.push_done
 
@@ -1142,11 +1142,11 @@ str_overflow_abort262:                            ; preds = %b.grow
   call void @dva_abort_str_overflow_msg()
   unreachable
 
-b.rn.new.len274:                                  ; preds = %loop.exit.121
+b.rn.new.len274:                                  ; preds = %loop.exit.122
   %b.need.grow279 = icmp slt i64 %builder.new.salloc.sroa.54.1, %sum272
   br i1 %b.need.grow279, label %b.grow2280, label %b.grow_done282
 
-str_overflow_abort275:                            ; preds = %loop.exit.121
+str_overflow_abort275:                            ; preds = %loop.exit.122
   call void @dva_abort_str_overflow_msg()
   unreachable
 
@@ -1207,8 +1207,8 @@ a.after:                                          ; preds = %a.create, %entry
   %cmptmp = icmp eq i64 %a.len.query3, 0
   br i1 %cmptmp, label %choice.then, label %choice.exit
 
-common.ret:                                       ; preds = %loop.exit.124, %choice.then
-  %common.ret.op = phi { i64, ptr } [ %ret.pack, %choice.then ], [ %ret.pack173.fca.1.insert, %loop.exit.124 ]
+common.ret:                                       ; preds = %loop.exit.125, %choice.then
+  %common.ret.op = phi { i64, ptr } [ %ret.pack, %choice.then ], [ %ret.pack173.fca.1.insert, %loop.exit.125 ]
   ret { i64, ptr } %common.ret.op
 
 choice.then:                                      ; preds = %a.after
@@ -1221,26 +1221,26 @@ choice.exit:                                      ; preds = %a.after
   %arr.cycle.len21 = load i64, ptr %var.fields.0, align 8
   %arr.cycle.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.fields.0, i32 0, i32 1
   %arr.cycle.data22 = load ptr, ptr %arr.cycle.data, align 8
-  br label %loop.header.123
+  br label %loop.header.124
 
-loop.header.123:                                  ; preds = %loop.body.123, %choice.exit
-  %loop.idx.123.0 = phi i64 [ 0, %choice.exit ], [ %loop.next, %loop.body.123 ]
-  %"var.total'.0" = phi i64 [ %str.len.query7, %choice.exit ], [ %addtmp28, %loop.body.123 ]
-  %loop.cond = icmp slt i64 %loop.idx.123.0, %arr.cycle.len21
-  br i1 %loop.cond, label %loop.body.123, label %loop.exit.123
+loop.header.124:                                  ; preds = %loop.body.124, %choice.exit
+  %loop.idx.124.0 = phi i64 [ 0, %choice.exit ], [ %loop.next, %loop.body.124 ]
+  %"var.total'.0" = phi i64 [ %str.len.query7, %choice.exit ], [ %addtmp28, %loop.body.124 ]
+  %loop.cond = icmp slt i64 %loop.idx.124.0, %arr.cycle.len21
+  br i1 %loop.cond, label %loop.body.124, label %loop.exit.124
 
-loop.body.123:                                    ; preds = %loop.header.123
-  %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data22, i64 %loop.idx.123.0
+loop.body.124:                                    ; preds = %loop.header.124
+  %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data22, i64 %loop.idx.124.0
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
   %addtmp = add i64 %"var.total'.0", 1
   %str.len.query26 = load i64, ptr %slot.i2p, align 8
   %str.len.query27 = and i64 %str.len.query26, 281474976710655
   %addtmp28 = add i64 %addtmp, %str.len.query27
-  %loop.next = add i64 %loop.idx.123.0, 1
-  br label %loop.header.123
+  %loop.next = add i64 %loop.idx.124.0, 1
+  br label %loop.header.124
 
-loop.exit.123:                                    ; preds = %loop.header.123
+loop.exit.124:                                    ; preds = %loop.header.124
   %addtmp30 = add i64 %"var.total'.0", 8
   %cap.neg = icmp slt i64 %addtmp30, 0
   %cap.safe = select i1 %cap.neg, i64 0, i64 %addtmp30
@@ -1249,7 +1249,7 @@ loop.exit.123:                                    ; preds = %loop.header.123
   %ovf = extractvalue { i64, i1 } %b.buf.len, 1
   br i1 %ovf, label %str_overflow_abort, label %b.buf.len31
 
-b.buf.len31:                                      ; preds = %loop.exit.123
+b.buf.len31:                                      ; preds = %loop.exit.124
   %arena.cur32 = load ptr, ptr @dva_active_arena_tls, align 8
   %b.buf = call ptr @dva_arena_alloc(ptr %arena.cur32, i64 %sum)
   store i8 0, ptr %b.buf, align 1
@@ -1262,7 +1262,7 @@ b.buf.len31:                                      ; preds = %loop.exit.123
   %ovf39 = extractvalue { i64, i1 } %b.app.new.len, 1
   br i1 %ovf39, label %str_overflow_abort41, label %b.app.new.len40
 
-str_overflow_abort:                               ; preds = %loop.exit.123
+str_overflow_abort:                               ; preds = %loop.exit.124
   call void @dva_abort_str_overflow_msg()
   unreachable
 
@@ -1294,7 +1294,7 @@ b.grow_done:                                      ; preds = %b.app.new.len40, %b
   %arr.cycle.len68 = load i64, ptr %var.fields.0, align 8
   %arr.cycle.data69 = getelementptr inbounds { i64, ptr, i64 }, ptr %var.fields.0, i32 0, i32 1
   %arr.cycle.data70 = load ptr, ptr %arr.cycle.data69, align 8
-  br label %loop.header.124
+  br label %loop.header.125
 
 b.new.buf.len248:                                 ; preds = %b.grow2
   %arena.cur51 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -1307,16 +1307,16 @@ str_overflow_abort49:                             ; preds = %b.grow2
   call void @dva_abort_str_overflow_msg()
   unreachable
 
-loop.header.124:                                  ; preds = %choice.exit86, %b.grow_done
+loop.header.125:                                  ; preds = %choice.exit86, %b.grow_done
   %builder.new.salloc.sroa.24.1 = phi i64 [ %builder.new.salloc.sroa.24.0, %b.grow_done ], [ %builder.new.salloc.sroa.24.2, %choice.exit86 ]
   %builder.new.salloc.sroa.12.1 = phi ptr [ %builder.new.salloc.sroa.12.0, %b.grow_done ], [ %builder.new.salloc.sroa.12.2, %choice.exit86 ]
   %builder.new.salloc.sroa.0.0 = phi i64 [ %sum38, %b.grow_done ], [ %builder.new.salloc.sroa.0.1, %choice.exit86 ]
-  %loop.idx.124.0 = phi i64 [ 0, %b.grow_done ], [ %loop.next169, %choice.exit86 ]
-  %loop.cond72 = icmp slt i64 %loop.idx.124.0, %arr.cycle.len68
-  br i1 %loop.cond72, label %loop.body.124, label %loop.exit.124
+  %loop.idx.125.0 = phi i64 [ 0, %b.grow_done ], [ %loop.next169, %choice.exit86 ]
+  %loop.cond72 = icmp slt i64 %loop.idx.125.0, %arr.cycle.len68
+  br i1 %loop.cond72, label %loop.body.125, label %loop.exit.125
 
-loop.body.124:                                    ; preds = %loop.header.124
-  %arr.elem.gep74 = getelementptr i64, ptr %arr.cycle.data70, i64 %loop.idx.124.0
+loop.body.125:                                    ; preds = %loop.header.125
+  %arr.elem.gep74 = getelementptr i64, ptr %arr.cycle.data70, i64 %loop.idx.125.0
   %arr.elem.raw75 = load i64, ptr %arr.elem.gep74, align 8
   %slot.i2p76 = inttoptr i64 %arr.elem.raw75 to ptr
   %str.len.query82 = load i64, ptr %slot.i2p76, align 8
@@ -1324,23 +1324,23 @@ loop.body.124:                                    ; preds = %loop.header.124
   %cmptmp84 = icmp sgt i64 %str.len.query83, 0
   br i1 %cmptmp84, label %choice.then85, label %choice.exit86
 
-loop.exit.124:                                    ; preds = %loop.header.124
+loop.exit.125:                                    ; preds = %loop.header.125
   %ret.pack173.fca.0.insert = insertvalue { i64, ptr } poison, i64 %builder.new.salloc.sroa.0.0, 0
   %ret.pack173.fca.1.insert = insertvalue { i64, ptr } %ret.pack173.fca.0.insert, ptr %builder.new.salloc.sroa.12.1, 1
   br label %common.ret
 
-choice.then85:                                    ; preds = %loop.body.124
+choice.then85:                                    ; preds = %loop.body.125
   %b.rn.new.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 1)
   %sum89 = extractvalue { i64, i1 } %b.rn.new.len, 0
   %ovf90 = extractvalue { i64, i1 } %b.rn.new.len, 1
   br i1 %ovf90, label %str_overflow_abort92, label %b.rn.new.len91
 
-choice.exit86:                                    ; preds = %b.grow_done142, %loop.body.124
-  %builder.new.salloc.sroa.24.2 = phi i64 [ %builder.new.salloc.sroa.24.4, %b.grow_done142 ], [ %builder.new.salloc.sroa.24.1, %loop.body.124 ]
-  %builder.new.salloc.sroa.12.2 = phi ptr [ %builder.new.salloc.sroa.12.4, %b.grow_done142 ], [ %builder.new.salloc.sroa.12.1, %loop.body.124 ]
-  %builder.new.salloc.sroa.0.1 = phi i64 [ %sum132, %b.grow_done142 ], [ %builder.new.salloc.sroa.0.0, %loop.body.124 ]
-  %loop.next169 = add i64 %loop.idx.124.0, 1
-  br label %loop.header.124
+choice.exit86:                                    ; preds = %b.grow_done142, %loop.body.125
+  %builder.new.salloc.sroa.24.2 = phi i64 [ %builder.new.salloc.sroa.24.4, %b.grow_done142 ], [ %builder.new.salloc.sroa.24.1, %loop.body.125 ]
+  %builder.new.salloc.sroa.12.2 = phi ptr [ %builder.new.salloc.sroa.12.4, %b.grow_done142 ], [ %builder.new.salloc.sroa.12.1, %loop.body.125 ]
+  %builder.new.salloc.sroa.0.1 = phi i64 [ %sum132, %b.grow_done142 ], [ %builder.new.salloc.sroa.0.0, %loop.body.125 ]
+  %loop.next169 = add i64 %loop.idx.125.0, 1
+  br label %loop.header.125
 
 b.rn.new.len91:                                   ; preds = %choice.then85
   %b.need.grow96 = icmp slt i64 %builder.new.salloc.sroa.24.1, %sum89
@@ -1672,8 +1672,8 @@ entry:
   %cmptmp = icmp slt i64 %call.res, 4
   %var.load3 = load i64, ptr @"var.log::#min_level", align 8
   %cmptmp4 = icmp sge i64 %call.res, %var.load3
-  %and.127.phi = select i1 %cmptmp, i1 %cmptmp4, i1 false
-  ret i1 %and.127.phi
+  %and.128.phi = select i1 %cmptmp, i1 %cmptmp4, i1 false
+  ret i1 %and.128.phi
 }
 
 define void @"log::set_timestamps"(i1 %0) #3 {
@@ -1731,8 +1731,8 @@ entry:
   %var.load = load i64, ptr @"var.log::#owned_fd", align 8
   %cmptmp = icmp sge i64 %var.load, 0
   %cmptmp3 = icmp ne i64 %var.load, %0
-  %and.128.phi = select i1 %cmptmp, i1 %cmptmp3, i1 false
-  br i1 %and.128.phi, label %choice.then, label %choice.exit
+  %and.129.phi = select i1 %cmptmp, i1 %cmptmp3, i1 false
+  br i1 %and.129.phi, label %choice.then, label %choice.exit
 
 choice.then:                                      ; preds = %entry
   %var.load4 = load i64, ptr @"var.log::#owned_fd", align 8

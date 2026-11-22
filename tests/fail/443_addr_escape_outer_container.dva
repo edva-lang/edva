@@ -1,7 +1,7 @@
 #type PtrPair (id: Int, ptr: Addr)
 #type Box (id: Int, pair: PtrPair)
 
-box = Box(0, PtrPair(0, ptr(0)))
+box = Box(0, PtrPair(0, &"persistent"))
 res =
    b = {32}
    b += "tmp"

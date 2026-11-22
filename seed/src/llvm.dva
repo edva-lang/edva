@@ -13,20 +13,20 @@
    LLVMAppendModuleInlineAsm: (M: Addr, Asm: String, Len: Int) => ()
    LLVMCreatePassBuilderOptions: () => Addr
    LLVMDisposePassBuilderOptions: (Options: Addr) => ()
-   LLVMRunPasses: (M: Addr, Passes: String, TM: Addr, Options: Addr) => Addr
+   LLVMRunPasses: (M: Addr, Passes: String, TM: < Addr | >, Options: Addr) => < Addr | >
    LLVMGetErrorMessage: (Err: Addr) => Addr
    LLVMDisposeErrorMessage: (Msg: Addr) => ()
-   LLVMGetFirstGlobal: (M: Addr) => Addr
-   LLVMGetNextGlobal: (G: Addr) => Addr
+   LLVMGetFirstGlobal: (M: Addr) => < Addr | >
+   LLVMGetNextGlobal: (G: Addr) => < Addr | >
    LLVMGetLinkage: (GlobalVar: Addr) => Int
-   LLVMGetFirstUse: (Val: Addr) => Addr
-   LLVMGetNextUse: (Use: Addr) => Addr
+   LLVMGetFirstUse: (Val: Addr) => < Addr | >
+   LLVMGetNextUse: (Use: Addr) => < Addr | >
    LLVMGetUser: (Use: Addr) => Addr
-   LLVMIsAGlobalVariable: (Val: Addr) => Addr
-   LLVMIsAStoreInst: (Val: Addr) => Addr
-   LLVMIsACallInst: (Val: Addr) => Addr
-   LLVMIsAGetElementPtrInst: (Val: Addr) => Addr
-   LLVMIsAConstantInt: (Val: Addr) => Addr
+   LLVMIsAGlobalVariable: (Val: Addr) => < Addr | >
+   LLVMIsAStoreInst: (Val: Addr) => < Addr | >
+   LLVMIsACallInst: (Val: Addr) => < Addr | >
+   LLVMIsAGetElementPtrInst: (Val: Addr) => < Addr | >
+   LLVMIsAConstantInt: (Val: Addr) => < Addr | >
    LLVMGetGEPSourceElementType: (GEP: Addr) => Addr
    LLVMGetOperand: (Val: Addr, Index: Int) => Addr
    LLVMGetNumOperands: (Val: Addr) => Int
@@ -58,12 +58,13 @@
    LLVMGetParam: (Fn: Addr, Index: Int) => Addr
    LLVMCountParams: (Fn: Addr) => Int
    LLVMGetNamedFunction: (M: Addr, Name: String) => Addr
+   LLVMGetNamedFunctionNullable = LLVMGetNamedFunction: (M: Addr, Name: String) => < Addr | >
    LLVMAppendBasicBlock: (Fn: Addr, Name: String) => Addr
    LLVMPositionBuilderAtEnd: (Builder: Addr, Block: Addr) => ()
    LLVMConstNull: (Ty: Addr) => Addr
    LLVMConstInt: (IntTy: Addr, N: Int, SignExtend: Int) => Addr
    LLVMIsConstant: (Val: Addr) => Int
-   LLVMIsAGlobalVariable: (Val: Addr) => Addr
+   LLVMIsAGlobalVariable: (Val: Addr) => < Addr | >
    LLVMBuildAtomicRMW: (B: Addr, Op: Int, Ptr: Addr, V: Addr, Order: Int, ST: Int) => Addr
    LLVMSetOrdering: (Instruction: Addr, Ordering: Int) => ()
    LLVMConstIntGetZExtValue: (ConstantVal: Addr) => Int
@@ -77,6 +78,7 @@
    LLVMConstAdd: (LHSConstant: Addr, RHSConstant: Addr) => Addr
    LLVMAddGlobal: (M: Addr, Ty: Addr, Name: String) => Addr
    LLVMGetNamedGlobal: (M: Addr, Name: String) => Addr
+   LLVMGetNamedGlobalNullable = LLVMGetNamedGlobal: (M: Addr, Name: String) => < Addr | >
    LLVMSetInitializer: (GlobalVar: Addr, ConstantVal: Addr) => ()
    LLVMSetGlobalConstant: (GlobalVar: Addr, IsConstant: Int) => ()
    LLVMSetUnnamedAddr: (GlobalVar: Addr, HasUnnamedAddr: Int) => ()
@@ -94,6 +96,7 @@
    LLVMBuildGEP2: (Builder: Addr, Ty: Addr, Pointer: Addr, Indices: Addr, NumIndices: Int, Name: String) => Addr
    LLVMBuildStructGEP2: (Builder: Addr, Ty: Addr, Pointer: Addr, Index: Int, Name: String) => Addr
    LLVMBuildCall2: (Builder: Addr, FnTy: Addr, Fn: Addr, Args: Addr, NumArgs: Int, Name: String) => Addr
+   LLVMBuildCall2Nullable = LLVMBuildCall2: (Builder: Addr, FnTy: Addr, Fn: Addr, Args: < Addr | >, NumArgs: Int, Name: String) => Addr
    LLVMBuildAdd: (Builder: Addr, LHS: Addr, RHS: Addr, Name: String) => Addr
    LLVMBuildSub: (Builder: Addr, LHS: Addr, RHS: Addr, Name: String) => Addr
    LLVMBuildMul: (Builder: Addr, LHS: Addr, RHS: Addr, Name: String) => Addr
@@ -131,8 +134,10 @@
    LLVMBuildSwitch: (Builder: Addr, V: Addr, Else: Addr, NumCases: Int) => Addr
    LLVMAddCase: (Switch: Addr, OnVal: Addr, Dest: Addr) => ()
    LLVMGetInsertBlock: (Builder: Addr) => Addr
+   LLVMGetInsertBlockNullable = LLVMGetInsertBlock: (Builder: Addr) => < Addr | >
    LLVMGetBasicBlockParent: (BB: Addr) => Addr
    LLVMGetBasicBlockTerminator: (BB: Addr) => Addr
+   LLVMGetBasicBlockTerminatorNullable = LLVMGetBasicBlockTerminator: (BB: Addr) => < Addr | >
    LLVMBuildRet: (Builder: Addr, V: Addr) => Addr
    LLVMBuildRetVoid: (Builder: Addr) => Addr
    LLVMBuildUnreachable: (Builder: Addr) => Addr
@@ -165,7 +170,7 @@
    LLVMSetTarget: (M: Addr, Triple: String) => ()
    LLVMGetDefaultTargetTriple: () => Addr
    LLVMGetTargetFromTriple: (Triple: String, T: Addr, ErrorMessage: Addr) => Int
-   LLVMCreateTargetMachine: (T: Addr, Triple: String, CPU: String, Features: String, Level: Int, Reloc: Int, CodeModel: Int) => Addr
+   LLVMCreateTargetMachine: (T: Addr, Triple: String, CPU: String, Features: String, Level: Int, Reloc: Int, CodeModel: Int) => < Addr | >
    LLVMDisposeTargetMachine: (T: Addr) => ()
    LLVMCreateTargetDataLayout: (T: Addr) => Addr
    LLVMCopyStringRepOfTargetData: (TD: Addr) => Addr
@@ -266,7 +271,7 @@
    LLVMAddAttributeAtIndex: (F: Addr, Idx: Int, A: Addr) => ()
    LLVMGetMDKindIDInContext: (C: Addr, Name: String, SLen: Int) => Int
    LLVMValueAsMetadata: (Val: Addr) => Addr
-   LLVMMDNodeInContext2: (C: Addr, MDs: Addr, Count: Int) => Addr
+   LLVMMDNodeInContext2: (C: Addr, MDs: < Addr | >, Count: Int) => Addr
    LLVMMetadataAsValue: (C: Addr, MD: Addr) => Addr
-   LLVMSetMetadata: (Val: Addr, KindID: Int, Node: Addr) => ()
-   LLVMGetMetadata: (Val: Addr, KindID: Int) => Addr
+   LLVMSetMetadata: (Val: Addr, KindID: Int, Node: < Addr | >) => ()
+   LLVMGetMetadata: (Val: Addr, KindID: Int) => < Addr | >

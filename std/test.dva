@@ -551,13 +551,12 @@ cov_trace = edge_id =>
 cov_clear: () => ()
 cov_clear = !=>
    p = dva_cov_map_ptr!
-   p != sys::addr_null | %memset(p, 0, COV_MAP_SIZE)
+   %memset(p, 0, COV_MAP_SIZE)
 
 // Returns the number of covered (non-zero) buckets in `@__dva_cov_map`.
 cov_edges: () => Int
 cov_edges = !=>
    p = dva_cov_map_ptr!
-   p == sys::addr_null | --| 0
    count_nonzero_bytes(p)
 
 // Hierarchically reduces a failing `String` input while preserving `!prop(cand)`:
@@ -711,7 +710,7 @@ fuzz_opts = name, seeds, default_runs, seed, prop =>
    corpus_root != "" | load_corpus_dir(path::join(corpus_root, name), corpus)
    ?corpus == 0 | (corpus += ++"")
 
-   seen_cov = libc::malloc(COV_MAP_SIZE)
+   seen_cov = libc::malloc(COV_MAP_SIZE).expect("could not allocate fuzz coverage map")
    %memset(seen_cov, 0, COV_MAP_SIZE)
    ar = mem::arena(262144)
 

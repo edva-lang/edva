@@ -76,7 +76,7 @@
 
    set_current: Addr => Addr
    set_current = raw =>
-      Int(raw) == 0 | set_global! | runtime_arena_set_current(<+ raw +>)
+      runtime_arena_set_current(<+ raw +>)
 
    set_global: () => Addr
    set_global = !=> runtime_arena_set_current(<-->)
@@ -87,12 +87,16 @@
    restore_to: Arena, Int => ()
    restore_to = a, mark => runtime_arena_restore(a.raw, mark)
 
-   arena: Int => Arena
-   arena = chunk_size =>
+   try_arena: Int => < Arena | >
+   try_arena = chunk_size =>
       sz = chunk_size !> 0 | 67108864 | chunk_size
-      raw = libc::malloc(131632)
-      raw != ptr(0) | dva_arena_init(raw, sz)
-      Arena(raw, sz)
+      libc::malloc(131632)
+         | raw =>
+            dva_arena_init(raw, sz)
+            <+ Arena(raw, sz) +>
+
+   arena: Int => Arena
+   arena = chunk_size => try_arena(chunk_size).expect("could not allocate arena descriptor")
 
    arena_default: () => Arena
    arena_default = !=> arena(67108864)
@@ -108,10 +112,8 @@
 
    destroy: Arena => ()
    destroy = a =>
-      a.raw != ptr(0)
-         |
-            release(a)
-            libc::free(a.raw)
+      release(a)
+      libc::free(a.raw)
 
    stats: Arena => ArenaStats
    stats = a =>
@@ -153,7 +155,6 @@
    // Checks whether `ptr` points inside the live allocated region of `a`.
    owns_addr: Arena, Addr => <>
    owns_addr = a, ptr =>
-      a.raw == ptr(0) | --| <->
       raw_addr = Int(ptr) .&. 0xFFFFFFFFFFFF
       raw_addr == 0 | --| <->
       cap = a.cap > 0 | a.cap | @[a.raw Int]
@@ -202,7 +203,7 @@
       st_sz = 16
       act_sz = cap
       total = buf_sz + fs_sz + st_sz + act_sz
-      buf = libc::malloc(total)
+      buf = libc::malloc(total).expect("could not allocate pool storage")
       fs = buf + buf_sz
       st = fs + fs_sz
       act = st + st_sz

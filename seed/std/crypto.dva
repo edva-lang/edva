@@ -17,14 +17,13 @@
 #use hex
 #use libc
 #use mem
-#use sys
 
 #private
 
 #foreign("c")
    getrandom       : (buf: Addr, buflen: Int, flags: Int) => Int
    arc4random_buf  : (buf: Addr, nbytes: Int) => ()
-   BCryptGenRandom : (hAlgorithm: Addr, pbBuffer: Addr, cbBuffer: Int, dwFlags: Int) => Int
+   BCryptGenRandom : (hAlgorithm: < Addr | >, pbBuffer: Addr, cbBuffer: Int, dwFlags: Int) => Int
 
 #type OsDarwin  (darwin: Int, tag: Int)
 #type OsWindows (windows: Int, tag: Int)
@@ -64,7 +63,7 @@ fill_os_random = #param OS, ptr, n =>
          arc4random_buf(ptr, n)
          <+>
       [OsWindows]
-         Int(i32(BCryptGenRandom(sys::addr_null, ptr, n, 2))) == 0
+         Int(i32(BCryptGenRandom(<-->, ptr, n, 2))) == 0
       [OsWasm]
          getrandom(ptr, n, 0) == n
       |

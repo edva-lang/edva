@@ -26,7 +26,7 @@
    unlink: (path: String) => Int
 
 llvm_val_opt: Addr => <Addr|>
-llvm_val_opt = a => a != sys::addr_null | <+ a +> | <-->
+llvm_val_opt = a => Int(a) != 0 | <+ a +> | <-->
 
 c_str_opt: <Addr|> => String
 c_str_opt = raw_opt =>
@@ -161,7 +161,7 @@ default_codegen_opts = !=> CodegenOpts("", <->, <->, ast::Names(),
 #type Cg (
    module: Addr,
    builder: Addr,
-   target_machine: Addr,
+   target_machine: < Addr | >,
    main_fn: <Addr|>,
    vars: CgVars,
    exited: <>,
@@ -191,7 +191,7 @@ default_codegen_opts = !=> CodegenOpts("", <->, <->, ast::Names(),
    in_fn: <>,
    in_restore_scope: Int,
    current_module: String,
-   current_fn: Addr,
+   active_fn: < Addr | >,
 cycle_breaks: Addrs,
 cycle_conts: Addrs,
   fn_alias_names: ast::Names,
@@ -278,8 +278,8 @@ param_clo_tys: Addrs,
    fast_freeze_builders: ast::Names = ast::Names(),
    unboxed_ret_tail: Int = 0,
    current_fn_has_restore: <> = <->,
-   inline_ret_bb: Addr = sys::addr_null,
-   inline_ret_slot: Addr = sys::addr_null,
+   inline_ret_bb: < Addr | > = <-->,
+   inline_ret_slot: < Addr | > = <-->,
    validated_str_vals: Addrs = Addrs(),
    escape_check_depth: Int = 0,
    analyzing_str_header: <> = <->
@@ -295,7 +295,7 @@ param_clo_tys: Addrs,
    ast::Names(), types::CtVals(),
    ast::Names(), types::IntArr(), types::LambdaEnvInfos(), <->, 1,
    <->, <->, <-->, ast::Names(), ast::Names(), 0, <->,
-   sys::addr_null, sys::addr_null, types::Addrs(), 0)
+   <-->, <-->, types::Addrs(), 0)
 
 // Value-Range Analysis (VRA) lattice and per-module state.
 // state: 0 = Bottom (unseen), 1 = Bounded [lo, hi], 2 = Top (unbounded).
@@ -416,18 +416,17 @@ emit_cov_edge: Cg => ()
 emit_cov_edge = cg =>
    cg.opts.fuzz_cov && cg.current_module != "test"
       |
-         cur_bb = LLVMGetInsertBlock(cg.builder)
-         has_bb = cur_bb != sys::addr_null && !<>(llvm_val_opt(LLVMGetBasicBlockTerminator(cur_bb)))
-         has_bb
-            |
-               edge_id = g.cov_edge_seq
-               g.cov_edge_seq = ((edge_id + 1) .&. 65535) + 1
-               fn = LLVMGetNamedFunction(cg.module, "dva_cov_trace")
-               fn != sys::addr_null
+         LLVMGetInsertBlockNullable(cg.builder)
+            | block =>
+               !<>(LLVMGetBasicBlockTerminatorNullable(block))
                   |
-                     i64t = LLVMInt64Type!
-                     ft = fn_type1(LLVMVoidType!, i64t)
-                     call1(cg, ft, fn, LLVMConstInt(i64t, edge_id, 0), "")
+                     edge_id = g.cov_edge_seq
+                     g.cov_edge_seq = ((edge_id + 1) .&. 65535) + 1
+                     LLVMGetNamedFunctionNullable(cg.module, "dva_cov_trace")
+                        | fn =>
+                           i64t = LLVMInt64Type!
+                           ft = fn_type1(LLVMVoidType!, i64t)
+                           call1(cg, ft, fn, LLVMConstInt(i64t, edge_id, 0), "")
 
 inc_tmpc: () => Int
 inc_tmpc = !=>
@@ -885,7 +884,7 @@ gep2 = cg, elem_t, base, i0, i1, name =>
 // BuildCall2 with zero arguments.
 call0: Cg, Addr, Addr, String => Addr
 call0 = cg, fty, fn, name =>
-   LLVMBuildCall2(cg.builder, fty, fn, sys::addr_null, 0, name)
+   LLVMBuildCall2Nullable(cg.builder, fty, fn, <-->, 0, name)
 
 // BuildCall2 with one argument.
 call1: Cg, Addr, Addr, Addr, String => Addr
@@ -925,8 +924,8 @@ struct_type_packed_n = cg, types, n, is_packed =>
 // every use), leaving the builder position untouched.
 hoisted_alloca: Cg, Addr, String => Addr
 hoisted_alloca = cg, ty, name =>
-   entry = LLVMGetEntryBasicBlock(cg.current_fn)
-   saved_opt = llvm_val_opt(LLVMGetInsertBlock(cg.builder))
+   entry = LLVMGetEntryBasicBlock(current_function(cg))
+   saved_opt = LLVMGetInsertBlockNullable(cg.builder)
    first_opt = llvm_val_opt(LLVMGetFirstInstruction(entry))
    first_opt
       | first => LLVMPositionBuilderBefore(cg.builder, first)
@@ -1059,17 +1058,17 @@ codegen_init = opts =>
    res = LLVMGetTargetFromTriple(triple, &target_raw', &err_raw')
    tm = res == 0
       | LLVMCreateTargetMachine(Addr(target_raw'), triple, "", "", 2, 0, 0)
-      | sys::addr_null
-   layout = tm != sys::addr_null
-      |
-         td = LLVMCreateTargetDataLayout(tm)
+      | <-->
+   layout = tm
+      | target =>
+         td = LLVMCreateTargetDataLayout(target)
          raw_l = LLVMCopyStringRepOfTargetData(td)
          l_str = c_str(raw_l)
          LLVMDisposeMessage(raw_l)
          LLVMDisposeTargetData(td)
          l_str
       |
-         err_ptr_opt = llvm_val_opt(ptr(err_raw'))
+         err_ptr_opt = sys::addr_opt(ptr(err_raw'))
          err_s = c_str_opt(err_ptr_opt)
          log::error $ "E3069: No LLVM target registered for triple '" + triple + "'" +
            (?err_s > 0 | ": " + err_s | "")
@@ -1091,7 +1090,7 @@ codegen_init = opts =>
      <-->, <-->, <-->, <-->, <-->, <-->, <-->, <-->,
      0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", <-->,
      ast::Names(),
-     ast::VTypes(), FnDefs(), FnNameIndex(), FnInfos(), <->, 0, "", sys::addr_null,
+     ast::VTypes(), FnDefs(), FnNameIndex(), FnInfos(), <->, 0, "", <-->,
      Addrs(), Addrs(), ast::Names(), ast::Names(), "", ast::Names(),
      ast::Names(), ast::Names(), Addrs(), ast::VTypes(), ParamRecs(),
      ast::Names(), ast::Names(), <-->, <-->, <-->, <-->,
@@ -1099,6 +1098,9 @@ codegen_init = opts =>
      FieldInitState(ast::Names(), ast::Names()),
      ChoiceInitFrames(), BindingMuts(), <->, <-->, <->, ast::Names(),
      Addrs(), "", 0, 0, eff_opts)
+
+current_function: Cg => Addr
+current_function = cg => cg.active_fn.expect("code generation requires an active function")
 
 // Define "i32 @main(i32, ptr)" or void @__dva_global_init().
 codegen_build_main: Cg => Addr
@@ -1115,7 +1117,7 @@ codegen_build_main = cg =>
          entry' = LLVMAppendBasicBlock(fn', "entry")
          LLVMPositionBuilderAtEnd(cg.builder, entry')
          cg.main_fn = <+ fn' +>
-         cg.current_fn = fn'
+         cg.active_fn = <+ fn' +>
          !cg.opts.no_runtime && !cg.opts.is_module | emit_arena_init(cg)
          fn'
       |
@@ -1130,7 +1132,7 @@ codegen_build_main = cg =>
          entry' = LLVMAppendBasicBlock(fn', "entry")
          LLVMPositionBuilderAtEnd(cg.builder, entry')
          cg.main_fn = <+ fn' +>
-         cg.current_fn = fn'
+         cg.active_fn = <+ fn' +>
          !cg.opts.no_runtime
             |
                argc_p = LLVMGetParam(fn', 0)
@@ -1306,7 +1308,7 @@ is_map_vt: ast::ValueType => <>
 is_map_vt = [Map]
 
 is_ptr_vt: ast::ValueType => <>
-is_ptr_vt = [RawPtr]
+is_ptr_vt = [RawPtr, NullablePtr]
 
 // The LLVM type backing a ValueType (i64 Int, double Float, i1 ram-flag,
 // ptr String). Slice-9 subset; composite types arrive with later slices.
@@ -1316,11 +1318,11 @@ is_ptr_vt = [RawPtr]
 // returning <Addr|> so callers must explicitly match both states.
 llvm_find_function: Addr, String => <Addr|>
 llvm_find_function = module, name =>
-   llvm_val_opt(LLVMGetNamedFunction(module, name))
+   LLVMGetNamedFunctionNullable(module, name)
 
 llvm_find_global: Addr, String => <Addr|>
 llvm_find_global = module, name =>
-   llvm_val_opt(LLVMGetNamedGlobal(module, name))
+   LLVMGetNamedGlobalNullable(module, name)
 
 float_llvm: ast::ValueType => Addr
 float_llvm = vt => vt [F32] LLVMFloatType! | LLVMDoubleType!
@@ -1352,7 +1354,7 @@ llvm_type_of_vt = vt =>
       [Array] i8p
       [Slice] i8p
       [Error] i8p
-      [RawPtr] i8p
+      [RawPtr, NullablePtr] i8p
       [Record] i8p
       | i64t
 
@@ -2135,7 +2137,7 @@ type_name_to_vt = name =>
       ["String"] (ast::ValueType(Str), <+>)
       ["void"] (ast::ValueType(Unit), <+>)
       ["Addr"] (ast::ValueType(RawPtr), <+>)
-      ["ptr"] (ast::ValueType(RawPtr), <+>)
+      ["ptr"] (ast::ValueType(NullablePtr), <+>)
       ["Builder"] (ast::ValueType(Builder), <+>)
       ["Error"] (ast::ValueType(Error), <+>)
       ["Type"] (ast::ValueType(Type), <+>)
@@ -2268,7 +2270,7 @@ llvm_abi_type_of_ti = cg, ti =>
 
 is_unboxed_ret_field_vt: ast::ValueType => <>
 is_unboxed_ret_field_vt = vt =>
-   vt [Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Flag, RawPtr, Str]
+   vt [Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Flag, RawPtr, NullablePtr, Str]
 
 rec_fields_unboxed_ok: Cg, ast::FieldTypes, Int, Int => <>
 rec_fields_unboxed_ok = cg, fields, i, n =>
@@ -2611,7 +2613,7 @@ codegen_prim_type_size = cg, vt, ti =>
       [I16, U16] 2
       [I32, U32, F32, Rune] 4
       [Record] codegen_record_size_bytes(cg, ti)
-      [RawPtr, Fn] target_ptr_size(cg)
+      [RawPtr, NullablePtr, Fn] target_ptr_size(cg)
       [Str, Slice, Map] target_ptr_size(cg) * 2
       [Builder, Array] target_ptr_size(cg) * 3
       [Error] codegen_error_size(cg)
@@ -2644,7 +2646,7 @@ codegen_prim_type_align = cg, vt, ti =>
       [I16, U16] 2
       [I32, U32, F32, Rune] 4
       [Record] codegen_record_align(cg, ti)
-      [RawPtr, Fn] target_ptr_align(cg)
+      [RawPtr, NullablePtr, Fn] target_ptr_align(cg)
       [Str, Slice, Map, Builder, Array] target_ptr_align(cg)
       [Error] 8
       | 8
@@ -3608,7 +3610,7 @@ type_is_scalar: ast::TypeInfo => <>
 type_is_scalar = ti =>
    ti
       [Prim p]
-         is_sc = p [RawPtr, Flag] || is_int_vt(p) || is_float_vt(p)
+         is_sc = p [RawPtr, NullablePtr, Flag] || is_int_vt(p) || is_float_vt(p)
          is_sc
       | <->
 
@@ -3636,7 +3638,7 @@ type_is_pointer: ast::TypeInfo => <>
 type_is_pointer = ti =>
    ti
       [Prim p]
-         is_ptr = p [RawPtr]
+         is_ptr = is_ptr_vt(p)
          is_ptr
       | <->
 
@@ -4555,6 +4557,7 @@ prim_vt_display_name = vt =>
       [Flag] "<>"
       [Unit] "()"
       [RawPtr] "Addr"
+      [NullablePtr] "ptr"
       [Type] "Type"
       [Record] "Record"
       [Enum] "Enum"
@@ -4880,6 +4883,7 @@ value_type_name =
    [Record] "Record"
    [Unit] "Void"
    [RawPtr] "Addr"
+   [NullablePtr] "ptr"
    [Fn] "Function"
    [Type] "Type"
    [Slice] "Slice"
@@ -5047,9 +5051,10 @@ raw_addr_value: Cg, Addr, ast::ValueType, Addr => <Addr|>
 raw_addr_value = cg, value, vt, i8p =>
    llvm_val_opt(value)
       | v =>
-         raw_ptr = vt [RawPtr] v |
+         raw_ptr = is_ptr_vt(vt) | v |
             LLVMBuildIntToPtr(cg.builder, v, i8p, "raw.ptr")
-         <+ expr::validate_and_strip_addr_tag(cg, raw_ptr, i8p) +>
+         out = vt [RawPtr] | expr::validate_and_strip_addr_tag(cg, raw_ptr, i8p) | raw_ptr
+         <+ out +>
       | <-->
 
 codegen_eval_raw_memory: Cg, ast::RawMemoryExpr => (Addr, ast::ValueType)
@@ -5079,7 +5084,7 @@ codegen_eval_raw_memory = cg, rm =>
                (typed_ptr, ast::ValueType(Record))
             |
                rm.load_type
-                  [Unknown] (ptr_val, ast::ValueType(RawPtr))
+                  [Unknown] (ptr_val, ast::ValueType(NullablePtr))
                   |
                      elem_ty = llvm_type_of_vt(rm.load_type)
                      elem_ptr = LLVMBuildPointerCast(cg.builder, ptr_val,
@@ -5087,6 +5092,7 @@ codegen_eval_raw_memory = cg, rm =>
                      loaded = LLVMBuildLoad2(cg.builder, elem_ty,
                        elem_ptr, "raw.load")
                      LLVMSetVolatile(loaded, 1)
+                     rm.load_type [RawPtr] | match::check_nonnull_addr(cg, loaded, <->)
                      (loaded, rm.load_type)
 
 raw_address_uses_string: Cg, ast::Expr => <>
@@ -5144,7 +5150,7 @@ tag_id_of =
 // A pointer-shaped payload is stored in the union slot directly; a scalar is
 // boxed. The chain form (not a '||' merge) avoids flag-phi inference.
 is_ptrish_vt: ast::ValueType => <>
-is_ptrish_vt = [Str, RawPtr, Builder, Ram, Record, Map, Error, Array, Slice, Enum, Fn]
+is_ptrish_vt = [Str, RawPtr, NullablePtr, Builder, Ram, Record, Map, Error, Array, Slice, Enum, Fn]
 
 // A heap { tag, payload } union: malloc'd 16-byte struct, tag in slot 0, the
 // payload in slot 1 (a pointer-shaped value stored directly, a scalar boxed
@@ -5588,7 +5594,7 @@ vra_reset = !=>
 attach_i64_range_md: Cg, Addr, Int, Int => ()
 attach_i64_range_md = cg, load_val, lo, hi =>
    near_full = lo == (const::min_i64 + 1) && hi == (const::max_i64 - 1)
-   ok = load_val != sys::addr_null && lo > const::min_i64 &&
+   ok = Int(load_val) != 0 && lo > const::min_i64 &&
      hi < const::max_i64 && lo !> hi && !near_full
    ok
       |
@@ -5597,9 +5603,9 @@ attach_i64_range_md = cg, load_val, lo, hi =>
          md0 = LLVMValueAsMetadata(LLVMConstInt(i64t, lo, 0))
          md1 = LLVMValueAsMetadata(LLVMConstInt(i64t, hi + 1, 0))
          mds = (md0, md1)
-         node = LLVMMDNodeInContext2(ctx, &mds, 2)
+         node = LLVMMDNodeInContext2(ctx, <+ &mds +>, 2)
          kind = LLVMGetMDKindIDInContext(ctx, "range", 5)
-         LLVMSetMetadata(load_val, kind, LLVMMetadataAsValue(ctx, node))
+         LLVMSetMetadata(load_val, kind, <+ LLVMMetadataAsValue(ctx, node) +>)
 
 vra_checked_add: Int, Int => <Int|>
 vra_checked_add = a, b =>
@@ -5808,7 +5814,7 @@ vra_vt_tag =
    [Str] "str"
    [Flag] "flag"
    [Unit] "unit"
-   [RawPtr] "ptr"
+   [RawPtr, NullablePtr] "ptr"
    [Builder] "bldr"
    [Error] "err"
    [Ram] "ram"
@@ -7130,7 +7136,7 @@ vra_poison_scan_expr = cg, te, fn_names, is_top_fn =>
            c.0 == "%alloc" || c.0 == "%realloc"
          has_raw_arg' = <->
          c.2 @ ate =>
-            vt_from_ti_cg(cg, ate.ti) [RawPtr, Type] | has_raw_arg' = <+>
+            vt_from_ti_cg(cg, ate.ti) [RawPtr, NullablePtr, Type] | has_raw_arg' = <+>
             ate.kind
                [Var av] (is_user_type(cg, av.0) | has_raw_arg' = <+>)
             vra_poison_scan_expr(cg, ate, fn_names, <->)

@@ -262,9 +262,9 @@ codegen_record_pay_eq = cg, l_rec, r_rec, rec_struct_opt, fields, depth =>
       |
          rec_struct_t = rec_struct_opt.expect("missing rec struct opt")
          entry_b = LLVMGetInsertBlock(cg.builder)
-         ptr_neq_b = LLVMAppendBasicBlock(cg.current_fn, "rec.ptr.neq")
-         cmp_fields_b = LLVMAppendBasicBlock(cg.current_fn, "rec.fields.cmp")
-         rec_exit_b = LLVMAppendBasicBlock(cg.current_fn, "rec.cmp.exit")
+         ptr_neq_b = LLVMAppendBasicBlock(types::current_function(cg), "rec.ptr.neq")
+         cmp_fields_b = LLVMAppendBasicBlock(types::current_function(cg), "rec.fields.cmp")
+         rec_exit_b = LLVMAppendBasicBlock(types::current_function(cg), "rec.cmp.exit")
          LLVMBuildCondBr(cg.builder, ptr_eq, rec_exit_b, ptr_neq_b)
 
          LLVMPositionBuilderAtEnd(cg.builder, ptr_neq_b)
@@ -303,9 +303,9 @@ codegen_error_pay_eq = cg, l_val, r_val =>
    r_i = LLVMBuildPtrToInt(cg.builder, r_val, i64t, "err.r.i")
    ptr_eq = LLVMBuildICmp(cg.builder, 32, l_i, r_i, "err.ptr.eq")
    entry_b = LLVMGetInsertBlock(cg.builder)
-   ptr_neq_b = LLVMAppendBasicBlock(cg.current_fn, "err.ptr.neq")
-   cmp_fields_b = LLVMAppendBasicBlock(cg.current_fn, "err.fields.cmp")
-   err_exit_b = LLVMAppendBasicBlock(cg.current_fn, "err.cmp.exit")
+   ptr_neq_b = LLVMAppendBasicBlock(types::current_function(cg), "err.ptr.neq")
+   cmp_fields_b = LLVMAppendBasicBlock(types::current_function(cg), "err.fields.cmp")
+   err_exit_b = LLVMAppendBasicBlock(types::current_function(cg), "err.cmp.exit")
    LLVMBuildCondBr(cg.builder, ptr_eq, err_exit_b, ptr_neq_b)
 
    LLVMPositionBuilderAtEnd(cg.builder, ptr_neq_b)
@@ -418,20 +418,20 @@ codegen_emit_enum_deep_cmp_depth = cg, op, lr, rr, slots, depth =>
          i64t = LLVMInt64Type!
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
          entry_bb = LLVMGetInsertBlock(cg.builder)
-         tag_match_bb = LLVMAppendBasicBlock(cg.current_fn, "enum.tag.match")
-         exit_bb = LLVMAppendBasicBlock(cg.current_fn, "enum.cmp.exit")
+         tag_match_bb = LLVMAppendBasicBlock(types::current_function(cg), "enum.tag.match")
+         exit_bb = LLVMAppendBasicBlock(types::current_function(cg), "enum.cmp.exit")
          LLVMBuildCondBr(cg.builder, tags_eq, tag_match_bb, exit_bb)
 
          has_unit = enum_slots_have_unit(slots, 0, n_slots)
          unit_bb_opt = has_unit
-            | <+ LLVMAppendBasicBlock(cg.current_fn, "enum.unit.match") +>
+            | <+ LLVMAppendBasicBlock(types::current_function(cg), "enum.unit.match") +>
             | <-->
          unit_bb_opt
             | ubb =>
                LLVMPositionBuilderAtEnd(cg.builder, ubb)
                stmt::branch_to(cg, exit_bb)
 
-         unreachable_bb = LLVMAppendBasicBlock(cg.current_fn, "enum.unreachable")
+         unreachable_bb = LLVMAppendBasicBlock(types::current_function(cg), "enum.unreachable")
          LLVMPositionBuilderAtEnd(cg.builder, unreachable_bb)
          LLVMBuildUnreachable(cg.builder)
 
@@ -447,7 +447,7 @@ codegen_emit_enum_deep_cmp_depth = cg, op, lr, rr, slots, depth =>
                | (unit_bb_opt | ubb => LLVMAddCase(sw, case_tag, ubb))
             sl.has_payload
                |
-                  case_bb = LLVMAppendBasicBlock(cg.current_fn,
+                  case_bb = LLVMAppendBasicBlock(types::current_function(cg),
                     "enum.pay.case." + str::from_int(si))
                   LLVMAddCase(sw, case_tag, case_bb)
                   LLVMPositionBuilderAtEnd(cg.builder, case_bb)
@@ -1783,9 +1783,9 @@ codegen_emit_logical_scalar = cg, is_and, lr, t =>
    codegen_check_logical_ram_layout(cg, is_and, t.1, t.2)
    rname = ram_expr_dtype(cg, t.2)
    pre = is_and | "and" | "or"
-   then_bb = LLVMAppendBasicBlock(cg.current_fn, pre + ".then")
-   else_bb = LLVMAppendBasicBlock(cg.current_fn, pre + ".else")
-   exit_bb = LLVMAppendBasicBlock(cg.current_fn, pre + ".exit")
+   then_bb = LLVMAppendBasicBlock(types::current_function(cg), pre + ".then")
+   else_bb = LLVMAppendBasicBlock(types::current_function(cg), pre + ".else")
+   exit_bb = LLVMAppendBasicBlock(types::current_function(cg), pre + ".exit")
    LLVMBuildCondBr(cg.builder, stmt::codegen_cond_value(cg, lr.0, lr.1),
      then_bb, else_bb)
 
@@ -2181,7 +2181,7 @@ codegen_eval_choice_switch_cases_at = cg, c, sw_inst, i64t, i, nb, vals, vts, bb
             [Case]
                case_c_name = "inexhaustive.case" + str::from_int(i) + "." +
                  str::from_int(types::g.tmpc)
-               case_bb = LLVMAppendBasicBlock(cg.current_fn,
+               case_bb = LLVMAppendBasicBlock(types::current_function(cg),
                  case_c_name)
                ncv = ?br.case_values
                codegen_eval_choice_switch_case_values_at(sw_inst, i64t,
@@ -2215,8 +2215,8 @@ codegen_eval_choice_switch_valid = cg, c, cond_val, cond_type =>
    exit_c_name = "inexhaustive.exit." + str::from_int(types::g.tmpc)
    default_c_name = "inexhaustive.default." + str::from_int(types::g.tmpc)
    types::g.tmpc = types::g.tmpc + 1
-   exit_bb = LLVMAppendBasicBlock(cg.current_fn, exit_c_name)
-   default_bb = LLVMAppendBasicBlock(cg.current_fn, default_c_name)
+   exit_bb = LLVMAppendBasicBlock(types::current_function(cg), exit_c_name)
+   default_bb = LLVMAppendBasicBlock(types::current_function(cg), default_c_name)
    is_i64 = LLVMTypeOf(cond_val) == i64t
    is_int = LLVMGetTypeKind(LLVMTypeOf(cond_val)) == 8
    sw_val = is_i64
@@ -2291,8 +2291,8 @@ codegen_eval_choice_case_chain_at = cg, c, cond_val, cond_type, curr_check_bb, k
          next_c_name = "choice.next" + str::from_int(k) + "." +
            str::from_int(types::g.tmpc)
          types::g.tmpc = types::g.tmpc + 1
-         case_bb = LLVMAppendBasicBlock(cg.current_fn, case_c_name)
-         next_bb = LLVMAppendBasicBlock(cg.current_fn, next_c_name)
+         case_bb = LLVMAppendBasicBlock(types::current_function(cg), case_c_name)
+         next_bb = LLVMAppendBasicBlock(types::current_function(cg), next_c_name)
          br = c.branches(k).expect("missing branches")
          LLVMPositionBuilderAtEnd(cg.builder, curr_check_bb)
          mm = branch_test(cg, br, cond_val, cond_type)
@@ -2314,7 +2314,7 @@ codegen_eval_choice_case_chain_at = cg, c, cond_val, cond_type, curr_check_bb, k
 // "scrutinee [v1] a [v2] b | fallback" — conditional chain per branch.
 codegen_eval_choice_case_chain: types::Cg, ast::ChoiceExpr, Addr, ast::ValueType => (Addr, ast::ValueType)
 codegen_eval_choice_case_chain = cg, c, cond_val, cond_type =>
-   exit_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
+   exit_bb = LLVMAppendBasicBlock(types::current_function(cg), "choice.exit")
    curr_check_bb = LLVMGetInsertBlock(cg.builder)
    vals = types::Addrs()
    vts = ast::VTypes()
@@ -2438,8 +2438,8 @@ codegen_eval_choice_bare_single = cg, c, cond_val, cond_type, dtype =>
          then_b = c.branches(0).expect("missing branches")
          t0 = types::g.tmpc
          types::g.tmpc = types::g.tmpc + 1
-         exit_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
-         then_bb = LLVMAppendBasicBlock(cg.current_fn,
+         exit_bb = LLVMAppendBasicBlock(types::current_function(cg), "choice.exit")
+         then_bb = LLVMAppendBasicBlock(types::current_function(cg),
            "choice.case0." + str::from_int(t0))
          cval = stmt::codegen_cond_value(cg, cv, cond_type)
          LLVMBuildCondBr(cg.builder, cval, then_bb, exit_bb)
@@ -2571,10 +2571,10 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
    else_b = c.branches(1).expect("missing branches")
    t0 = types::g.tmpc
    types::g.tmpc = types::g.tmpc + 1
-   exit_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
-   then_bb = LLVMAppendBasicBlock(cg.current_fn,
+   exit_bb = LLVMAppendBasicBlock(types::current_function(cg), "choice.exit")
+   then_bb = LLVMAppendBasicBlock(types::current_function(cg),
      "choice.case0." + str::from_int(t0))
-   else_bb = LLVMAppendBasicBlock(cg.current_fn,
+   else_bb = LLVMAppendBasicBlock(types::current_function(cg),
      "choice.next0." + str::from_int(t0))
    cval = niche.0
       |
@@ -2796,9 +2796,9 @@ union_int_chain = cg, ppay, pay_type =>
    int_ty = types::llvm_type_of_vt(pay_type)
    nullbit = LLVMBuildICmp(cg.builder, 32, ppay,
      LLVMConstNull(i8p), "pay.int.null")
-   load_bb = LLVMAppendBasicBlock(cg.current_fn, "pay.int.load")
-   null_bb = LLVMAppendBasicBlock(cg.current_fn, "pay.int.nullbb")
-   merge_bb = LLVMAppendBasicBlock(cg.current_fn, "pay.int.merge")
+   load_bb = LLVMAppendBasicBlock(types::current_function(cg), "pay.int.load")
+   null_bb = LLVMAppendBasicBlock(types::current_function(cg), "pay.int.nullbb")
+   merge_bb = LLVMAppendBasicBlock(types::current_function(cg), "pay.int.merge")
    LLVMBuildCondBr(cg.builder, nullbit, null_bb, load_bb)
    LLVMPositionBuilderAtEnd(cg.builder, load_bb)
    val = LLVMBuildLoad2(cg.builder, int_ty, ppay, "pay.int.val")
@@ -2817,9 +2817,9 @@ union_float_chain = cg, ppay, pay_type =>
    flt_ty = types::llvm_type_of_vt(pay_type)
    nullbit = LLVMBuildICmp(cg.builder, 32, ppay,
      LLVMConstNull(i8p), "pay.float.null")
-   load_bb = LLVMAppendBasicBlock(cg.current_fn, "pay.float.load")
-   null_bb = LLVMAppendBasicBlock(cg.current_fn, "pay.float.nullbb")
-   merge_bb = LLVMAppendBasicBlock(cg.current_fn, "pay.float.merge")
+   load_bb = LLVMAppendBasicBlock(types::current_function(cg), "pay.float.load")
+   null_bb = LLVMAppendBasicBlock(types::current_function(cg), "pay.float.nullbb")
+   merge_bb = LLVMAppendBasicBlock(types::current_function(cg), "pay.float.merge")
    LLVMBuildCondBr(cg.builder, nullbit, null_bb, load_bb)
    LLVMPositionBuilderAtEnd(cg.builder, load_bb)
    val = LLVMBuildLoad2(cg.builder, flt_ty, ppay, "pay.float.val")
@@ -2999,7 +2999,7 @@ codegen_error_or_yield = cg, pay_val, pay_type =>
          LLVMBuildStore(cg.builder, pay_val, slot2)
          main::codegen_emit_error_panic(cg, pay_val)
          cg.exited = <+>
-         dead = LLVMAppendBasicBlock(cg.current_fn, "err.abort")
+         dead = LLVMAppendBasicBlock(types::current_function(cg), "err.abort")
          LLVMPositionBuilderAtEnd(cg.builder, dead)
          (LLVMConstNull(LLVMTypeOf(pay_val)), pay_type)
       | (pay_val, pay_type)
@@ -3065,8 +3065,8 @@ codegen_eval_choice_variant_at = cg, c, cond_val, slots, curr_check_bb, k, nvars
          next_c_name = "choice.next" + str::from_int(k) + "." +
            str::from_int(types::g.tmpc)
          types::g.tmpc = types::g.tmpc + 1
-         case_bb = LLVMAppendBasicBlock(cg.current_fn, case_c_name)
-         next_bb = LLVMAppendBasicBlock(cg.current_fn, next_c_name)
+         case_bb = LLVMAppendBasicBlock(types::current_function(cg), case_c_name)
+         next_bb = LLVMAppendBasicBlock(types::current_function(cg), next_c_name)
          br = c.branches(k).expect("missing branches")
          label = types::decl_bare_name(br.variant_names(0) | _ | "", 0)
          LLVMPositionBuilderAtEnd(cg.builder, curr_check_bb)
@@ -3107,7 +3107,7 @@ codegen_eval_choice_variant = cg, c, cond_val, cond_type, dtype =>
 codegen_eval_choice_variant_valid: types::Cg, ast::ChoiceExpr, Addr, ast::ValueType,
   String => (Addr, ast::ValueType)
 codegen_eval_choice_variant_valid = cg, c, cond_val, cond_type, dtype =>
-   exit_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
+   exit_bb = LLVMAppendBasicBlock(types::current_function(cg), "choice.exit")
    curr_check_bb = LLVMGetInsertBlock(cg.builder)
    vals = types::Addrs()
    vts = ast::VTypes()
@@ -4304,8 +4304,8 @@ codegen_typed_eval_cond_choice_tail = cg, cond, branches, ti, tail_k =>
    neg_boxed = types::is_unboxed_ram_ti(cg, neg_ti)
    nbranches == 1
       |
-         then_bb' = LLVMAppendBasicBlock(cg.current_fn, "choice.then")
-         exit_bb' = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
+         then_bb' = LLVMAppendBasicBlock(types::current_function(cg), "choice.then")
+         exit_bb' = LLVMAppendBasicBlock(types::current_function(cg), "choice.exit")
          LLVMBuildCondBr(cg.builder, cval, then_bb', exit_bb')
          LLVMPositionBuilderAtEnd(cg.builder, then_bb')
          types::emit_cov_edge(cg)
@@ -4374,9 +4374,9 @@ codegen_typed_eval_cond_choice_tail = cg, cond, branches, ti, tail_k =>
                types::is_unboxed_ram_ti(cg, ti)
                   | <+ unboxed_ram_struct_t(cg) +>
                   | <+ types::llvm_type_of_vt(vt) +>
-         then_bb' = LLVMAppendBasicBlock(cg.current_fn, "choice.then")
-         else_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.else")
-         exit_bb' = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
+         then_bb' = LLVMAppendBasicBlock(types::current_function(cg), "choice.then")
+         else_bb = LLVMAppendBasicBlock(types::current_function(cg), "choice.else")
+         exit_bb' = LLVMAppendBasicBlock(types::current_function(cg), "choice.exit")
          LLVMBuildCondBr(cg.builder, cval, then_bb', else_bb)
 
          saved_val_strs_2 = types::g.validated_str_vals
@@ -4724,7 +4724,7 @@ codegen_typed_eval_guarded_choice_slow_tail: types::Cg, tast::TypedExpr, tast::T
   ast::TypeInfo, Int => (Addr, ast::ValueType)
 codegen_typed_eval_guarded_choice_slow_tail = cg, cond, branches, ti, tail_k =>
    cv = main::codegen_typed_eval(cg, cond)
-   exit_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
+   exit_bb = LLVMAppendBasicBlock(types::current_function(cg), "choice.exit")
    vt = types::vt_from_ti_cg(cg, ti)
    is_void = vt [Unit]
    phi_ty_opt = is_void
@@ -4759,8 +4759,8 @@ codegen_typed_eval_guarded_choice_slow_tail = cg, cond, branches, ti, tail_k =>
                   incoming_bbs += LLVMGetInsertBlock(cg.builder)
             stmt::branch_to(cg, exit_bb)
          |
-            case_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.case")
-            next_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.next")
+            case_bb = LLVMAppendBasicBlock(types::current_function(cg), "choice.case")
+            next_bb = LLVMAppendBasicBlock(types::current_function(cg), "choice.next")
             is_pred = br.kind [Predicate]
             is_var = br.kind [Variant]
             cv_opt = types::llvm_val_opt(cv.0)
@@ -4999,8 +4999,8 @@ check_nonnull_addr = cg, value, optional =>
          --|
    // LLVM folds comparisons of nonnull constants into constant expressions.
    LLVMIsConstant(value) != 0 | --|
-   fail = LLVMAppendBasicBlock(cg.current_fn, "addr.null")
-   present = LLVMAppendBasicBlock(cg.current_fn, "addr.present")
+   fail = LLVMAppendBasicBlock(types::current_function(cg), "addr.null")
+   present = LLVMAppendBasicBlock(types::current_function(cg), "addr.present")
    is_null = LLVMBuildICmp(cg.builder, 32, value, zero, "addr.is.null")
    LLVMBuildCondBr(cg.builder, is_null, fail, present)
    LLVMPositionBuilderAtEnd(cg.builder, fail)

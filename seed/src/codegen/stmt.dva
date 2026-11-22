@@ -661,7 +661,7 @@ compile_lambda = cg, f =>
    fn = LLVMAddFunction(cg.module, fnname, fty)
    LLVMSetLinkage(fn, 8)
    runtime::mark_nounwind(cg, fn)
-   saved_fn = cg.current_fn
+   saved_fn = cg.active_fn
    saved_bb = LLVMGetInsertBlock(cg.builder)
    saved_in_fn = cg.in_fn
    // Read the captured values from the ENCLOSING scope while they are still
@@ -670,7 +670,7 @@ compile_lambda = cg, f =>
    cap_vts = is_cap
       | lambda_caps_vts_at(cg, caps, 0, nc, ast::VTypes())
       | ast::VTypes()
-   cg.current_fn = fn
+   cg.active_fn = <+ fn +>
    cg.in_fn = <+>
    cg.fn_binding_start = saved_nbindings
    entry = LLVMAppendBasicBlock(fn, "entry")
@@ -715,7 +715,7 @@ compile_lambda = cg, f =>
    cg.fn_var_start = saved_var_start
    cg.fn_binding_start = saved_binding_start
    cg.in_fn = saved_in_fn
-   cg.current_fn = saved_fn
+   cg.active_fn = saved_fn
    LLVMPositionBuilderAtEnd(cg.builder, saved_bb)
    envp' = LLVMConstNull(i8p)
    est_opt
@@ -869,9 +869,9 @@ codegen_string_concat = cg, l, r =>
 codegen_str_span_eq: types::Cg, Addr, Addr, Addr, Addr => Addr
 codegen_str_span_eq = cg, ll, ldata, rl, rdata =>
    len_eq = LLVMBuildICmp(cg.builder, 32, ll, rl, "eq.len")
-   eq_bb = LLVMAppendBasicBlock(cg.current_fn, "str.eq.then")
-   neq_bb = LLVMAppendBasicBlock(cg.current_fn, "str.eq.else")
-   merge_bb = LLVMAppendBasicBlock(cg.current_fn, "str.eq.merge")
+   eq_bb = LLVMAppendBasicBlock(types::current_function(cg), "str.eq.then")
+   neq_bb = LLVMAppendBasicBlock(types::current_function(cg), "str.eq.else")
+   merge_bb = LLVMAppendBasicBlock(types::current_function(cg), "str.eq.merge")
    LLVMBuildCondBr(cg.builder, len_eq, eq_bb, neq_bb)
    LLVMPositionBuilderAtEnd(cg.builder, eq_bb)
    mc = types::ensure_memcmp_fn(cg)
@@ -893,9 +893,9 @@ codegen_string_eq = cg, l, r =>
    ll = expr::codegen_string_len(cg, l, "eq.lhs.len")
    rl = expr::codegen_string_len(cg, r, "eq.rhs.len")
    len_eq = LLVMBuildICmp(cg.builder, 32, ll, rl, "eq.len")
-   eq_bb = LLVMAppendBasicBlock(cg.current_fn, "str.eq.then")
-   neq_bb = LLVMAppendBasicBlock(cg.current_fn, "str.eq.else")
-   merge_bb = LLVMAppendBasicBlock(cg.current_fn, "str.eq.merge")
+   eq_bb = LLVMAppendBasicBlock(types::current_function(cg), "str.eq.then")
+   neq_bb = LLVMAppendBasicBlock(types::current_function(cg), "str.eq.else")
+   merge_bb = LLVMAppendBasicBlock(types::current_function(cg), "str.eq.merge")
    LLVMBuildCondBr(cg.builder, len_eq, eq_bb, neq_bb)
    LLVMPositionBuilderAtEnd(cg.builder, eq_bb)
    ldata = expr::codegen_string_data(cg, l, "eq.lhs.data")
@@ -949,7 +949,7 @@ codegen_string_append_rune = cg, str_val, rune_val =>
 
          sc = str::from_int(types::g.tmpc)
          types::g.tmpc = types::g.tmpc + 1
-         cur_fn = cg.current_fn
+         cur_fn = types::current_function(cg)
          b1_bb = LLVMAppendBasicBlock(cur_fn, "sr.b1." + sc)
          check2_bb = LLVMAppendBasicBlock(cur_fn, "sr.c2." + sc)
          b2_bb = LLVMAppendBasicBlock(cur_fn, "sr.b2." + sc)
@@ -1113,13 +1113,13 @@ ensure_fmt_i64_buf = cg =>
    i1t = LLVMInt1Type!
    i8p = LLVMPointerType(i8t, 0)
    fty = types::fn_type3(i64t, i8p, i64t, i1t)
-   types::llvm_val_opt(LLVMGetNamedFunction(cg.module, "dva_fmt_i64_buf"))
+   LLVMGetNamedFunctionNullable(cg.module, "dva_fmt_i64_buf")
       | existing => (existing, fty)
       |
          fn = LLVMAddFunction(cg.module, "dva_fmt_i64_buf", fty)
          LLVMSetLinkage(fn, 8)
          runtime::mark_nounwind(cg, fn)
-         saved_bb = types::llvm_val_opt(LLVMGetInsertBlock(cg.builder))
+         saved_bb = LLVMGetInsertBlockNullable(cg.builder)
          entry_bb = LLVMAppendBasicBlock(fn, "entry")
          zero_bb = LLVMAppendBasicBlock(fn, "zero")
          nz_bb = LLVMAppendBasicBlock(fn, "nonzero")
@@ -1249,7 +1249,7 @@ codegen_decode_rune_at = cg, sdata, curr_i =>
    i8t = LLVMInt8Type!
    sc = str::from_int(types::g.tmpc)
    types::g.tmpc = types::g.tmpc + 1
-   cur_fn = cg.current_fn
+   cur_fn = types::current_function(cg)
    b0_ptr = types::gep1(cg, i8t, sdata, curr_i, "dec.b0.ptr." + sc)
    b0_raw = LLVMBuildLoad2(cg.builder, i8t, b0_ptr,
      "dec.b0.raw." + sc)
@@ -1388,7 +1388,7 @@ codegen_eval_string_rune_count = cg, str_val =>
    sdata = expr::codegen_string_data(cg, str_val, "rc.data")
    sc = str::from_int(types::g.tmpc)
    types::g.tmpc = types::g.tmpc + 1
-   cur_fn = cg.current_fn
+   cur_fn = types::current_function(cg)
    entry_bb = LLVMGetInsertBlock(cg.builder)
    header_bb = LLVMAppendBasicBlock(cur_fn, "rc.hdr." + sc)
    body_bb = LLVMAppendBasicBlock(cur_fn, "rc.body." + sc)
@@ -1429,8 +1429,8 @@ codegen_eval_string_rune_count = cg, str_val =>
 // use the local bare spelling.
 block_is_terminated: types::Cg => <>
 block_is_terminated = cg =>
-   types::llvm_val_opt(LLVMGetInsertBlock(cg.builder))
-      | cur => <>(types::llvm_val_opt(LLVMGetBasicBlockTerminator(cur)))
+   LLVMGetInsertBlockNullable(cg.builder)
+      | cur => <>(LLVMGetBasicBlockTerminatorNullable(cur))
       | <+>
 
 // Br to dest unless the current block is already terminated.
@@ -1561,7 +1561,7 @@ choice_coerce_c = cg, v, target =>
                            is_zero_c
                               | LLVMConstNull(tt)
                               |
-                                 ! <>(types::llvm_val_opt(LLVMGetInsertBlock(cg.builder)))
+                                 ! <>(LLVMGetInsertBlockNullable(cg.builder))
                                     | LLVMConstNull(tt)
                                     |
                                        LLVMBuildIntToPtr(cg.builder, vv,
@@ -1569,7 +1569,7 @@ choice_coerce_c = cg, v, target =>
                         |
                            tkind == 8 && vkind == 12
                               |
-                                 ! <>(types::llvm_val_opt(LLVMGetInsertBlock(cg.builder)))
+                                 ! <>(LLVMGetInsertBlockNullable(cg.builder))
                                     | LLVMConstInt(tt, 0, 0)
                                     |
                                        LLVMBuildPtrToInt(cg.builder, vv,
@@ -2133,11 +2133,11 @@ codegen_eval_map_cycle = cg, c, m =>
    counter_alloca = types::hoisted_alloca(cg, i64t, "loop.midx." + sc)
    LLVMBuildStore(cg.builder, LLVMConstInt(i64t, 0, 0),
      counter_alloca)
-   header = LLVMAppendBasicBlock(cg.current_fn, "loop.mheader." + sc)
-   body = LLVMAppendBasicBlock(cg.current_fn, "loop.mbody." + sc)
-   live_bb = LLVMAppendBasicBlock(cg.current_fn, "loop.mlive." + sc)
-   latch = LLVMAppendBasicBlock(cg.current_fn, "loop.mlatch." + sc)
-   done = LLVMAppendBasicBlock(cg.current_fn, "loop.mexit." + sc)
+   header = LLVMAppendBasicBlock(types::current_function(cg), "loop.mheader." + sc)
+   body = LLVMAppendBasicBlock(types::current_function(cg), "loop.mbody." + sc)
+   live_bb = LLVMAppendBasicBlock(types::current_function(cg), "loop.mlive." + sc)
+   latch = LLVMAppendBasicBlock(types::current_function(cg), "loop.mlatch." + sc)
+   done = LLVMAppendBasicBlock(types::current_function(cg), "loop.mexit." + sc)
    break_target = cg.escape_bb | _ | done
    cg.escape_bb = <-->
    cg.cycle_breaks += break_target
@@ -2220,10 +2220,10 @@ codegen_eval_condition_cycle: types::Cg, ast::CycleExpr => (Addr, ast::ValueType
 codegen_eval_condition_cycle = cg, c =>
    sc = str::from_int(types::g.tmpc)
    types::g.tmpc = types::g.tmpc + 1
-   header = LLVMAppendBasicBlock(cg.current_fn, "loop.header." + sc)
-   body = LLVMAppendBasicBlock(cg.current_fn, "loop.body." + sc)
-   latch = LLVMAppendBasicBlock(cg.current_fn, "loop.latch." + sc)
-   done = LLVMAppendBasicBlock(cg.current_fn, "loop.exit." + sc)
+   header = LLVMAppendBasicBlock(types::current_function(cg), "loop.header." + sc)
+   body = LLVMAppendBasicBlock(types::current_function(cg), "loop.body." + sc)
+   latch = LLVMAppendBasicBlock(types::current_function(cg), "loop.latch." + sc)
+   done = LLVMAppendBasicBlock(types::current_function(cg), "loop.exit." + sc)
    break_target = cg.escape_bb | _ | done
    cg.escape_bb = <-->
    cg.cycle_breaks += break_target
@@ -2329,10 +2329,10 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv_opt =>
    counter_alloca = types::hoisted_alloca(cg, i64t, "loop.idx." + sc)
    LLVMBuildStore(cg.builder, start_val, counter_alloca)
    step_alloca = types::hoisted_alloca(cg, i64t, "loop.step." + sc)
-   header = LLVMAppendBasicBlock(cg.current_fn, "loop.header." + sc)
-   body = LLVMAppendBasicBlock(cg.current_fn, "loop.body." + sc)
-   latch = LLVMAppendBasicBlock(cg.current_fn, "loop.latch." + sc)
-   done = LLVMAppendBasicBlock(cg.current_fn, "loop.exit." + sc)
+   header = LLVMAppendBasicBlock(types::current_function(cg), "loop.header." + sc)
+   body = LLVMAppendBasicBlock(types::current_function(cg), "loop.body." + sc)
+   latch = LLVMAppendBasicBlock(types::current_function(cg), "loop.latch." + sc)
+   done = LLVMAppendBasicBlock(types::current_function(cg), "loop.exit." + sc)
    break_target = cg.escape_bb | _ | done
    cg.escape_bb = <-->
    cg.cycle_breaks += break_target
@@ -2508,8 +2508,8 @@ codegen_eval_cycle_escape = cg, e =>
    types::g.tmpc = types::g.tmpc + 1
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    res_lt = i8p
-   branch_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
-   merge_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
+   branch_bb = LLVMAppendBasicBlock(types::current_function(cg), "escape.branch." + sc)
+   merge_bb = LLVMAppendBasicBlock(types::current_function(cg), "escape.merge." + sc)
    res_alloca = types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
    u_none = types::codegen_build_union(cg, 3, ast::Exprs(), "escape.none." + sc)
    LLVMBuildStore(cg.builder, u_none, res_alloca)
@@ -4090,7 +4090,7 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
    value_safe = vs
    exports = exp
    saved_module = cg.current_module
-   saved_fn = cg.current_fn
+   saved_fn = cg.active_fn
    saved_bb = LLVMGetInsertBlock(cg.builder)
    saved_in_fn = cg.in_fn
    saved_exited = cg.exited
@@ -4170,7 +4170,7 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
          get_or_create_dyn_fn_ptr(cg, fd.name, <+ fn +>)
    runtime::mark_nounwind(cg, fn)
    mark_inline_preference(cg, fn, fd.name)
-   cg.current_fn = fn
+   cg.active_fn = <+ fn +>
    cg.in_fn = <+>
    entry = LLVMAppendBasicBlock(fn, "entry")
    LLVMPositionBuilderAtEnd(cg.builder, entry)
@@ -4310,7 +4310,7 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
    cg.param_clo_names = types::truncate_names(cg.param_clo_names, saved_nclo)
    cg.param_clo_tys = cycle_trunc(cg.param_clo_tys, saved_nclo)
    cg.param_clo_rets = truncate_vtypes(cg.param_clo_rets, saved_nclo)
-   cg.current_fn = saved_fn
+   cg.active_fn = saved_fn
    LLVMPositionBuilderAtEnd(cg.builder, saved_bb)
    cg.current_module = saved_module
    types::g.last_compiling_fn = saved_last_fn
@@ -6310,7 +6310,7 @@ ut_is_scalar: unify::UType => <>
 ut_is_scalar = ut =>
    ut
       [Prim p] (p [Int, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Rune, Flag, Unit,
-        RawPtr])
+        RawPtr, NullablePtr])
       | <->
 
 name_before_dot: String => String
@@ -6541,7 +6541,7 @@ codegen_typed_eval_fwd = cg, name, ti =>
 
 ut_is_rawptr: unify::UType => <>
 ut_is_rawptr = ut =>
-   ut [Prim p] (p [RawPtr]) | <->
+   ut [Prim p] (p [RawPtr, NullablePtr]) | <->
 
 tast_is_addr_arg_scoped: types::Cg, tast::TypedExpr, Int => <>
 tast_is_addr_arg_scoped = cg, arg, threshold =>
@@ -6790,7 +6790,7 @@ str_var_only_safe_uses = cg, name, te, safe =>
            types::is_str_vt(types::vt_from_ti_cg(cg, c.1.expect("required payload").ti))
          rec_ok = c.1 | r => str_var_only_safe_uses(cg, name, r, is_str_idx) | <+>
          is_to_str = ! <>(c.1) && (?c.2 == 1) && (c.0 == "%to_str")
-         is_inl_ut = safe && (types::g.inline_ret_bb != sys::addr_null) &&
+         is_inl_ut = safe && <>(types::g.inline_ret_bb) &&
            ! <>(c.1) && types::is_user_type(cg, c.0)
          args_ok = (is_inl_ut || (is_to_str && safe))
             | str_var_exprs_safe(cg, name, c.2, 0, ?c.2, <+>)
@@ -6835,7 +6835,7 @@ str_var_only_safe_uses = cg, name, te, safe =>
       [EnumConstruct ec]
          (ec.1 | p => str_var_only_safe_uses(cg, name, p, <->) | <+>)
       [Record r]
-         fld_safe = safe && (types::g.inline_ret_bb != sys::addr_null)
+         fld_safe = safe && <>(types::g.inline_ret_bb)
          ok' = <+>
          r @ f =>
             !str_var_only_safe_uses(cg, name, f.val, fld_safe) | ok' = <->
@@ -6864,7 +6864,7 @@ choice_branches_bind_or_lam = brs, i, n =>
 
 fn_ret_unboxes_str: types::Cg => <>
 fn_ret_unboxes_str = cg =>
-   types::g.inline_ret_bb != sys::addr_null | --| <+>
+   <>(types::g.inline_ret_bb) | --| <+>
    types::fn_uses_c_ret_abi(cg, types::g.last_compiling_fn) | --| <->
    types::unboxed_ret_struct_ti(cg, types::g.expected_fn_ti)
       | u => (u.1 [1, 2])
@@ -8744,10 +8744,10 @@ codegen_typed_eval_condition_cycle: types::Cg, tast::TypedExpr, tast::TypedExpr,
 codegen_typed_eval_condition_cycle = cg, iterable, body_fn, esc_opt, ti =>
    sc = str::from_int(types::g.tmpc)
    types::g.tmpc = types::g.tmpc + 1
-   header = LLVMAppendBasicBlock(cg.current_fn, "loop.header." + sc)
-   body = LLVMAppendBasicBlock(cg.current_fn, "loop.body." + sc)
-   latch = LLVMAppendBasicBlock(cg.current_fn, "loop.latch." + sc)
-   done = LLVMAppendBasicBlock(cg.current_fn, "loop.exit." + sc)
+   header = LLVMAppendBasicBlock(types::current_function(cg), "loop.header." + sc)
+   body = LLVMAppendBasicBlock(types::current_function(cg), "loop.body." + sc)
+   latch = LLVMAppendBasicBlock(types::current_function(cg), "loop.latch." + sc)
+   done = LLVMAppendBasicBlock(types::current_function(cg), "loop.exit." + sc)
    has_esc = <>(esc_opt)
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
    res_lt = has_esc
@@ -8755,8 +8755,8 @@ codegen_typed_eval_condition_cycle = cg, iterable, body_fn, esc_opt, ti =>
       | types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
       |
-         b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
-         m_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
+         b_bb = LLVMAppendBasicBlock(types::current_function(cg), "escape.branch." + sc)
+         m_bb = LLVMAppendBasicBlock(types::current_function(cg), "escape.merge." + sc)
          r_al = types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
          u_none = codegen_typed_cycle_escape_construct(cg, <->, <-->, ti)
          LLVMBuildStore(cg.builder, u_none, r_al)
@@ -8946,11 +8946,11 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
       [Array a] a.1
       [Rec r] (?r.0 > 0 | r.0(0).expect("required payload").rec_type | ast::TypeInfo(Prim, elem_vt))
       | ast::TypeInfo(Prim, elem_vt)
-   header = LLVMAppendBasicBlock(cg.current_fn, "loop.header." + sc)
-   body = LLVMAppendBasicBlock(cg.current_fn, "loop.body." + sc)
-   exit_nat = LLVMAppendBasicBlock(cg.current_fn, "loop.exit.nat." + sc)
-   latch = LLVMAppendBasicBlock(cg.current_fn, "loop.latch." + sc)
-   done = LLVMAppendBasicBlock(cg.current_fn, "loop.exit." + sc)
+   header = LLVMAppendBasicBlock(types::current_function(cg), "loop.header." + sc)
+   body = LLVMAppendBasicBlock(types::current_function(cg), "loop.body." + sc)
+   exit_nat = LLVMAppendBasicBlock(types::current_function(cg), "loop.exit.nat." + sc)
+   latch = LLVMAppendBasicBlock(types::current_function(cg), "loop.latch." + sc)
+   done = LLVMAppendBasicBlock(types::current_function(cg), "loop.exit." + sc)
    has_esc = <>(esc_opt)
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
    res_lt = has_esc
@@ -8958,8 +8958,8 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
       | types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
       |
-         b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
-         m_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
+         b_bb = LLVMAppendBasicBlock(types::current_function(cg), "escape.branch." + sc)
+         m_bb = LLVMAppendBasicBlock(types::current_function(cg), "escape.merge." + sc)
          r_al = types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
          u_none = codegen_typed_cycle_escape_construct(cg, <->, <-->, ti)
          LLVMBuildStore(cg.builder, u_none, r_al)
@@ -9141,11 +9141,11 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
       [Lambda lam]
          ?lam.0 > 1 | (lam.0(1) | _ | "") | ""
       | ""
-   header = LLVMAppendBasicBlock(cg.current_fn, "loop.mheader." + sc)
-   body = LLVMAppendBasicBlock(cg.current_fn, "loop.mbody." + sc)
-   live_bb = LLVMAppendBasicBlock(cg.current_fn, "loop.mlive." + sc)
-   latch = LLVMAppendBasicBlock(cg.current_fn, "loop.mlatch." + sc)
-   done = LLVMAppendBasicBlock(cg.current_fn, "loop.mexit." + sc)
+   header = LLVMAppendBasicBlock(types::current_function(cg), "loop.mheader." + sc)
+   body = LLVMAppendBasicBlock(types::current_function(cg), "loop.mbody." + sc)
+   live_bb = LLVMAppendBasicBlock(types::current_function(cg), "loop.mlive." + sc)
+   latch = LLVMAppendBasicBlock(types::current_function(cg), "loop.mlatch." + sc)
+   done = LLVMAppendBasicBlock(types::current_function(cg), "loop.mexit." + sc)
 
    has_esc = <>(esc_opt)
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
@@ -9154,8 +9154,8 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
       | types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
       |
-         b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
-         m_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
+         b_bb = LLVMAppendBasicBlock(types::current_function(cg), "escape.branch." + sc)
+         m_bb = LLVMAppendBasicBlock(types::current_function(cg), "escape.merge." + sc)
          r_al = types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
          u_none = codegen_typed_cycle_escape_construct(cg, <->, <-->, ti)
          LLVMBuildStore(cg.builder, u_none, r_al)
@@ -9391,7 +9391,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    is_cap = can_capture && nc > 0
 
    saved_module = cg.current_module
-   saved_fn = cg.current_fn
+   saved_fn = cg.active_fn
    saved_bb = LLVMGetInsertBlock(cg.builder)
    saved_nvars = ?cg.vars
    saved_var_start = cg.fn_var_start
@@ -9430,8 +9430,8 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    saved_inline_ret_bb = types::g.inline_ret_bb
    saved_inline_ret_slot = types::g.inline_ret_slot
    saved_validated_strs = types::g.validated_str_vals
-   types::g.inline_ret_bb = sys::addr_null
-   types::g.inline_ret_slot = sys::addr_null
+   types::g.inline_ret_bb = <-->
+   types::g.inline_ret_slot = <-->
    types::g.validated_str_vals = types::Addrs()
    saved_in_fn && orig_name != ""
       |
@@ -9509,7 +9509,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
          get_or_create_dyn_fn_ptr(cg, name, <+ fn +>)
    runtime::mark_nounwind(cg, fn)
    mark_inline_preference(cg, fn, name)
-   cg.current_fn = fn
+   cg.active_fn = <+ fn +>
    cg.in_fn = <+>
    cg.in_restore_scope = 0
    cg.cycle_breaks = types::Addrs()
@@ -9629,7 +9629,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    cg.bindings = saved_bindings
    cg.fn_var_start = saved_var_start
    cg.fn_binding_start = saved_binding_start
-   cg.current_fn = saved_fn
+   cg.active_fn = saved_fn
    LLVMPositionBuilderAtEnd(cg.builder, saved_bb)
    cg.current_module = saved_module
    types::g.last_compiling_fn = saved_last_fn
@@ -9643,7 +9643,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    types::g.inline_ret_slot = saved_inline_ret_slot
    types::g.validated_str_vals = saved_validated_strs
 
-   can_stack_clo = want_stack_clo && <>(types::llvm_val_opt(cg.current_fn))
+   can_stack_clo = want_stack_clo && <>(cg.active_fn)
    envp' = LLVMConstNull(i8p)
    est_opt
       | est =>

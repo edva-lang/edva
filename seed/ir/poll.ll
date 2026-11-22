@@ -95,23 +95,23 @@ entry:
   store i64 %call.res, ptr %var.res, align 8
   %var.load5 = load i64, ptr %var.res, align 8
   %cmptmp = icmp sgt i64 %var.load5, 0
-  br i1 %cmptmp, label %and.4.then, label %and.4.else
+  br i1 %cmptmp, label %and.6.then, label %and.6.else
 
-and.4.then:                                       ; preds = %entry
+and.6.then:                                       ; preds = %entry
   %var.load6 = load ptr, ptr %"var.pfd'", align 8
   %fld.gep = getelementptr inbounds <{ i32, i16, i16 }>, ptr %var.load6, i32 0, i32 2
   %fld.load = load i16, ptr %fld.gep, align 2
   %coerce.sext = sext i16 %fld.load to i64
   %bandtmp = and i64 %coerce.sext, 1
   %cmptmp7 = icmp ne i64 %bandtmp, 0
-  br label %and.4.exit
+  br label %and.6.exit
 
-and.4.else:                                       ; preds = %entry
-  br label %and.4.exit
+and.6.else:                                       ; preds = %entry
+  br label %and.6.exit
 
-and.4.exit:                                       ; preds = %and.4.else, %and.4.then
-  %and.4.phi = phi i1 [ %cmptmp7, %and.4.then ], [ %cmptmp, %and.4.else ]
-  ret i1 %and.4.phi
+and.6.exit:                                       ; preds = %and.6.else, %and.6.then
+  %and.6.phi = phi i1 [ %cmptmp7, %and.6.then ], [ %cmptmp, %and.6.else ]
+  ret i1 %and.6.phi
 }
 
 define i1 @"poll::stdin_ready"(i64 %0) #2 {

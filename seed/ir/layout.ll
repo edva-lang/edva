@@ -474,9 +474,9 @@ choice.exit4:                                     ; preds = %choice.else3, %choi
   %tag.match = icmp eq i64 %tag.id, 0
   br i1 %tag.match, label %choice.case, label %choice.next
 
-choice.exit6:                                     ; preds = %choice.next112, %choice.exit119, %choice.case102, %choice.case94, %choice.case88, %choice.case82, %choice.case76, %choice.case68, %choice.case62, %choice.case56, %choice.case50, %choice.case44, %choice.case38, %choice.case32, %choice.case26, %choice.case20, %choice.case14, %choice.case8, %choice.case
-  %choice.res126 = phi ptr [ %call.res7, %choice.case ], [ %call.res13, %choice.case8 ], [ %call.res19, %choice.case14 ], [ %call.res25, %choice.case20 ], [ %call.res31, %choice.case26 ], [ %call.res37, %choice.case32 ], [ %call.res43, %choice.case38 ], [ %call.res49, %choice.case44 ], [ %call.res55, %choice.case50 ], [ %call.res61, %choice.case56 ], [ %call.res67, %choice.case62 ], [ %call.res75, %choice.case68 ], [ %call.res81, %choice.case76 ], [ %call.res87, %choice.case82 ], [ %call.res93, %choice.case88 ], [ %call.res101, %choice.case94 ], [ %call.res110, %choice.case102 ], [ %choice.res122, %choice.exit119 ], [ %call.res125, %choice.next112 ]
-  ret ptr %choice.res126
+choice.exit6:                                     ; preds = %choice.next113, %choice.exit120, %choice.case103, %choice.case94, %choice.case88, %choice.case82, %choice.case76, %choice.case68, %choice.case62, %choice.case56, %choice.case50, %choice.case44, %choice.case38, %choice.case32, %choice.case26, %choice.case20, %choice.case14, %choice.case8, %choice.case
+  %choice.res127 = phi ptr [ %call.res7, %choice.case ], [ %call.res13, %choice.case8 ], [ %call.res19, %choice.case14 ], [ %call.res25, %choice.case20 ], [ %call.res31, %choice.case26 ], [ %call.res37, %choice.case32 ], [ %call.res43, %choice.case38 ], [ %call.res49, %choice.case44 ], [ %call.res55, %choice.case50 ], [ %call.res61, %choice.case56 ], [ %call.res67, %choice.case62 ], [ %call.res75, %choice.case68 ], [ %call.res81, %choice.case76 ], [ %call.res87, %choice.case82 ], [ %call.res93, %choice.case88 ], [ %call.res102, %choice.case94 ], [ %call.res111, %choice.case103 ], [ %choice.res123, %choice.exit120 ], [ %call.res126, %choice.next113 ]
+  ret ptr %choice.res127
 
 choice.case:                                      ; preds = %choice.exit4
   %call.res7 = call ptr @"tast::layout_scalar"(i64 8, i64 8)
@@ -629,53 +629,55 @@ choice.next89:                                    ; preds = %choice.next83
   %tag.gep96 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %tag.id97 = load i64, ptr %tag.gep96, align 8
   %tag.match98 = icmp eq i64 %tag.id97, 15
-  br i1 %tag.match98, label %choice.case94, label %choice.next95
+  %tag.match99 = icmp eq i64 %tag.id97, 16
+  %tag.or = or i1 %tag.match98, %tag.match99
+  br i1 %tag.or, label %choice.case94, label %choice.next95
 
 choice.case94:                                    ; preds = %choice.next89
-  %var.load99 = load i64, ptr %var.ptr_sz, align 8
-  %var.load100 = load i64, ptr %var.ptr_align, align 8
-  %call.res101 = call ptr @"tast::layout_scalar"(i64 %var.load99, i64 %var.load100)
+  %var.load100 = load i64, ptr %var.ptr_sz, align 8
+  %var.load101 = load i64, ptr %var.ptr_align, align 8
+  %call.res102 = call ptr @"tast::layout_scalar"(i64 %var.load100, i64 %var.load101)
   br label %choice.exit6
 
 choice.next95:                                    ; preds = %choice.next89
-  %tag.gep104 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
-  %tag.id105 = load i64, ptr %tag.gep104, align 8
-  %tag.match106 = icmp eq i64 %tag.id105, 16
-  br i1 %tag.match106, label %choice.case102, label %choice.next103
+  %tag.gep105 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
+  %tag.id106 = load i64, ptr %tag.gep105, align 8
+  %tag.match107 = icmp eq i64 %tag.id106, 17
+  br i1 %tag.match107, label %choice.case103, label %choice.next104
 
-choice.case102:                                   ; preds = %choice.next95
-  %var.load107 = load i64, ptr %var.ptr_sz, align 8
-  %multmp108 = mul i64 %var.load107, 3
-  %var.load109 = load i64, ptr %var.ptr_align, align 8
-  %call.res110 = call ptr @"tast::layout_scalar"(i64 %multmp108, i64 %var.load109)
+choice.case103:                                   ; preds = %choice.next95
+  %var.load108 = load i64, ptr %var.ptr_sz, align 8
+  %multmp109 = mul i64 %var.load108, 3
+  %var.load110 = load i64, ptr %var.ptr_align, align 8
+  %call.res111 = call ptr @"tast::layout_scalar"(i64 %multmp109, i64 %var.load110)
   br label %choice.exit6
 
-choice.next103:                                   ; preds = %choice.next95
-  %tag.gep113 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
-  %tag.id114 = load i64, ptr %tag.gep113, align 8
-  %tag.match115 = icmp eq i64 %tag.id114, 17
-  br i1 %tag.match115, label %choice.case111, label %choice.next112
+choice.next104:                                   ; preds = %choice.next95
+  %tag.gep114 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
+  %tag.id115 = load i64, ptr %tag.gep114, align 8
+  %tag.match116 = icmp eq i64 %tag.id115, 18
+  br i1 %tag.match116, label %choice.case112, label %choice.next113
 
-choice.case111:                                   ; preds = %choice.next103
-  %call.res116 = call i1 @"layout::is_32bit_target"()
-  br i1 %call.res116, label %choice.then117, label %choice.else118
+choice.case112:                                   ; preds = %choice.next104
+  %call.res117 = call i1 @"layout::is_32bit_target"()
+  br i1 %call.res117, label %choice.then118, label %choice.else119
 
-choice.next112:                                   ; preds = %choice.next103
-  %var.load123 = load i64, ptr %var.ptr_sz, align 8
-  %var.load124 = load i64, ptr %var.ptr_align, align 8
-  %call.res125 = call ptr @"tast::layout_scalar"(i64 %var.load123, i64 %var.load124)
+choice.next113:                                   ; preds = %choice.next104
+  %var.load124 = load i64, ptr %var.ptr_sz, align 8
+  %var.load125 = load i64, ptr %var.ptr_align, align 8
+  %call.res126 = call ptr @"tast::layout_scalar"(i64 %var.load124, i64 %var.load125)
   br label %choice.exit6
 
-choice.then117:                                   ; preds = %choice.case111
-  %call.res120 = call ptr @"tast::layout_aggregate"(i64 48, i64 8)
-  br label %choice.exit119
+choice.then118:                                   ; preds = %choice.case112
+  %call.res121 = call ptr @"tast::layout_aggregate"(i64 48, i64 8)
+  br label %choice.exit120
 
-choice.else118:                                   ; preds = %choice.case111
-  %call.res121 = call ptr @"tast::layout_aggregate"(i64 56, i64 8)
-  br label %choice.exit119
+choice.else119:                                   ; preds = %choice.case112
+  %call.res122 = call ptr @"tast::layout_aggregate"(i64 56, i64 8)
+  br label %choice.exit120
 
-choice.exit119:                                   ; preds = %choice.else118, %choice.then117
-  %choice.res122 = phi ptr [ %call.res120, %choice.then117 ], [ %call.res121, %choice.else118 ]
+choice.exit120:                                   ; preds = %choice.else119, %choice.then118
+  %choice.res123 = phi ptr [ %call.res121, %choice.then118 ], [ %call.res122, %choice.else119 ]
   br label %choice.exit6
 }
 
@@ -721,7 +723,7 @@ choice.case:                                      ; preds = %entry
   %tag.gep7 = getelementptr inbounds { i64, ptr }, ptr %var.load3, i32 0, i32 0
   %tag.id8 = load i64, ptr %tag.gep7, align 8
   %tag.match9 = icmp eq i64 %tag.id8, 11
-  %tag.match10 = icmp eq i64 %tag.id8, 17
+  %tag.match10 = icmp eq i64 %tag.id8, 18
   %tag.or = or i1 %tag.match9, %tag.match10
   br i1 %tag.or, label %choice.case5, label %choice.next6
 

@@ -16,6 +16,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.utf::encode_codepoint" = global ptr null
 @clo.const.4 = internal constant { ptr, ptr } { ptr @"utf::seq_len", ptr null }
 @"var.utf::seq_len" = global ptr null
+@null_addr_cast = internal unnamed_addr constant [40 x i8] c"E4015: cannot construct Addr from zero\0A\00"
 @clo.const.5 = internal constant { ptr, ptr } { ptr @"utf::decode_rune_addr", ptr null }
 @"var.utf::decode_rune_addr" = global ptr null
 @str_oob_msg = internal unnamed_addr constant [40 x i8] c"E4006: string byte index out of bounds\0A\00"
@@ -1007,9 +1008,9 @@ choice.next5:                                     ; preds = %choice.next2
 
 define i32 @"utf::decode_rune_addr"(ptr %0, i64 %1) #3 {
 entry:
-  %var.c127 = alloca i64, align 8
+  %var.c159 = alloca i64, align 8
   %var.b3 = alloca i64, align 8
-  %var.b289 = alloca i64, align 8
+  %var.b2113 = alloca i64, align 8
   %var.c = alloca i64, align 8
   %var.b2 = alloca i64, align 8
   %var.b1 = alloca i64, align 8
@@ -1024,6 +1025,14 @@ entry:
   %ptr.int.l = ptrtoint ptr %var.load to i64
   %addtmp = add i64 %ptr.int.l, %var.load1
   %ptr.res = inttoptr i64 %addtmp to ptr
+  %addr.is.null = icmp eq ptr %ptr.res, null
+  br i1 %addr.is.null, label %addr.null, label %addr.present
+
+addr.null:                                        ; preds = %entry
+  call void @dva_abort_null_addr_cast()
+  unreachable
+
+addr.present:                                     ; preds = %entry
   %raw.int = ptrtoint ptr %ptr.res to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
@@ -1034,12 +1043,15 @@ entry:
   %cmptmp = icmp slt i64 %var.load2, 128
   br i1 %cmptmp, label %choice.then, label %choice.exit
 
-choice.then:                                      ; preds = %entry
+abort.dead:                                       ; No predecessors!
+  unreachable
+
+choice.then:                                      ; preds = %addr.present
   %var.load3 = load i64, ptr %var.b0, align 8
   %coerce.trunc = trunc i64 %var.load3 to i32
   ret i32 %coerce.trunc
 
-choice.exit:                                      ; preds = %ret.dead, %entry
+choice.exit:                                      ; preds = %ret.dead, %addr.present
   store i64 65533, ptr %"var.cp'", align 8
   %var.load4 = load i64, ptr %var.b0, align 8
   %cmptmp6 = icmp sge i64 %var.load4, 194
@@ -1048,10 +1060,10 @@ choice.exit:                                      ; preds = %ret.dead, %entry
 ret.dead:                                         ; No predecessors!
   br label %choice.exit
 
-choice.exit5:                                     ; preds = %choice.next, %choice.exit24
-  %var.load138 = load i64, ptr %"var.cp'", align 8
-  %coerce.trunc139 = trunc i64 %var.load138 to i32
-  ret i32 %coerce.trunc139
+choice.exit5:                                     ; preds = %choice.next, %choice.exit32
+  %var.load170 = load i64, ptr %"var.cp'", align 8
+  %coerce.trunc171 = trunc i64 %var.load170 to i32
+  ret i32 %coerce.trunc171
 
 choice.case:                                      ; preds = %and.9.exit
   %var.load8 = load ptr, ptr %var.p, align 8
@@ -1059,19 +1071,8 @@ choice.case:                                      ; preds = %and.9.exit
   %ptr.int.l10 = ptrtoint ptr %var.load8 to i64
   %addtmp11 = add i64 %ptr.int.l10, %var.load9
   %ptr.res12 = inttoptr i64 %addtmp11 to ptr
-  %ptr.int.l13 = ptrtoint ptr %ptr.res12 to i64
-  %addtmp14 = add i64 %ptr.int.l13, 1
-  %ptr.res15 = inttoptr i64 %addtmp14 to ptr
-  %raw.int16 = ptrtoint ptr %ptr.res15 to i64
-  %raw.clean.int17 = and i64 %raw.int16, 281474976710655
-  %raw.clean.ptr18 = inttoptr i64 %raw.clean.int17 to ptr
-  %raw.load19 = load volatile i8, ptr %raw.clean.ptr18, align 1
-  %coerce.zext20 = zext i8 %raw.load19 to i64
-  store i64 %coerce.zext20, ptr %var.b1, align 8
-  %var.load21 = load i64, ptr %var.b1, align 8
-  %bandtmp = and i64 %var.load21, 192
-  %cmptmp22 = icmp eq i64 %bandtmp, 128
-  br i1 %cmptmp22, label %choice.then23, label %choice.exit24
+  %addr.is.null15 = icmp eq ptr %ptr.res12, null
+  br i1 %addr.is.null15, label %addr.null13, label %addr.present14
 
 choice.next:                                      ; preds = %and.9.exit
   br label %choice.exit5
@@ -1087,206 +1088,316 @@ and.9.exit:                                       ; preds = %and.9.else, %and.9.
   %and.9.phi = phi i1 [ %cmptmp7, %and.9.then ], [ %cmptmp6, %and.9.else ]
   br i1 %and.9.phi, label %choice.case, label %choice.next
 
-choice.then23:                                    ; preds = %choice.case
-  %var.load25 = load i64, ptr %var.b0, align 8
-  %cmptmp29 = icmp slt i64 %var.load25, 224
-  br i1 %cmptmp29, label %choice.case27, label %choice.next28
+addr.null13:                                      ; preds = %choice.case
+  call void @dva_abort_null_addr_cast()
+  unreachable
 
-choice.exit24:                                    ; preds = %choice.exit26, %choice.case
+addr.present14:                                   ; preds = %choice.case
+  %ptr.int.l17 = ptrtoint ptr %ptr.res12 to i64
+  %addtmp18 = add i64 %ptr.int.l17, 1
+  %ptr.res19 = inttoptr i64 %addtmp18 to ptr
+  %addr.is.null22 = icmp eq ptr %ptr.res19, null
+  br i1 %addr.is.null22, label %addr.null20, label %addr.present21
+
+abort.dead16:                                     ; No predecessors!
+  unreachable
+
+addr.null20:                                      ; preds = %addr.present14
+  call void @dva_abort_null_addr_cast()
+  unreachable
+
+addr.present21:                                   ; preds = %addr.present14
+  %raw.int24 = ptrtoint ptr %ptr.res19 to i64
+  %raw.clean.int25 = and i64 %raw.int24, 281474976710655
+  %raw.clean.ptr26 = inttoptr i64 %raw.clean.int25 to ptr
+  %raw.load27 = load volatile i8, ptr %raw.clean.ptr26, align 1
+  %coerce.zext28 = zext i8 %raw.load27 to i64
+  store i64 %coerce.zext28, ptr %var.b1, align 8
+  %var.load29 = load i64, ptr %var.b1, align 8
+  %bandtmp = and i64 %var.load29, 192
+  %cmptmp30 = icmp eq i64 %bandtmp, 128
+  br i1 %cmptmp30, label %choice.then31, label %choice.exit32
+
+abort.dead23:                                     ; No predecessors!
+  unreachable
+
+choice.then31:                                    ; preds = %addr.present21
+  %var.load33 = load i64, ptr %var.b0, align 8
+  %cmptmp37 = icmp slt i64 %var.load33, 224
+  br i1 %cmptmp37, label %choice.case35, label %choice.next36
+
+choice.exit32:                                    ; preds = %choice.exit34, %addr.present21
   br label %choice.exit5
 
-choice.exit26:                                    ; preds = %choice.exit94, %choice.exit54, %choice.case27
-  br label %choice.exit24
+choice.exit34:                                    ; preds = %choice.exit118, %choice.exit70, %choice.case35
+  br label %choice.exit32
 
-choice.case27:                                    ; preds = %choice.then23
-  %var.load30 = load i64, ptr %var.b0, align 8
-  %bandtmp31 = and i64 %var.load30, 31
-  %shltmp = shl i64 %bandtmp31, 6
-  %var.load32 = load i64, ptr %var.b1, align 8
-  %bandtmp33 = and i64 %var.load32, 63
-  %bortmp = or i64 %shltmp, %bandtmp33
+choice.case35:                                    ; preds = %choice.then31
+  %var.load38 = load i64, ptr %var.b0, align 8
+  %bandtmp39 = and i64 %var.load38, 31
+  %shltmp = shl i64 %bandtmp39, 6
+  %var.load40 = load i64, ptr %var.b1, align 8
+  %bandtmp41 = and i64 %var.load40, 63
+  %bortmp = or i64 %shltmp, %bandtmp41
   store i64 %bortmp, ptr %"var.cp'", align 8
-  br label %choice.exit26
+  br label %choice.exit34
 
-choice.next28:                                    ; preds = %choice.then23
-  %cmptmp36 = icmp slt i64 %var.load25, 240
-  br i1 %cmptmp36, label %choice.case34, label %choice.next35
+choice.next36:                                    ; preds = %choice.then31
+  %cmptmp44 = icmp slt i64 %var.load33, 240
+  br i1 %cmptmp44, label %choice.case42, label %choice.next43
 
-choice.case34:                                    ; preds = %choice.next28
-  %var.load37 = load ptr, ptr %var.p, align 8
-  %var.load38 = load i64, ptr %var.i, align 8
-  %ptr.int.l39 = ptrtoint ptr %var.load37 to i64
-  %addtmp40 = add i64 %ptr.int.l39, %var.load38
-  %ptr.res41 = inttoptr i64 %addtmp40 to ptr
-  %ptr.int.l42 = ptrtoint ptr %ptr.res41 to i64
-  %addtmp43 = add i64 %ptr.int.l42, 2
-  %ptr.res44 = inttoptr i64 %addtmp43 to ptr
-  %raw.int45 = ptrtoint ptr %ptr.res44 to i64
-  %raw.clean.int46 = and i64 %raw.int45, 281474976710655
-  %raw.clean.ptr47 = inttoptr i64 %raw.clean.int46 to ptr
-  %raw.load48 = load volatile i8, ptr %raw.clean.ptr47, align 1
-  %coerce.zext49 = zext i8 %raw.load48 to i64
-  store i64 %coerce.zext49, ptr %var.b2, align 8
-  %var.load50 = load i64, ptr %var.b2, align 8
-  %bandtmp51 = and i64 %var.load50, 192
-  %cmptmp52 = icmp eq i64 %bandtmp51, 128
-  br i1 %cmptmp52, label %choice.then53, label %choice.exit54
+choice.case42:                                    ; preds = %choice.next36
+  %var.load45 = load ptr, ptr %var.p, align 8
+  %var.load46 = load i64, ptr %var.i, align 8
+  %ptr.int.l47 = ptrtoint ptr %var.load45 to i64
+  %addtmp48 = add i64 %ptr.int.l47, %var.load46
+  %ptr.res49 = inttoptr i64 %addtmp48 to ptr
+  %addr.is.null52 = icmp eq ptr %ptr.res49, null
+  br i1 %addr.is.null52, label %addr.null50, label %addr.present51
 
-choice.next35:                                    ; preds = %choice.next28
-  %var.load76 = load ptr, ptr %var.p, align 8
-  %var.load77 = load i64, ptr %var.i, align 8
-  %ptr.int.l78 = ptrtoint ptr %var.load76 to i64
-  %addtmp79 = add i64 %ptr.int.l78, %var.load77
-  %ptr.res80 = inttoptr i64 %addtmp79 to ptr
-  %ptr.int.l81 = ptrtoint ptr %ptr.res80 to i64
-  %addtmp82 = add i64 %ptr.int.l81, 2
-  %ptr.res83 = inttoptr i64 %addtmp82 to ptr
-  %raw.int84 = ptrtoint ptr %ptr.res83 to i64
-  %raw.clean.int85 = and i64 %raw.int84, 281474976710655
-  %raw.clean.ptr86 = inttoptr i64 %raw.clean.int85 to ptr
-  %raw.load87 = load volatile i8, ptr %raw.clean.ptr86, align 1
-  %coerce.zext88 = zext i8 %raw.load87 to i64
-  store i64 %coerce.zext88, ptr %var.b289, align 8
-  %var.load90 = load i64, ptr %var.b289, align 8
-  %bandtmp91 = and i64 %var.load90, 192
-  %cmptmp92 = icmp eq i64 %bandtmp91, 128
-  br i1 %cmptmp92, label %choice.then93, label %choice.exit94
+choice.next43:                                    ; preds = %choice.next36
+  %var.load92 = load ptr, ptr %var.p, align 8
+  %var.load93 = load i64, ptr %var.i, align 8
+  %ptr.int.l94 = ptrtoint ptr %var.load92 to i64
+  %addtmp95 = add i64 %ptr.int.l94, %var.load93
+  %ptr.res96 = inttoptr i64 %addtmp95 to ptr
+  %addr.is.null99 = icmp eq ptr %ptr.res96, null
+  br i1 %addr.is.null99, label %addr.null97, label %addr.present98
 
-choice.then53:                                    ; preds = %choice.case34
-  %var.load55 = load i64, ptr %var.b0, align 8
-  %bandtmp56 = and i64 %var.load55, 15
-  %shltmp57 = shl i64 %bandtmp56, 12
-  %var.load58 = load i64, ptr %var.b1, align 8
-  %bandtmp59 = and i64 %var.load58, 63
-  %shltmp60 = shl i64 %bandtmp59, 6
-  %bortmp61 = or i64 %shltmp57, %shltmp60
-  %var.load62 = load i64, ptr %var.b2, align 8
-  %bandtmp63 = and i64 %var.load62, 63
-  %bortmp64 = or i64 %bortmp61, %bandtmp63
-  store i64 %bortmp64, ptr %var.c, align 8
-  %var.load65 = load i64, ptr %var.c, align 8
-  %cmptmp66 = icmp sge i64 %var.load65, 2048
-  br i1 %cmptmp66, label %and.10.then, label %and.10.else
+addr.null50:                                      ; preds = %choice.case42
+  call void @dva_abort_null_addr_cast()
+  unreachable
 
-choice.exit54:                                    ; preds = %choice.exit74, %choice.case34
-  br label %choice.exit26
+addr.present51:                                   ; preds = %choice.case42
+  %ptr.int.l54 = ptrtoint ptr %ptr.res49 to i64
+  %addtmp55 = add i64 %ptr.int.l54, 2
+  %ptr.res56 = inttoptr i64 %addtmp55 to ptr
+  %addr.is.null59 = icmp eq ptr %ptr.res56, null
+  br i1 %addr.is.null59, label %addr.null57, label %addr.present58
 
-and.10.then:                                      ; preds = %choice.then53
-  %var.load67 = load i64, ptr %var.c, align 8
-  %cmptmp71 = icmp sge i64 %var.load67, 55296
-  br i1 %cmptmp71, label %and.11.then, label %and.11.else
+abort.dead53:                                     ; No predecessors!
+  unreachable
 
-and.10.else:                                      ; preds = %choice.then53
+addr.null57:                                      ; preds = %addr.present51
+  call void @dva_abort_null_addr_cast()
+  unreachable
+
+addr.present58:                                   ; preds = %addr.present51
+  %raw.int61 = ptrtoint ptr %ptr.res56 to i64
+  %raw.clean.int62 = and i64 %raw.int61, 281474976710655
+  %raw.clean.ptr63 = inttoptr i64 %raw.clean.int62 to ptr
+  %raw.load64 = load volatile i8, ptr %raw.clean.ptr63, align 1
+  %coerce.zext65 = zext i8 %raw.load64 to i64
+  store i64 %coerce.zext65, ptr %var.b2, align 8
+  %var.load66 = load i64, ptr %var.b2, align 8
+  %bandtmp67 = and i64 %var.load66, 192
+  %cmptmp68 = icmp eq i64 %bandtmp67, 128
+  br i1 %cmptmp68, label %choice.then69, label %choice.exit70
+
+abort.dead60:                                     ; No predecessors!
+  unreachable
+
+choice.then69:                                    ; preds = %addr.present58
+  %var.load71 = load i64, ptr %var.b0, align 8
+  %bandtmp72 = and i64 %var.load71, 15
+  %shltmp73 = shl i64 %bandtmp72, 12
+  %var.load74 = load i64, ptr %var.b1, align 8
+  %bandtmp75 = and i64 %var.load74, 63
+  %shltmp76 = shl i64 %bandtmp75, 6
+  %bortmp77 = or i64 %shltmp73, %shltmp76
+  %var.load78 = load i64, ptr %var.b2, align 8
+  %bandtmp79 = and i64 %var.load78, 63
+  %bortmp80 = or i64 %bortmp77, %bandtmp79
+  store i64 %bortmp80, ptr %var.c, align 8
+  %var.load81 = load i64, ptr %var.c, align 8
+  %cmptmp82 = icmp sge i64 %var.load81, 2048
+  br i1 %cmptmp82, label %and.10.then, label %and.10.else
+
+choice.exit70:                                    ; preds = %choice.exit90, %addr.present58
+  br label %choice.exit34
+
+and.10.then:                                      ; preds = %choice.then69
+  %var.load83 = load i64, ptr %var.c, align 8
+  %cmptmp87 = icmp sge i64 %var.load83, 55296
+  br i1 %cmptmp87, label %and.11.then, label %and.11.else
+
+and.10.else:                                      ; preds = %choice.then69
   br label %and.10.exit
 
-and.10.exit:                                      ; preds = %and.10.else, %choice.exit68
-  %and.10.phi = phi i1 [ %nottmp, %choice.exit68 ], [ %cmptmp66, %and.10.else ]
-  br i1 %and.10.phi, label %choice.then73, label %choice.exit74
+and.10.exit:                                      ; preds = %and.10.else, %choice.exit84
+  %and.10.phi = phi i1 [ %nottmp, %choice.exit84 ], [ %cmptmp82, %and.10.else ]
+  br i1 %and.10.phi, label %choice.then89, label %choice.exit90
 
-choice.exit68:                                    ; preds = %choice.next70, %choice.case69
-  %choice.res = phi i1 [ true, %choice.case69 ], [ false, %choice.next70 ]
+choice.exit84:                                    ; preds = %choice.next86, %choice.case85
+  %choice.res = phi i1 [ true, %choice.case85 ], [ false, %choice.next86 ]
   %nottmp = xor i1 %choice.res, true
   br label %and.10.exit
 
-choice.case69:                                    ; preds = %and.11.exit
-  br label %choice.exit68
+choice.case85:                                    ; preds = %and.11.exit
+  br label %choice.exit84
 
-choice.next70:                                    ; preds = %and.11.exit
-  br label %choice.exit68
+choice.next86:                                    ; preds = %and.11.exit
+  br label %choice.exit84
 
 and.11.then:                                      ; preds = %and.10.then
-  %cmptmp72 = icmp sle i64 %var.load67, 57343
+  %cmptmp88 = icmp sle i64 %var.load83, 57343
   br label %and.11.exit
 
 and.11.else:                                      ; preds = %and.10.then
   br label %and.11.exit
 
 and.11.exit:                                      ; preds = %and.11.else, %and.11.then
-  %and.11.phi = phi i1 [ %cmptmp72, %and.11.then ], [ %cmptmp71, %and.11.else ]
-  br i1 %and.11.phi, label %choice.case69, label %choice.next70
+  %and.11.phi = phi i1 [ %cmptmp88, %and.11.then ], [ %cmptmp87, %and.11.else ]
+  br i1 %and.11.phi, label %choice.case85, label %choice.next86
 
-choice.then73:                                    ; preds = %and.10.exit
-  %var.load75 = load i64, ptr %var.c, align 8
-  store i64 %var.load75, ptr %"var.cp'", align 8
-  br label %choice.exit74
+choice.then89:                                    ; preds = %and.10.exit
+  %var.load91 = load i64, ptr %var.c, align 8
+  store i64 %var.load91, ptr %"var.cp'", align 8
+  br label %choice.exit90
 
-choice.exit74:                                    ; preds = %choice.then73, %and.10.exit
-  br label %choice.exit54
+choice.exit90:                                    ; preds = %choice.then89, %and.10.exit
+  br label %choice.exit70
 
-choice.then93:                                    ; preds = %choice.next35
-  %var.load95 = load ptr, ptr %var.p, align 8
-  %var.load96 = load i64, ptr %var.i, align 8
-  %ptr.int.l97 = ptrtoint ptr %var.load95 to i64
-  %addtmp98 = add i64 %ptr.int.l97, %var.load96
-  %ptr.res99 = inttoptr i64 %addtmp98 to ptr
-  %ptr.int.l100 = ptrtoint ptr %ptr.res99 to i64
-  %addtmp101 = add i64 %ptr.int.l100, 3
-  %ptr.res102 = inttoptr i64 %addtmp101 to ptr
-  %raw.int103 = ptrtoint ptr %ptr.res102 to i64
-  %raw.clean.int104 = and i64 %raw.int103, 281474976710655
-  %raw.clean.ptr105 = inttoptr i64 %raw.clean.int104 to ptr
-  %raw.load106 = load volatile i8, ptr %raw.clean.ptr105, align 1
-  %coerce.zext107 = zext i8 %raw.load106 to i64
-  store i64 %coerce.zext107, ptr %var.b3, align 8
-  %var.load108 = load i64, ptr %var.b3, align 8
-  %bandtmp109 = and i64 %var.load108, 192
-  %cmptmp110 = icmp eq i64 %bandtmp109, 128
-  br i1 %cmptmp110, label %choice.then111, label %choice.exit112
+addr.null97:                                      ; preds = %choice.next43
+  call void @dva_abort_null_addr_cast()
+  unreachable
 
-choice.exit94:                                    ; preds = %choice.exit112, %choice.next35
-  br label %choice.exit26
+addr.present98:                                   ; preds = %choice.next43
+  %ptr.int.l101 = ptrtoint ptr %ptr.res96 to i64
+  %addtmp102 = add i64 %ptr.int.l101, 2
+  %ptr.res103 = inttoptr i64 %addtmp102 to ptr
+  %addr.is.null106 = icmp eq ptr %ptr.res103, null
+  br i1 %addr.is.null106, label %addr.null104, label %addr.present105
 
-choice.then111:                                   ; preds = %choice.then93
-  %var.load113 = load i64, ptr %var.b0, align 8
-  %bandtmp114 = and i64 %var.load113, 7
-  %shltmp115 = shl i64 %bandtmp114, 18
-  %var.load116 = load i64, ptr %var.b1, align 8
-  %bandtmp117 = and i64 %var.load116, 63
-  %shltmp118 = shl i64 %bandtmp117, 12
-  %bortmp119 = or i64 %shltmp115, %shltmp118
-  %var.load120 = load i64, ptr %var.b289, align 8
-  %bandtmp121 = and i64 %var.load120, 63
-  %shltmp122 = shl i64 %bandtmp121, 6
-  %bortmp123 = or i64 %bortmp119, %shltmp122
-  %var.load124 = load i64, ptr %var.b3, align 8
-  %bandtmp125 = and i64 %var.load124, 63
-  %bortmp126 = or i64 %bortmp123, %bandtmp125
-  store i64 %bortmp126, ptr %var.c127, align 8
-  %var.load128 = load i64, ptr %var.c127, align 8
-  %cmptmp132 = icmp sge i64 %var.load128, 65536
-  br i1 %cmptmp132, label %and.12.then, label %and.12.else
+abort.dead100:                                    ; No predecessors!
+  unreachable
 
-choice.exit112:                                   ; preds = %choice.exit136, %choice.then93
-  br label %choice.exit94
+addr.null104:                                     ; preds = %addr.present98
+  call void @dva_abort_null_addr_cast()
+  unreachable
 
-choice.exit129:                                   ; preds = %choice.next131, %choice.case130
-  %choice.res134 = phi i1 [ true, %choice.case130 ], [ false, %choice.next131 ]
-  br i1 %choice.res134, label %choice.then135, label %choice.exit136
+addr.present105:                                  ; preds = %addr.present98
+  %raw.int108 = ptrtoint ptr %ptr.res103 to i64
+  %raw.clean.int109 = and i64 %raw.int108, 281474976710655
+  %raw.clean.ptr110 = inttoptr i64 %raw.clean.int109 to ptr
+  %raw.load111 = load volatile i8, ptr %raw.clean.ptr110, align 1
+  %coerce.zext112 = zext i8 %raw.load111 to i64
+  store i64 %coerce.zext112, ptr %var.b2113, align 8
+  %var.load114 = load i64, ptr %var.b2113, align 8
+  %bandtmp115 = and i64 %var.load114, 192
+  %cmptmp116 = icmp eq i64 %bandtmp115, 128
+  br i1 %cmptmp116, label %choice.then117, label %choice.exit118
 
-choice.case130:                                   ; preds = %and.12.exit
-  br label %choice.exit129
+abort.dead107:                                    ; No predecessors!
+  unreachable
 
-choice.next131:                                   ; preds = %and.12.exit
-  br label %choice.exit129
+choice.then117:                                   ; preds = %addr.present105
+  %var.load119 = load ptr, ptr %var.p, align 8
+  %var.load120 = load i64, ptr %var.i, align 8
+  %ptr.int.l121 = ptrtoint ptr %var.load119 to i64
+  %addtmp122 = add i64 %ptr.int.l121, %var.load120
+  %ptr.res123 = inttoptr i64 %addtmp122 to ptr
+  %addr.is.null126 = icmp eq ptr %ptr.res123, null
+  br i1 %addr.is.null126, label %addr.null124, label %addr.present125
 
-and.12.then:                                      ; preds = %choice.then111
-  %cmptmp133 = icmp sle i64 %var.load128, 1114111
+choice.exit118:                                   ; preds = %choice.exit144, %addr.present105
+  br label %choice.exit34
+
+addr.null124:                                     ; preds = %choice.then117
+  call void @dva_abort_null_addr_cast()
+  unreachable
+
+addr.present125:                                  ; preds = %choice.then117
+  %ptr.int.l128 = ptrtoint ptr %ptr.res123 to i64
+  %addtmp129 = add i64 %ptr.int.l128, 3
+  %ptr.res130 = inttoptr i64 %addtmp129 to ptr
+  %addr.is.null133 = icmp eq ptr %ptr.res130, null
+  br i1 %addr.is.null133, label %addr.null131, label %addr.present132
+
+abort.dead127:                                    ; No predecessors!
+  unreachable
+
+addr.null131:                                     ; preds = %addr.present125
+  call void @dva_abort_null_addr_cast()
+  unreachable
+
+addr.present132:                                  ; preds = %addr.present125
+  %raw.int135 = ptrtoint ptr %ptr.res130 to i64
+  %raw.clean.int136 = and i64 %raw.int135, 281474976710655
+  %raw.clean.ptr137 = inttoptr i64 %raw.clean.int136 to ptr
+  %raw.load138 = load volatile i8, ptr %raw.clean.ptr137, align 1
+  %coerce.zext139 = zext i8 %raw.load138 to i64
+  store i64 %coerce.zext139, ptr %var.b3, align 8
+  %var.load140 = load i64, ptr %var.b3, align 8
+  %bandtmp141 = and i64 %var.load140, 192
+  %cmptmp142 = icmp eq i64 %bandtmp141, 128
+  br i1 %cmptmp142, label %choice.then143, label %choice.exit144
+
+abort.dead134:                                    ; No predecessors!
+  unreachable
+
+choice.then143:                                   ; preds = %addr.present132
+  %var.load145 = load i64, ptr %var.b0, align 8
+  %bandtmp146 = and i64 %var.load145, 7
+  %shltmp147 = shl i64 %bandtmp146, 18
+  %var.load148 = load i64, ptr %var.b1, align 8
+  %bandtmp149 = and i64 %var.load148, 63
+  %shltmp150 = shl i64 %bandtmp149, 12
+  %bortmp151 = or i64 %shltmp147, %shltmp150
+  %var.load152 = load i64, ptr %var.b2113, align 8
+  %bandtmp153 = and i64 %var.load152, 63
+  %shltmp154 = shl i64 %bandtmp153, 6
+  %bortmp155 = or i64 %bortmp151, %shltmp154
+  %var.load156 = load i64, ptr %var.b3, align 8
+  %bandtmp157 = and i64 %var.load156, 63
+  %bortmp158 = or i64 %bortmp155, %bandtmp157
+  store i64 %bortmp158, ptr %var.c159, align 8
+  %var.load160 = load i64, ptr %var.c159, align 8
+  %cmptmp164 = icmp sge i64 %var.load160, 65536
+  br i1 %cmptmp164, label %and.12.then, label %and.12.else
+
+choice.exit144:                                   ; preds = %choice.exit168, %addr.present132
+  br label %choice.exit118
+
+choice.exit161:                                   ; preds = %choice.next163, %choice.case162
+  %choice.res166 = phi i1 [ true, %choice.case162 ], [ false, %choice.next163 ]
+  br i1 %choice.res166, label %choice.then167, label %choice.exit168
+
+choice.case162:                                   ; preds = %and.12.exit
+  br label %choice.exit161
+
+choice.next163:                                   ; preds = %and.12.exit
+  br label %choice.exit161
+
+and.12.then:                                      ; preds = %choice.then143
+  %cmptmp165 = icmp sle i64 %var.load160, 1114111
   br label %and.12.exit
 
-and.12.else:                                      ; preds = %choice.then111
+and.12.else:                                      ; preds = %choice.then143
   br label %and.12.exit
 
 and.12.exit:                                      ; preds = %and.12.else, %and.12.then
-  %and.12.phi = phi i1 [ %cmptmp133, %and.12.then ], [ %cmptmp132, %and.12.else ]
-  br i1 %and.12.phi, label %choice.case130, label %choice.next131
+  %and.12.phi = phi i1 [ %cmptmp165, %and.12.then ], [ %cmptmp164, %and.12.else ]
+  br i1 %and.12.phi, label %choice.case162, label %choice.next163
 
-choice.then135:                                   ; preds = %choice.exit129
-  %var.load137 = load i64, ptr %var.c127, align 8
-  store i64 %var.load137, ptr %"var.cp'", align 8
-  br label %choice.exit136
+choice.then167:                                   ; preds = %choice.exit161
+  %var.load169 = load i64, ptr %var.c159, align 8
+  store i64 %var.load169, ptr %"var.cp'", align 8
+  br label %choice.exit168
 
-choice.exit136:                                   ; preds = %choice.then135, %choice.exit129
-  br label %choice.exit112
+choice.exit168:                                   ; preds = %choice.then167, %choice.exit161
+  br label %choice.exit144
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_null_addr_cast() #4 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @null_addr_cast, i64 39)
+  call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
 }
 
 define i32 @"utf::decode_rune_builder"(ptr %0, i64 %1) #3 {

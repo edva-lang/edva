@@ -6,11 +6,11 @@
 
 #foreign("c")
    edva_dom_call: (op: Int, arg1: Int, arg2: Int, arg3: Int, ptr1: Addr,
-     len1: Int, ptr2: Addr, len2: Int, out: Addr) => Int
+     len1: Int, ptr2: Addr, len2: Int, out: < Addr | >) => Int
 
 emit: String, String => ()
 emit = method, msg =>
-   code = edva_dom_call(67, 0, 0, 0, &method, ?method, &msg, ?msg, ptr(0))
+   code = edva_dom_call(67, 0, 0, 0, &method, ?method, &msg, ?msg, <-->)
 
 #public
 

@@ -622,7 +622,7 @@ entry:
   %arena.cur1 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc2 = call ptr @dva_arena_alloc(ptr %arena.cur1, i64 16)
   %tag.gep3 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc2, i32 0, i32 0
-  store i64 26, ptr %tag.gep3, align 8
+  store i64 27, ptr %tag.gep3, align 8
   %pay.gep4 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc2, i32 0, i32 1
   store ptr null, ptr %pay.gep4, align 8
   store ptr %enum.alloc2, ptr %pay.gep, align 8

@@ -1,5 +1,5 @@
 outer: Addr
-outer = ptr(0)
+outer = &"persistent"
 res =
    b = {32}
    b += "test"

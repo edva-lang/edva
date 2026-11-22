@@ -24,8 +24,11 @@ Edva unifies booleans, optional values, fallible statuses, and result types into
 `< Addr | >` occupies one pointer-width word. A C `NULL` is `<-->`, and a
 non-null pointer is `<+ addr +>`. Use this type directly in a
 `#foreign("c")` declaration for a pointer parameter or result that can be
-null. `Addr(0)` reports E3180, and a dynamic integer cast to `Addr` traps
-with E4015 if its value is zero. Use an integer address for an intentional
+null. A bare `Addr` in a foreign declaration promises that the C value
+is non-null. The raw `ptr` type permits zero and requires a checked
+`Addr(raw)` conversion to become an address. `Addr(0)` and `#zero Addr`
+report E3180. A dynamic cast to `Addr` traps with E4015 if the pointer
+would be zero. Use an integer address for an intentional
 volatile access to offset zero, such as `@[0 u8]`.
 
 ### Constructor delimiter matrix

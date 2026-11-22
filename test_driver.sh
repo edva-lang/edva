@@ -4006,11 +4006,13 @@ cat >"$T72_DIR/addr.dva" <<'DVA'
 #foreign("c")
    fixture_addr: (present: Int) => < Addr | >
    fixture_echo: (value: < Addr | >) => < Addr | >
+   fixture_bare = fixture_addr: (present: Int) => Addr
+   fixture_raw = fixture_echo: (value: ptr) => ptr
 
 #type Nullable < Addr | >
 
 present: Int => Nullable
-present = word => <+ ptr(word) +>
+present = word => <+ fixture_bare(word) +>
 
 read: Nullable => Int
 read = opt =>
@@ -4021,6 +4023,7 @@ io::out $ #size Nullable
 io::out $ read(fixture_echo(fixture_addr(1)))
 io::out $ read(fixture_echo(fixture_addr(0)))
 io::out $ read(#zero Nullable)
+io::out $ Int(fixture_raw(ptr(-1)))
 a = mem::arena(4096)
 previous = mem::set_current(a.raw)
 restored = mem::set_global!
@@ -4028,7 +4031,7 @@ io::out $ restored == a.raw && mem::current! == previous
 mem::destroy(a)
 DVA
 timeout 10 clang -c "$T72_DIR/addr.c" -o "$T72_DIR/addr.o" < /dev/null
-printf '8\n42\n-1\n-1\n<+>\n' >"$T72_DIR/expected"
+printf '8\n42\n-1\n-1\n-1\n<+>\n' >"$T72_DIR/expected"
 for opt in -O0 -O2; do
     timeout 30 ./edva "$T72_DIR/addr.dva" "$opt" --no-cache --cflag "$T72_DIR/addr.o" \
         -o "$T72_DIR/addr" < /dev/null >"$T72_DIR/build.log" 2>&1
@@ -4042,15 +4045,32 @@ done
 timeout 30 ./edva "$T72_DIR/addr.dva" -O2 --no-cache --ir -target wasm32-unknown-unknown \
     -o "$T72_DIR/wasm" < /dev/null >"$T72_DIR/wasm.log" 2>&1
 grep -Eq '^declare ptr @fixture_echo\(ptr\)' "$T72_DIR/wasm.ll"
-cat >"$T72_DIR/null_present.dva" <<'DVA'
+cat >"$T72_DIR/raw_optional.dva" <<'DVA'
 bad: () => < Addr | >
 bad = !=> <+ ptr(0) +>
 DVA
 status=0
-timeout 30 ./edva "$T72_DIR/null_present.dva" --ir --no-cache < /dev/null \
+timeout 30 ./edva "$T72_DIR/raw_optional.dva" --ir --no-cache < /dev/null \
     >"$T72_DIR/bad.log" 2>&1 || status=$?
 [ "$status" -eq 1 ]
-grep -q 'E3178:' "$T72_DIR/bad.log"
+grep -q 'E3084:' "$T72_DIR/bad.log"
+cat >"$T72_DIR/raw_return.dva" <<'DVA'
+bad: () => Addr
+bad = !=> ptr(0)
+DVA
+status=0
+timeout 30 ./edva "$T72_DIR/raw_return.dva" --ir --no-cache < /dev/null \
+    >"$T72_DIR/raw_return.log" 2>&1 || status=$?
+[ "$status" -eq 1 ]
+grep -Fq 'cannot unify Addr with ptr' "$T72_DIR/raw_return.log"
+cat >"$T72_DIR/zero_init.dva" <<'DVA'
+value = #zero Addr
+DVA
+status=0
+timeout 30 ./edva "$T72_DIR/zero_init.dva" --ir --no-cache < /dev/null \
+    >"$T72_DIR/zero_init.log" 2>&1 || status=$?
+[ "$status" -eq 1 ]
+grep -q 'E3180:' "$T72_DIR/zero_init.log"
 cat >"$T72_DIR/zero_cast.dva" <<'DVA'
 value = Addr(0)
 DVA
@@ -4071,6 +4091,34 @@ timeout 10 "$T72_DIR/dynamic_cast" < /dev/null >"$T72_DIR/out" 2>&1 || status=$?
 [ "$status" -eq 1 ]
 grep -q 'E4015:' "$T72_DIR/out"
 timeout 10 "$T72_DIR/dynamic_cast" nonzero < /dev/null
+
+cat >"$T72_DIR/address_offset.dva" <<'DVA'
+#use sys
+
+base = Addr(sys::argc)
+value = base - 1
+DVA
+cat >"$T72_DIR/address_load.dva" <<'DVA'
+raw = (ptr(0), 0)
+value = @[&raw Addr]
+DVA
+for regression in address_offset address_load; do
+    timeout 30 ./edva "$T72_DIR/$regression.dva" --no-cache -o "$T72_DIR/$regression" \
+        < /dev/null >"$T72_DIR/$regression.log" 2>&1
+    status=0
+    timeout 10 "$T72_DIR/$regression" < /dev/null >"$T72_DIR/out" 2>&1 || status=$?
+    [ "$status" -eq 1 ]
+    grep -q 'E4015:' "$T72_DIR/out"
+done
+cat >"$T72_DIR/zero_offset_wasm.dva" <<'DVA'
+#export
+   zero_offset: () => Int
+   zero_offset = !=> Int(@[0 u8])
+DVA
+timeout 30 ./edva "$T72_DIR/zero_offset_wasm.dva" --no-cache --no-runtime --ir \
+    -target wasm32-unknown-unknown -o "$T72_DIR/zero_offset_wasm" \
+    < /dev/null >"$T72_DIR/zero_offset_wasm.log" 2>&1
+grep -Fq 'load volatile i8, ptr null' "$T72_DIR/zero_offset_wasm.ll"
 echo "PASS"
 
 echo "=== All driver tests PASSED ==="

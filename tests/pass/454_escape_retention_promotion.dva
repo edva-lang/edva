@@ -150,7 +150,7 @@ main_test = !=>
    // for stack-promoted records/closures
    promo_sum2 = run_non_escaping_promotions(7)
    b2 = mem::provenance(ar).bytes_allocated
-   _back = mem::set_current(ptr(0))
+   _back = mem::set_global!
    mem::destroy(ar)
    io::out $ "promo:${str::from_int(promo_sum)}:${str::from_int(promo_sum2)}:${str::from_int(b2 - b1)}"
 

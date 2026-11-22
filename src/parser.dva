@@ -3850,7 +3850,7 @@ parse_dva_type_name =
    ["f32"] <+ ast::ValueType(F32) +>
    ["String"] <+ ast::ValueType(Str) +>
    ["Addr"] <+ ast::ValueType(RawPtr) +>
-   ["ptr"] <+ ast::ValueType(RawPtr) +>
+   ["ptr"] <+ ast::ValueType(NullablePtr) +>
    ["Builder"] <+ ast::ValueType(Builder) +>
    ["Error"] <+ ast::ValueType(Error) +>
    ["Type"] <+ ast::ValueType(Type) +>
@@ -5126,7 +5126,7 @@ parse_type_map = p, at =>
          mk_tp(at.0, at.1, <+>)
 
 map_key_ok: ast::ValueType => <>
-map_key_ok = [Str, Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64, RawPtr]
+map_key_ok = [Str, Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64, RawPtr, NullablePtr]
 
 parse_cursor_type_expr: Parser => <ast::Expr|>
 parse_cursor_type_expr = p =>
@@ -8849,7 +8849,7 @@ sig_params_g = p, name, params, infos, first_tn, is_global =>
 // runtime param types are parsed for syntax; the Assign carries only the
 // return marker, since the selfhost Assign has no type slot).
 is_valid_ct_param_type: ast::ValueType => <>
-is_valid_ct_param_type = [Type, Int, Str, Float, F32, Rune, Flag, RawPtr,
+is_valid_ct_param_type = [Type, Int, Str, Float, F32, Rune, Flag, RawPtr, NullablePtr,
   I8, I16, I32, I64, U8, U16, U32, U64]
 
 ct_signature: Parser, String, String, ast::CParams => <ast::Expr|>

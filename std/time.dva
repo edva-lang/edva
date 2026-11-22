@@ -4,17 +4,16 @@
 // `time::clock!`, `time::local!`, `time::utc!`, `time::format("%Y-%m-%d")`).
 
 #use str
-#use sys
 #use type
 
 #foreign("c")
    clock_gettime: (clk_id: i32, tp: Addr) => i32
    nanosleep: (req: Addr, rem: Addr) => i32
-   localtime_r: (timep: Addr, result: Addr) => Addr
-   gmtime_r: (timep: Addr, result: Addr) => Addr
+   localtime_r: (timep: Addr, result: Addr) => < Addr | >
+   gmtime_r: (timep: Addr, result: Addr) => < Addr | >
    mktime: (tm: Addr) => i64
    strftime: (s: Addr, max: Int, format: String, tm: Addr) => Int
-   strptime: (s: String, format: String, tm: Addr) => Addr
+   strptime: (s: String, format: String, tm: Addr) => < Addr | >
 
 #public
 
@@ -55,7 +54,7 @@ SEC_PER_DAY  = 86400
    isdst:  i32
    pad0:   i32
    gmtoff: i64
-   zone:   Addr
+   zone:   < Addr | >
 )
 
 // Broken-down civil calendar date and time (1-based month and day, full year)
@@ -139,7 +138,7 @@ datetime_to_tm = dt =>
       -1i32,
       0i32,
       i64(dt.utc_off),
-      sys::addr_null
+      <-->
    )
 
 // Howard Hinnant's days_from_civil: days since 1970-01-01
@@ -439,11 +438,10 @@ local_from_sec_os = #param OS, sec, nsec =>
       [TimeOsWasm] utc_from_epoch(sec, nsec)
       |
          t_val' = i64(sec)
-         tm' = TmRaw(0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i64, sys::addr_null)
-         res = localtime_r(&t_val', &tm')
-         res == sys::addr_null
-            | utc_from_epoch(sec, nsec)
+         tm' = TmRaw(0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i64, <-->)
+         localtime_r(&t_val', &tm')
             | tm_to_datetime(tm', nsec)
+            | utc_from_epoch(sec, nsec)
 
 local_from_sec: Int, Int => DateTime
 local_from_sec = sec, nsec => local_from_sec_os(TimeOsTarget, sec, nsec)
@@ -620,9 +618,8 @@ parse_tm_os = #param OS, value, fmt_pat =>
       |
          value @ ch_ =>
             ch_ == 0 |-->
-         tm' = TmRaw(0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i64, sys::addr_null)
-         end = strptime(value, fmt_pat, &tm')
-         end == sys::addr_null |-->
+         tm' = TmRaw(0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i64, <-->)
+         end = strptime(value, fmt_pat, &tm') | cursor => cursor |-->
          // The FFI passes a NUL-terminated copy; the cursor must stop at its end.
          @[end u8] != 0u8 |-->
          <+ tm' +>

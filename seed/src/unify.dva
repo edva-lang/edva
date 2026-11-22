@@ -16,7 +16,7 @@
 
 #type UPrim <
    Int, I8, I16, I32, I64, U8, U16, U32, U64,
-   Float, F32, Str, Rune, Flag, Unit, RawPtr,
+   Float, F32, Str, Rune, Flag, Unit, RawPtr, NullablePtr,
    Builder, Error, ThreadId, Type, Unknown
 >
 
@@ -152,6 +152,9 @@ prim_unit = !=> UType(Prim, UPrim(Unit))
 
 prim_rawptr: () => UType
 prim_rawptr = !=> UType(Prim, UPrim(RawPtr))
+
+prim_nullable_ptr: () => UType
+prim_nullable_ptr = !=> UType(Prim, UPrim(NullablePtr))
 
 prim_builder: () => UType
 prim_builder = !=> UType(Prim, UPrim(Builder))
@@ -352,7 +355,7 @@ is_flag_uprim: UPrim => <>
 is_flag_uprim = [Flag]
 
 is_map_key_uprim: UPrim => <>
-is_map_key_uprim = [Str, Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64, RawPtr]
+is_map_key_uprim = [Str, Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64, RawPtr, NullablePtr]
 
 is_map_key_utype: Ctx, UType => <>
 is_map_key_utype = ctx, ut =>
@@ -1137,6 +1140,7 @@ show_uprim =
    [Flag] "Flag"
    [Unit] "()"
    [RawPtr] "Addr"
+   [NullablePtr] "ptr"
    [Builder] "Builder"
    [Error] "Error"
    [ThreadId] "ThreadId"
@@ -1160,6 +1164,7 @@ uprim_to_vt =
    [Flag] ast::ValueType(Flag)
    [Unit] ast::ValueType(Unit)
    [RawPtr] ast::ValueType(RawPtr)
+   [NullablePtr] ast::ValueType(NullablePtr)
    [Builder] ast::ValueType(Builder)
    [Error] ast::ValueType(Error)
    [ThreadId] ast::ValueType(ThreadId)
@@ -1184,6 +1189,7 @@ vt_to_uprim =
    [Flag] UPrim(Flag)
    [Unit] UPrim(Unit)
    [RawPtr] UPrim(RawPtr)
+   [NullablePtr] UPrim(NullablePtr)
    [Builder] UPrim(Builder)
    [Error] UPrim(Error)
    [ThreadId] UPrim(ThreadId)

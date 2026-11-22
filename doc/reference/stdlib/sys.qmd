@@ -20,7 +20,6 @@ standard stream descriptor constants, null-pointer safety helpers, and process t
 - `sys::STDIN`: Standard input descriptor (`0`).
 - `sys::STDOUT`: Standard output descriptor (`1`).
 - `sys::STDERR`: Standard error descriptor (`2`).
-- `sys::addr_null`: Canonical null address constant (`Addr(0)`).
 
 ## Command-line arguments
 
@@ -30,7 +29,7 @@ standard stream descriptor constants, null-pointer safety helpers, and process t
 | `sys::argv` | `Int => < String | >` | Safely retrieves argument by 0-based index as `RamPN` |
 | `sys::argv_string` | `Int => String` | Retrieves argument string, returning `""` on invalid index |
 | `sys::argv_matches` | `Int, String => <>` | Tests whether `argv[n]` equals specified string |
-| `sys::raw_argv` | `Int => Addr` | Returns raw C-string pointer `Addr` for FFI use |
+| `sys::raw_argv` | `Int => < Addr | >` | Returns the C-string address or `<-->` for an invalid index |
 
 ```{.dva .partial}
 sys::argv(1)
@@ -40,8 +39,8 @@ sys::argv(1)
 
 ## Address and pointer helpers
 
-- `sys::addr_is_null(a: Addr) => <>`: Returns `<+>` if address equals `sys::addr_null`.
-- `sys::addr_opt(a: Addr) => < Addr | >`: Wraps an address in a `RamPN` option, returning `<-->` if null.
+- `sys::addr_is_null(a: ptr) => <>` tests whether a raw pointer is zero.
+- `sys::addr_opt(a: ptr) => < Addr | >` converts a raw pointer to an optional non-null address.
 - `sys::c_str(raw: Addr) => String`: Copies a null-terminated C string into a newly allocated, immutable Edva `String`.
 
 ## Process termination

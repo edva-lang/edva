@@ -10,6 +10,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @clo.const = internal constant { ptr, ptr } { ptr @"str::#load_search_word", ptr null }
 @"var.str::#load_search_word" = global ptr null
 @str_oob_msg = internal unnamed_addr constant [40 x i8] c"E4006: string byte index out of bounds\0A\00"
+@null_addr_cast = internal unnamed_addr constant [40 x i8] c"E4015: cannot construct Addr from zero\0A\00"
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"str::#find_byte_from", ptr null }
 @"var.str::#find_byte_from" = global ptr null
 @clo.const.2 = internal constant { ptr, ptr } { ptr @"str::#find_substring_from", ptr null }
@@ -305,8 +306,8 @@ or.42.else:                                       ; preds = %entry
   %nottmp = xor i1 %choice.res, true
   br i1 %nottmp, label %common.ret, label %choice.exit10
 
-common.ret:                                       ; preds = %idx_ok, %loop.header.45, %or.42.else, %entry, %choice.exit16, %choice.then35
-  %common.ret.op = phi i64 [ %addtmp, %choice.then35 ], [ %choice.res86, %choice.exit16 ], [ -1, %entry ], [ -1, %or.42.else ], [ -1, %loop.header.45 ], [ %"var.p'.1", %idx_ok ]
+common.ret:                                       ; preds = %idx_ok, %loop.header.45, %or.42.else, %entry, %addr.present, %choice.then35
+  %common.ret.op = phi i64 [ %addtmp, %choice.then35 ], [ %choice.res85, %addr.present ], [ -1, %entry ], [ -1, %or.42.else ], [ -1, %loop.header.45 ], [ %"var.p'.1", %idx_ok ]
   ret i64 %common.ret.op
 
 choice.exit10:                                    ; preds = %or.42.else
@@ -325,14 +326,8 @@ choice.exit16:                                    ; preds = %choice.exit10
   %bandtmp70 = and i64 %coerce.ptr2int, 281474976710655
   %addtmp73 = add i64 %coerce.ptr2int, %clamp.min
   %ptr.res = inttoptr i64 %addtmp73 to ptr
-  %addr.ffi.masked = and i64 %addtmp73, 281474976710655
-  %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
-  %call.res76 = call ptr @memchr(ptr %addr.ffi.clean, i64 %1, i64 %subtmp)
-  %ptr.int.l78 = ptrtoint ptr %call.res76 to i64
-  %cmptmp79 = icmp eq i64 %ptr.int.l78, 0
-  %subtmp85 = sub i64 %ptr.int.l78, %bandtmp70
-  %choice.res86 = select i1 %cmptmp79, i64 -1, i64 %subtmp85
-  br label %common.ret
+  %addr.is.null = icmp eq ptr %ptr.res, null
+  br i1 %addr.is.null, label %addr.null, label %addr.present
 
 loop.header.44:                                   ; preds = %choice.exit36, %choice.then15
   %"var.p'.0" = phi i64 [ %clamp.min, %choice.then15 ], [ %addtmp41, %choice.exit36 ]
@@ -391,6 +386,20 @@ choice.exit59:                                    ; preds = %idx_ok
   %addtmp63 = add i64 %"var.p'.1", 1
   %loop.next65 = add i64 %loop.idx.45.0, 1
   br label %loop.header.45
+
+addr.null:                                        ; preds = %choice.exit16
+  call void @dva_abort_null_addr_cast()
+  unreachable
+
+addr.present:                                     ; preds = %choice.exit16
+  %addr.ffi.masked = and i64 %addtmp73, 281474976710655
+  %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
+  %call.res77 = call ptr @memchr(ptr %addr.ffi.clean, i64 %1, i64 %subtmp)
+  %niche.ne.null = icmp ne ptr %call.res77, null
+  %coerce.ptr2int82 = ptrtoint ptr %call.res77 to i64
+  %subtmp84 = sub i64 %coerce.ptr2int82, %bandtmp70
+  %choice.res85 = select i1 %niche.ne.null, i64 %subtmp84, i64 -1
+  br label %common.ret
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
@@ -414,6 +423,14 @@ declare i64 @write(i32, ptr, i64)
 
 ; Function Attrs: cold noreturn
 declare void @exit(i32) #6
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_null_addr_cast() #5 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @null_addr_cast, i64 39)
+  call void @exit(i32 1)
+  unreachable
+}
 
 ; Function Attrs: noinline
 define internal { i1, i64 } @"str::#find_substring_from"(ptr %0, ptr %1, i64 %2, i64 %3) #2 {
@@ -3435,7 +3452,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep29 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc26, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep29, align 8
   %err.line.gep30 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc26, i32 0, i32 3
-  store i64 477, ptr %err.line.gep30, align 8
+  store i64 478, ptr %err.line.gep30, align 8
   %err.col.gep31 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc26, i32 0, i32 4
   store i64 28, ptr %err.col.gep31, align 8
   %err.ctx.gep32 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc26, i32 0, i32 5

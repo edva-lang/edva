@@ -22,7 +22,7 @@ io::out $ #size Int
 #use libc
 #use io
 #type Pt (x: Int, y: Int)
-buf = libc::malloc $ #size Pt
+buf = libc::malloc(#size Pt).expect("could not allocate example point")
 io::out $ ( buf !< 1 | "Positive" | "Negative")
 
 // Sizes are compile-time constants: they fold into arithmetic.

@@ -4,11 +4,11 @@
 #use mem
 
 #foreign("c")
-   realloc: (Addr, Int) => Addr
+   realloc: (< Addr | >, Int) => < Addr | >
    memcmp: (Addr, Addr, Int) => i32
    edva_dom_call: (Int, Int, Int, Int, Addr, Int, Addr, Int, Addr) => Int
    edva_dom_batch: (Addr, Int, Addr) => Int
-   edva_dom_measure: (Addr, Int, Addr) => Int
+   edva_dom_measure: (< Addr | >, Int, Addr) => Int
    edva_dom_free: (Addr) => ()
    edva_dom_report: (Addr, Int) => ()
 
@@ -37,7 +37,7 @@ INVALID_RESULT = 10
 #private
 
 #type(packed) Reply (first: Int, length: Int, x: Float, y: Float, z: Float, w: Float)
-#type Owned (data: Addr, length: Int, capacity: Int)
+#type Owned (data: < Addr | >, length: Int, capacity: Int)
 #type Property (op: Int, key: Owned, value: Owned, flag: Int, valid: <>)
 #type Properties Property{}
 #type Cache (properties: Properties, live: <>, used: Int)
@@ -58,7 +58,13 @@ error: Int, String => Error
 error = code, message => Error(code, message, "std/dom", 0, 0, (0, 0))
 
 empty_owned: () => Owned
-empty_owned = !=> Owned(ptr(0), 0, 0)
+empty_owned = !=> Owned(<-->, 0, 0)
+
+owned_data: Owned => Addr
+owned_data = buffer => buffer.data.expect("DOM buffer must have storage")
+
+owned_word: Owned => Int
+owned_word = buffer => buffer.data | address => Int(address) | 0
 
 owned_store: Owned, String => < | Error >
 owned_store = buffer, value =>
@@ -66,16 +72,16 @@ owned_store = buffer, value =>
       |
          cap = %max(?value, %max(buffer.capacity * 2, 32))
          data = realloc(buffer.data, cap)
-         Int(data) == 0 | --| <- error(BROWSER_ERROR, "Cannot retain DOM bytes") ->
+         !<>(data) | --| <- error(BROWSER_ERROR, "Cannot retain DOM bytes") ->
          buffer.data = data
          buffer.capacity = cap
-   ?value > 0 | %memcpy(buffer.data, &value, ?value)
+   ?value > 0 | %memcpy(owned_data(buffer), &value, ?value)
    buffer.length = ?value
    <++>
 
 owned_equal: Owned, String => <>
 owned_equal = buffer, value =>
-   buffer.length == ?value && (?value == 0 || memcmp(buffer.data, &value, ?value) == 0)
+   buffer.length == ?value && (?value == 0 || memcmp(owned_data(buffer), &value, ?value) == 0)
 
 // HTML attribute names are ASCII case insensitive. Treat aliases conservatively
 // for every element, preserving correctness for case-sensitive SVG names too.
@@ -83,7 +89,7 @@ owned_name_equal: Owned, String => <>
 owned_name_equal = buffer, value =>
    buffer.length != ?value |->
    ?value @ i =>
-      a = Int(@[buffer.data + i u8])
+      a = Int(@[owned_data(buffer) + i u8])
       b = value(i)
       al = a [65...90] a + 32 | a
       bl = b [65...90] b + 32 | b
@@ -94,8 +100,8 @@ owned_names_equal: Owned, Owned => <>
 owned_names_equal = left, right =>
    left.length != right.length |->
    left.length @ i =>
-      a = Int(@[left.data + i u8])
-      b = Int(@[right.data + i u8])
+      a = Int(@[owned_data(left) + i u8])
+      b = Int(@[owned_data(right) + i u8])
       al = a [65...90] a + 32 | a
       bl = b [65...90] b + 32 | b
       al != bl |->
@@ -109,16 +115,18 @@ invalidate_attribute = id, name =>
 
 owned_free: Owned => ()
 owned_free = buffer =>
-   libc::free(buffer.data)
-   buffer.data = ptr(0)
+   buffer.data | raw => libc::free(raw)
+   buffer.data = <-->
    buffer.length = 0
    buffer.capacity = 0
 
 owned_string: Owned => String
 owned_string = buffer =>
+   buffer.length == 0 | --| ""
+   data = owned_data(buffer)
    b = {buffer.length}
    mem::write_tail(b, buffer.length, (dst, n =>
-      %memcpy(dst, buffer.data, n)
+      %memcpy(dst, data, n)
       n
    ))
    +b
@@ -134,12 +142,14 @@ listener_token = listener => listener.listener_slot .|. (listener.generation .<.
 
 reply_string: Reply => String
 reply_string = reply =>
+   reply.first == 0 | --| ""
+   address = Addr(reply.first)
    b = {reply.length}
    mem::write_tail(b, reply.length, (dst, n =>
-      %memcpy(dst, Addr(reply.first), n)
+      %memcpy(dst, address, n)
       n
    ))
-   edva_dom_free(Addr(reply.first))
+   edva_dom_free(address)
    +b
 
 available: () => < | Error >
@@ -223,7 +233,7 @@ property_owned = id, op, key =>
    row.properties @ p, i =>
       i !< row.used | -->
       same = p.key.length == key.length &&
-         (key.length == 0 || memcmp(p.key.data, key.data, key.length) == 0)
+         (key.length == 0 || memcmp(owned_data(p.key), owned_data(key), key.length) == 0)
       p.op == op && same | --| p
    prev = mem::set_global!
    row.used == ?row.properties
@@ -234,7 +244,7 @@ property_owned = id, op, key =>
    p.valid = <->
    mem::set_current(prev)
    reserve(p.key, key.length) !| _
-   key.length > 0 | %memcpy(p.key.data, key.data, key.length)
+   key.length > 0 | %memcpy(owned_data(p.key), owned_data(key), key.length)
    p
 
 write: Int, Element, String, String, Int => < | Error >
@@ -399,7 +409,7 @@ reserve = buffer, size =>
       |
          cap = %max(size, %max(buffer.capacity * 2, 256))
          data = realloc(buffer.data, cap)
-         Int(data) == 0 | --| <- error(BROWSER_ERROR, "Cannot retain DOM commands") ->
+         !<>(data) | --| <- error(BROWSER_ERROR, "Cannot retain DOM commands") ->
          buffer.data = data
          buffer.capacity = cap
    buffer.length = size
@@ -410,10 +420,10 @@ serialize = commands, count, wire =>
    reserve(wire, count * #size WireCommand)--!
    commands @ command, i =>
       i !< count | -->
-      p = wire.data + i * #size WireCommand
+      p = owned_data(wire) + i * #size WireCommand
       wire_command = WireCommand(command.op, command.a, command.b, command.c,
-         Int(command.key.data), command.key.length,
-         Int(command.value.data), command.value.length)
+         owned_word(command.key), command.key.length,
+         owned_word(command.value), command.value.length)
       %memcpy(p, &wire_command, #size WireCommand)
    <++>
 
@@ -494,7 +504,7 @@ flush = batch =>
    reply = reply_enter!
    active_batch ::= <+ batch +>
    flushing ::= <+>
-   code = edva_dom_batch(batch.wire.data, batch.count, &reply)
+   code = edva_dom_batch(owned_data(batch.wire), batch.count, &reply)
    reply_leave!
    flushing ::= <->
    active_batch ::= <-->
@@ -605,7 +615,7 @@ close_measurements = measurements =>
                   p = property_owned(command.a, command.op, command.key)
                   reserve(p.value, command.value.length) !| _
                   command.value.length > 0
-                     | %memcpy(p.value.data, command.value.data, command.value.length)
+                     | %memcpy(owned_data(p.value), owned_data(command.value), command.value.length)
                   p.flag = command.c
                   p.valid = <+>
 
@@ -836,10 +846,15 @@ children = parent =>
    available!--!
    reply = call(51, token(parent), 0, 0, "", "")--!
    result = Elements()
+   reply.first == 0
+      |
+         reply.length == 0 | --| <+ result ->
+         --| <- error(INVALID_RESULT, "Missing DOM children data") +>
+   address = Addr(reply.first)
    reply.length @ i =>
-      id = @[Addr(reply.first) + i * 8 Int]
+      id = @[address + i * 8 Int]
       result += element_from(id)
-   edva_dom_free(Addr(reply.first))
+   edva_dom_free(address)
    <+ result ->
 
 queue_insert_before: Batch, Element, Element, Element => < | Error >

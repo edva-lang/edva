@@ -81,9 +81,9 @@ helper_restore_mid: mem::Arena, Int => ()
 helper_restore_mid = ar, mk =>
    helper_restore_leaf(ar, mk)
 
-helper_switch_arena: Addr => Addr
+helper_switch_arena: < Addr | > => Addr
 helper_switch_arena = raw =>
-   mem::set_current(raw)
+   raw | address => mem::set_current(address) | mem::set_global!
 
 // A function that builds a string, calls a 2-hop arena-resetting helper on a scratch arena,
 // and returns the surviving string from the current arena (must NOT stack-promote across the reset!).
@@ -152,9 +152,9 @@ main_test = !=>
 
    // 5. Arena selection via helper
    base_raw = mem::current!
-   prev_raw = helper_switch_arena(ar.raw)
+   prev_raw = helper_switch_arena(<+ ar.raw +>)
    in_ar = mem::current! == ar.raw
-   back_raw = helper_switch_arena(ptr(0))
+   back_raw = helper_switch_arena(<-->)
    restored_ok = (prev_raw == base_raw) && (back_raw == ar.raw) && (mem::current! == base_raw)
    flag_s = in_ar && restored_ok | "ok" | "fail"
    io::out $ "select:${flag_s}"

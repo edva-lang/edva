@@ -1,4 +1,4 @@
 #use libc
 
-buf = libc::malloc $ 6
+buf = libc::malloc(6).expect("could not allocate test buffer")
 s = String(buf)

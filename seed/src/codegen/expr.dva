@@ -153,7 +153,7 @@ codegen_call_arena_validate_tag = cg, arena, tag =>
 arena_tag_slow_helper: types::Cg, String, String => Addr
 arena_tag_slow_helper = cg, err_msg, gname =>
    name = "dva_validate_tag_or_abort_${gname}"
-   types::llvm_val_opt(LLVMGetNamedFunction(cg.module, name))
+   LLVMGetNamedFunctionNullable(cg.module, name)
       | fn => fn
       |
          saved = LLVMGetInsertBlock(cg.builder)
@@ -1114,8 +1114,10 @@ codegen_materialize_prim = cg, vt =>
       [Rune]
          <+ (LLVMConstInt(LLVMInt32Type!, 0, 0), ast::ValueType(Rune)) +>
       [RawPtr]
-         <+ (LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0)),
-           ast::ValueType(RawPtr)) +>
+         types::init_error(cg, "E3180", "Addr has no zero value. Use < Addr | >.", 0, 0)
+         <+ (LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0)), vt) +>
+      [NullablePtr]
+         <+ (LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0)), vt) +>
       [Unit]
          <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit)) +>
       |
@@ -2052,7 +2054,7 @@ codegen_array_loop_op = cg, op, lhs_val, lhs_arr, rhs_val, rhs_arr, meta =>
    is_unsigned = types::is_unsigned_vt(elem_vt)
    cur = str::from_int(types::g.tmpc)
    types::g.tmpc = types::g.tmpc + 1
-   parent = cg.current_fn
+   parent = types::current_function(cg)
    header_bb = LLVMAppendBasicBlock(parent, "arr.loop.hdr." + cur)
    body_bb = LLVMAppendBasicBlock(parent, "arr.loop.body." + cur)
    latch_bb = LLVMAppendBasicBlock(parent, "arr.loop.latch." + cur)
@@ -2299,7 +2301,7 @@ codegen_array_loop_cmp = cg, op, lhs_val, lhs_arr, rhs_val, rhs_arr, meta =>
    is_unsigned = types::is_unsigned_vt(elem_vt)
    cur = str::from_int(types::g.tmpc)
    types::g.tmpc = types::g.tmpc + 1
-   parent = cg.current_fn
+   parent = types::current_function(cg)
    header_bb = LLVMAppendBasicBlock(parent, "arr.cmp.hdr." + cur)
    body_bb = LLVMAppendBasicBlock(parent, "arr.cmp.body." + cur)
    latch_bb = LLVMAppendBasicBlock(parent, "arr.cmp.latch." + cur)
@@ -2480,7 +2482,7 @@ codegen_array_loop_logical = cg, is_and, lv, l_arr, rv, r_arr, n =>
    result_ptr = codegen_call_arena_alloc(cg, alloc_sz, "rec.mask.alloc")
    cur = str::from_int(types::g.tmpc)
    types::g.tmpc = types::g.tmpc + 1
-   parent = cg.current_fn
+   parent = types::current_function(cg)
    header_bb = LLVMAppendBasicBlock(parent, "arr.log.hdr." + cur)
    body_bb = LLVMAppendBasicBlock(parent, "arr.log.body." + cur)
    latch_bb = LLVMAppendBasicBlock(parent, "arr.log.latch." + cur)
@@ -2712,8 +2714,7 @@ codegen_emit_arith_fallback = cg, op, lr, rr =>
                  LLVMGetTypeKind(
                     LLVMTypeOf(rr.0)) == 12
                l_is_ptr || r_is_ptr
-                  | codegen_eval_ptr_arith(cg, op, lr.0, rr.0,
-                    l_is_ptr, r_is_ptr)
+                  | codegen_eval_ptr_arith(cg, op, lr, rr, l_is_ptr, r_is_ptr)
                   |
                      i64t = LLVMInt64Type!
                      u_l = types::is_unsigned_vt(lr.1)
@@ -2724,33 +2725,36 @@ codegen_emit_arith_fallback = cg, op, lr, rr =>
                      (codegen_eval_int_arith(cg, op, lv, rv,
                        is_u), ast::ValueType(Int))
 
-codegen_eval_ptr_arith: types::Cg, ast::BinaryOp, Addr, Addr, <>,
-  <> => (Addr, ast::ValueType)
+codegen_eval_ptr_arith: types::Cg, ast::BinaryOp, (Addr, ast::ValueType),
+  (Addr, ast::ValueType), <>, <> => (Addr, ast::ValueType)
 codegen_eval_ptr_arith = cg, op, l, r, l_is_ptr, r_is_ptr =>
-   i64t = LLVMInt64Type!
+   word_ty = types::target_ptr_size(cg) == 4 | LLVMInt32Type! | LLVMInt64Type!
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    l_val = l_is_ptr
-      | LLVMBuildPtrToInt(cg.builder, l, i64t, "ptr.int.l")
-      | stmt::coerce_int(cg, l, i64t)
+      | LLVMBuildPtrToInt(cg.builder, l.0, word_ty, "ptr.int.l")
+      | stmt::coerce_int_ext(cg, l.0, word_ty, types::is_unsigned_vt(l.1))
    r_val = r_is_ptr
-      | LLVMBuildPtrToInt(cg.builder, r, i64t, "ptr.int.r")
-      | stmt::coerce_int(cg, r, i64t)
+      | LLVMBuildPtrToInt(cg.builder, r.0, word_ty, "ptr.int.r")
+      | stmt::coerce_int_ext(cg, r.0, word_ty, types::is_unsigned_vt(r.1))
+   pointer_vt = l_is_ptr | l.1 | r.1
+   result_vt = types::is_ptr_vt(pointer_vt) | pointer_vt | ast::ValueType(NullablePtr)
    op
       [Add]
          sum = LLVMBuildAdd(cg.builder, l_val, r_val, "addtmp")
          res_ptr' = LLVMBuildIntToPtr(cg.builder, sum, i8p, "ptr.res")
-         (res_ptr', ast::ValueType(RawPtr))
+         result_vt [RawPtr] | match::check_nonnull_addr(cg, res_ptr', <->)
+         (res_ptr', result_vt)
       [Sub]
          !l_is_ptr
             | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             |
                diff = LLVMBuildSub(cg.builder, l_val, r_val, "subtmp")
                r_is_ptr
-                  | (diff, ast::ValueType(Int))
+                  | (stmt::coerce_int(cg, diff, LLVMInt64Type!), ast::ValueType(Int))
                   |
-                     res_ptr' = LLVMBuildIntToPtr(cg.builder, diff, i8p,
-                       "ptr.res")
-                     (res_ptr', ast::ValueType(RawPtr))
+                     res_ptr' = LLVMBuildIntToPtr(cg.builder, diff, i8p, "ptr.res")
+                     result_vt [RawPtr] | match::check_nonnull_addr(cg, res_ptr', <->)
+                     (res_ptr', result_vt)
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 codegen_eval_float_arith: types::Cg, ast::BinaryOp, Addr, Addr => Addr
@@ -3107,9 +3111,9 @@ codegen_eval_unary_unwrap = cg, val, vt, target =>
                   | pos_vt0
                t0 = types::g.tmpc
                types::g.tmpc = types::g.tmpc + 1
-               pos_bb = LLVMAppendBasicBlock(cg.current_fn,
+               pos_bb = LLVMAppendBasicBlock(types::current_function(cg),
                  "unwrap.pos." + str::from_int(t0))
-               abort_bb = LLVMAppendBasicBlock(cg.current_fn,
+               abort_bb = LLVMAppendBasicBlock(types::current_function(cg),
                  "unwrap.abort." + str::from_int(t0))
                tag_gep = LLVMBuildStructGEP2(cg.builder, cg.union_t,
                  val, 0, "unwrap.tag.gep")
@@ -3240,9 +3244,9 @@ codegen_eval_unary_propagate = cg, val, vt, target =>
                            types::g.tmpc = types::g.tmpc + 1
                            s_t0 = str::from_int(t0)
                            pos_bb = LLVMAppendBasicBlock(
-                              cg.current_fn, "prop.pos." + s_t0)
+                              types::current_function(cg), "prop.pos." + s_t0)
                            ret_bb = LLVMAppendBasicBlock(
-                              cg.current_fn, "prop.ret." + s_t0)
+                              types::current_function(cg), "prop.ret." + s_t0)
                            tag_gep = LLVMBuildStructGEP2(
                               cg.builder, cg.union_t, val, 0,
                               "prop.tag.gep")
@@ -3355,13 +3359,18 @@ coerce_val = cg, v, v_vt, target =>
             |
                (stmt::coerce_int_ext(cg, v, LLVMInt64Type!,
                  types::is_unsigned_vt(v_vt)), ast::ValueType(Int))
-      [RawPtr]
+      [RawPtr, NullablePtr]
          types::is_int_vt(v_vt)
             |
                (LLVMBuildIntToPtr(cg.builder, v,
                  LLVMPointerType(LLVMInt8Type!, 0),
-                 "cast.int2ptr"), ast::ValueType(RawPtr))
-            | (v, ast::ValueType(RawPtr))
+                 "cast.int2ptr"), target)
+            |
+               to_raw = (target [NullablePtr]) && (v_vt [RawPtr])
+               address = to_raw
+                  | validate_and_strip_addr_tag(cg, v, LLVMPointerType(LLVMInt8Type!, 0))
+                  | v
+               (address, target)
       [Str]
          types::is_str_vt(v_vt)
             | (v, ast::ValueType(Str))
@@ -4288,6 +4297,7 @@ vt_to_type_key = cg, vt, dtype =>
             [Str] "String"
             [Builder] "Builder"
             [RawPtr] "Addr"
+            [NullablePtr] "ptr"
             [Flag] "Flag"
             [Ram] "Ram"
             [Enum] "Enum"
@@ -4925,8 +4935,8 @@ pack_unboxed_ret_val = cg, bv_val, st, kind =>
             | LLVMBuildIntToPtr(cg.builder, bv_val, i8p, "ret.niche.i2p")
          is_nn = LLVMBuildICmp(cg.builder, 33, p_i8, LLVMConstNull(i8p), "ret.niche.nn")
          cur_bb = LLVMGetInsertBlock(cg.builder)
-         load_bb = LLVMAppendBasicBlock(cg.current_fn, "ret.niche.load")
-         merge_bb = LLVMAppendBasicBlock(cg.current_fn, "ret.niche.merge")
+         load_bb = LLVMAppendBasicBlock(types::current_function(cg), "ret.niche.load")
+         merge_bb = LLVMAppendBasicBlock(types::current_function(cg), "ret.niche.merge")
          LLVMBuildCondBr(cg.builder, is_nn, load_bb, merge_bb)
          LLVMPositionBuilderAtEnd(cg.builder, load_bb)
          p_st = LLVMBuildPointerCast(cg.builder, p_i8, LLVMPointerType(st, 0),
@@ -4977,8 +4987,8 @@ unpack_unboxed_call_ret = cg, raw_res, ret_vt, want_stack =>
                  "ret.niche.sel")
             |
                cur_bb = LLVMGetInsertBlock(cg.builder)
-               alloc_bb = LLVMAppendBasicBlock(cg.current_fn, "ret.niche.alloc")
-               merge_bb = LLVMAppendBasicBlock(cg.current_fn, "ret.niche.done")
+               alloc_bb = LLVMAppendBasicBlock(types::current_function(cg), "ret.niche.alloc")
+               merge_bb = LLVMAppendBasicBlock(types::current_function(cg), "ret.niche.done")
                LLVMBuildCondBr(cg.builder, has_pay, alloc_bb, merge_bb)
                LLVMPositionBuilderAtEnd(cg.builder, alloc_bb)
                raw = codegen_call_arena_alloc(cg, LLVMConstInt(LLVMInt64Type!, 16, 0),
@@ -5017,12 +5027,12 @@ named_call_emit_pre_opt = cg, fname, fn, fty, ret, args, arg_vts, want_stack =>
    fi_idx = types::fninfo_index(cg, fname)
    fi_opt = <>(fi_idx) | fi_idx | types::fninfo_index(cg, types::resolve_fn_name(cg, fname))
    is_cap_fn = fi_opt | idx => !cg.fninfos(idx).expect("missing fninfos").no_capture | <->
-   is_rec_cap = (fn != sys::addr_null) && (cg.current_fn == fn) && is_cap_fn
+   is_rec_cap = (cg.active_fn | current => current == fn | <->) && is_cap_fn
    call_args = types::Addrs()
    call_vts = ast::VTypes()
    is_rec_cap
       |
-         call_args += LLVMGetParam(cg.current_fn, 0)
+         call_args += LLVMGetParam(types::current_function(cg), 0)
          call_vts += ast::ValueType(RawPtr)
    args @ ca, ci =>
       call_args += ca
@@ -5120,7 +5130,7 @@ eval_named_args_step = cg, t, fname, fn, is_for, ptypes, i, args =>
                stmt::set_lambda_expected_type(saved_exp)
                cg.discard_result = saved_discard
                is_str = is_for && types::is_str_vt(pt)
-               is_ptr = is_for && (types::is_ptr_vt(pt) || types::is_ptr_vt(ev.1))
+               is_ptr = is_for && ((ev.1 [RawPtr]) || ((pt [RawPtr]) && (ev.1 ![NullablePtr])))
                arg_value = expected
                   [Ram] match::coerce_ram_repr(cg, ev.0, expected)
                   | ev.0
@@ -5311,9 +5321,9 @@ codegen_closure_call_indirect_val = cg, t, clo_val, ret =>
    n @ i => cap_tys += plain_tys(i).expect("missing plain tys")
    cap_ty = stmt::fn_type_n(cg, ret_ll, cap_tys, n + 1)
 
-   cap_bb = LLVMAppendBasicBlock(cg.current_fn, "clo.cap")
-   plain_bb = LLVMAppendBasicBlock(cg.current_fn, "clo.plain")
-   merge_bb = LLVMAppendBasicBlock(cg.current_fn, "clo.merge")
+   cap_bb = LLVMAppendBasicBlock(types::current_function(cg), "clo.cap")
+   plain_bb = LLVMAppendBasicBlock(types::current_function(cg), "clo.plain")
+   merge_bb = LLVMAppendBasicBlock(types::current_function(cg), "clo.merge")
    is_cap = LLVMBuildICmp(cg.builder, 33, envp,
      LLVMConstNull(i8p), "clo.is_cap")
    LLVMBuildCondBr(cg.builder, is_cap, cap_bb, plain_bb)
@@ -5611,9 +5621,9 @@ codegen_typed_eval_logical_evaled = cg, is_and, lv, lhs_ti, rhs, ti =>
             | match::unboxed_ram_struct_t(cg)
             | types::llvm_type_of_vt(res_vt)
          res_lt = types::llvm_val_opt(res_lt0) | _ | LLVMInt1Type!
-         then_bb = LLVMAppendBasicBlock(cg.current_fn, pre + ".then")
-         else_bb = LLVMAppendBasicBlock(cg.current_fn, pre + ".else")
-         exit_bb = LLVMAppendBasicBlock(cg.current_fn, pre + ".exit")
+         then_bb = LLVMAppendBasicBlock(types::current_function(cg), pre + ".then")
+         else_bb = LLVMAppendBasicBlock(types::current_function(cg), pre + ".else")
+         exit_bb = LLVMAppendBasicBlock(types::current_function(cg), pre + ".exit")
          cond_val = types::codegen_cond_value_with_ti(cg, lv.0, lv.1, lhs_ti)
          LLVMBuildCondBr(cg.builder, cond_val, then_bb, else_bb)
 
@@ -5917,7 +5927,7 @@ eval_flat_str_parts = cg, parts, i, n, lens, datas =>
                iev = main::codegen_typed_eval(cg, ifmt.1)
                types::llvm_val_opt(iev.0)
                   | iv =>
-                     sbuf_arr = types::llvm_val_opt(cg.current_fn)
+                     sbuf_arr = cg.active_fn
                         | _cf => types::hoisted_alloca(cg, LLVMArrayType(i8t, 24), "cat.ibuf")
                         | LLVMBuildAlloca(cg.builder, LLVMArrayType(i8t, 24), "cat.ibuf")
                      sbuf = LLVMBuildBitCast(cg.builder, sbuf_arr, i8p, "cat.ibuf.p")
@@ -6431,7 +6441,7 @@ codegen_typed_eval_bin_arith_default = cg, op, lv, rv, ti =>
            (types::llvm_val_opt(rv.0) | v => LLVMGetTypeKind(LLVMTypeOf(v)) == 12 | <->)
          l_is_ptr || r_is_ptr
             |
-               codegen_eval_ptr_arith(cg, op, lv.0, rv.0, l_is_ptr, r_is_ptr)
+               codegen_eval_ptr_arith(cg, op, lv, rv, l_is_ptr, r_is_ptr)
             |
                is_u = types::is_unsigned_vt(lv.1) || types::is_unsigned_vt(rv.1)
                res_ty = types::is_ptr_vt(lv.1) | lv.1 |
@@ -6555,9 +6565,9 @@ codegen_typed_unary_ready = cg, op, operand, ut, ti, ev, heap_only =>
                t0' = types::g.tmpc
                types::g.tmpc = types::g.tmpc + 1
                sc' = str::from_int(t0')
-               pos_bb' = LLVMAppendBasicBlock(cg.current_fn,
+               pos_bb' = LLVMAppendBasicBlock(types::current_function(cg),
                  "unwrap.pos." + sc')
-               abort_bb = LLVMAppendBasicBlock(cg.current_fn,
+               abort_bb = LLVMAppendBasicBlock(types::current_function(cg),
                  "unwrap.abort." + sc')
                is_pos' = is_niche'
                   |
@@ -6629,9 +6639,9 @@ codegen_typed_unary_ready = cg, op, operand, ut, ti, ev, heap_only =>
                t0' = types::g.tmpc
                types::g.tmpc = types::g.tmpc + 1
                sc' = str::from_int(t0')
-               pos_bb' = LLVMAppendBasicBlock(cg.current_fn,
+               pos_bb' = LLVMAppendBasicBlock(types::current_function(cg),
                  "prop.pos." + sc')
-               ret_bb = LLVMAppendBasicBlock(cg.current_fn,
+               ret_bb = LLVMAppendBasicBlock(types::current_function(cg),
                  "prop.ret." + sc')
                is_pos' = is_niche'
                   |
@@ -7279,7 +7289,7 @@ try_inline_rec_factory_call = cg, rname, fname, args, ti, is_generic, want_stack
       |
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
          ret_slot = types::hoisted_alloca(cg, i8p, "inl.ret.slot")
-         ret_bb = LLVMAppendBasicBlock(cg.current_fn, "inl.ret.exit")
+         ret_bb = LLVMAppendBasicBlock(types::current_function(cg), "inl.ret.exit")
          saved_fn_body = types::g.current_fn_body
          saved_exp_ti = types::g.expected_fn_ti
          saved_ret_bb = types::g.inline_ret_bb
@@ -7291,8 +7301,8 @@ try_inline_rec_factory_call = cg, rname, fname, args, ti, is_generic, want_stack
          saved_vra_lvs = types::vra.len_vars
          types::g.current_fn_body = <+ rec_body +>
          types::g.expected_fn_ti = ti
-         types::g.inline_ret_bb = ret_bb
-         types::g.inline_ret_slot = ret_slot
+         types::g.inline_ret_bb = <+ ret_bb +>
+         types::g.inline_ret_slot = <+ ret_slot +>
          types::vra.locals = types::VraLocals()
          types::vra.bounded_idxs = types::BoundedStrIdxs()
          types::vra.len_vars = types::LenVarEntries()
@@ -7398,7 +7408,7 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
             aev' = eval_call_arg_sync_clo(cg, rname, r_i, arg_e')
             is_str' = is_for' && types::is_str_vt(aev'.1)
             optional_addr = types::is_niche_ram_ti(cg, arg_e'.ti)
-            is_ptr' = is_for' && (types::is_ptr_vt(aev'.1) ||
+            is_ptr' = is_for' && ((aev'.1 [RawPtr]) ||
                (optional_addr.0 && (optional_addr.2 [RawPtr])))
             a0' = is_str'
                | codegen_ensure_nul_terminated(cg, aev'.0, "arg.str.ptr")
@@ -7476,7 +7486,7 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
             aev' = eval_call_arg_sync_clo(cg, rname, j, arg_e')
             is_str' = is_for' && types::is_str_vt(aev'.1)
             optional_addr = types::is_niche_ram_ti(cg, arg_e'.ti)
-            is_ptr' = is_for' && (types::is_ptr_vt(aev'.1) ||
+            is_ptr' = is_for' && ((aev'.1 [RawPtr]) ||
                (optional_addr.0 && (optional_addr.2 [RawPtr])))
             a0' = is_str'
                | codegen_ensure_nul_terminated(cg, aev'.0, "arg.str.ptr")
@@ -7569,9 +7579,9 @@ codegen_typed_eval_indirect_call_opt = cg, clo_val, args, ti, want_stack =>
    n @ i => cap_tys += plain_tys(i).expect("missing plain tys")
    cap_ty = stmt::fn_type_n(cg, ret_ll, cap_tys, n + 1)
 
-   cap_bb = LLVMAppendBasicBlock(cg.current_fn, "clo.cap")
-   plain_bb = LLVMAppendBasicBlock(cg.current_fn, "clo.plain")
-   merge_bb = LLVMAppendBasicBlock(cg.current_fn, "clo.merge")
+   cap_bb = LLVMAppendBasicBlock(types::current_function(cg), "clo.cap")
+   plain_bb = LLVMAppendBasicBlock(types::current_function(cg), "clo.plain")
+   merge_bb = LLVMAppendBasicBlock(types::current_function(cg), "clo.merge")
    is_cap = LLVMBuildICmp(cg.builder, 33, envp,
      LLVMConstNull(i8p), "clo.is_cap")
    LLVMBuildCondBr(cg.builder, is_cap, cap_bb, plain_bb)
@@ -7633,6 +7643,7 @@ codegen_typed_eval_addr = cg, args =>
                ev = main::codegen_typed_eval(cg, arg)
                p_val_opt = types::raw_addr_value(cg, ev.0, ev.1, i8p)
                p_val = p_val_opt | _ | LLVMConstNull(i8p)
+               match::check_nonnull_addr(cg, p_val, <->)
                (p_val, ast::ValueType(RawPtr))
 codegen_typed_eval_exit: types::Cg, tast::TypedExpr => (Addr, ast::ValueType)
 codegen_typed_eval_exit = cg, e =>
@@ -7648,7 +7659,7 @@ codegen_typed_eval_exit = cg, e =>
                LLVMBuildStore(cg.builder, tr, code_g)
                LLVMBuildUnreachable(cg.builder)
                cg.exited = <+>
-               dead' = LLVMAppendBasicBlock(cg.current_fn, "exit.halt")
+               dead' = LLVMAppendBasicBlock(types::current_function(cg), "exit.halt")
                LLVMPositionBuilderAtEnd(cg.builder, dead')
             |
                runtime::emit_arena_destroy(cg)
@@ -7656,7 +7667,7 @@ codegen_typed_eval_exit = cg, e =>
                types::call1(cg, ef.0, ef.1, tr, "")
                LLVMBuildUnreachable(cg.builder)
                cg.exited = <+>
-               dead' = LLVMAppendBasicBlock(cg.current_fn, "exit.done")
+               dead' = LLVMAppendBasicBlock(types::current_function(cg), "exit.done")
                LLVMPositionBuilderAtEnd(cg.builder, dead')
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
       |
@@ -7670,8 +7681,8 @@ codegen_typed_eval_return = cg, val_opt =>
          types::init_error(cg, "E3173", diag::E3173_return_outside_fn!, 0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
-         types::g.inline_ret_bb != sys::addr_null
-            |
+         types::g.inline_ret_bb
+            | return_block =>
                i8p = LLVMPointerType(LLVMInt8Type!, 0)
                rval = val_opt
                   | val_te =>
@@ -7688,9 +7699,9 @@ codegen_typed_eval_return = cg, val_opt =>
                   | LLVMConstNull(i8p)
                !stmt::block_is_terminated(cg)
                   |
-                     LLVMBuildStore(cg.builder, rval, types::g.inline_ret_slot)
-                     LLVMBuildBr(cg.builder, types::g.inline_ret_bb)
-               dead = LLVMAppendBasicBlock(cg.current_fn, "inl.ret.dead")
+                     LLVMBuildStore(cg.builder, rval, types::g.inline_ret_slot.expect("missing inline return slot"))
+                     LLVMBuildBr(cg.builder, return_block)
+               dead = LLVMAppendBasicBlock(types::current_function(cg), "inl.ret.dead")
                LLVMPositionBuilderAtEnd(cg.builder, dead)
                --| (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
          val_opt
@@ -7737,13 +7748,13 @@ codegen_typed_eval_return = cg, val_opt =>
                                             LLVMInt64Type!, "ret.int")
                                           | stmt::coerce_int(cg, bvv, ret_ll)
                !stmt::block_is_terminated(cg) | LLVMBuildRet(cg.builder, ret_v)
-               dead = LLVMAppendBasicBlock(cg.current_fn, "ret.dead")
+               dead = LLVMAppendBasicBlock(types::current_function(cg), "ret.dead")
                LLVMPositionBuilderAtEnd(cg.builder, dead)
                cg.exited = <+>
                (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
             |
                !stmt::block_is_terminated(cg) | LLVMBuildRetVoid(cg.builder)
-               dead = LLVMAppendBasicBlock(cg.current_fn, "ret.dead")
+               dead = LLVMAppendBasicBlock(types::current_function(cg), "ret.dead")
                LLVMPositionBuilderAtEnd(cg.builder, dead)
                cg.exited = <+>
                (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
@@ -7758,7 +7769,7 @@ codegen_eval_return = cg, r =>
          !r.has_val
             |
                !stmt::block_is_terminated(cg) | LLVMBuildRetVoid(cg.builder)
-               dead = LLVMAppendBasicBlock(cg.current_fn, "ret.dead")
+               dead = LLVMAppendBasicBlock(types::current_function(cg), "ret.dead")
                LLVMPositionBuilderAtEnd(cg.builder, dead)
                cg.exited = <+>
                (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
@@ -7820,7 +7831,7 @@ codegen_eval_return = cg, r =>
                                 LLVMInt64Type!, "ret.int")
                               | stmt::coerce_int(cg, bvv, ret_ll)
                !stmt::block_is_terminated(cg) | LLVMBuildRet(cg.builder, ret_v)
-               dead = LLVMAppendBasicBlock(cg.current_fn, "ret.dead")
+               dead = LLVMAppendBasicBlock(types::current_function(cg), "ret.dead")
                LLVMPositionBuilderAtEnd(cg.builder, dead)
                cg.exited = <+>
                (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
@@ -8775,6 +8786,7 @@ codegen_eval_bitcast = cg, ev, src_ti, dst_ti =>
       |
          dst_ll = types::llvm_type_of_vt(dst_vt)
          res_val = LLVMBuildBitCast(cg.builder, src_reg, dst_ll, "bitcast")
+         dst_vt [RawPtr] | match::check_nonnull_addr(cg, res_val, <->)
          (res_val, dst_vt)
 
 codegen_typed_eval_intrinsic: types::Cg, String, tast::TypedExprs,
@@ -8896,19 +8908,19 @@ codegen_typed_eval_intrinsic = cg, fname, args, ti =>
          src_ptr = intrin_ptr_val(cg, ev1)
          sz_val = intrin_size_val(cg, ev2)
          LLVMBuildMemCpy(cg.builder, dst_ptr, 1, src_ptr, 1, sz_val, 0)
-         (dst_ptr, ast::ValueType(RawPtr))
+         (dst_ptr, types::vt_from_ti(ti))
       ["%memmove"]
          dst_ptr = intrin_ptr_val(cg, ev0)
          src_ptr = intrin_ptr_val(cg, ev1)
          sz_val = intrin_size_val(cg, ev2)
          LLVMBuildMemMove(cg.builder, dst_ptr, 1, src_ptr, 1, sz_val, 0)
-         (dst_ptr, ast::ValueType(RawPtr))
+         (dst_ptr, types::vt_from_ti(ti))
       ["%memset"]
          dst_ptr = intrin_ptr_val(cg, ev0)
          v8 = intrin_val8(cg, ev1)
          sz_val = intrin_size_val(cg, ev2)
          LLVMBuildMemSet(cg.builder, dst_ptr, v8, sz_val, 1)
-         (dst_ptr, ast::ValueType(RawPtr))
+         (dst_ptr, types::vt_from_ti(ti))
       ["%ptrmask"]
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
          is_32 = types::is_32bit_target(cg)
@@ -8928,6 +8940,7 @@ codegen_typed_eval_intrinsic = cg, fname, args, ti =>
          fty = intrin_fn_type2(i8p, i8p, intptr_t)
          fn = get_or_add_intrinsic(cg, iname, fty)
          res = call_fn2(cg, fty, fn, raw_p, mask_val, "ptrmask")
+         ev0.1 [RawPtr] | match::check_nonnull_addr(cg, res, <->)
          (res, ev0.1)
       ["%bitcast"]
          codegen_eval_bitcast(cg, ev1, ti1, ti)
@@ -8986,6 +8999,7 @@ codegen_eval_legacy_intrinsic = cg, t =>
          fty = intrin_fn_type2(i8p, i8p, intptr_t)
          fn = get_or_add_intrinsic(cg, iname, fty)
          res = call_fn2(cg, fty, fn, raw_p, mask_val, "ptrmask")
+         ev0.1 [RawPtr] | match::check_nonnull_addr(cg, res, <->)
          (res, ev0.1)
       | codegen_eval_scalar_math(cg, t.fn_name, ev0, ev1, ev2)
 
@@ -9546,12 +9560,12 @@ codegen_typed_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
    capm1 = LLVMBuildSub(cg.builder, cap, one, "m.capm1")
    idx0 = LLVMBuildAnd(cg.builder, hash, capm1, "m.idx0")
    cur = LLVMGetInsertBlock(cg.builder)
-   loop = LLVMAppendBasicBlock(cg.current_fn, "m.rd.loop")
-   probe = LLVMAppendBasicBlock(cg.current_fn, "m.rd.probe")
-   found_bb = LLVMAppendBasicBlock(cg.current_fn, "m.rd.found")
-   next = LLVMAppendBasicBlock(cg.current_fn, "m.rd.next")
-   miss_bb = LLVMAppendBasicBlock(cg.current_fn, "m.rd.miss")
-   done = LLVMAppendBasicBlock(cg.current_fn, "m.rd.done")
+   loop = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.loop")
+   probe = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.probe")
+   found_bb = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.found")
+   next = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.next")
+   miss_bb = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.miss")
+   done = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.done")
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, loop)
    idx_phi = LLVMBuildPhi(cg.builder, i64t, "m.rd.idx")
@@ -9573,7 +9587,7 @@ codegen_typed_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
    LLVMPositionBuilderAtEnd(cg.builder, found_bb)
    key_slot = types::gep1(cg, i64t, keys, idx_phi, "m.rd.key.slot")
    eq = runtime::codegen_map_key_equal(cg, key_slot, key_val, key_vt)
-   hit = LLVMAppendBasicBlock(cg.current_fn, "m.rd.hit")
+   hit = LLVMAppendBasicBlock(types::current_function(cg), "m.rd.hit")
    LLVMBuildCondBr(cg.builder, eq, hit, next)
    LLVMPositionBuilderAtEnd(cg.builder, next)
    idx_next = LLVMBuildAnd(cg.builder,
@@ -9680,7 +9694,7 @@ codegen_typed_eval_cast_other = cg, target_vt, aev =>
                           types::is_unsigned_vt(aev.1)),
                           ast::ValueType(Int))
                   |
-                     is_ptr_tgt = target_vt [RawPtr]
+                     is_ptr_tgt = types::is_ptr_vt(target_vt)
                      is_ptr_tgt
                         |
                            i8p = LLVMPointerType(LLVMInt8Type!, 0)
@@ -9696,9 +9710,13 @@ codegen_typed_eval_cast_other = cg, target_vt, aev =>
                                     | LLVMInt64Type!
                                  word = stmt::coerce_int_ext(cg, aev.0, word_ty,
                                    types::is_unsigned_vt(aev.1))
-                                 (LLVMBuildIntToPtr(cg.builder, word, i8p, "cast.int2ptr"),
-                                   ast::ValueType(RawPtr))
-                              | (aev.0, ast::ValueType(RawPtr))
+                                 (LLVMBuildIntToPtr(cg.builder, word, i8p, "cast.int2ptr"), target_vt)
+                              |
+                                 to_raw = (target_vt [NullablePtr]) && (aev.1 [RawPtr])
+                                 address = to_raw
+                                    | validate_and_strip_addr_tag(cg, aev.0, i8p)
+                                    | aev.0
+                                 (address, target_vt)
                         |
                            is_intish = types::is_int_vt(target_vt)
                            is_intish

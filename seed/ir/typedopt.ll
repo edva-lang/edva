@@ -232,7 +232,7 @@ choice.case10:                                    ; preds = %pay.int.merge
   %payload.ptr16 = load ptr, ptr %pay.gep15, align 8
   %tag.id23 = load i64, ptr %payload.ptr16, align 8
   switch i64 %tag.id23, label %choice.next21 [
-    i64 26, label %choice.exit
+    i64 27, label %choice.exit
     i64 12, label %choice.exit
     i64 11, label %choice.exit
     i64 10, label %choice.exit
@@ -2300,7 +2300,7 @@ choice.case:                                      ; preds = %or.213.else
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %fld.load, i32 0, i32 1
   %payload.ptr = load ptr, ptr %pay.gep, align 8
   %tag.id7 = load i64, ptr %payload.ptr, align 8
-  %tag.match8 = icmp eq i64 %tag.id7, 26
+  %tag.match8 = icmp eq i64 %tag.id7, 27
   %. = select i1 %tag.match8, i1 true, i1 false
   br label %or.213.exit
 
@@ -3011,7 +3011,7 @@ choice.case688:                                   ; preds = %choice.case675
   %pay.gep693 = getelementptr inbounds { i64, ptr }, ptr %fld.load686, i32 0, i32 1
   %payload.ptr694 = load ptr, ptr %pay.gep693, align 8
   %tag.id702 = load i64, ptr %payload.ptr694, align 8
-  %tag.match703 = icmp eq i64 %tag.id702, 26
+  %tag.match703 = icmp eq i64 %tag.id702, 27
   %.855 = select i1 %tag.match703, i1 true, i1 false
   br label %choice.exit687
 
