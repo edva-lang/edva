@@ -1,2 +1,2 @@
-// Operand of '!!' must be a RamPP or RamPN ramification
+// The retired postfix token must be a compiler error.
 x = 5!!

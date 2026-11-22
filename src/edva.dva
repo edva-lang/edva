@@ -497,7 +497,7 @@ collect_pub_generic_priv_deps = stmts, publics, privates, prefix =>
    w_idx' = 0
    0.. @
       w_idx' !< ?work | -->
-      cur_w = work(w_idx')!!
+      cur_w = work(w_idx').expect("missing work")
       w_idx' = w_idx' + 1
       expand_priv_dep_item(stmts, cur_w, prefix, cands, needed, work)
    needed
@@ -1285,9 +1285,9 @@ try_lower_std_call = canon, args =>
    ?args != 1 | --| <-->
    canon
       ["task::spawn"]
-         args(0)!! [Call inner] <+ ast::Expr(Spawn, inner) +> | <-->
-      ["task::join"] <+ ast::Expr(Join, args(0)!!) +>
-      ["sys::exit"] <+ ast::Expr(Exit, args(0)!!) +>
+         args(0).expect("missing args") [Call inner] <+ ast::Expr(Spawn, inner) +> | <-->
+      ["task::join"] <+ ast::Expr(Join, args(0).expect("missing args")) +>
+      ["sys::exit"] <+ ast::Expr(Exit, args(0).expect("missing args")) +>
       | <-->
 
 try_eval_has_member_static: ast::Expr, ast::Expr, ImportMap, ast::Names => < ast::Expr | >
@@ -1326,13 +1326,13 @@ rewrite_import_expr = e, table, locals =>
       [Call c]
          c.fn_name == "#has_member" && ?c.args == 2
             |
-               hm = try_eval_has_member_static(c.args(0)!!, c.args(1)!!,
+               hm = try_eval_has_member_static(c.args(0).expect("missing args"), c.args(1).expect("missing args"),
                  table, locals)
                hm | res => --| res
                // Keep member arg identifier intact when deferring generic #has_member
-               arg0 = rewrite_import_expr(c.args(0)!!, table, locals)
-               arg1 = c.args(1)!! [Var] c.args(1)!!
-                  | rewrite_import_expr(c.args(1)!!, table, locals)
+               arg0 = rewrite_import_expr(c.args(0).expect("missing args"), table, locals)
+               arg1 = c.args(1).expect("missing args") [Var] c.args(1).expect("missing args")
+                  | rewrite_import_expr(c.args(1).expect("missing args"), table, locals)
                new_args = ast::Exprs()
                new_args += arg0
                new_args += arg1
@@ -1406,10 +1406,10 @@ rewrite_import_expr = e, table, locals =>
                probe_val
                   | present =>
                      present
-                        | --| rewrite_import_expr(ch.branches(0)!!.block, table, locals)
+                        | --| rewrite_import_expr(ch.branches(0).expect("missing branches").block, table, locals)
                         |
                            ?ch.branches > 1
-                              | --| rewrite_import_expr(ch.branches(1)!!.block, table, locals)
+                              | --| rewrite_import_expr(ch.branches(1).expect("missing branches").block, table, locals)
                            --| ast::Expr(Block, ast::Exprs())
          new_branches = ast::Branches()
          ch.branches @ br =>
@@ -1853,7 +1853,7 @@ mark_iface_defined_stubs = exprs, start_idx, prefix, defined =>
    prefix == "" | --|
    pfx = "${prefix}::"
    start_idx..?exprs @ i =>
-      exprs(i)!!
+      exprs(i).expect("missing exprs")
          [Assign a]
             a.0 != "" && is_fwd_assign_expr(a.5) && starts_with(a.0, pfx)
                |
@@ -1877,7 +1877,7 @@ normalize_dir_module_visibility = ldr, start_idx, prefix, pubs, defs, is_iface =
    pub_retype = ImportMap()
    pubs @ pn => (pub_retype ^ "${priv_pfx}${pn}" = "${pub_pfx}${pn}")
    start_idx..?ldr.out_exprs @ i =>
-      cur_e = ldr.out_exprs(i)!!
+      cur_e = ldr.out_exprs(i).expect("missing out exprs")
       retyped_e = qualify_decl_type_infos(cur_e, pub_retype)
       final_e = retyped_e
          [Assign a]
@@ -1938,8 +1938,8 @@ load_stmts = deps, base, prefix, ldr, path, ppr, is_pkg, imp_path =>
          ok' = <->
       |
          ?params @ pi =>
-            pname = params(pi)!!
-            acid = my_args(pi)!!
+            pname = params(pi).expect("missing params")
+            acid = my_args(pi).expect("missing my args")
             param_map ^? pname
                |
                   loader_error(5049, path, "E5049: Duplicate '#param " + pname +
@@ -2045,7 +2045,7 @@ load_stmts = deps, base, prefix, ldr, path, ppr, is_pkg, imp_path =>
                lexer::lex_set_file(path)
                parsed = parser::parse_program(ppr)
                !<>(parsed) | --| <->
-               body = parsed!!
+               body = parsed.expect("missing parsed")
                actual = body [Block b] b | ast::Exprs()
                publics = ppr.publics
                privates = ppr.privates
@@ -2685,10 +2685,10 @@ generate_c_header = prog, exports, header_path =>
                            | proto += "void"
                            |
                               params_vt @ p_vt, j =>
-                                 p_ti = params_ti(j)!!
+                                 p_ti = params_ti(j).expect("missing params ti")
                                  p_type = c_type_of_ti(p_vt, p_ti)
                                  p_name' = j < ?pnames'
-                                    | pnames'(j)!!
+                                    | pnames'(j).expect("missing pnames")
                                     | ""
                                  p_name' == "" || p_name' == "_"
                                     | p_name' = "arg" + str::from_int(j)
@@ -2846,14 +2846,14 @@ dom_is_reachable = prog, exports =>
    found' = <->
    0.. @
       wi' !< ?work || found' | -->
-      cur = work(wi')!!
+      cur = work(wi').expect("missing work")
       wi' = wi' + 1
       is_dom_symbol(cur)
          | found' = <+>
          |
             graph.indices ^ cur
                | idx =>
-                  nd = graph.nodes(idx)!!
+                  nd = graph.nodes(idx).expect("missing nodes")
                   nd.deps @ dep =>
                      is_dom_symbol(dep)
                         | found' = <+>
@@ -2956,7 +2956,7 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
    dom_source = canonical_path(compiler_std_dir + "/dom.dva")
    has_dom_file = loaded_has(lfiles, dom_source)
    uses_dom = has_dom_file && (is_wasm_triple(opts.triple) ||
-     (?lfiles > 0 && lfiles(0)!! == dom_source) ||
+     (?lfiles > 0 && lfiles(0).expect("missing lfiles") == dom_source) ||
      dom_is_reachable(prog, exports))
    actual_exports = ++exports
    uses_dom
@@ -3392,7 +3392,7 @@ last_non_binding_stmt: tast::TypedStmts => < tast::TypedStmt | >
 last_non_binding_stmt = stmts =>
    n = ?stmts
    n @ k =>
-      st = stmts(n - 1 - k)!!
+      st = stmts(n - 1 - k).expect("missing stmts")
       is_b = st [Binding]
       !is_b | --| <+ st +>
    <-->

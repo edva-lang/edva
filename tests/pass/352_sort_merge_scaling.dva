@@ -15,8 +15,8 @@ large = sort::Ints()
 100 @ i =>
    large += 100 - i
 l_sorted = sort::ints(large)
-io::out $ l_sorted(0)!!
-io::out $ l_sorted(99)!!
+io::out $ l_sorted(0).expect("missing l sorted")
+io::out $ l_sorted(99).expect("missing l sorted")
 
 // 3. Sort strings
 strs = sort::Strings()

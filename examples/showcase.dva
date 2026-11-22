@@ -383,7 +383,7 @@ run_showcase = !=>
    //   - `nums(i) |_| fallback` coalesces out-of-bounds to `fallback`
    //   - `nums(i) = val !| _` writes in-bounds or panics on error
    nums(1) = 25 !| _
-   check(?nums == 3 && nums(1)!! == 25 && (nums(99) |_| -1) == -1, "growable array ops")
+   check(?nums == 3 && nums(1).expect("missing nums") == 25 && (nums(99) |_| -1) == -1, "growable array ops")
 
    // Explicit structural copy `++` clones growable arrays so mutations don't alias:
    nums_copy = ++nums
@@ -489,11 +489,11 @@ run_showcase = !=>
    sum_nums = (0, nums) @> (+)
    pairs = (Int, Int){}((2, 3), (4, 5))
    dot_pairs = (0, pairs) @> acc, (x, y) => acc + x * y
-   check(?doubled_nums == 3 && doubled_nums(0)!! == 20 && ?big_nums == 2 && sum_nums == 65 && dot_pairs == 26,
+   check(?doubled_nums == 3 && doubled_nums(0).expect("missing doubled nums") == 20 && ?big_nums == 2 && sum_nums == 65 && dot_pairs == 26,
      "expression-valued cycle @> map, filter-map, seeded fold, and destructuring")
 
    // 3. `@>` and `@@>` returning `Builder` (Rune body, direct `+` freeze, or `{}` seed):
-   rwx_bld = (<+>, <->, <+>) @> on, i => on | Rune{}('r, 'w, 'x)(i)!! | '-
+   rwx_bld = (<+>, <->, <+>) @> on, i => on | Rune{}('r, 'w, 'x)(i).expect("required payload") | '-
    digits_bld = "a1b2c3" @@> r => r ['0...'9] <+ r +>
    frozen_csv = +(nums @> n => (str::from_int(n), ";"))
    seeded_bld = ({}, nums) @> n => (str::from_int(n), ",")

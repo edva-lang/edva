@@ -161,7 +161,7 @@ clone_queue: TokArr, TokArr, Int, Int => ()
 clone_queue = src, dst, count, i =>
    i < count
       |
-         dst += src(i)!!
+         dst += src(i).expect("missing src")
          clone_queue(src, dst, count, i + 1)
 
 // Deep-copy an Lx: a fresh lexer instance with the same source, position,
@@ -1148,13 +1148,13 @@ scan_pragma_parens = lx, hstart, line, col =>
    ?toks
       [0] mktok(lx, TokKind(PragmaKw), hstart, lx.pos - hstart, line, col,
          "#pragma")
-      [1] toks(0)!!
+      [1] toks(0).expect("missing toks")
       |
          qu = lx.queue
-         qu += toks(0)!!
+         qu += toks(0).expect("missing toks")
          1..?toks @ i =>
             qu += Tok(TokKind(Newline), hstart, 0, line, col, <->, <+>, "\n")
-            qu += toks(i)!!
+            qu += toks(i).expect("missing toks")
          take_queued(lx, 0)
 
 pragma_fp_fail: String, Int, Int => String
@@ -1524,7 +1524,7 @@ emit_interp_tokens = lx, assembled, start, start_line, start_col =>
    text_buf = {256}
    has_text' = <->
    0..?assembled @ k =>
-      part = assembled(k)!!
+      part = assembled(k).expect("missing assembled")
       part
          [Text s]
             text_buf += s
@@ -1540,7 +1540,7 @@ emit_interp_tokens = lx, assembled, start, start_line, start_col =>
 
    active = HeredocParts()
    0..?merged @ k =>
-      part = merged(k)!!
+      part = merged(k).expect("missing merged")
       part
          [Text s]
             (?s > 0 || ?merged == 1) | active += part
@@ -1551,7 +1551,7 @@ emit_interp_tokens = lx, assembled, start, start_line, start_col =>
    qu += Tok(TokKind(LParen), start, 1, start_line, start_col, <->, <->, "(")
    qu += Tok(TokKind(Str), start, 0, start_line, start_col, <->, <->, "")
    0..?active @ k =>
-      part = active(k)!!
+      part = active(k).expect("missing active")
       part
          [Text s]
             ?s > 0 |
@@ -1567,7 +1567,7 @@ emit_interp_tokens = lx, assembled, start, start_line, start_col =>
             qu += Tok(TokKind(LParen), start, 1, start_line, start_col,
                <->, <->, "(")
             0..?toks @ j =>
-               qu += toks(j)!!
+               qu += toks(j).expect("missing toks")
             qu += Tok(TokKind(RParen), start, 1, start_line, start_col,
                <->, <->, ")")
    qu += Tok(TokKind(RParen), start, 1, start_line, start_col, <->, <->, ")")
@@ -1661,7 +1661,7 @@ scan_single_string = lx, start, start_line, start_col, is_triple =>
       |
          p0_s = ?cur_parts' > 0
             |
-               cur_parts'(0)!!
+               cur_parts'(0).expect("missing cur parts")
                   [Text s] s
                   | ""
             | ""
@@ -1806,13 +1806,13 @@ scan_multiline_string = lx, start, start_line, start_col, is_triple =>
       |
          first_nb_idx' = -1
          0..nlines @ i =>
-            line = lines(i)!!
+            line = lines(i).expect("missing lines")
             !line.is_blank && first_nb_idx' == -1 | first_nb_idx' = i
 
          margin' = 0
          first_nb_idx' !< 0
             |
-               fl = lines(first_nb_idx')!!
+               fl = lines(first_nb_idx').expect("missing lines")
                sp = fl.indent
                sp == 0 | fail(1017, fl.line_num, 1,
                   diag::E1017_multiline_under_indented!)
@@ -1820,7 +1820,7 @@ scan_multiline_string = lx, start, start_line, start_col, is_triple =>
 
          assembled = HeredocParts()
          0..nlines @ i =>
-            line = lines(i)!!
+            line = lines(i).expect("missing lines")
             is_last = i == nlines - 1
             add_nl = !line.continued && (!is_last || !closed_on_last_line')
             line.is_blank
@@ -1833,7 +1833,7 @@ scan_multiline_string = lx, start, start_line, start_col, is_triple =>
                   nparts = ?line.parts
                   nparts > 0
                      |
-                        p0 = line.parts(0)!!
+                        p0 = line.parts(0).expect("missing parts")
                         p0
                            [Text s]
                               new_s = s(margin'..(?s))
@@ -1841,21 +1841,21 @@ scan_multiline_string = lx, start, start_line, start_col, is_triple =>
                            [Expr]
                               assembled += p0
                         1..nparts @ j =>
-                           assembled += line.parts(j)!!
+                           assembled += line.parts(j).expect("missing parts")
                         add_nl | assembled += HeredocPart(Text, "\n")
                      |
                         add_nl | assembled += HeredocPart(Text, "\n")
 
          expr_count' = 0
          0..?assembled @ k =>
-            assembled(k)!!
+            assembled(k).expect("missing assembled")
                [Expr] expr_count' = expr_count' + 1
 
          expr_count' == 0
             |
                buf = {512}
                0..?assembled @ k =>
-                  assembled(k)!!
+                  assembled(k).expect("missing assembled")
                      [Text s] buf += s
                final_s = +buf
                mktok(lx, TokKind(Str), start, lx.pos - start, start_line, start_col, final_s)

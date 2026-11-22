@@ -150,7 +150,7 @@ main_test = !=>
    // for stack-promoted records/closures
    promo_sum2 = run_non_escaping_promotions(7)
    b2 = mem::provenance(ar).bytes_allocated
-   _back = mem::set_current(Addr(0))
+   _back = mem::set_current(ptr(0))
    mem::destroy(ar)
    io::out $ "promo:${str::from_int(promo_sum)}:${str::from_int(promo_sum2)}:${str::from_int(b2 - b1)}"
 
@@ -162,7 +162,7 @@ main_test = !=>
    // 3. Argument retention & escaping closures across frame exit
    ret_score = store_via_helper(retained_items, 25)
    _clobber2 = run_non_escaping_promotions(123)
-   saved_it = retained_items(0)!!
+   saved_it = retained_items(0).expect("missing retained items")
    io::out $ "retained:${str::from_int(ret_score)}:${str::from_int(saved_it.id)}:${str::from_int(saved_it.weight)}:${saved_it.tag}"
 
    boxed = make_escaping_closure(6)
@@ -172,7 +172,7 @@ main_test = !=>
 
    cb_first = register_global_callback(retained_fns, 33)
    _clobber4 = run_non_escaping_promotions(77)
-   rfn = retained_fns(0)!!
+   rfn = retained_fns(0).expect("missing retained fns")
    cb_second = rfn(20)
    io::out $ "retained_cb:${str::from_int(cb_first)}:${str::from_int(cb_second)}"
 

@@ -131,8 +131,8 @@ res_ok
       test::check(cli::has(p, "port"), "cli::has port true")
       test::check(!cli::has(p, "root"), "cli::has root false")
       test::eq(?p.args, 2, "cli positional count")
-      test::eq(p.args(0)!!, "pos1", "cli positional 0")
-      test::eq(p.args(1)!!, "pos2", "cli positional 1")
+      test::eq(p.args(0).expect("missing args"), "pos1", "cli positional 0")
+      test::eq(p.args(1).expect("missing args"), "pos2", "cli positional 1")
 
 // Missing mandatory option (-c / --config)
 argv_missing = cli::Args("-p", "8000")
@@ -194,8 +194,8 @@ res_run
       test::eq(cli::str(p, "target"), "app.dva", "cli::pos target")
       pt = cli::passthrough(p)
       test::eq(?pt, 2, "cli::passthrough count")
-      test::eq(pt(0)!!, "--port", "cli::passthrough 0")
-      test::eq(pt(1)!!, "8080", "cli::passthrough 1")
+      test::eq(pt(0).expect("missing pt"), "--port", "cli::passthrough 0")
+      test::eq(pt(1).expect("missing pt"), "8080", "cli::passthrough 1")
 
 // Missing required positional in subcommand
 test::err(cli::parse_args(sub_opts, cli::Args("rm")), "cli::pos missing required <alias>")

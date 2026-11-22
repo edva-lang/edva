@@ -15,7 +15,7 @@
    record_enriched = tbl, item =>
       ev = item.event
       t = ev.tenant
-      cur = tbl(t)!!
+      cur = tbl(t).expect("missing tbl")
       ok_inc = ev.ok | 1 | 0
       err_inc = ev.ok | 0 | 1
       max_l = ev.latency_ms > cur.max_latency | ev.latency_ms | cur.max_latency

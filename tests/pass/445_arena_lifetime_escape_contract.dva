@@ -74,9 +74,9 @@ test_provenance_and_escapes = !=>
 
    map_v = tags_map ^ "key_one" | v => v | -1
    res_id = rbox.res | it => it.id | _err => -1
-   cb_out = (callbacks(0)!!)(99)
+   cb_out = (callbacks(0).expect("missing callbacks"))(99)
    tag_in_global = mem::owns_addr(mem::global_arena!, &escaped_item.tag)
-   io::out $ "escaped:${escaped_item.id}:${escaped_item.tag}:${items(0)!!.tag}:${map_v}:${res_id}:${cb_out}:${fb(tag_in_global)}"
+   io::out $ "escaped:${escaped_item.id}:${escaped_item.tag}:${items(0).expect("missing items").tag}:${map_v}:${res_id}:${cb_out}:${fb(tag_in_global)}"
 
    mem::destroy(ar)
 

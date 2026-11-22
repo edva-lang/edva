@@ -42,8 +42,8 @@ click = output => event => dom::text(output, "Clicked")
 #export
    start: () => ()
    start = !=>
-      output = dom::find("#output")!!
-      button = dom::find("#button")!!
+      output = dom::find("#output").expect("missing find")
+      button = dom::find("#button").expect("missing find")
       writes = dom::batch!
       dom::queue_text(writes, output, "Ready") !| _
       dom::queue_attr(writes, button, "type", "button") !| _

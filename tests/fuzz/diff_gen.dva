@@ -42,7 +42,7 @@ choices_from_seed = seed =>
 emit_shrink_candidates: Int{} => ()
 emit_shrink_candidates = cs =>
    6 @ i =>
-      v = cs(i)!!
+      v = cs(i).expect("missing cs")
       v > 0
          |
             // Candidate 1: zero coordinate i
@@ -162,12 +162,12 @@ emit_print_int_helper = !=>
 
 write_diff_program: String, Int{} => ()
 write_diff_program = out_dir, cs =>
-   c0 = cs(0)!!
-   c1 = cs(1)!!
-   c2 = cs(2)!!
-   c3 = cs(3)!!
-   c4 = cs(4)!!
-   c5 = cs(5)!!
+   c0 = cs(0).expect("missing cs")
+   c1 = cs(1).expect("missing cs")
+   c2 = cs(2).expect("missing cs")
+   c3 = cs(3).expect("missing cs")
+   c4 = cs(4).expect("missing cs")
+   c5 = cs(5).expect("missing cs")
    fs::create_dir_all(out_dir)
 
    mod_src = emit_core_body(c0, c1, c2, c3, c4, c5, <+>)

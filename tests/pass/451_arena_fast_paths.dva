@@ -34,7 +34,7 @@ run = !=>
    selected = mem::arena(65536)
    old = mem::set_current(selected.raw)
    check(old == base && mem::current! == selected.raw, "select arena")
-   previous = mem::set_current(Addr(0))
+   previous = mem::set_current(ptr(0))
    check(previous == selected.raw && mem::current! == base, "restore base arena")
    mem::destroy(selected)
    io::out("arena bump, growth, restore and TLS: ok")

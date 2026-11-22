@@ -678,7 +678,7 @@ mutate_str = rng, base, corpus =>
             // crossover with another corpus entry
             ?corpus > 1 && len < 4096
                |
-                  other = corpus(rand::range(rng, 0, ?corpus))!!
+                  other = corpus(rand::range(rng, 0, ?corpus)).expect("missing corpus")
                   ?other > 0 |
                      a = len > 0 | rand::range(rng, 0, len + 1) | 0
                      b0 = rand::range(rng, 0, ?other)
@@ -730,7 +730,7 @@ fuzz_opts = name, seeds, default_runs, seed, prop =>
 
    fail_idx' !< 0
       |
-         bad = corpus(fail_idx')!!
+         bad = corpus(fail_idx').expect("missing corpus")
          minimal = shrink_str(bad, prop)
          save_reproducer(corpus_root, name, minimal, eff_seed)
          libc::free(seen_cov)
@@ -747,7 +747,7 @@ fuzz_opts = name, seeds, default_runs, seed, prop =>
       iter' !< eff_runs && (time_s !> 0 || (time::mono_ns! - start_ns) !< budget_ns) | -->
       iter' = iter' + 1
       pick = rand::range(rng, 0, ?corpus)
-      base = corpus(pick)!!
+      base = corpus(pick).expect("missing corpus")
       cand = mutate_str(rng, base, corpus)
       cov_clear!
       ok = mem::with_value(ar, !=> prop(cand))

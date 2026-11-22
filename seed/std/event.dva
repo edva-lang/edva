@@ -137,8 +137,8 @@
          rev = Int(@[&pfds + k * 8 + 6 i16]) .&. 0xFFFF
          rev != 0
             |
-               slot = idxs(k)!!
-               ev = p.entries(slot)!!
+               slot = idxs(k).expect("missing idxs")
+               ev = p.entries(slot).expect("missing entries")
                ev_mask = ((rev .&. 1) != 0 | READ | 0) .|.
                   ((rev .&. 4) != 0 | WRITE | 0) .|.
                   ((rev .&. 2) != 0 | PRI | 0) .|.

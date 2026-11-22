@@ -138,7 +138,7 @@ walk_call = c, ctx, locals, cur_mod =>
    c.args @ a, i =>
       arg_ti = expected
          [Fn f]
-            i < ?f.1 | f.1(i)!! | unknown!
+            i < ?f.1 | f.1(i).expect("required payload") | unknown!
          | unknown!
       args += select_value(walk(a, ctx, locals, cur_mod), arg_ti, ctx, locals, cur_mod)
    target = family | ast::Expr(Var, target_name) | walk(c.fn_target, ctx, locals, cur_mod)

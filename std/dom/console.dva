@@ -10,7 +10,7 @@
 
 emit: String, String => ()
 emit = method, msg =>
-   code = edva_dom_call(67, 0, 0, 0, &method, ?method, &msg, ?msg, Addr(0))
+   code = edva_dom_call(67, 0, 0, 0, &method, ?method, &msg, ?msg, ptr(0))
 
 #public
 

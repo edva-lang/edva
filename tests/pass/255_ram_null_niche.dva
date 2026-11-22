@@ -29,7 +29,7 @@ s2
    | io::out $ "none"
 
 // Test unwrap on niche RamPN <String|>
-io::out $ s1!!
+io::out $ s1.expect("missing s1")
 
 // Test RamPN <(x: Int, y: Int)|>
 p1 = find_pt(1)
@@ -47,7 +47,7 @@ p2
    | io::out $ "no point"
 
 // Test unwrap on niche RamPN <Record|>
-pt_val = p1!!
+pt_val = p1.expect("missing p1")
 io::out $ pt_val.x + pt_val.y
 
 // Test RamNP <|String>

@@ -64,13 +64,13 @@ The `regex` module (`#use regex`) implements a linear-time regular expression en
 #use io
 #use regex
 
-re = regex::compile("v?(\\d+)\\.(\\d+)\\.(\\d+)(?:-([0-9A-Za-z.-]+))?")!!
-caps = regex::captures(re, "release v1.4.6-rc.2")!!
-io::out("full:  " + caps(0)!!)
-io::out("major: " + caps(1)!!)
-io::out("minor: " + caps(2)!!)
-io::out("patch: " + caps(3)!!)
-io::out("pre:   " + caps(4)!!)
+re = regex::compile("v?(\\d+)\\.(\\d+)\\.(\\d+)(?:-([0-9A-Za-z.-]+))?").expect("missing compile")
+caps = regex::captures(re, "release v1.4.6-rc.2").expect("missing captures")
+io::out("full:  " + caps(0).expect("missing caps"))
+io::out("major: " + caps(1).expect("missing caps"))
+io::out("minor: " + caps(2).expect("missing caps"))
+io::out("patch: " + caps(3).expect("missing caps"))
+io::out("pre:   " + caps(4).expect("missing caps"))
 ```
 
 ### Greedy vs. Lazy Quantifiers, Replacement, and Splitting
@@ -80,16 +80,16 @@ io::out("pre:   " + caps(4)!!)
 #use regex
 
 // Lazy quantifier <.+?> matches each individual tag
-re_tag = regex::compile("<.+?>")!!
+re_tag = regex::compile("<.+?>").expect("missing compile")
 tags = regex::find_all(re_tag, "<b>Edva</b> <i>PikeVM</i>")
 io::out(?tags)
 
 // Group-aware replacement with $1 and $2
-re_kv = regex::compile("(\\w+)=(\\d+)")!!
+re_kv = regex::compile("(\\w+)=(\\d+)").expect("missing compile")
 io::out(regex::replace_all(re_kv, "x=10, y=20", "$1:$2"))
 
 // Splitting by whitespace-padded delimiter
-re_sep = regex::compile("\\s*;\\s*")!!
+re_sep = regex::compile("\\s*;\\s*").expect("missing compile")
 parts = regex::split(re_sep, "alpha ; beta;  gamma")
-io::out(parts(1)!!)
+io::out(parts(1).expect("missing parts"))
 ```

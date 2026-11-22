@@ -79,7 +79,7 @@ push_ct_type = name, ut, ti, dtype =>
 pop_ct_types_to: Int => ()
 pop_ct_types_to = n =>
    next = CtTypeBinds()
-   n @ i => next += cur_ct_types(i)!!
+   n @ i => next += cur_ct_types(i).expect("missing cur ct types")
    cur_ct_types ::= next
 
 /// Looks up the innermost active compile-time type binding by name.
@@ -87,7 +87,7 @@ lookup_ct_type: String => < CtTypeBind | >
 lookup_ct_type = name =>
    ?cur_ct_types @ k =>
       i = ?cur_ct_types - 1 - k
-      b = cur_ct_types(i)!!
+      b = cur_ct_types(i).expect("missing cur ct types")
       b.name == name | --| <+ b +>
    <-->
 
@@ -102,7 +102,7 @@ push_ct_val = name, te, is_const =>
 pop_ct_vals_to: Int => ()
 pop_ct_vals_to = n =>
    next = CtValBinds()
-   n @ i => next += cur_ct_vals(i)!!
+   n @ i => next += cur_ct_vals(i).expect("missing cur ct vals")
    cur_ct_vals ::= next
 
 /// Looks up the innermost active compile-time value binding by name.
@@ -110,7 +110,7 @@ lookup_ct_val: String => < CtValBind | >
 lookup_ct_val = name =>
    ?cur_ct_vals @ k =>
       i = ?cur_ct_vals - 1 - k
-      b = cur_ct_vals(i)!!
+      b = cur_ct_vals(i).expect("missing cur ct vals")
       b.name == name | --| <+ b +>
    <-->
 
@@ -125,7 +125,7 @@ push_ct_cursor = b =>
 pop_ct_cursors_to: Int => ()
 pop_ct_cursors_to = n =>
    next = CtCursorBinds()
-   n @ i => next += cur_ct_cursors(i)!!
+   n @ i => next += cur_ct_cursors(i).expect("missing cur ct cursors")
    cur_ct_cursors ::= next
 
 /// Looks up an active `#members` cursor binding by variable name.
@@ -133,7 +133,7 @@ lookup_ct_cursor: String => < CtCursorBind | >
 lookup_ct_cursor = name =>
    ?cur_ct_cursors @ k =>
       i = ?cur_ct_cursors - 1 - k
-      b = cur_ct_cursors(i)!!
+      b = cur_ct_cursors(i).expect("missing cur ct cursors")
       b.var_name == name | --| <+ b +>
    <-->
 
@@ -148,7 +148,7 @@ push_ct_int = name, idx =>
 pop_ct_ints_to: Int => ()
 pop_ct_ints_to = n =>
    next = CtIntBinds()
-   n @ i => next += cur_ct_ints(i)!!
+   n @ i => next += cur_ct_ints(i).expect("missing cur ct ints")
    cur_ct_ints ::= next
 
 /// Looks up an active compile-time integer loop binding by name.
@@ -156,7 +156,7 @@ lookup_ct_int: String => < Int | >
 lookup_ct_int = name =>
    ?cur_ct_ints @ k =>
       i = ?cur_ct_ints - 1 - k
-      b = cur_ct_ints(i)!!
+      b = cur_ct_ints(i).expect("missing cur ct ints")
       b.var_name == name | --| <+ b.idx +>
    <-->
 
@@ -201,7 +201,7 @@ resolve_ct_ti_aliases = env, ti =>
             new_flds += ast::RecordFieldType(fld.name, new_vt, new_ti,
                fld.has_default, fld.default_expr)
          new_elem_vt = r.1 && ?new_flds > 0
-            | new_flds(0)!!.val_type
+            | new_flds(0).expect("missing new flds").val_type
             | r.3
          ast::TypeInfo(Rec, (new_flds, r.1, r.2, new_elem_vt, r.4, r.5))
       [Ram r]
@@ -231,7 +231,7 @@ resolve_ct_ti_aliases = env, ti =>
          new_pis = ast::VInfos()
          new_vts = ast::VTypes()
          ?f.1 @ i =>
-            pi_raw = f.1(i)!!
+            pi_raw = f.1(i).expect("required payload")
             pi_res = resolve_ct_ti_aliases(env, pi_raw)
             new_pis += pi_res
             pv_raw = f.0(i) | _ | ast::ValueType(Unknown)
@@ -258,8 +258,8 @@ utype_eq = ctx, a, b =>
             [Rec rb]
                ?ra != ?rb | --| <->
                ?ra @ i =>
-                  fa = ra(i)!!
-                  fb = rb(i)!!
+                  fa = ra(i).expect("missing ra")
+                  fb = rb(i).expect("missing rb")
                   (fa.name != fb.name || fa.rec_name != fb.rec_name ||
                     !utype_eq(ctx, fa.ut, fb.ut)) | --| <->
                <+>
@@ -289,7 +289,7 @@ utype_eq = ctx, a, b =>
             [Fn f2]
                ?f1.params != ?f2.params | --| <->
                ?f1.params @ i =>
-                  !utype_eq(ctx, f1.params(i)!!, f2.params(i)!!) | --| <->
+                  !utype_eq(ctx, f1.params(i).expect("missing params"), f2.params(i).expect("missing params")) | --| <->
                utype_eq(ctx, f1.ret, f2.ret)
             | <->
       [Enum e1]
@@ -300,8 +300,8 @@ utype_eq = ctx, a, b =>
                   |
                      ?e1.variants != ?e2.variants | --| <->
                      ?e1.variants @ i =>
-                        va = e1.variants(i)!!
-                        vb = e2.variants(i)!!
+                        va = e1.variants(i).expect("missing variants")
+                        vb = e2.variants(i).expect("missing variants")
                         (va.label != vb.label || va.has_payload != vb.has_payload ||
                           (va.has_payload && !utype_eq(ctx, va.payload_type, vb.payload_type)))
                            | --| <->
@@ -898,20 +898,20 @@ resolve_type_expr_ut_ti = ctx, env, fn_mod, e =>
                         | <-->
                      (rt_tgt.2 && <>(idx_opt))
                         |
-                           idx_n = idx_opt!!
+                           idx_n = idx_opt.expect("missing idx opt")
                            c_rt_t = unify::canon(ctx, rt_tgt.0)
                            c_rt_t
                               [Rec flds]
                                  (idx_n !< 0 && idx_n < ?flds)
                                     |
-                                       fld_ut = (flds(idx_n)!!).ut
+                                       fld_ut = (flds(idx_n).expect("missing flds")).ut
                                        fld_ti = extract_child_ti(ctx, env, rt_tgt.1, idx_n, fld_ut)
                                        --| (fld_ut, fld_ti, <+>)
                               [Enum ue_raw]
                                  uenum = resolve_enum_ut(ctx, env, ue_raw)
                                  (idx_n !< 0 && idx_n < ?uenum.variants)
                                     |
-                                       uv = uenum.variants(idx_n)!!
+                                       uv = uenum.variants(idx_n).expect("missing variants")
                                        v_ut = uv.has_payload | uv.payload_type | unify::prim_unit!
                                        --| (v_ut, unify::type_info_from_utype(ctx, v_ut), <+>)
                      --| (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
@@ -993,7 +993,7 @@ instantiate_generic_ti_call_named = ctx, env, fn_mod, ti, call_args, fn_name =>
                |
                   arg_idx' < n_call
                      |
-                        arg_e = call_args(arg_idx')!!
+                        arg_e = call_args(arg_idx').expect("missing call args")
                         is_unit_lit = arg_e [Record r_u] (?r_u.fields == 0) | <->
                         has_extra = (n_call - arg_idx') > ?vinfos
                         rt = (!(arg_e [SizeOf]) && (!is_unit_lit || has_extra))
@@ -1036,7 +1036,7 @@ lookup_user_type_any_mod = env, name =>
    priv_sfx = "::#" + name
    ?env.user_types @ k =>
       i = (?env.user_types) - 1 - k
-      u = env.user_types(i)!!
+      u = env.user_types(i).expect("missing user types")
       !(u.ut [None]) && (u.name == name || str::ends_with(u.name, pub_sfx) || str::ends_with(u.name, priv_sfx))
          | --| <+ u +>
    <-->
@@ -1046,7 +1046,7 @@ find_enum_utype_by_slots = env, slots =>
    n = ?slots
    ?env.user_types @ k =>
       i = (?env.user_types) - 1 - k
-      u = env.user_types(i)!!
+      u = env.user_types(i).expect("missing user types")
       u.ti
          [Enum u_slots]
             u.ut
@@ -1055,9 +1055,9 @@ find_enum_utype_by_slots = env, slots =>
                      |
                         ok' = <+>
                         n @ idx =>
-                           v = ue.variants(idx)!!
-                           us = u_slots(idx)!!
-                           ss = slots(idx)!!
+                           v = ue.variants(idx).expect("missing variants")
+                           us = u_slots(idx).expect("missing u slots")
+                           ss = slots(idx).expect("missing slots")
                            (us.label != ss.label || us.has_payload != ss.has_payload ||
                              us.payload_type != ss.payload_type ||
                              (v.has_payload && (v.payload_type [None])))
@@ -1567,7 +1567,7 @@ is_float_ut = ctx, ut =>
 rec_all_fields_homogeneous: unify::Ctx, unify::UFields => <>
 rec_all_fields_homogeneous = ctx, flds =>
    ?flds == 0 | --| <->
-   f0_ut = flds(0)!!.ut
+   f0_ut = flds(0).expect("missing flds").ut
    flds @ el_, i =>
       i > 0 && !utype_eq(ctx, f0_ut, el_.ut) | --| <->
    <+>
@@ -1890,17 +1890,17 @@ collect_assign_lhs_exprs = es, out =>
 lookup_rename: ast::Names, ast::Names, String => String
 lookup_rename = old_ns, new_ns, name =>
    ?old_ns @ i =>
-      old_ns(i)!! == name | --| new_ns(i)!!
+      old_ns(i).expect("missing old ns") == name | --| new_ns(i).expect("missing new ns")
    name
 
 filter_shadows: ast::Names, ast::Names, ast::Names, ast::Names, ast::Names => (ast::Names, ast::Names)
 filter_shadows = old_ns, new_ns, shadows, out_old, out_new =>
    ?old_ns @ i =>
-      on = old_ns(i)!!
+      on = old_ns(i).expect("missing old ns")
       !has_name_in(shadows, on)
          |
             out_old += on
-            out_new += new_ns(i)!!
+            out_new += new_ns(i).expect("missing new ns")
    (out_old, out_new)
 
 rename_ast_exprs: ast::Exprs, ast::Names, ast::Names => ast::Exprs
@@ -2049,7 +2049,7 @@ cycle_uses_ct_index = e, pname =>
             | <->
       [Call c]
          ct_m3 = c.fn_name == "#member3" && ?c.args == 3 &&
-           (c.args(1)!! [Var v] (v == pname || v == "_") | <->)
+           (c.args(1).expect("missing args") [Var v] (v == pname || v == "_") | <->)
          ct_m3 || cycle_uses_ct_index(c.fn_target, pname) ||
            cycle_uses_ct_index_exprs(c.args, pname)
       [Assign a]
@@ -2109,8 +2109,8 @@ unroll_members_cycle = ctx, env, c, target_ut, target_ti =>
       [Rec flds]
          rec_ftis = eff_ti2 [Rec rti] rti.0 | ast::FieldTypes()
          ?flds @ idx =>
-            uf = flds(idx)!!
-            rft_opt = idx < ?rec_ftis | <+ rec_ftis(idx)!! +> | <-->
+            uf = flds(idx).expect("missing flds")
+            rft_opt = idx < ?rec_ftis | <+ rec_ftis(idx).expect("missing rec ftis") +> | <-->
             f_name = uf.name
             f_ti = rft_opt
                | rft => resolve_ct_ti_aliases(env, rft.rec_type)
@@ -2137,10 +2137,10 @@ unroll_members_cycle = ctx, env, c, target_ut, target_ti =>
                         [Enum uer] (uenum' = uer)
          eslots = eff_ti2 [Enum sls] sls | ast::EnumSlots()
          ?uenum'.variants @ idx =>
-            uv = uenum'.variants(idx)!!
+            uv = uenum'.variants(idx).expect("missing variants")
             v_ut = uv.has_payload | uv.payload_type | unify::prim_unit!
             v_ti = (idx < ?eslots && uv.has_payload)
-               | resolve_ct_ti_aliases(env, (eslots(idx)!!).payload_record)
+               | resolve_ct_ti_aliases(env, (eslots(idx).expect("missing eslots")).payload_record)
                | (uv.has_payload
                   | unify::type_info_from_utype(ctx, v_ut)
                   | ast::TypeInfo(Prim, ast::ValueType(Unit)))
@@ -2817,7 +2817,7 @@ try_unroll_seeded_ct_range_fold = ctx, env, c, seed_e, rhs_e =>
          c.body_fn
             [Fn fe_f]
                ?fe_f.params < 2 || !rng_f.has_rhs ||
-                 !cycle_uses_ct_index(fe_f.body, fe_f.params(1)!!) | --| <-->
+                 !cycle_uses_ct_index(fe_f.body, fe_f.params(1).expect("missing params")) | --| <-->
                lhs_opt = rng_f.has_lhs
                   | eval_static_int_expr(ctx, env, rng_f.lhs)
                   | <+ 0 +>
@@ -2832,8 +2832,8 @@ try_unroll_seeded_ct_range_fold = ctx, env, c, seed_e, rhs_e =>
                fold_v = unify::fresh_var(ctx)
                fold_id = fold_v [Var id] id | 0
                acc_name = "_fold_acc_" + str::from_int(fold_id)
-               p_acc = fe_f.params(0)!!
-               p_elem = fe_f.params(1)!!
+               p_acc = fe_f.params(0).expect("missing params")
+               p_elem = fe_f.params(1).expect("missing params")
                p_idx = fe_f.params(2) | _ | ""
                unit_ut = unify::prim_unit!
                unit_ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
@@ -2902,8 +2902,8 @@ annotate_cycle_expr = ctx, env, c =>
       [Record rec]
          (!rec.is_repeat && ?rec.fields == 2)
             |
-               f0 = rec.fields(0)!!
-               f1 = rec.fields(1)!!
+               f0 = rec.fields(0).expect("missing fields")
+               f1 = rec.fields(1).expect("missing fields")
                (!f0.has_name && !f1.has_name)
                   |
                      ct_fold_opt = try_unroll_seeded_ct_range_fold(ctx, env, c, f0.val, f1.val)
@@ -3028,7 +3028,7 @@ member_field_ti = env, ti, name =>
             |
                pos = unify::parse_field_digits(name, 0, 0)
                pos !< 0 && pos < ?r.0
-                  | (res' = <+ r.0(pos)!!.rec_type +>)
+                  | (res' = <+ r.0(pos).expect("required payload").rec_type +>)
          res'
       [Bitfield b]
          res' = <-->
@@ -3169,7 +3169,7 @@ annotate_type_carrier_member = ctx, env, m =>
                        c_rt [Enum ue] ue | unify::UEnum("", unify::UEnumVariants()))
                      (cur_v.idx !< 0 && cur_v.idx < ?uenum_c.variants)
                         |
-                           vi_c = uenum_c.variants(cur_v.idx)!!
+                           vi_c = uenum_c.variants(cur_v.idx).expect("missing variants")
                            vi_c.has_payload
                               | unify::add_error(ctx, 3097,
                                 "Enum '${bare_enum_label(uenum_c.name)}' variant '${vi_c.label}' requires a payload argument.")
@@ -3223,7 +3223,7 @@ annotate_type_carrier_member = ctx, env, m =>
                              "Record field index ${idx_n} out of range (0..${?flds - 1}).")
                            <+ tast::mk_lit_str("", m.line, m.col) +>
                         |
-                           fnm = (flds(idx_n)!!).name
+                           fnm = (flds(idx_n).expect("missing flds")).name
                            <+ tast::mk_lit_str(
                              (fnm != "" | fnm | str::from_int(idx_n)),
                              m.line, m.col) +>
@@ -3235,7 +3235,7 @@ annotate_type_carrier_member = ctx, env, m =>
                            unify::add_error(ctx, 3171,
                              "Enum variant index ${idx_n} out of range (0..${n_ev - 1}).")
                            <+ tast::mk_lit_str("", m.line, m.col) +>
-                        | <+ tast::mk_lit_str((uenum_m.variants(idx_n)!!).label,
+                        | <+ tast::mk_lit_str((uenum_m.variants(idx_n).expect("missing variants")).label,
                           m.line, m.col) +>
                   |
                      <+ tast::mk_typed_member(target_te, "", idx_n, unify::prim_str!,
@@ -3612,7 +3612,7 @@ annotate_expr = ctx, env, expr =>
                                           |
                                              trimmed_errs = unify::TypeErrors()
                                              saved_errs_n @ ei =>
-                                                trimmed_errs += ctx.errors(ei)!!
+                                                trimmed_errs += ctx.errors(ei).expect("missing errors")
                                              ctx.errors = trimmed_errs
                                        ok_p
                                           |
@@ -4080,7 +4080,7 @@ annotate_expr = ctx, env, expr =>
                                     | unify::add_error(ctx, 3171,
                                       "Record field index ${idx_v} out of range (0..${?r_pre - 1}).")
                                     |
-                                       f_opt = r_pre(idx_v)!!
+                                       f_opt = r_pre(idx_v).expect("missing r pre")
                                        fname' = f_opt.name != "" | f_opt.name | str::from_int(idx_v)
                                        direct_fld_ut' = <+ f_opt.ut +>
                               [Enum ue_raw]
@@ -4092,7 +4092,7 @@ annotate_expr = ctx, env, expr =>
                                          "Enum variant index ${idx_v} out of range (0..${n_ev - 1}).")
                                        --| tast::mk_lit_flag(<->, m.line, m.col)
                                     |
-                                       vi = uenum_v.variants(idx_v)!!
+                                       vi = uenum_v.variants(idx_v).expect("missing variants")
                                        b0_vnames = ast::Names()
                                        b0_vnames += vi.label
                                        vi.has_payload
@@ -4335,7 +4335,7 @@ annotate_expr = ctx, env, expr =>
                      tast::mk_typed_ram_construct(rsh, is_succ, <-->,
                        u_ut, u_ti, u_lay, 0, 0)
             |
-               pay_te = annotate_expr(ctx, env, ve.args(0)!!)
+               pay_te = annotate_expr(ctx, env, ve.args(0).expect("missing args"))
                (is_pos || is_some)
                   |
                      p_ut = is_some | unify::ram_pn(pay_te.ut) |
@@ -4679,7 +4679,7 @@ annotate_unary_op = ctx, env, op, t, operand_expr =>
             |
                unify::add_error(ctx, 3008, diag::E3008_not_invalid_type!)
                unify::prim_flag!
-      [Unwrap]
+      [Unwrap, Expect]
          c = unify::canon(ctx, t)
          c
             [Ram r]
@@ -4687,11 +4687,11 @@ annotate_unary_op = ctx, env, op, t, operand_expr =>
                   | r.pos.ut
                   |
                      unify::add_error(ctx, 3091,
-                       "Operand of '!!' must have a positive payload")
+                       "Operand of expect must have a positive payload")
                      unify::prim_unknown!
             |
                unify::add_error(ctx, 3091,
-                 "Operand of '!!' must be a RamPP or RamPN ramification")
+                 "Operand of expect must be a RamPP or RamPN ramification")
                unify::prim_unknown!
       [Propagate]
          !env.in_fn
@@ -5753,7 +5753,7 @@ annotate_intrinsic_call = ctx, env, ce =>
                           "String interpolation does not support non-scalar type.")
                name == "%bitcast"
                   |
-                     raw_ti = (ce.args(0)!!)
+                     raw_ti = (ce.args(0).expect("missing args"))
                         [SizeOf so] so.rec_type
                         | ast::TypeInfo(Prim, ast::ValueType(Unknown))
                      bc_ut = utype_from_ti_env(env, raw_ti)
@@ -5836,7 +5836,7 @@ annotate_hash_member3_call = ctx, env, ce =>
          unify::add_error(ctx, 3084,
            "'#member' 3-argument form expects (EnumType, Variant, payload).")
          --| tast::mk_lit_unit(ce.line, ce.col)
-   arg0_e = ce.args(0)!!
+   arg0_e = ce.args(0).expect("missing args")
    rt = resolve_type_expr_ut_ti(ctx, env, "", arg0_e)
    c_rt = rt.2 | unify::canon(ctx, rt.0) | unify::UType(None)
    !(rt.2 && (c_rt [Enum]))
@@ -5857,7 +5857,7 @@ annotate_hash_member3_call = ctx, env, ce =>
    enum_disp = uenum'.name != ""
       | bare_enum_label(uenum'.name)
       | (t_vname != "" | bare_enum_label(t_vname) | "enum")
-   lbl_e = ce.args(1)!!
+   lbl_e = ce.args(1).expect("missing args")
    found_idx' = -1
    v_info' = unify::UEnumVariant("", <->, unify::UType(None))
    eff_lbl' = ++""
@@ -5894,7 +5894,7 @@ annotate_hash_member3_call = ctx, env, ce =>
    saved_exp = cur_expected_ut
    v_info'.has_payload
       | (cur_expected_ut ::= <+ v_info'.payload_type +>)
-   pay_te = annotate_call_arg(ctx, env, ce.args(2)!!)
+   pay_te = annotate_call_arg(ctx, env, ce.args(2).expect("missing args"))
    cur_expected_ut ::= saved_exp
    found_idx' !< 0 && v_info'.has_payload
       |
@@ -5946,7 +5946,7 @@ annotate_primitive_cast_call = ctx, env, ce, cast_name, uprim =>
            str::from_int(nargs_cast))
    nargs_cast == 1
       |
-         arg0 = typed_args(0)!!
+         arg0 = typed_args(0).expect("missing typed args")
          c_a0 = unify::canon(ctx, arg0.ut)
          is_bf_src = is_bitfield_ti_env(env, arg0.ti)
          !(is_bf_src && is_uprim_int(uprim))
@@ -5966,11 +5966,11 @@ annotate_error_ctor_call = ctx, env, ce =>
          unify::add_error(ctx, 3084,
            "Constructor 'Error' takes at most 6 arguments, got " +
            str::from_int(nargs_err))
-   nargs_err > 0 | unify::unify(ctx, (typed_args(0)!!).ut, unify::prim_int!)
-   nargs_err > 1 | unify::unify(ctx, (typed_args(1)!!).ut, unify::prim_str!)
-   nargs_err > 2 | unify::unify(ctx, (typed_args(2)!!).ut, unify::prim_str!)
-   nargs_err > 3 | unify::unify(ctx, (typed_args(3)!!).ut, unify::prim_int!)
-   nargs_err > 4 | unify::unify(ctx, (typed_args(4)!!).ut, unify::prim_int!)
+   nargs_err > 0 | unify::unify(ctx, (typed_args(0).expect("missing typed args")).ut, unify::prim_int!)
+   nargs_err > 1 | unify::unify(ctx, (typed_args(1).expect("missing typed args")).ut, unify::prim_str!)
+   nargs_err > 2 | unify::unify(ctx, (typed_args(2).expect("missing typed args")).ut, unify::prim_str!)
+   nargs_err > 3 | unify::unify(ctx, (typed_args(3).expect("missing typed args")).ut, unify::prim_int!)
+   nargs_err > 4 | unify::unify(ctx, (typed_args(4).expect("missing typed args")).ut, unify::prim_int!)
    err_ut = unify::prim_error!
    err_ti = ast::TypeInfo(Prim, ast::ValueType(Error))
    err_lay = layout::compute_layout(ctx, err_ut)
@@ -5983,6 +5983,13 @@ annotate_call_udef: unify::Ctx, type_env::TypeEnv, ast::CallExpr,
 annotate_call: unify::Ctx, type_env::TypeEnv, ast::CallExpr => tast::TypedExpr
 annotate_call = ctx, env, ce =>
    ce.line > 0 | unify::set_pos(ctx, ce.line, ce.col)
+   ce.fn_name == "Addr" && ?ce.args == 1
+      |
+         argument = ce.args(0).expect("missing Addr argument")
+         argument [Int n]
+            n == 0
+               | unify::add_error(ctx, 3180,
+                 "Addr cannot be zero. Use <--> for an absent address.")
    ce.fn_name == "#has_member"
       |
          ?ce.args != 2
@@ -5990,7 +5997,7 @@ annotate_call = ctx, env, ce =>
                unify::add_error(ctx, 3084,
                  "'#has_member' expects 2 arguments (Target, member).")
                --| tast::mk_lit_flag(<->, ce.line, ce.col)
-         arg1 = ce.args(1)!!
+         arg1 = ce.args(1).expect("missing args")
          m_info = arg1
             [Str s] (s, <+>)
             [Var v] (v, <+>)
@@ -6000,13 +6007,13 @@ annotate_call = ctx, env, ce =>
                unify::add_error(ctx, 3084,
                  "'#has_member' member name must be an identifier or string literal.")
                --| tast::mk_lit_flag(<->, ce.line, ce.col)
-         hm = try_eval_has_member(ctx, env, ce.args(0)!!, m_info.0)
+         hm = try_eval_has_member(ctx, env, ce.args(0).expect("missing args"), m_info.0)
          hm.1 | --| tast::mk_lit_flag(hm.0, ce.line, ce.col)
-         rt0 = resolve_type_expr_ut_ti(ctx, env, "", ce.args(0)!!)
+         rt0 = resolve_type_expr_ut_ti(ctx, env, "", ce.args(0).expect("missing args"))
          tgt_te = rt0.2
-            | tast::mk_typed_var(ce.args(0)!! [Var v] v | "", 0, <->,
+            | tast::mk_typed_var(ce.args(0).expect("missing args") [Var v] v | "", 0, <->,
               unify::prim_type!, rt0.1, tast::layout_scalar(8, 8), ce.line, ce.col)
-            | annotate_expr(ctx, env, ce.args(0)!!)
+            | annotate_expr(ctx, env, ce.args(0).expect("missing args"))
          typed_args = tast::TypedExprs()
          typed_args += tgt_te
          typed_args += tast::mk_lit_str(m_info.0, ce.line, ce.col)
@@ -6025,7 +6032,7 @@ annotate_call = ctx, env, ce =>
             | type_pred_name_from_expr(ce.fn_target)
          is_allowed_type_pred_call(env, ce, pred_nm)
             |
-               rt_pred = resolve_type_expr_ut_ti(ctx, env, "", ce.args(0)!!)
+               rt_pred = resolve_type_expr_ut_ti(ctx, env, "", ce.args(0).expect("missing args"))
                rt_pred.2
                   | --| tast::mk_lit_flag(eval_utype_predicate(ctx, pred_nm, rt_pred.0),
                     ce.line, ce.col)
@@ -6108,7 +6115,7 @@ annotate_call = ctx, env, ce =>
                  str::from_int(nargs_addr))
          nargs_addr == 1
             |
-               arg0 = typed_args(0)!!
+               arg0 = typed_args(0).expect("missing typed args")
                c_a0 = unify::canon(ctx, arg0.ut)
                validate_primitive_cast(ctx, ce.fn_name,
                  unify::UPrim(RawPtr), c_a0)
@@ -6163,7 +6170,7 @@ find_record_ctor_field_expr = args, fld, j, nf, rest_have_defaults =>
                tuple_res' = <-->
                is_tuple_arg
                   |
-                     a0 = args(0)!!
+                     a0 = args(0).expect("missing args")
                      !(a0 [NamedArg, Range])
                         |
                            a0
@@ -6212,13 +6219,13 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf, is_bitfield,
          a0 [Record r] <+ r +> | <-->
       | <-->
    fld0_is_rec = ?flds > 0
-      | unify::canon(ctx, flds(0)!!.ut) [Rec]
+      | unify::canon(ctx, flds(0).expect("missing flds").ut) [Rec]
       | (fields(0) | f0 => f0.rec_type [Rec] | <->)
    rest_have_defaults' = <+>
    nf @ fi =>
       fi > 0
          |
-            f_i = fields(fi)!!
+            f_i = fields(fi).expect("missing fields")
             !f_i.has_default | (rest_have_defaults' = <->)
    is_tuple_lit = ?ce.args == 1 && <>(a0_rec_opt) &&
      (!fld0_is_rec || (nf > 1 && !rest_have_defaults'))
@@ -6229,7 +6236,7 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf, is_bitfield,
            "': write '" + ce.fn_name + "(...)', not '" + ce.fn_name + "((...))'")
    is_tuple_lit
       |
-         rec_lit = a0_rec_opt!!
+         rec_lit = a0_rec_opt.expect("missing a0 rec opt")
          rec_lit.fields @ rf =>
             rf.has_name
                | effective_args += ast::Expr(NamedArg, ast::NamedArgExpr(rf.name, rf.val))
@@ -6275,7 +6282,7 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf, is_bitfield,
                |
                   pos_idx' < nf
                      |
-                        f_at = fields(pos_idx')!!
+                        f_at = fields(pos_idx').expect("missing fields")
                         f_at.name != ""
                            |
                               seen_names @ s_nm =>
@@ -6446,7 +6453,7 @@ annotate_record_ctor = ctx, env, ce, udef, flds =>
    raw_te' = tast::mk_lit_unit(0, 0)
    ?ce.args == 1
       |
-         a0 = ce.args(0)!!
+         a0 = ce.args(0).expect("missing args")
          !(a0 [NamedArg, Range])
             |
                a0_te = annotate_expr(ctx, env, a0)
@@ -6499,7 +6506,7 @@ annotate_record_copy_update = ctx, env, ce, base_expr, base_ut, base_ti, rec =>
    upd_args += ast::Expr(Range, ast::RangeExpr(<->, <+>, ast::Expr(Int, 0), base_expr, <->))
    tname_ti = base_ti [TypeVar tv] tv | ""
    udef_ti_opt = tname_ti != "" | type_env::lookup_user_type(env, tname_ti) | <-->
-   rec_rn = ?rec > 0 | rec(0)!!.rec_name | ""
+   rec_rn = ?rec > 0 | rec(0).expect("missing rec").rec_name | ""
    udef_opt = udef_ti_opt
       | u => <+ u +>
       | (rec_rn != "" | type_env::lookup_user_type(env, rec_rn) | <-->)
@@ -6526,7 +6533,7 @@ find_unique_user_rec_for_fields = ctx, env, req_names, cur_mod_only =>
    matches' = type_env::UserTypeDef{}
    ?env.user_types @ k =>
       i = (?env.user_types) - 1 - k
-      u = env.user_types(i)!!
+      u = env.user_types(i).expect("missing user types")
       !has_name_in(seen, u.name)
          |
             seen += u.name
@@ -6536,10 +6543,10 @@ find_unique_user_rec_for_fields = ctx, env, req_names, cur_mod_only =>
                   cu = unify::canon(ctx, u.ut)
                   cu
                      [Rec u_fs]
-                        ?u_fs > 0 && u_fs(0)!!.rec_name == u.name && u_fs(0)!!.name != "" &&
+                        ?u_fs > 0 && u_fs(0).expect("missing u fs").rec_name == u.name && u_fs(0).expect("missing u fs").name != "" &&
                           rec_has_all_fields(u_fs, req_names)
                            | (matches' += u)
-   ?matches' == 1 | <+ matches'(0)!! +> | <-->
+   ?matches' == 1 | <+ matches'(0).expect("missing matches") +> | <-->
 
 maybe_resolve_copy_update_ut: unify::Ctx, type_env::TypeEnv, ast::Exprs, unify::UType => <type_env::UserTypeDef|>
 maybe_resolve_copy_update_ut = ctx, env, args, base_ut =>
@@ -6549,7 +6556,7 @@ maybe_resolve_copy_update_ut = ctx, env, args, base_ut =>
          c_ut = unify::canon(ctx, base_ut)
          is_open_or_var = c_ut
             [Var] <+>
-            [Rec r] (?r == 0 || r(0)!!.rec_name == "")
+            [Rec r] (?r == 0 || r(0).expect("missing r").rec_name == "")
             | <->
          !is_open_or_var
             | <-->
@@ -6599,8 +6606,8 @@ desugar_array_lit_item = ctx, arr_var, elem_ut_is_fn, e =>
                   |
                      new_exprs = ast::Exprs()
                      (?exprs - 1) @ bi =>
-                        new_exprs += exprs(bi)!!
-                     last_e = exprs(?exprs - 1)!!
+                        new_exprs += exprs(bi).expect("missing exprs")
+                     last_e = exprs(?exprs - 1).expect("missing exprs")
                      new_exprs += desugar_array_lit_item(ctx, arr_var, elem_ut_is_fn, last_e)
                      ast::Expr(Block, new_exprs)
                   |
@@ -6725,7 +6732,7 @@ annotate_call_udef = ctx, env, ce, udef =>
             [Ram r]
                n_args == 1
                   |
-                     a0 = typed_args(0)!!
+                     a0 = typed_args(0).expect("missing typed args")
                      c_a0 = unify::canon(ctx, a0.ut)
                      c_a0
                         [Ram r_arg]
@@ -6819,7 +6826,7 @@ annotate_call_normal = ctx, env, ce =>
                                           |
                                              unify::add_error(ctx, 3051,
                                                diag::E3051_dynamic_index_hetero!)
-                                       f0 = rec(0)!!
+                                       f0 = rec(0).expect("missing rec")
                                        is_rng = ce.args(0) | a => is_range_expr(a) | <->
                                        f0_ut = f0.ut
                                        sl_ut = unify::mk_slice(f0_ut)
@@ -6945,7 +6952,7 @@ annotate_call_normal = ctx, env, ce =>
                                           |
                                              unify::add_error(ctx, 3051,
                                                diag::E3051_dynamic_index_hetero!)
-                                       f02 = rec2(0)!!
+                                       f02 = rec2(0).expect("missing rec2")
                                        is_rng2 = ce.args(0) | a => is_range_expr(a) | <->
                                        f0_ut2 = f02.ut
                                        sl_ut2 = unify::mk_slice(f0_ut2)
@@ -6964,15 +6971,15 @@ annotate_call_normal = ctx, env, ce =>
                      | <+ unify::poison_utype! +>
                      |
                         c_callee
-                           [Fn f_sig] (i < ?f_sig.params | <+ f_sig.params(i)!! +> | <-->)
+                           [Fn f_sig] (i < ?f_sig.params | <+ f_sig.params(i).expect("missing params") +> | <-->)
                            | <-->
                   is_opt_val = i == 3 && (a [Fn]) && ?typed_args > 1 && (ce.fn_name == "cli::opt" || ce.fn_name == "opt")
                   is_opt_val
                      |
-                        a1_e = ce.args(1)!!
+                        a1_e = ce.args(1).expect("missing args")
                         a1_vname = a1_e [Var vn] vn | ""
                         a1_uprim = a1_vname != "" | type_name_to_uprim(a1_vname) | <-->
-                        a1_ut = unify::canon(ctx, (typed_args(1)!!).ut)
+                        a1_ut = unify::canon(ctx, (typed_args(1).expect("missing typed args")).ut)
                         a1_base_ut = a1_ut [Array ua] ua.elem | a1_ut
                         opt_v_ut = a1_uprim
                            | up => unify::UType(Prim, up)
@@ -7007,7 +7014,7 @@ annotate_call_normal = ctx, env, ce =>
             |
                ?typed_args > 0
                   |
-                     a0 = typed_args(0)!!
+                     a0 = typed_args(0).expect("missing typed args")
                      is_rng_ce = ce.args(0) | a => is_range_expr(a) | <->
                      !is_rng_ce | unify::unify(ctx, a0.ut, unify::prim_int!)
                ti = unify::type_info_from_utype(ctx, index_ret_ut')
@@ -7030,7 +7037,7 @@ annotate_call_normal = ctx, env, ce =>
                                     |
                                        all_tail_vars' = <+>
                                        (?arg_uts..?f_sig.params) @ ti_k =>
-                                          p_k = unify::canon(ctx, f_sig.params(ti_k)!!)
+                                          p_k = unify::canon(ctx, f_sig.params(ti_k).expect("missing params"))
                                           !(p_k [Var]) | (all_tail_vars' = <->)
                                        all_tail_vars'
                                           |
@@ -7099,7 +7106,7 @@ annotate_fn = ctx, env, fe, is_disc =>
       pname = fe.params(i) | _ | ""
       p_exp = exp_fn_opt
          | ef =>
-            i < ?ef.params | <+ ef.params(i)!! +> | <-->
+            i < ?ef.params | <+ ef.params(i).expect("missing params") +> | <-->
          | <-->
       p_var = is_exp_poison | unify::poison_utype! | unify::fresh_var(ctx)
       !is_exp_poison
@@ -7140,7 +7147,7 @@ body_closing_return = e =>
       [Return r] <+ r +>
       [Block b]
          n = ?b
-         n > 0 | body_closing_return(b(n - 1)!!) | <-->
+         n > 0 | body_closing_return(b(n - 1).expect("missing b")) | <-->
       [Bin t]
          t.0 [Seq] body_closing_return(t.2) | <-->
       | <-->
@@ -7254,7 +7261,7 @@ choice_branch_is_constant = e =>
       [Variant v] ?v.args == 0
       [Block b]
          ?b == 1
-            | choice_branch_is_constant(b(0)!!)
+            | choice_branch_is_constant(b(0).expect("missing b"))
             | <->
       [Fn fe] choice_branch_is_constant(fe.body)
       | <->
@@ -7410,12 +7417,12 @@ try_eval_static_choice_flag = ctx, env, cond_e =>
       [Call ce]
          ce.fn_name == "#has_member" && ?ce.args == 2
             |
-               m_info = ce.args(1)!!
+               m_info = ce.args(1).expect("missing args")
                   [Str s] (s, <+>)
                   [Var v] (v, <+>)
                   | ("", <->)
                m_info.1
-                  | try_eval_has_member(ctx, env, ce.args(0)!!, m_info.0)
+                  | try_eval_has_member(ctx, env, ce.args(0).expect("missing args"), m_info.0)
                   | (<->, <->)
             |
                ?ce.args == 1
@@ -7425,7 +7432,7 @@ try_eval_static_choice_flag = ctx, env, cond_e =>
                         | type_pred_name_from_expr(ce.fn_target)
                      is_allowed_type_pred_call(env, ce, pred)
                         |
-                           rt = resolve_type_expr_ut_ti(ctx, env, "", ce.args(0)!!)
+                           rt = resolve_type_expr_ut_ti(ctx, env, "", ce.args(0).expect("missing args"))
                            rt.2
                               | (eval_utype_predicate(ctx, pred, rt.0), <+>)
                               | (<->, <->)
@@ -7552,7 +7559,7 @@ add_type_bind_opt: unify::Ctx, type_env::TypeEnv, ast::Names, Int,
   unify::UType, ast::TypeInfo, CtTypeBinds => <>
 add_type_bind_opt = ctx, env, bind_vars, b_i, ut, parent_ti, out =>
    b_i !< ?bind_vars | --| <+>
-   bn = bind_vars(b_i)!!
+   bn = bind_vars(b_i).expect("missing bind vars")
    bn == "" || bn == "_" | --| <+>
    fx_opt = resolve_fixed_type_ut(env, bn)
    fx_opt
@@ -7594,7 +7601,7 @@ match_type_pat_tag = ctx, env, c_ut, cond_ti, tag, bind_vars, out =>
             [Rec flds]
                rec_all_fields_homogeneous(ctx, flds)
                   |
-                     add_type_bind_opt(ctx, env, bind_vars, 0, flds(0)!!.ut,
+                     add_type_bind_opt(ctx, env, bind_vars, 0, flds(0).expect("missing flds").ut,
                        cond_ti, out)
                   | <->
             | <->
@@ -7660,7 +7667,7 @@ match_type_pat_tag = ctx, env, c_ut, cond_ti, tag, bind_vars, out =>
                              rec_all_fields_homogeneous(ctx, flds)
                               |
                                  add_type_bind_opt(ctx, env, bind_vars, 0,
-                                   flds(0)!!.ut, cond_ti, out)
+                                   flds(0).expect("missing flds").ut, cond_ti, out)
                               | <->
                         | <->
                   | <->
@@ -7730,14 +7737,14 @@ annotate_choice = ctx, env, ch, is_disc =>
                   |
                      cur_expected_ut ::= saved_choice_exp
                      env.discard_result = is_disc
-                     taken_br = ch.branches(sf.0 | 0 | 1)!!
+                     taken_br = ch.branches(sf.0 | 0 | 1).expect("missing branches")
                      --| annotate_expr(ctx, env, taken_br.block)
                   | is_disc || choice_cond_has_member(ch.cond)
                      |
                         cur_expected_ut ::= saved_choice_exp
                         env.discard_result = is_disc
                         --| sf.0
-                           | annotate_expr(ctx, env, (ch.branches(0)!!).block)
+                           | annotate_expr(ctx, env, (ch.branches(0).expect("missing branches")).block)
                            | tast::mk_lit_unit(0, 0)
    is_disc && choice_has_constant_branch(ch)
       |
@@ -7760,8 +7767,8 @@ annotate_choice = ctx, env, ch, is_disc =>
                      rt_m = resolve_type_expr_ut_ti(ctx, env, "", ch.cond)
                      b0_is_str = ?ch.branches > 0
                         |
-                           b0_cvs = ch.branches(0)!!.case_values
-                           ?b0_cvs > 0 && (b0_cvs(0)!! [Str])
+                           b0_cvs = ch.branches(0).expect("missing branches").case_values
+                           ?b0_cvs > 0 && (b0_cvs(0).expect("missing b0 cvs") [Str])
                         | <->
                      (rt_m.2 && !b0_is_str) | <+ (rt_m.0, rt_m.1) +> | <-->
                   |
@@ -7887,7 +7894,7 @@ annotate_choice = ctx, env, ch, is_disc =>
             is_bare = br.kind [Bare]
             is_bare
                |
-                  is_b0_bare = ?ch.branches > 0 && ((ch.branches(0)!!).kind [Bare])
+                  is_b0_bare = ?ch.branches > 0 && ((ch.branches(0).expect("missing branches")).kind [Bare])
                   is_b0_bare
                      |
                         i == 0
@@ -8202,10 +8209,10 @@ annotate_record = ctx, env, re =>
                   f.name != ""
                      |
                         f_idx = unify::find_field_idx(efs, f.name)
-                        f_idx !< 0 | <+ efs(f_idx)!!.ut +> | <-->
+                        f_idx !< 0 | <+ efs(f_idx).expect("missing efs").ut +> | <-->
                      |
                         cur_f_idx = ?uf_list'
-                        cur_f_idx < ?efs | <+ efs(cur_f_idx)!!.ut +> | <-->
+                        cur_f_idx < ?efs | <+ efs(cur_f_idx).expect("missing efs").ut +> | <-->
                | <-->
             cur_expected_ut ::= field_exp
             f_te = annotate_expr(ctx, env, f.val)
@@ -8273,7 +8280,7 @@ annotate_member_write = ctx, env, mm, val_expr, is_compound =>
                         | unify::add_error(ctx, 3171,
                           "Record field index ${n} out of range (0..${?rw - 1}).")
                         |
-                           fn_n = rw(n)!!.name
+                           fn_n = rw(n).expect("missing rw").name
                            fname' = fn_n != "" | fn_n | str::from_int(n)
                   | unify::add_error(ctx, 3084,
                     "'#member' write target must be a record value.")
@@ -8288,10 +8295,10 @@ annotate_member_write = ctx, env, mm, val_expr, is_compound =>
            !type_env::is_marked_global(env, root_var)
            | type_env::init_mark_tracked(env, root_var)
    fld_ut = unify::fresh_var(ctx)
-   did_idx_fld = (resolved_idx' !< 0) && (c_tgt_w [Rec r_w] (resolved_idx' < ?r_w && (r_w(resolved_idx')!!).name == "") | <->)
+   did_idx_fld = (resolved_idx' !< 0) && (c_tgt_w [Rec r_w] (resolved_idx' < ?r_w && (r_w(resolved_idx').expect("missing r w")).name == "") | <->)
    did_idx_fld
       |
-         c_tgt_w [Rec r_w2] unify::unify(ctx, fld_ut, (r_w2(resolved_idx')!!).ut)
+         c_tgt_w [Rec r_w2] unify::unify(ctx, fld_ut, (r_w2(resolved_idx').expect("missing r w2")).ut)
       |
          fname' != "" | unify::solve_field(ctx, target_te.ut, fname', fld_ut)
    is_compound
@@ -9084,7 +9091,7 @@ collect_body_records = expr, out =>
       [Record]
          out += expr
       [Block bs]
-         ?bs > 0 | collect_body_records(bs(?bs - 1)!!, out)
+         ?bs > 0 | collect_body_records(bs(?bs - 1).expect("missing bs"), out)
       [Return ret]
          ret.has_val | collect_body_records(ret.val, out)
       [Choice ch]
@@ -9163,7 +9170,7 @@ find_immutable_ast_val_expr: ast::Exprs, String => <ast::Expr|>
 find_immutable_ast_val_expr = exprs, name =>
    idx = find_assign_idx(exprs, name)
    idx < 0 | --| <-->
-   e = exprs(idx)!!
+   e = exprs(idx).expect("missing exprs")
    e
       [Assign a]
          !(a.1 || name_is_primed(a.0) || a.2 || is_fwd_assign(a))
@@ -9337,7 +9344,7 @@ match_sig_ti_param_ut = ctx, env, pat_ti, actual_ut, target_tv =>
             |
                ?r.0 > 0
                   |
-                     e_ti = r.0(0)!!.rec_type
+                     e_ti = r.0(0).expect("required payload").rec_type
                      ca
                         [Slice sl] match_sig_ti_param_ut(ctx, env, e_ti, sl, target_tv)
                         [Array ua] match_sig_ti_param_ut(ctx, env, e_ti, ua.elem, target_tv)
@@ -9349,8 +9356,8 @@ match_sig_ti_param_ut = ctx, env, pat_ti, actual_ut, target_tv =>
                      ?r.0 @ i =>
                         i < ?flds
                            |
-                              hit = match_sig_ti_param_ut(ctx, env, (r.0(i)!!).rec_type,
-                                (flds(i)!!).ut, target_tv)
+                              hit = match_sig_ti_param_ut(ctx, env, (r.0(i).expect("required payload")).rec_type,
+                                (flds(i).expect("missing flds")).ut, target_tv)
                               <>(hit) | --| hit
                      <-->
                   | <-->
@@ -9360,8 +9367,8 @@ match_sig_ti_param_ut = ctx, env, pat_ti, actual_ut, target_tv =>
                ?sf.1 @ i =>
                   i < ?uf.params
                      |
-                        hit = match_sig_ti_param_ut(ctx, env, sf.1(i)!!,
-                          uf.params(i)!!, target_tv)
+                        hit = match_sig_ti_param_ut(ctx, env, sf.1(i).expect("required payload"),
+                          uf.params(i).expect("missing params"), target_tv)
                         <>(hit) | --| hit
                match_sig_ti_param_ut(ctx, env, sf.3, uf.ret, target_tv)
             | <-->
@@ -9370,10 +9377,10 @@ match_sig_ti_param_ut = ctx, env, pat_ti, actual_ut, target_tv =>
             [Enum ue]
                ue2 = resolve_enum_ut(ctx, env, ue)
                ?slots @ i =>
-                  i < ?ue2.variants && (slots(i)!!).has_payload && (ue2.variants(i)!!).has_payload
+                  i < ?ue2.variants && (slots(i).expect("missing slots")).has_payload && (ue2.variants(i).expect("missing variants")).has_payload
                      |
-                        hit = match_sig_ti_param_ut(ctx, env, (slots(i)!!).payload_record,
-                          (ue2.variants(i)!!).payload_type, target_tv)
+                        hit = match_sig_ti_param_ut(ctx, env, (slots(i).expect("missing slots")).payload_record,
+                          (ue2.variants(i).expect("missing variants")).payload_type, target_tv)
                         <>(hit) | --| hit
                <-->
             | <-->
@@ -9425,9 +9432,9 @@ match_sig_ti_param_ti = env, pat_ti, actual_ti, target_tv =>
             |
                ?r.0 > 0
                   |
-                     e_ti = r.0(0)!!.rec_type
+                     e_ti = r.0(0).expect("required payload").rec_type
                      eff_ti
-                        [Rec er] (er.1 && ?er.0 > 0 | match_sig_ti_param_ti(env, e_ti, (er.0(0)!!).rec_type, target_tv) | <-->)
+                        [Rec er] (er.1 && ?er.0 > 0 | match_sig_ti_param_ti(env, e_ti, (er.0(0).expect("required payload")).rec_type, target_tv) | <-->)
                         [Array ea] match_sig_ti_param_ti(env, e_ti, ea.1, target_tv)
                         | <-->
                   | <-->
@@ -9437,8 +9444,8 @@ match_sig_ti_param_ti = env, pat_ti, actual_ti, target_tv =>
                      ?r.0 @ i =>
                         i < ?er.0
                            |
-                              hit = match_sig_ti_param_ti(env, (r.0(i)!!).rec_type,
-                                (er.0(i)!!).rec_type, target_tv)
+                              hit = match_sig_ti_param_ti(env, (r.0(i).expect("required payload")).rec_type,
+                                (er.0(i).expect("required payload")).rec_type, target_tv)
                               <>(hit) | --| hit
                      <-->
                   | <-->
@@ -9448,7 +9455,7 @@ match_sig_ti_param_ti = env, pat_ti, actual_ti, target_tv =>
                ?sf.1 @ i =>
                   i < ?ef.1
                      |
-                        hit = match_sig_ti_param_ti(env, sf.1(i)!!, ef.1(i)!!, target_tv)
+                        hit = match_sig_ti_param_ti(env, sf.1(i).expect("required payload"), ef.1(i).expect("required payload"), target_tv)
                         <>(hit) | --| hit
                match_sig_ti_param_ti(env, sf.3, ef.3, target_tv)
             | <-->
@@ -9463,11 +9470,11 @@ extract_ct_from_sig = ctx, env, param_tis, ret_ti, rt_args, call_ret_ut, call_re
    ?param_tis @ i =>
       i < ?rt_args
          |
-            u_hit = match_sig_ti_param_ut(ctx, env, param_tis(i)!!, (rt_args(i)!!).ut, tv_name)
+            u_hit = match_sig_ti_param_ut(ctx, env, param_tis(i).expect("missing param tis"), (rt_args(i).expect("missing rt args")).ut, tv_name)
             <>(u_hit)
                |
                   found_ut' = u_hit
-                  found_ti' = match_sig_ti_param_ti(env, param_tis(i)!!, (rt_args(i)!!).ti, tv_name)
+                  found_ti' = match_sig_ti_param_ti(env, param_tis(i).expect("missing param tis"), (rt_args(i).expect("missing rt args")).ti, tv_name)
                   -->
    !<>(found_ut')
       |
@@ -9647,7 +9654,7 @@ mono_rewrite_list: MonoCtx, tast::TypedExprs => tast::TypedExprs
 slice_names_from: ast::Names, Int => ast::Names
 slice_names_from = names, start =>
    out = ast::Names()
-   (?names - start) @ i => out += names(start + i)!!
+   (?names - start) @ i => out += names(start + i).expect("missing names")
    out
 
 mono_specialize_call: MonoCtx, tast::TypedExpr, String, tast::TypedExprs => tast::TypedExpr
@@ -9657,13 +9664,13 @@ mono_specialize_call = mctx, call_te, cname, args =>
    !<>(gen_ti_opt) || assign_idx < 0
       | --| tast::TypedExpr(tast::TypedExprKind(Call, (cname, <-->, args)),
         call_te.ut, call_te.ti, call_te.layout, call_te.line, call_te.col)
-   fn_e = mctx.exprs(assign_idx)!!
+   fn_e = mctx.exprs(assign_idx).expect("missing exprs")
    fe_opt = fn_e [Assign a] (a.5 [Fn fe] <+ fe +> | <-->) | <-->
    !<>(fe_opt)
       | --| tast::TypedExpr(tast::TypedExprKind(Call, (cname, <-->, args)),
         call_te.ut, call_te.ti, call_te.layout, call_te.line, call_te.col)
-   fe = fe_opt!!
-   sig_ti = gen_ti_opt!!
+   fe = fe_opt.expect("missing fe opt")
+   sig_ti = gen_ti_opt.expect("missing gen ti opt")
    sig_fn = sig_ti [Fn f] f |
       (ast::VTypes(), ast::VInfos(), ast::ValueType(Unknown),
         ast::TypeInfo(Prim, ast::ValueType(Unknown)), ast::CParams())
@@ -9686,7 +9693,7 @@ mono_specialize_call = mctx, call_te, cname, args =>
    ct_vtes = tast::TypedExprs()
    arg_idx' = 0
    n_cps @ ci =>
-      cp = cps(ci)!!
+      cp = cps(ci).expect("missing cps")
       ct_names += cp.name
       is_val = cp.val_type != ast::ValueType(Type)
       is_val
@@ -9697,7 +9704,7 @@ mono_specialize_call = mctx, call_te, cname, args =>
             ct_dts += ""
             arg_idx' < n_args
                |
-                  raw_v = args(arg_idx')!!
+                  raw_v = args(arg_idx').expect("missing args")
                   arg_idx' = arg_idx' + 1
                   ev_ct = eval_typed_ct_val(mctx.ctx, mctx.exprs, raw_v)
                   ev_ct
@@ -9722,7 +9729,7 @@ mono_specialize_call = mctx, call_te, cname, args =>
             explicit_ok' = <->
             arg_idx' < n_args
                |
-                  arg_t = args(arg_idx')!!
+                  arg_t = args(arg_idx').expect("missing args")
                   c_at = unify::canon(mctx.ctx, arg_t.ut)
                   is_tp = c_at [Prim p] p [Type] | <->
                   is_ul = arg_t.kind [LitUnit]
@@ -9745,27 +9752,27 @@ mono_specialize_call = mctx, call_te, cname, args =>
                   ct_tis += ast::TypeInfo(Prim, ast::ValueType(Unknown))
                   ct_dts += ""
    rt_args = tast::TypedExprs()
-   (n_args - arg_idx') @ ri => rt_args += args(arg_idx' + ri)!!
+   (n_args - arg_idx') @ ri => rt_args += args(arg_idx' + ri).expect("missing args")
    bkey = {64}
    bkey += cname
    all_ct_ground' = <+>
    n_cps @ ci =>
       bkey += '$
-      ct_is_val(ci)!! == 1
-         | bkey += ct_val_mono_key(ct_vtes(ci)!!)
+      ct_is_val(ci).expect("missing ct is val") == 1
+         | bkey += ct_val_mono_key(ct_vtes(ci).expect("missing ct vtes"))
          |
-            ct_res(ci)!! == 1
+            ct_res(ci).expect("missing ct res") == 1
                |
-                  u_c = ct_uts(ci)!!
-                  ti_c = ct_tis(ci)!!
-                  dt_c = ct_dts(ci)!!
+                  u_c = ct_uts(ci).expect("missing ct uts")
+                  ti_c = ct_tis(ci).expect("missing ct tis")
+                  dt_c = ct_dts(ci).expect("missing ct dts")
                   !unify::is_ground(mctx.ctx, u_c) | (all_ct_ground' = <->)
                   bkey += utype_type_key(mctx.ctx, mctx.env, u_c, ti_c, dt_c)
                |
                   has_explicit_sig
                      |
                         inf = extract_ct_from_sig(mctx.ctx, mctx.env, sig_fn.1, sig_fn.3,
-                          rt_args, call_te.ut, call_te.ti, ct_names(ci)!!)
+                          rt_args, call_te.ut, call_te.ti, ct_names(ci).expect("missing ct names"))
                         !inf.3 | (all_ct_ground' = <->)
                         !unify::is_ground(mctx.ctx, inf.0) | (all_ct_ground' = <->)
                         ct_res(ci) = 1 !| _
@@ -9781,7 +9788,7 @@ mono_specialize_call = mctx, call_te, cname, args =>
         call_te.ut, call_te.ti, call_te.layout, call_te.line, call_te.col)
    has_poison_in' = <->
    n_cps @ ci_p =>
-      ct_is_val(ci_p)!! == 0 && ct_res(ci_p)!! == 1 && unify::is_poison(mctx.ctx, ct_uts(ci_p)!!)
+      ct_is_val(ci_p).expect("missing ct is val") == 0 && ct_res(ci_p).expect("missing ct res") == 1 && unify::is_poison(mctx.ctx, ct_uts(ci_p).expect("missing ct uts"))
          | (has_poison_in' = <+>)
    rt_args @ ra_p =>
       unify::is_poison(mctx.ctx, ra_p.ut) | (has_poison_in' = <+>)
@@ -9827,9 +9834,9 @@ mono_specialize_call = mctx, call_te, cname, args =>
            saved_file, call_line, call_col))
          set_stmt_loc_at(mctx.ctx, assign_idx)
          n_cps @ ci =>
-            ct_is_val(ci)!! == 1
-               | push_ct_val(ct_names(ci)!!, ct_vtes(ci)!!, <+>)
-               | push_ct_type(ct_names(ci)!!, ct_uts(ci)!!, ct_tis(ci)!!, ct_dts(ci)!!)
+            ct_is_val(ci).expect("missing ct is val") == 1
+               | push_ct_val(ct_names(ci).expect("missing ct names"), ct_vtes(ci).expect("missing ct vtes"), <+>)
+               | push_ct_type(ct_names(ci).expect("missing ct names"), ct_uts(ci).expect("missing ct uts"), ct_tis(ci).expect("missing ct tis"), ct_dts(ci).expect("missing ct dts"))
          type_env::enter_scope(mctx.env)
          mctx.env.in_fn = <+>
          mctx.env.init = type_env::new_init!
@@ -9837,12 +9844,12 @@ mono_specialize_call = mctx, call_te, cname, args =>
          p_vts = ast::VTypes()
          p_tis = ast::VInfos()
          ?eff_params @ pi =>
-            pname = eff_params(pi)!!
+            pname = eff_params(pi).expect("missing eff params")
             has_decl_p = has_explicit_sig && pi < ?sig_fn.1 &&
-              !(sig_fn.1(pi)!! [Prim vt] vt [Unknown] | <->)
+              !(sig_fn.1(pi).expect("required payload") [Prim vt] vt [Unknown] | <->)
             p_info = has_decl_p
                |
-                  pti_raw = sig_fn.1(pi)!!
+                  pti_raw = sig_fn.1(pi).expect("required payload")
                   pti_res = resolve_ct_ti_aliases(mctx.env, pti_raw)
                   put_d0 = utype_from_ti_env(mctx.env, pti_raw)
                   put_d = put_d0 [None] utype_from_ti_env(mctx.env, pti_res) | put_d0
@@ -9850,9 +9857,9 @@ mono_specialize_call = mctx, call_te, cname, args =>
                   (put_final, pti_res)
                |
                   fv = unify::fresh_var(mctx.ctx)
-                  pi < ?rt_args | unify::unify(mctx.ctx, fv, (rt_args(pi)!!).ut)
+                  pi < ?rt_args | unify::unify(mctx.ctx, fv, (rt_args(pi).expect("missing rt args")).ut)
                   arg_ti_pi = pi < ?rt_args
-                     | (rt_args(pi)!!).ti
+                     | (rt_args(pi).expect("missing rt args")).ti
                      | unify::type_info_from_utype(mctx.ctx, fv)
                   (fv, arg_ti_pi)
             p_uts += p_info.0
@@ -10041,13 +10048,13 @@ monomorphize_program_stmts = ctx, env, exprs, gen_names, stmts, st_files, st_lin
    i' = 0
    0.. @
       i' !< ?mctx.work | -->
-      st = mctx.work(i')!!
-      w_f = i' < ?mctx.work_files | mctx.work_files(i')!! | cur_source_file
-      w_l = i' < ?mctx.work_lines | mctx.work_lines(i')!! | 0
-      w_c = i' < ?mctx.work_cols | mctx.work_cols(i')!! | 0
+      st = mctx.work(i').expect("missing work")
+      w_f = i' < ?mctx.work_files | mctx.work_files(i').expect("missing work files") | cur_source_file
+      w_l = i' < ?mctx.work_lines | mctx.work_lines(i').expect("missing work lines") | 0
+      w_c = i' < ?mctx.work_cols | mctx.work_cols(i').expect("missing work cols") | 0
       unify::set_location(mctx.ctx, w_f, w_l, w_c)
       w_stk = i' < ?mctx.work_stacks
-         | clone_inst_stack(mctx.work_stacks(i')!!)
+         | clone_inst_stack(mctx.work_stacks(i').expect("missing work stacks"))
          | unify::InstStack()
       mctx.ctx.inst_stack = w_stk
       is_inv_bnd = st [Binding b] has_name_in(invalid_scc_fns, b.0) | <->
@@ -10231,11 +10238,11 @@ verify_typed_expr_ground = ctx, te =>
 verify_program_ground: unify::Ctx, tast::TypedStmts, ast::Names, ast::Ints, ast::Ints, MonoWorkStacks => ()
 verify_program_ground = ctx, stmts, files, lines, cols, stacks =>
    stmts @ st, si =>
-      sf = si < ?files | files(si)!! | cur_source_file
-      sl = si < ?lines | lines(si)!! | 0
-      sc = si < ?cols | cols(si)!! | 0
+      sf = si < ?files | files(si).expect("missing files") | cur_source_file
+      sl = si < ?lines | lines(si).expect("missing lines") | 0
+      sc = si < ?cols | cols(si).expect("missing cols") | 0
       unify::set_location(ctx, sf, sl, sc)
-      cur_stk = si < ?stacks | clone_inst_stack(stacks(si)!!) | unify::InstStack()
+      cur_stk = si < ?stacks | clone_inst_stack(stacks(si).expect("missing stacks")) | unify::InstStack()
       ctx.inst_stack = cur_stk
       st
          [Expr te] verify_typed_expr_ground(ctx, te)
@@ -10389,9 +10396,9 @@ elaborate_program_with_ctx = exprs =>
                                                       exp_ut_opt = rf.name != ""
                                                          |
                                                             f_i = unify::find_field_idx(exp_fs, rf.name)
-                                                            f_i !< 0 | <+ exp_fs(f_i)!!.ut +> | <-->
+                                                            f_i !< 0 | <+ exp_fs(f_i).expect("missing exp fs").ut +> | <-->
                                                          |
-                                                            idx < ?exp_fs | <+ exp_fs(idx)!!.ut +> | <-->
+                                                            idx < ?exp_fs | <+ exp_fs(idx).expect("missing exp fs").ut +> | <-->
                                                       exp_ut_opt
                                                          | exp_u =>
                                                             ef_ut = unify::canon(ctx, exp_u)
@@ -10405,7 +10412,7 @@ elaborate_program_with_ctx = exprs =>
                                                                               t_idx = find_assign_idx(exprs, q_target)
                                                                               t_idx !< 0
                                                                                  |
-                                                                                    exprs(t_idx)!!
+                                                                                    exprs(t_idx).expect("missing exprs")
                                                                                        [Assign ta]
                                                                                           !ta.2 && !ta.4
                                                                                              |

@@ -734,19 +734,13 @@ argument's shape (see §3.6):
 - `b(i)` — **Builder peek**: bounds-checked read of one *written* byte.
 - `b(a..b)` is an error (`E3064`): a Builder has no views.
 
-### 2.7.4 Postfix unwrap `!!`
+### 2.7.4 Explicit expectations
 
-Postfix `!!` is sugar for `x | _ | _` at Tier 16 (postfix/apply,
-left-associative). It extracts the positive payload of a ramification and
-aborts on the negative slot:
-
-- On `RamPP <A | B>`: yields `A` (positive payload) and aborts on the negative
-  slot (triggering poisonous `Error` panic if `B` is `Error`).
-- On `RamPN <A | >`: yields `A` and aborts on the negative unit slot.
-- On `RamNP <| B>`, bare `Flag`, or non-ram operand: compile error (`E3091`).
-
-Because `!!` sits at Tier 16, it chains naturally without parentheses:
-`users(i)!!.name`, `matrix(r)!!(c)!!`, and `a(i)!! $> process`.
+Use `result.expect("reason")` to extract the positive payload of a
+`< A | B >` or `< A | >` when failure should terminate the process.
+The reason must be a nonempty string literal. On native targets it is
+printed before the runtime error. The old `!!` operator is a compile
+error (E3177). Use `--!`, `|_|`, or a choice for recoverable errors.
 
 ### 2.8 Functions
 

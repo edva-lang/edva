@@ -91,7 +91,7 @@
    arena = chunk_size =>
       sz = chunk_size !> 0 | 67108864 | chunk_size
       raw = libc::malloc(131632)
-      raw != Addr(0) | dva_arena_init(raw, sz)
+      raw != ptr(0) | dva_arena_init(raw, sz)
       Arena(raw, sz)
 
    arena_default: () => Arena
@@ -108,7 +108,7 @@
 
    destroy: Arena => ()
    destroy = a =>
-      a.raw != Addr(0)
+      a.raw != ptr(0)
          |
             release(a)
             libc::free(a.raw)
@@ -153,7 +153,7 @@
    // Checks whether `ptr` points inside the live allocated region of `a`.
    owns_addr: Arena, Addr => <>
    owns_addr = a, ptr =>
-      a.raw == Addr(0) | --| <->
+      a.raw == ptr(0) | --| <->
       raw_addr = Int(ptr) .&. 0xFFFFFFFFFFFF
       raw_addr == 0 | --| <->
       cap = a.cap > 0 | a.cap | @[a.raw Int]

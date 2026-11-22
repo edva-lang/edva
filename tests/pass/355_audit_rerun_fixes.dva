@@ -54,7 +54,7 @@ large += '1
 309 @
    large += '0
 large += "e-309"
-a = json::parse(+large)!!
+a = json::parse(+large).expect("missing parse")
 a [Number n] io::outf(n == 1.0, "F6 large n==1.0: {}")
 
 small = {430}
@@ -62,7 +62,7 @@ small += "0."
 399 @
    small += '0
 small += "1e400"
-b = json::parse(+small)!!
+b = json::parse(+small).expect("missing parse")
 b [Number n] io::outf(n == 1.0, "F6 small n==1.0: {}")
 
 // --- Finding 7: json raw UTF-8 validation ---

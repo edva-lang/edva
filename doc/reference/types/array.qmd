@@ -32,7 +32,7 @@ Edva provides three built-in collection shapes backed by the active arena:
 | **Instantiate empty** | `xs = Ints()` / `xs = Int{}` | `T{}` | Allocates array descriptor (default initial capacity `16`, or `cap` in `T{cap}`) |
 | **Append element** | `xs += val` | `()` | Appends `val` in place, doubling capacity in the arena when `len == cap` |
 | **Fallible read** | `xs(i)` | `< T | Error >` | Returns `<+ elem ->` if `0 <= i < ?xs`, else `<- Error(...) +>` |
-| **Unwrap / fallback read** | `xs(i)!!` / `xs(i) | _ | def` | `T` | Panics on out-of-bounds (`!!`) or substitutes `def` |
+| **Unwrap / fallback read** | `xs(i).expect("required element")` / `xs(i) | _ | def` | `T` | Panics on out-of-bounds (`.expect("reason")`) or substitutes `def` |
 | **Fallible write** | `xs(i) = val` / `xs(i) = val !| _` | `< | Error >` / `()` | Updates slot `i` if in bounds; `!| _` aborts on out-of-bounds write |
 | **Create slice view** | `xs(a..b)` / `xs(a...b)` / `xs(..)` | `T[]` | Non-owning window into `xs`'s current buffer (`a..`, `..b`, `-k..` supported) |
 | **Shallow container copy** | `++xs` / `++view` | Same as operand | Allocates a fresh backing buffer and copies element slots |
@@ -55,7 +55,7 @@ xs += 20
 xs += 30
 xs(1) = 25 !| _
 
-io::out $ (xs(0)!!, ?xs, sum_slice(xs(0..3)))   // (10, 3, 65)
+io::out $ (xs(0).expect("missing xs"), ?xs, sum_slice(xs(0..3)))   // (10, 3, 65)
 ```
 
 ## Associative hash maps (`K ^ V`)

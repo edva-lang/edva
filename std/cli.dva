@@ -99,9 +99,9 @@ split_cmd_spec = spec =>
    ?parts == 0
       | ("", Args())
       |
-         primary = parts(0)!!
+         primary = parts(0).expect("missing parts")
          aliases = 1..?parts @> i =>
-            a = parts(i)!!
+            a = parts(i).expect("missing parts")
             a != "" | <+ a +>
          (primary, aliases)
 
@@ -357,7 +357,7 @@ apply_opt_val = o, idx, val, flags, ints, floats, strs, str_lists =>
          v_err != ""
             | v_err
             |
-               cur_list = str_lists(idx)!!
+               cur_list = str_lists(idx).expect("missing str lists")
                cur_list += val
                str_lists(idx) = cur_list !| _
                strs(idx) = val !| _
@@ -375,7 +375,7 @@ parse_argv = opts, argv, allow_auto_version =>
    pos_indices = IntList()
    has_cmds' = <->
    n_opts @ k =>
-      o = opts(k)!!
+      o = opts(k).expect("missing opts")
       seen += <->
       flags += o.def_flag
       ints += o.def_int
@@ -397,7 +397,7 @@ parse_argv = opts, argv, allow_auto_version =>
    n = ?argv
    i' = 0
    i' < n @
-      cur_arg = argv(i')!!
+      cur_arg = argv(i').expect("missing argv")
       after_sep'
          |
             pass_list += cur_arg
@@ -423,7 +423,7 @@ parse_argv = opts, argv, allow_auto_version =>
                                     err' = "unknown option: --" + lname
                                     -->
                                  |
-                                    o = opts(idx)!!
+                                    o = opts(idx).expect("missing opts")
                                     e_msg = apply_opt_val(o, idx, val, flags, ints, floats, strs, str_lists)
                                     e_msg != ""
                                        |
@@ -436,7 +436,7 @@ parse_argv = opts, argv, allow_auto_version =>
                               idx = find_long_idx(opts, rem_str)
                               idx !< 0
                                  |
-                                    o = opts(idx)!!
+                                    o = opts(idx).expect("missing opts")
                                     o.kind
                                        [KFlag]
                                           v_err = run_flag_val(o.val_flag, <+>)
@@ -456,7 +456,7 @@ parse_argv = opts, argv, allow_auto_version =>
                                                 err' = "option requires an argument: --" + rem_str
                                                 -->
                                              |
-                                                val = argv(i' + 1)!!
+                                                val = argv(i' + 1).expect("missing argv")
                                                 e_msg = apply_opt_val(o, idx, val, flags, ints, floats, strs, str_lists)
                                                 e_msg != ""
                                                    |
@@ -470,9 +470,9 @@ parse_argv = opts, argv, allow_auto_version =>
                                        |
                                           neg_name = rem_str(3..?rem_str)
                                           neg_idx = find_long_idx(opts, neg_name)
-                                          neg_idx !< 0 && (opts(neg_idx)!!.kind [KFlag])
+                                          neg_idx !< 0 && (opts(neg_idx).expect("missing opts").kind [KFlag])
                                              |
-                                                no_o = opts(neg_idx)!!
+                                                no_o = opts(neg_idx).expect("missing opts")
                                                 v_err = run_flag_val(no_o.val_flag, <->)
                                                 v_err != ""
                                                    |
@@ -513,7 +513,7 @@ parse_argv = opts, argv, allow_auto_version =>
                                           err' = "unknown option: -" + sname
                                           -->
                                        |
-                                          o = opts(idx)!!
+                                          o = opts(idx).expect("missing opts")
                                           e_msg = apply_opt_val(o, idx, val, flags, ints, floats, strs, str_lists)
                                           e_msg != ""
                                              |
@@ -529,7 +529,7 @@ parse_argv = opts, argv, allow_auto_version =>
                                           idx = find_short_idx(opts, sname)
                                           idx !< 0
                                              |
-                                                o = opts(idx)!!
+                                                o = opts(idx).expect("missing opts")
                                                 o.kind
                                                    [KFlag]
                                                       v_err = run_flag_val(o.val_flag, <+>)
@@ -549,7 +549,7 @@ parse_argv = opts, argv, allow_auto_version =>
                                                             err' = "option requires an argument: -" + sname
                                                             -->
                                                          |
-                                                            val = argv(i' + 1)!!
+                                                            val = argv(i' + 1).expect("missing argv")
                                                             e_msg = apply_opt_val(o, idx, val, flags, ints, floats, strs, str_lists)
                                                             e_msg != ""
                                                                |
@@ -575,7 +575,7 @@ parse_argv = opts, argv, allow_auto_version =>
                                           l_idx = find_long_idx(opts, rem_str)
                                           l_idx !< 0
                                              |
-                                                o = opts(l_idx)!!
+                                                o = opts(l_idx).expect("missing opts")
                                                 o.kind
                                                    [KFlag]
                                                       v_err = run_flag_val(o.val_flag, <+>)
@@ -595,7 +595,7 @@ parse_argv = opts, argv, allow_auto_version =>
                                                             err' = "option requires an argument: -" + rem_str
                                                             -->
                                                          |
-                                                            val = argv(i' + 1)!!
+                                                            val = argv(i' + 1).expect("missing argv")
                                                             e_msg = apply_opt_val(o, l_idx, val, flags, ints, floats, strs, str_lists)
                                                             e_msg != ""
                                                                |
@@ -608,9 +608,9 @@ parse_argv = opts, argv, allow_auto_version =>
                                                 s_head = rem_str(0..1)
                                                 s_val = rem_str(1..?rem_str)
                                                 s_idx = find_short_idx(opts, s_head)
-                                                s_idx !< 0 && !(opts(s_idx)!!.kind [KFlag])
+                                                s_idx !< 0 && !(opts(s_idx).expect("missing opts").kind [KFlag])
                                                    |
-                                                      o = opts(s_idx)!!
+                                                      o = opts(s_idx).expect("missing opts")
                                                       e_msg = apply_opt_val(o, s_idx, s_val, flags, ints, floats, strs, str_lists)
                                                       e_msg != ""
                                                          |
@@ -626,11 +626,11 @@ parse_argv = opts, argv, allow_auto_version =>
                               cmd_idx = (?pos_list == 0) | find_cmd_idx(opts, cur_arg) | -1
                               cmd_idx !< 0
                                  |
-                                    cmd_o = opts(cmd_idx)!!
+                                    cmd_o = opts(cmd_idx).expect("missing opts")
                                     subcmd_name' = cmd_o.long
                                     rem_argv = Args()
                                     (i' + 1)..n @ r_idx =>
-                                       rem_argv += argv(r_idx)!!
+                                       rem_argv += argv(r_idx).expect("missing argv")
                                     child_opts = cmd_o.sub_opts
                                        [SubCmd so] so
                                        | Opts()
@@ -648,8 +648,8 @@ parse_argv = opts, argv, allow_auto_version =>
                                        |
                                           pos_cursor' < ?pos_indices
                                              |
-                                                p_idx = pos_indices(pos_cursor')!!
-                                                p_o = opts(p_idx)!!
+                                                p_idx = pos_indices(pos_cursor').expect("missing pos indices")
+                                                p_o = opts(p_idx).expect("missing opts")
                                                 e_msg = apply_opt_val(p_o, p_idx, cur_arg, flags, ints, floats, strs, str_lists)
                                                 e_msg != ""
                                                    |
@@ -682,7 +682,7 @@ parse_argv = opts, argv, allow_auto_version =>
                   | <+ Parsed(opts, seen, flags, ints, floats, strs, str_lists, pos_list, pass_list, subcmd_name', sub_val', help_req', ver_req') ->
                   |
                      opts @ o, m =>
-                        o.required && !(seen(m)!!)
+                        o.required && !(seen(m).expect("missing seen"))
                            | --| <- (o.role [RPos]
                               | "missing required argument: <" + o.long + ">"
                               | "missing required option: --" + o.long) +>
@@ -693,7 +693,7 @@ format_active_help = p, prog, desc, version =>
    p.sub
       [HasSub sub_p]
          c_idx = find_cmd_idx(p.opts, p.subcmd)
-         c_desc = c_idx !< 0 | p.opts(c_idx)!!.desc | ""
+         c_desc = c_idx !< 0 | p.opts(c_idx).expect("missing opts").desc | ""
          base_prog = prog_basename(prog)
          sub_prog = (base_prog != "" | base_prog | "program") + " " + p.subcmd
          format_active_help(sub_p, sub_prog, c_desc, "")
@@ -901,24 +901,24 @@ format_help = opts, prog, desc, version =>
       |
          b += "\nCommands:\n"
          ?cmd_lefts @ c_j =>
-            l_col = str::pad_right(cmd_lefts(c_j)!!, col_w, '\s)
-            r_col = cmd_rights(c_j)!!
+            l_col = str::pad_right(cmd_lefts(c_j).expect("missing cmd lefts"), col_w, '\s)
+            r_col = cmd_rights(c_j).expect("missing cmd rights")
             b += l_col + r_col + "\n"
 
    ?pos_lefts > 0
       |
          b += "\nArguments:\n"
          ?pos_lefts @ p_j =>
-            l_col = str::pad_right(pos_lefts(p_j)!!, col_w, '\s)
-            r_col = pos_rights(p_j)!!
+            l_col = str::pad_right(pos_lefts(p_j).expect("missing pos lefts"), col_w, '\s)
+            r_col = pos_rights(p_j).expect("missing pos rights")
             b += l_col + r_col + "\n"
 
    ?opt_lefts > 0
       |
          b += "\nOptions:\n"
          ?opt_lefts @ o_j =>
-            l_col = str::pad_right(opt_lefts(o_j)!!, col_w, '\s)
-            r_col = opt_rights(o_j)!!
+            l_col = str::pad_right(opt_lefts(o_j).expect("missing opt lefts"), col_w, '\s)
+            r_col = opt_rights(o_j).expect("missing opt rights")
             b += l_col + r_col + "\n"
 
    +b

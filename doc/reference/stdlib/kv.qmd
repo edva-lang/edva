@@ -22,7 +22,7 @@ structural typed serialization (`put_val`, `get_val`) powered by `std/binary`.
 
 path = "/tmp/edva_doc_kv_demo.kv"
 libc::unlink(path)
-db = kv::open(path)!!
+db = kv::open(path).expect("missing open")
 kv::put(db, "greeting", "Hello from std/kv!") !| _
 io::out $ (kv::get(db, "greeting") | s => s | "")
 kv::close(db)

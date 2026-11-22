@@ -81,7 +81,7 @@
             position !< ?fields | --| fallback
             fields @ f =>
                f.name != "" || !scalar_literal(f.val) | --| fallback
-            value = fields(position)!!.val
+            value = fields(position).expect("missing fields").val
             same_scalar_type(orig, value) | replace(orig, value) | fallback
          | fallback
 
@@ -115,9 +115,9 @@
       !(e.kind [Block]) | --| <-->
       parts = e.kind [Block b] b | tast::TypedExprs()
       ?parts != 3 | --| <-->
-      init = parts(0)!!
-      cycle = parts(1)!!
-      result = parts(2)!!
+      init = parts(0).expect("missing parts")
+      cycle = parts(1).expect("missing parts")
+      result = parts(2).expect("missing parts")
       out = result.kind [Var v] v.0 | ""
       out == "" | --| <-->
       init_ok = init.kind [Assign a] a.0 == out && a.1 && !(a.2 || a.3 || a.4) | <->
@@ -140,14 +140,14 @@
                         lam.1.kind
                            [Block b]
                               ?b != 2 | --| <-->
-                              bind = b(0)!!
+                              bind = b(0).expect("missing b")
                               acc = bind.kind
                                  [Assign a]
                                     src = a.5.kind [Var v] v.0 | ""
                                     a.6 && src == out | a.0 | ""
                                  | ""
                               (acc ["", "_", "_i"]) || acc == p0 || acc == p1 | --| <-->
-                              <+ (b(1)!!, acc) +>
+                              <+ (b(1).expect("missing b"), acc) +>
                            | <-->
                   unpacked $+> s => Stage(init, cycle, result, c.0, c.1, lam.0,
                      s.0, out, s.1, collects, "#pipe_${out}_value", "#pipe_${out}_index")
@@ -166,9 +166,9 @@
       !scalar && !(e.ti [Ram]) | --| <-->
       e.kind
          [LitInt, LitFlag] <+ e +>
-         [Block es] (?es == 1 | stage_value(s, es(0)!!) | <-->)
+         [Block es] (?es == 1 | stage_value(s, es(0).expect("missing es")) | <-->)
          [Var v]
-            p0 = s.params(0)!!
+            p0 = s.params(0).expect("missing params")
             p1 = s.params(1) | _ | ""
             v.0 == s.accumulator && s.accumulator != "" | --| <+ read_var(s.output, e, <+>) +>
             v.0 [p0, "_"] | --| <+ read_var(s.element, e, <->) +>
@@ -181,7 +181,7 @@
             !(safe_div || safe_op) | --| <-->
             lhs = stage_value(s, b.1)
             rhs = stage_value(s, b.2)
-            <>(lhs) && <>(rhs) | <+ e(kind = tast::TypedExprKind(Bin, (b.0, lhs!!, rhs!!))) +> | <-->
+            <>(lhs) && <>(rhs) | <+ e(kind = tast::TypedExprKind(Bin, (b.0, lhs.expect("missing lhs"), rhs.expect("missing rhs")))) +> | <-->
          [Unary u]
             u.0 ![Not, Neg, BitNot] | --| <-->
             stage_value(s, u.1) $+> arg => e(kind = tast::TypedExprKind(Unary, (u.0, arg)))
@@ -204,8 +204,8 @@
                !bare_branch(b) || ?b.bind_vars != 0 | --| <-->
                body = stage_value(s, b.body)
                !<>(body) | --| <-->
-               branches += b(body = body!!)
-            <+ e(kind = tast::TypedExprKind(Choice, (cond!!, branches))) +>
+               branches += b(body = body.expect("missing body"))
+            <+ e(kind = tast::TypedExprKind(Choice, (cond.expect("missing cond"), branches))) +>
          | <-->
 
    replace_append: Stage, tast::TypedExpr, <Stage|>, <tast::TypedExpr|>, <> => <tast::TypedExpr|>
@@ -222,29 +222,29 @@
                   one = tast::mk_lit_int(1, 0, 0)
                   bump = idx(kind = tast::TypedExprKind(Bin, (ast::BinaryOp(Add), idx, one)))
                   body = tast::TypedExprs()
-                  body += write_var(next.element, <->, val!!)
-                  body += downstream!!
+                  body += write_var(next.element, <->, val.expect("missing val"))
+                  body += downstream.expect("missing downstream")
                   body += write_var(next.index, <->, bump)
                   <+ step(kind = tast::TypedExprKind(Block, body)) +>
                |
                   <+ step(kind = tast::TypedExprKind(Assign,
-                     (a.0, a.1, a.2, a.3, a.4, val!!, a.6))) +>
+                     (a.0, a.1, a.2, a.3, a.4, val.expect("missing val"), a.6))) +>
          [Choice c]
             payload || ?c.1 != 1 | --| <-->
-            br = c.1(0)!!
+            br = c.1(0).expect("required payload")
             !bare_branch(br) || ?br.bind_vars != 1 | --| <-->
             // The generated branch passes the positive payload to the append.
             br.body.kind
                [Assign a]
                   rhs = a.5.kind [Var v] v.0 | ""
-                  rhs != br.bind_vars(0)!! | --| <-->
+                  rhs != br.bind_vars(0).expect("missing bind vars") | --| <-->
                | --| <-->
             cond = stage_value(s, c.0)
             body = replace_append(s, br.body, next_stage, downstream, <+>)
             !<>(cond) || !<>(body) | --| <-->
             branches = tast::TypedBranches()
-            branches += br(body = body!!)
-            <+ step(kind = tast::TypedExprKind(Choice, (cond!!, branches))) +>
+            branches += br(body = body.expect("missing body"))
+            <+ step(kind = tast::TypedExprKind(Choice, (cond.expect("missing cond"), branches))) +>
          | <-->
 
    fusion_source: tast::TypedExpr => <>
@@ -280,7 +280,7 @@
    fuse_pipeline = e =>
       outer = read_stage(e)
       !<>(outer) | --| <-->
-      current' = outer!!
+      current' = outer.expect("missing outer")
       step' = replace_append(current', current'.step, <-->, <-->, <->)
       !<>(step') | --| <-->
       initial = current'.init.kind [Assign a] a.5 | current'.init
@@ -293,7 +293,7 @@
       0.. @
          candidate = read_stage(current'.iterable)
          !<>(candidate) | -->
-         inner = candidate!!
+         inner = candidate.expect("missing candidate")
          !inner.collects | -->
          lower = replace_append(inner, inner.step, <+ current' +>, step', <->)
          !<>(lower) | -->
@@ -308,11 +308,11 @@
       params += current'.element
       params += current'.index
       body_fn = current'.lambda(kind = tast::TypedExprKind(Lambda,
-         (params, step'!!, tast::TypedCaptures())))
+         (params, step'.expect("missing step"), tast::TypedCaptures())))
       fused = current'.cycle(kind = tast::TypedExprKind(Cycle,
          (current'.iterable, body_fn, <-->, <->)))
       prefix += fused
-      prefix += outer!!.result
+      prefix += outer.expect("missing outer").result
       <+ (prefix, binders) +>
 
    rewrite: Context, tast::TypedExpr => tast::TypedExpr
@@ -352,8 +352,8 @@
       fallback = orig(kind = tast::TypedExprKind(Choice, (condition, out)))
       // Keep branch scopes and codegen diagnostics for nonliteral bodies.
       !ctx.in_fn || ?out != 2 || !(cond.kind [LitFlag]) | --| fallback
-      yes = out(0)!!
-      no = out(1)!!
+      yes = out(0).expect("missing out")
+      no = out(1).expect("missing out")
       eligible = (yes.kind [Bare]) && (no.kind [Bare]) &&
          ?yes.bind_vars == 0 && ?no.bind_vars == 0 &&
          scalar_literal(yes.body) && scalar_literal(no.body) &&

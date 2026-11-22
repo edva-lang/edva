@@ -191,7 +191,7 @@ nums = Int{}(1, 2, 3, 4)
 doubled = nums @> (_ * 2)
 evens_sq = nums @> x => x % 2 == 0 | <+ x * x +>
 total = (0, nums) @> (+)
-io::out $ (doubled(0)!!, ?evens_sq, evens_sq(1)!!, total)
+io::out $ (doubled(0).expect("missing doubled"), ?evens_sq, evens_sq(1).expect("missing evens sq"), total)
 ```
 
 ### Cycle jump and escape operators
@@ -255,7 +255,7 @@ Assignments sit at LBP 60, RBP 50 (right-associative) and always evaluate to `()
 | `&x` | `String`, `Builder`, composite, or call-arg scalar | `Addr` | Raw data pointer / buffer address (no space after `&`) |
 | `++x` | `String`, `Builder`, record, `T{}`, `T[]` | Same as `x` | Deep arena copy |
 | `~~lvalue` | Mutable variable, field, or collection slot | `(get: () => T, set: T => ())` | Two-way state binding lens record |
-| `x!!` | `< A | B >` or `< A | >` | `A` | Unwraps positive payload or aborts on negative slot (`E3091` on `<|B>` / `<>`) |
+| `x.expect("reason")` | `< A | B >` or `< A | >` | `A` | Unwraps positive payload or aborts on negative slot (`E3091` on `<|B>` / `<>`) |
 | `x--!` | `< A | E >`, `< A | >`, `< | E >`, `<>` | `A` or `()` | Unwraps positive slot or early-returns negative slot from enclosing function |
 | `expr {N}` | Any expression, integer literal `N` | `(T * N)` | Repeats `expr` `N` times (splices flat inside tuple literals) |
 | `{}` / `{cap}` | Optional `Int` capacity expression | `Builder` | Allocates `Builder` with default byte capacity (`16`) or explicit `cap` |

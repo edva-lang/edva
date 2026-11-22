@@ -21,6 +21,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.mem::zero_buf" = global ptr null
 @clo.const.7 = internal constant { ptr, ptr } { ptr @"mem::write_tail", ptr null }
 @"var.mem::write_tail" = global ptr null
+@null_addr_cast = internal unnamed_addr constant [40 x i8] c"E4015: cannot construct Addr from zero\0A\00"
 @clo.const.8 = internal constant { ptr, ptr } { ptr @"mem::align_forward", ptr null }
 @"var.mem::align_forward" = global ptr null
 @clo.const.9 = internal constant { ptr, ptr } { ptr @"mem::is_aligned", ptr null }
@@ -280,7 +281,23 @@ entry:
   %bitnottmp = xor i64 %subtmp, -1
   %bandtmp = and i64 %addtmp, %bitnottmp
   %cast.int2ptr = inttoptr i64 %bandtmp to ptr
+  %addr.is.null = icmp eq ptr %cast.int2ptr, null
+  br i1 %addr.is.null, label %addr.null, label %addr.present
+
+addr.null:                                        ; preds = %entry
+  call void @dva_abort_null_addr_cast()
+  unreachable
+
+addr.present:                                     ; preds = %entry
   ret ptr %cast.int2ptr
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_null_addr_cast() #6 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @null_addr_cast, i64 39)
+  call void @exit(i32 1)
+  unreachable
 }
 
 define i1 @"mem::is_aligned"(ptr %0, i64 %1) #0 {
@@ -635,8 +652,8 @@ entry:
   %cmptmp = icmp eq i64 %ptr.int.l, 0
   br i1 %cmptmp, label %common.ret, label %choice.exit
 
-common.ret:                                       ; preds = %loop.body.34, %loop.header.34, %choice.exit, %entry
-  %common.ret.op = phi i1 [ false, %entry ], [ false, %choice.exit ], [ false, %loop.header.34 ], [ true, %loop.body.34 ]
+common.ret:                                       ; preds = %addr_ok66, %loop.header.34, %choice.exit, %entry
+  %common.ret.op = phi i1 [ false, %entry ], [ false, %choice.exit ], [ false, %loop.header.34 ], [ true, %addr_ok66 ]
   ret i1 %common.ret.op
 
 choice.exit:                                      ; preds = %entry
@@ -654,50 +671,98 @@ choice.exit5:                                     ; preds = %choice.exit
 choice.else:                                      ; preds = %choice.exit5
   %raw.clean.int = and i64 %ptr.int.l, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
-  br label %choice.exit12
+  %addr.tag = lshr i64 %ptr.int.l, 48
+  %tag.immortal = icmp eq i64 %addr.tag, 0
+  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.current = icmp eq i64 %addr.tag, %active.gen
+  %tag.fast.ok = or i1 %tag.immortal, %tag.current
+  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
 
-choice.exit12:                                    ; preds = %choice.exit5, %choice.else
-  %choice.res = phi i64 [ %raw.load, %choice.else ], [ %fld.load9, %choice.exit5 ]
+choice.exit12:                                    ; preds = %choice.exit5, %addr_ok
+  %choice.res = phi i64 [ %raw.load, %addr_ok ], [ %fld.load9, %choice.exit5 ]
   %fld.load21 = load ptr, ptr %0, align 8
   %ptr.int.l22 = ptrtoint ptr %fld.load21 to i64
   %addtmp = add i64 %ptr.int.l22, 8
   %raw.clean.int24 = and i64 %addtmp, 281474976710655
   %raw.clean.ptr25 = inttoptr i64 %raw.clean.int24 to ptr
-  %raw.load26 = load volatile i64, ptr %raw.clean.ptr25, align 8
-  %fld.load29 = load ptr, ptr %0, align 8
-  %ptr.int.l30 = ptrtoint ptr %fld.load29 to i64
-  %addtmp31 = add i64 %ptr.int.l30, 16
-  %raw.clean.int34 = and i64 %addtmp31, 281474976710655
-  %raw.clean.ptr35 = inttoptr i64 %raw.clean.int34 to ptr
-  %raw.load36 = load volatile i64, ptr %raw.clean.ptr35, align 8
+  %addr.tag26 = lshr i64 %addtmp, 48
+  %tag.immortal28 = icmp eq i64 %addr.tag26, 0
+  %active.gen29 = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.current30 = icmp eq i64 %addr.tag26, %active.gen29
+  %tag.fast.ok31 = or i1 %tag.immortal28, %tag.current30
+  br i1 %tag.fast.ok31, label %addr_ok27, label %tag.slow_check32
+
+addr_ok:                                          ; preds = %tag.slow_check, %choice.else
+  %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
+  br label %choice.exit12
+
+tag.slow_check:                                   ; preds = %choice.else
+  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
+  br label %addr_ok
+
+addr_ok27:                                        ; preds = %tag.slow_check32, %choice.exit12
+  %raw.load33 = load volatile i64, ptr %raw.clean.ptr25, align 8
+  %fld.load36 = load ptr, ptr %0, align 8
+  %ptr.int.l37 = ptrtoint ptr %fld.load36 to i64
+  %addtmp38 = add i64 %ptr.int.l37, 16
+  %raw.clean.int41 = and i64 %addtmp38, 281474976710655
+  %raw.clean.ptr42 = inttoptr i64 %raw.clean.int41 to ptr
+  %addr.tag43 = lshr i64 %addtmp38, 48
+  %tag.immortal45 = icmp eq i64 %addr.tag43, 0
+  %active.gen46 = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.current47 = icmp eq i64 %addr.tag43, %active.gen46
+  %tag.fast.ok48 = or i1 %tag.immortal45, %tag.current47
+  br i1 %tag.fast.ok48, label %addr_ok44, label %tag.slow_check49
+
+tag.slow_check32:                                 ; preds = %choice.exit12
+  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag26)
+  br label %addr_ok27
+
+addr_ok44:                                        ; preds = %tag.slow_check49, %addr_ok27
+  %raw.load50 = load volatile i64, ptr %raw.clean.ptr42, align 8
   br label %loop.header.34
 
-loop.header.34:                                   ; preds = %choice.exit71, %choice.exit12
-  %loop.idx.34.0 = phi i64 [ 0, %choice.exit12 ], [ %loop.next, %choice.exit71 ]
-  %loop.cond = icmp slt i64 %loop.idx.34.0, %raw.load26
+tag.slow_check49:                                 ; preds = %addr_ok27
+  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag43)
+  br label %addr_ok44
+
+loop.header.34:                                   ; preds = %choice.exit92, %addr_ok44
+  %loop.idx.34.0 = phi i64 [ 0, %addr_ok44 ], [ %loop.next, %choice.exit92 ]
+  %loop.cond = icmp slt i64 %loop.idx.34.0, %raw.load33
   br i1 %loop.cond, label %loop.body.34, label %common.ret
 
 loop.body.34:                                     ; preds = %loop.header.34
-  %fld.load40 = load ptr, ptr %0, align 8
-  %ptr.int.l41 = ptrtoint ptr %fld.load40 to i64
-  %addtmp42 = add i64 %ptr.int.l41, 24
+  %fld.load54 = load ptr, ptr %0, align 8
+  %ptr.int.l55 = ptrtoint ptr %fld.load54 to i64
+  %addtmp56 = add i64 %ptr.int.l55, 24
   %multmp = mul i64 %loop.idx.34.0, 8
-  %addtmp46 = add i64 %addtmp42, %multmp
-  %raw.clean.int49 = and i64 %addtmp46, 281474976710655
-  %raw.clean.ptr50 = inttoptr i64 %raw.clean.int49 to ptr
-  %raw.load51 = load volatile i64, ptr %raw.clean.ptr50, align 8
-  %bandtmp52 = and i64 %raw.load51, 281474976710655
-  %subtmp = sub i64 %raw.load26, 1
-  %cmptmp55 = icmp eq i64 %loop.idx.34.0, %subtmp
-  %raw.load36.choice.res = select i1 %cmptmp55, i64 %raw.load36, i64 %choice.res
-  %cmptmp64 = icmp sge i64 %bandtmp, %bandtmp52
-  %addtmp68 = add i64 %bandtmp52, %raw.load36.choice.res
-  %cmptmp69 = icmp slt i64 %bandtmp, %addtmp68
-  %and.35.phi = select i1 %cmptmp64, i1 %cmptmp69, i1 false
-  br i1 %and.35.phi, label %common.ret, label %choice.exit71
+  %addtmp60 = add i64 %addtmp56, %multmp
+  %raw.clean.int63 = and i64 %addtmp60, 281474976710655
+  %raw.clean.ptr64 = inttoptr i64 %raw.clean.int63 to ptr
+  %addr.tag65 = lshr i64 %addtmp60, 48
+  %tag.immortal67 = icmp eq i64 %addr.tag65, 0
+  %active.gen68 = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.current69 = icmp eq i64 %addr.tag65, %active.gen68
+  %tag.fast.ok70 = or i1 %tag.immortal67, %tag.current69
+  br i1 %tag.fast.ok70, label %addr_ok66, label %tag.slow_check71
 
-choice.exit71:                                    ; preds = %loop.body.34
+addr_ok66:                                        ; preds = %tag.slow_check71, %loop.body.34
+  %raw.load72 = load volatile i64, ptr %raw.clean.ptr64, align 8
+  %bandtmp73 = and i64 %raw.load72, 281474976710655
+  %subtmp = sub i64 %raw.load33, 1
+  %cmptmp76 = icmp eq i64 %loop.idx.34.0, %subtmp
+  %raw.load50.choice.res = select i1 %cmptmp76, i64 %raw.load50, i64 %choice.res
+  %cmptmp85 = icmp sge i64 %bandtmp, %bandtmp73
+  %addtmp89 = add i64 %bandtmp73, %raw.load50.choice.res
+  %cmptmp90 = icmp slt i64 %bandtmp, %addtmp89
+  %and.35.phi = select i1 %cmptmp85, i1 %cmptmp90, i1 false
+  br i1 %and.35.phi, label %common.ret, label %choice.exit92
+
+tag.slow_check71:                                 ; preds = %loop.body.34
+  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag65)
+  br label %addr_ok66
+
+choice.exit92:                                    ; preds = %addr_ok66
   %loop.next = add i64 %loop.idx.34.0, 1
   br label %loop.header.34
 }

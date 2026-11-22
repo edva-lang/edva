@@ -6,7 +6,7 @@ make = item => <+ Row(item.id, item) ->
 #type Callbacks (create: < (Item => < Row | Error >) | >, count: Int)
 run: #param C: Type, C, Item => < Int | Error >
 run = callbacks, item =>
-   callback = callbacks.create!!
+   callback = callbacks.create.expect("missing create")
    row = callback(item)--!
    <+ row.element ->
 zero: #param T: Type, T => Int
@@ -15,7 +15,7 @@ zero = value =>
    callback = ignored => 0
    callback(value)
 callbacks = Callbacks(<+ make +>, 0)
-io::out(run(callbacks, Item(7, "seven"))!!)
+io::out(run(callbacks, Item(7, "seven")).expect("missing run"))
 io::out(zero(Item(8, "eight")))
 flags = <>{}
 flags += <+>

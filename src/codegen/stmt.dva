@@ -150,7 +150,7 @@ refs_name_exprs_at = es, name, i, n =>
    i == n
       | <->
       |
-         refs_name(es(i)!!, name)
+         refs_name(es(i).expect("missing es"), name)
             | <+>
             | refs_name_exprs_at(es, name, i + 1, n)
 
@@ -163,7 +163,7 @@ refs_name_fields_at = fs, name, i, n =>
    i == n
       | <->
       |
-         rf = fs(i)!!
+         rf = fs(i).expect("missing fs")
          refs_name(rf.val, name)
             | <+>
             | refs_name_fields_at(fs, name, i + 1, n)
@@ -177,7 +177,7 @@ refs_name_branches_at = bs, name, i, n =>
    i == n
       | <->
       |
-         b = bs(i)!!
+         b = bs(i).expect("missing bs")
          refs_name_exprs(b.case_values, name) || param_in(b.variant_names, name) ||
            refs_name(b.pred_fn, name) || refs_name(b.block, name)
            | <+>
@@ -188,7 +188,7 @@ lambda_captures_at = cg, f, i, n, acc =>
    i == n
       | acc
       |
-         cv = cg.vars(i)!!
+         cv = cg.vars(i).expect("missing vars")
          (cv.is_local && !param_in(f.params, cv.name) && refs_name(f.body, cv.name))
             | acc += cv.name
          lambda_captures_at(cg, f, i + 1, n, acc)
@@ -266,7 +266,7 @@ lambda_env_find_at = name, i, n =>
    i == n
       | <-->
       |
-         lei = types::g.lambda_env_infos(i)!!
+         lei = types::g.lambda_env_infos(i).expect("missing lambda env infos")
          lei.name == name
             | <+ lei +>
             | lambda_env_find_at(name, i + 1, n)
@@ -280,7 +280,7 @@ lambda_env_index_at = name, i, n =>
    i == n
       | -1
       |
-         lei = types::g.lambda_env_infos(i)!!
+         lei = types::g.lambda_env_infos(i).expect("missing lambda env infos")
          lei.name == name
             | i
             | lambda_env_index_at(name, i + 1, n)
@@ -334,7 +334,7 @@ lambda_store_caps_at: types::Cg, ast::Names, types::Addrs, Addr, Addr, Int, Int 
 lambda_store_caps_at = cg, caps, cap_vals, est, ep2, j, n =>
    j != n
       |
-         LLVMBuildStore(cg.builder, cap_vals(j)!!,
+         LLVMBuildStore(cg.builder, cap_vals(j).expect("missing cap vals"),
            LLVMBuildStructGEP2(cg.builder, est, ep2, j, "env.store.gep"))
          lambda_store_caps_at(cg, caps, cap_vals, est, ep2, j + 1, n)
 
@@ -396,8 +396,8 @@ lambda_type_env = cg =>
       ev_opt | udef => annotate::register_enum_variants(env, td_ev.name, udef.ut)
    type_env::set_current_module(env, cg.current_module)
    ?types::g.ct_bind_names @ i =>
-      name = types::g.ct_bind_names(i)!!
-      ti = types::g.ct_bind_tis(i)!!
+      name = types::g.ct_bind_names(i).expect("missing ct bind names")
+      ti = types::g.ct_bind_tis(i).expect("missing ct bind tis")
       dname = types::g.ct_bind_dnames(i) | _ | ""
       exact_opt = dname != "" | type_env::lookup_user_type_exact(env, dname) | <-->
       ut' = exact_opt
@@ -507,7 +507,7 @@ compile_generic_lambda = cg, f =>
    typed = annotate::refresh_typed_expr(ctx, te)
    name = "$lambda_" + str::from_int(types::g.tmpc)
    types::g.tmpc = types::g.tmpc + 1
-   lam = (typed.kind [Lambda l] <+ l +> | <-->)!!
+   lam = (typed.kind [Lambda l] <+ l +> | <-->).expect("required payload")
    codegen_typed_compile_fn(cg, name, lam.0, lam.1, typed.ti, "")
 
 /// Elaborates a specialized function body through `annotate` and compiles it via typed codegen.
@@ -521,8 +521,8 @@ compile_typed_mono_fn = cg, fd, param_vts, param_tis, ret_ti =>
    ctx = unify::new_ctx!
    env = lambda_type_env(cg)
    ?types::g.ct_val_names @ vi =>
-      vname = types::g.ct_val_names(vi)!!
-      ctv = types::g.ct_val_vals(vi)!!
+      vname = types::g.ct_val_names(vi).expect("missing ct val names")
+      ctv = types::g.ct_val_vals(vi).expect("missing ct val vals")
       v_te = ctv
          [Int n] <+ tast::mk_lit_int(n, 0, 0) +>
          [Str s] <+ tast::mk_lit_str(s, 0, 0) +>
@@ -537,8 +537,8 @@ compile_typed_mono_fn = cg, fd, param_vts, param_tis, ret_ti =>
    resolved_pvts = ast::VTypes()
    param_uts = unify::UTypes()
    ?fd.params @ pi =>
-      pname = fd.params(pi)!!
-      raw_pti = pi < ?param_tis | param_tis(pi)!! |
+      pname = fd.params(pi).expect("missing params")
+      raw_pti = pi < ?param_tis | param_tis(pi).expect("missing param tis") |
          ast::TypeInfo(Prim, ast::ValueType(Unknown))
       res_pti = annotate::resolve_ct_ti_aliases(env, raw_pti)
       has_decl_p = !(res_pti [Prim vt] vt [Unknown] | <->)
@@ -587,8 +587,8 @@ compile_typed_mono_fn = cg, fd, param_vts, param_tis, ret_ti =>
          final_ptis = ast::VInfos()
          final_pvts = ast::VTypes()
          ?fd.params @ pi =>
-            c_pu = unify::canon(ctx, param_uts(pi)!!)
-            pti_old = resolved_ptis(pi)!!
+            c_pu = unify::canon(ctx, param_uts(pi).expect("missing param uts"))
+            pti_old = resolved_ptis(pi).expect("missing resolved ptis")
             keep_p = pti_old [TypeVar tv] tv != "" | (pti_old [Bitfield])
             f_pti = keep_p | pti_old | unify::type_info_from_utype(ctx, c_pu)
             final_ptis += f_pti
@@ -741,7 +741,7 @@ remove_var_at = vars, name, i, n, acc =>
    i == n
       | acc
       |
-         v = vars(i)!!
+         v = vars(i).expect("missing vars")
          v.name != name | acc += v
          remove_var_at(vars, name, i + 1, n, acc)
 
@@ -758,8 +758,8 @@ find_string_literal = cg, s, i =>
    i == ?cg.strvals
       | <-->
       |
-         cg.strvals(i)!! == s
-            | <+ cg.strglobals(i)!! +>
+         cg.strvals(i).expect("missing strvals") == s
+            | <+ cg.strglobals(i).expect("missing strglobals") +>
             | find_string_literal(cg, s, i + 1)
 
 codegen_string_literal: types::Cg, String => Addr
@@ -1621,7 +1621,7 @@ cycle_has_field_index_exprs = es, idx_name, i, n =>
    i == n
       | <->
       |
-         e = es(i)!!
+         e = es(i).expect("missing es")
          cycle_has_field_index(e, idx_name)
             | <+>
             | cycle_has_field_index_exprs(es, idx_name, i + 1, n)
@@ -1631,7 +1631,7 @@ cycle_has_field_index_branches = brs, idx_name, i, n =>
    i == n
       | <->
       |
-         br = brs(i)!!
+         br = brs(i).expect("missing brs")
          cycle_has_field_index_exprs(br.case_values, idx_name, 0, ?br.case_values) ||
            cycle_has_field_index(br.pred_fn, idx_name) ||
            cycle_has_field_index(br.block, idx_name)
@@ -1643,7 +1643,7 @@ cycle_has_field_index_fields = flds, idx_name, i, n =>
    i == n
       | <->
       |
-         f = flds(i)!!
+         f = flds(i).expect("missing flds")
          cycle_has_field_index(f.val, idx_name)
             | <+>
             | cycle_has_field_index_fields(flds, idx_name, i + 1, n)
@@ -1772,16 +1772,16 @@ codegen_eval_cycle_expr_ast = cg, c =>
       [Record rec]
          (!rec.is_repeat && ?rec.fields == 2)
             |
-               f0 = rec.fields(0)!!
-               f1 = rec.fields(1)!!
+               f0 = rec.fields(0).expect("missing fields")
+               f1 = rec.fields(1).expect("missing fields")
                !f0.has_name && !f1.has_name
             | <->
       | <->
    is_seeded
       |
          rec = c.iterable [Record r] r | ast::RecordExpr(ast::Fields(), <->)
-         seed_e = rec.fields(0)!!.val
-         iter_e = rec.fields(1)!!.val
+         seed_e = rec.fields(0).expect("missing fields").val
+         iter_e = rec.fields(1).expect("missing fields").val
          acc_name = "_fold_acc_" + sid
          init_e = ast::Expr(Assign, (acc_name, <+>, <->, <->, <->, seed_e,
            ast::Expr(Var, ""), "", ti_unk))
@@ -1944,7 +1944,7 @@ cycle_record_info = cg, e =>
          (n', elem_vt', elem_ll')
       [Record r]
          n' = ?r.fields
-         first_f = n' > 0 | r.fields(0)!! |
+         first_f = n' > 0 | r.fields(0).expect("missing fields") |
             ast::RecordField(<->, "", ast::Expr(Var, "?"))
          elem_vt' = n' > 0 | types::static_expr_vt(cg, first_f.val) |
             ast::ValueType(Unknown)
@@ -1969,7 +1969,7 @@ slice_elem_dtype = cg, dt =>
                fields = rr.0
                ?fields > 0
                   |
-                     f0 = fields(0)!!
+                     f0 = fields(0).expect("missing fields")
                      element_dtype(cg, f0.rec_type)
                   | ""
             [Array ae]
@@ -2324,7 +2324,7 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv_opt =>
                         | main::slice_len(cg, iv_val, "slice.cycle.len")
                         |
                            is_arr
-                              | main::builder_len(cg, arr_val_opt!!, "arr.cycle.len")
+                              | main::builder_len(cg, arr_val_opt.expect("missing arr val opt"), "arr.cycle.len")
                               | iv_val
    counter_alloca = types::hoisted_alloca(cg, i64t, "loop.idx." + sc)
    LLVMBuildStore(cg.builder, start_val, counter_alloca)
@@ -2376,7 +2376,7 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv_opt =>
       | arr_elem_rt_opt
       | (is_rec | <+ rec_info.2 +> | <-->)
    elem_val_rec_opt = is_arr
-      | <+ cycle_array_elem_val(cg, arr_val_opt!!, curr_i, arr_is_ptr, arr_vt,
+      | <+ cycle_array_elem_val(cg, arr_val_opt.expect("missing arr val opt"), curr_i, arr_is_ptr, arr_vt,
         arr_elem_ll) +>
       |
          is_sl
@@ -2387,7 +2387,7 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv_opt =>
                <+ LLVMBuildLoad2(cg.builder, sl_elem_ll, elem_gep2, "slice.elem") +>
             |
                str_rune
-                  | <+ r_dec_opt!! .0 +>
+                  | <+ r_dec_opt.expect("missing r dec opt") .0 +>
                   |
                      is_str
                         | <+ cycle_str_elem(cg, iv_val, curr_i) +>
@@ -2463,7 +2463,7 @@ cycle_trunc: types::Addrs, Int => types::Addrs
 cycle_trunc = st, n =>
    res = types::Addrs()
    n @ i =>
-      res += st(i)!!
+      res += st(i).expect("missing st")
    res
 
 // "-->" / "--^": break or continue the innermost enclosing cycle. A break
@@ -2495,8 +2495,8 @@ codegen_cycle_jump_too_deep = cg, j, depth =>
 codegen_eval_cycle_jump_valid: types::Cg, ast::CycleJumpExpr, Int => (Addr, ast::ValueType)
 codegen_eval_cycle_jump_valid = cg, j, nb =>
    target = j.is_break
-      | cg.cycle_breaks(nb - j.level)!!
-      | cg.cycle_conts(nb - j.level)!!
+      | cg.cycle_breaks(nb - j.level).expect("missing cycle breaks")
+      | cg.cycle_conts(nb - j.level).expect("missing cycle conts")
    branch_to(cg, target)
    (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
 
@@ -2590,7 +2590,7 @@ param_vt_at = v, params, ptypes, i, n =>
    i == n
       | ast::ValueType(Unknown)
       |
-         pn = params(i)!!
+         pn = params(i).expect("missing params")
          (pn == v)
             | (ptypes(i) | _ | ast::ValueType(Unknown))
             | param_vt_at(v, params, ptypes, i + 1, n)
@@ -2633,7 +2633,7 @@ infer_ret_choice_branches = brs, params, ptypes, i, n, has_unit =>
    i == n
       | (has_unit | ast::ValueType(Unit) | ast::ValueType(Unknown))
       |
-         br = brs(i)!!
+         br = brs(i).expect("missing brs")
          vt = infer_ret(br.block, params, ptypes)
          is_unit = vt == ast::ValueType(Unit)
          (vt != ast::ValueType(Unknown)) && !is_unit
@@ -2666,7 +2666,7 @@ infer_ret = e, params, ptypes =>
                idx = ct.0
                idx !< 0 && idx < ?c.branches
                   |
-                     br = c.branches(idx)!!
+                     br = c.branches(idx).expect("missing branches")
                      saved_ct_n = ?types::g.ct_bind_names
                      types::ctfe_push_branch_type_binds_simple(br, c.cond)
                      r_vt = infer_ret(br.block, params, ptypes)
@@ -2737,7 +2737,7 @@ infer_ret = e, params, ptypes =>
          c.fn_name == "#member3" && ?c.args == 3
             | --| ast::ValueType(Enum)
          c.fn_name == "%bitcast" && ?c.args == 2
-            | ((c.args(0)!!) [SizeOf so] so.val_type | ast::ValueType(Unknown))
+            | ((c.args(0).expect("missing args")) [SizeOf so] so.val_type | ast::ValueType(Unknown))
             |
                c.fn_name != ""
                   |
@@ -2754,7 +2754,7 @@ infer_ret_block = es, params, ptypes =>
    n = ?es
    n == 0
       | ast::ValueType(Unit)
-      | infer_ret(es(n - 1)!!, params, ptypes)
+      | infer_ret(es(n - 1).expect("missing es"), params, ptypes)
 
 param_rec_effective: types::Cg, String => <(Addr, ast::Names, ast::VTypes)|>
 param_rec_effective = cg, v =>
@@ -2942,7 +2942,7 @@ fn_block_var_type_at = cg, stmts, name, i =>
    i < 0
       | ast::ValueType(Unknown)
       |
-         e = stmts(i)!!
+         e = stmts(i).expect("missing stmts")
          e
             [Assign t]
                t.0 == name
@@ -2982,7 +2982,7 @@ fn_ret_choice_branches_override = cg, body, brs, cur, i, n =>
    i == n
       | ast::ValueType(Unknown)
       |
-         br = brs(i)!!
+         br = brs(i).expect("missing brs")
          target = fn_last_expr(br.block)
          bvt = fn_ret_var_override_target(cg, body, target, cur)
          (bvt != ast::ValueType(Unknown)) && (bvt != cur)
@@ -3090,7 +3090,7 @@ fn_body_is_builder_at = stmts, v, i, n =>
    i == n
       | <->
       |
-         fn_stmt_is_builder(stmts(i)!!, v)
+         fn_stmt_is_builder(stmts(i).expect("missing stmts"), v)
             | <+>
             | fn_body_is_builder_at(stmts, v, i + 1, n)
 
@@ -3110,7 +3110,7 @@ fn_local_fn_ret_at = cg, stmts, name, i, n =>
    i == n
       | ast::ValueType(Unknown)
       |
-         e = stmts(i)!!
+         e = stmts(i).expect("missing stmts")
          e
             [Assign t]
                t.0 == name
@@ -3157,7 +3157,7 @@ fn_ret_call_override = cg, body, c, cur =>
       |
          fn_var_is_sl(cg, fname)
             |
-               ?c.args > 0 && (c.args(0)!! [Range])
+               ?c.args > 0 && (c.args(0).expect("missing args") [Range])
                   | ast::ValueType(Slice)
                   | ast::ValueType(Int)
             |
@@ -3166,7 +3166,7 @@ fn_ret_call_override = cg, body, c, cur =>
                   | pvt
                   |
                      (fname == "tap" || fname == "fp::tap") && ?c.args > 0
-                        | fn_tap_arg_vt(cg, body, c.args(0)!!)
+                        | fn_tap_arg_vt(cg, body, c.args(0).expect("missing args"))
                         |
                            s_ret = fn_signature_return(cg, types::g.pstmts,
                              fname, 0)
@@ -3232,7 +3232,7 @@ fn_ret_unary_override = cg, body, op, target, cur =>
                   | ast::ValueType(Flag)
             [BuilderCreate] ast::ValueType(Str)
             | ast::ValueType(Flag)
-      [Unwrap]
+      [Unwrap, Expect]
          target
             [Call c]
                fn_var_is_arr(cg, c.fn_name)
@@ -3285,7 +3285,7 @@ fn_body_has_array_anno_at = cg, stmts, v, i, n =>
    i == n
       | <->
       |
-         fn_stmt_array_anno(cg, stmts(i)!!, v)
+         fn_stmt_array_anno(cg, stmts(i).expect("missing stmts"), v)
             | <+>
             | fn_body_has_array_anno_at(cg, stmts, v, i + 1, n)
 
@@ -3320,7 +3320,7 @@ fn_body_array_elem_vt_at = stmts, v, i, n =>
    i == n
       | ast::ValueType(Unknown)
       |
-         e = stmts(i)!!
+         e = stmts(i).expect("missing stmts")
          e [Assign t]
             (t.0 == v)
                |
@@ -3346,7 +3346,7 @@ fn_body_array_dtype_at = stmts, v, i, n =>
    i == n
       | ""
       |
-         e = stmts(i)!!
+         e = stmts(i).expect("missing stmts")
          e [Assign t]
             (t.0 == v)
                |
@@ -3383,7 +3383,7 @@ fn_last_expr = e =>
    e
       [Block b]
          n = ?b
-         n == 0 | ast::Expr(Var, "?") | fn_last_expr(b(n - 1)!!)
+         n == 0 | ast::Expr(Var, "?") | fn_last_expr(b(n - 1).expect("missing b"))
       | e
 
 expr_is_heap_val: types::Cg, ast::Expr => <>
@@ -3399,11 +3399,11 @@ expr_is_heap_val = cg, e =>
          types::ram_tag_is_heap_unit(v.tag_name) || (?v.args > 0)
       [Choice ch]
          nb = ?ch.branches
-         (nb > 0) && (expr_is_heap_val(cg, ch.branches(0)!!.block) ||
-           expr_is_heap_val(cg, ch.branches(nb - 1)!!.block))
+         (nb > 0) && (expr_is_heap_val(cg, ch.branches(0).expect("missing branches").block) ||
+           expr_is_heap_val(cg, ch.branches(nb - 1).expect("missing branches").block))
       [Block bl]
          ne = ?bl
-         (ne > 0) && expr_is_heap_val(cg, bl(ne - 1)!!)
+         (ne > 0) && expr_is_heap_val(cg, bl(ne - 1).expect("missing bl"))
       | <->
 
 fn_ret_heap: types::Cg, String, ast::Expr, ast::ValueType => <>
@@ -3678,7 +3678,7 @@ param_clo_ty_at = cg, name, i, n =>
    i == n
       | <-->
       |
-         cg.param_clo_names(i)!! == name
+         cg.param_clo_names(i).expect("missing param clo names") == name
             | (cg.param_clo_tys(i) | ty => <+ ty +> | <-->)
             | param_clo_ty_at(cg, name, i + 1, n)
 
@@ -3699,7 +3699,7 @@ param_clo_ret_at = cg, name, i, n =>
    i == n
       | ast::ValueType(Unknown)
       |
-         cg.param_clo_names(i)!! == name
+         cg.param_clo_names(i).expect("missing param clo names") == name
             | (cg.param_clo_rets(i) | _ | ast::ValueType(Unknown))
             | param_clo_ret_at(cg, name, i + 1, n)
 
@@ -4328,7 +4328,7 @@ truncate_vars: types::CgVars, Int => types::CgVars
 truncate_vars = vars, n =>
    res = types::CgVars()
    n @ i =>
-      res += vars(i)!!
+      res += vars(i).expect("missing vars")
    res
 
 is_foreign_fn_step: String, Int => <>
@@ -4382,7 +4382,7 @@ collect_foreign_params = cg, f, i, param_ll, param_vts =>
    i !< ?f.params
       | (param_ll, param_vts)
       |
-         p = f.params(i)!!
+         p = f.params(i).expect("missing params")
          param_vts += p.param_type
          p_is_i32 = p.param_type [Int] && (p.name == "fd" ||
            p.name == "flags" || p.name == "code")
@@ -4454,7 +4454,7 @@ codegen_collect_fns_step: types::Cg, ast::Exprs, Int => ()
 codegen_collect_fns_step = cg, stmts, i =>
    i < ?stmts
       |
-         e = stmts(i)!!
+         e = stmts(i).expect("missing stmts")
          e
             [Assign t] collect_if_fn(cg, t)
             [Block b] codegen_collect_fns(cg, b)
@@ -4545,7 +4545,7 @@ fn_has_signature_rev = stmts, name, at =>
    at < 0
       | <->
       |
-         e = stmts(at)!!
+         e = stmts(at).expect("missing stmts")
          e
             [Assign t]
                is_sig = (t.8 [Fn]) || (marker_ct0_name(t.7) != "")
@@ -4565,7 +4565,7 @@ codegen_check_record_return_sig: types::Cg, ast::Exprs, types::FnDef, Int => ()
 codegen_check_record_return_sig = cg, stmts, fd, at =>
    at < ?stmts
       |
-         e = stmts(at)!!
+         e = stmts(at).expect("missing stmts")
          e
             [Assign t]
                types::sig_name_matches(t.0, fd.name)
@@ -4711,7 +4711,7 @@ fn_signature_param_types_rev = cg, stmts, name, at =>
    at < 0
       | ast::VTypes()
       |
-         e = stmts(at)!!
+         e = stmts(at).expect("missing stmts")
          e
             [Assign t]
                types::sig_name_matches(t.0, name)
@@ -4758,7 +4758,7 @@ fn_signature_param_dtypes_rev = stmts, name, at =>
    at < 0
       | ast::Names()
       |
-         e = stmts(at)!!
+         e = stmts(at).expect("missing stmts")
          e
             [Assign t]
                types::sig_name_matches(t.0, name)
@@ -4790,7 +4790,7 @@ fn_signature_param_tis_rev = stmts, name, at =>
    at < 0
       | ast::VInfos()
       |
-         e = stmts(at)!!
+         e = stmts(at).expect("missing stmts")
          e
             [Assign t]
                types::sig_name_matches(t.0, name)
@@ -4814,7 +4814,7 @@ fn_signature_cparams_rev = stmts, name, at =>
    at < 0
       | ast::CParams()
       |
-         e = stmts(at)!!
+         e = stmts(at).expect("missing stmts")
          e
             [Assign a]
                a.8
@@ -4883,7 +4883,7 @@ fn_signature_return_rev = cg, stmts, name, at =>
    at < 0
       | ast::ValueType(Unknown)
       |
-         e = stmts(at)!!
+         e = stmts(at).expect("missing stmts")
          e
             [Assign a]
                a.8
@@ -4908,7 +4908,7 @@ fn_signature_return_ti_rev = cg, stmts, name, at =>
    at < 0
       | ast::TypeInfo(Prim, ast::ValueType(Unknown))
       |
-         e = stmts(at)!!
+         e = stmts(at).expect("missing stmts")
          e
             [Assign a]
                a.8
@@ -4979,7 +4979,7 @@ expr_has_threads_at = cg, stmts, i, n =>
    i == n
       | <->
       |
-         expr_has_threads_expr(cg, stmts(i)!!)
+         expr_has_threads_expr(cg, stmts(i).expect("missing stmts"))
             | <+>
             | expr_has_threads_at(cg, stmts, i + 1, n)
 
@@ -5008,7 +5008,7 @@ codegen_scan_record_stmt = cg, stmts, i =>
    n = ?stmts
    i != n
       |
-         e = stmts(i)!!
+         e = stmts(i).expect("missing stmts")
          codegen_scan_record_expr(cg, stmts, e)
          codegen_scan_record_stmt(cg, stmts, i + 1)
 
@@ -5095,7 +5095,7 @@ codegen_scan_record_args_of = cg, stmts, c, j =>
    n = ?c.args
    j != n
       |
-         av = c.args(j)!!
+         av = c.args(j).expect("missing args")
          check_sig_record_arg(cg, stmts, c, av, j)
          is_rec_candidate(av) > 0
             |
@@ -5117,14 +5117,14 @@ codegen_scan_enum_variant_stmts: types::Cg, ast::Exprs, ast::Exprs, Int => ()
 codegen_scan_enum_variant_stmts = cg, all, stmts, i =>
    i < ?stmts
       |
-         codegen_scan_enum_variant_expr(cg, all, stmts(i)!!)
+         codegen_scan_enum_variant_expr(cg, all, stmts(i).expect("missing stmts"))
          codegen_scan_enum_variant_stmts(cg, all, stmts, i + 1)
 
 codegen_scan_enum_variant_exprs: types::Cg, ast::Exprs, ast::Exprs, Int => ()
 codegen_scan_enum_variant_exprs = cg, all, es, i =>
    i < ?es
       |
-         codegen_scan_enum_variant_expr(cg, all, es(i)!!)
+         codegen_scan_enum_variant_expr(cg, all, es(i).expect("missing es"))
          codegen_scan_enum_variant_exprs(cg, all, es, i + 1)
 
 codegen_scan_enum_variant_expr: types::Cg, ast::Exprs, ast::Expr => ()
@@ -5185,7 +5185,7 @@ sig_ct0_name_rev = stmts, name, at =>
    res' = ++""
    (at + 1) @ k =>
       idx = at - k
-      e = stmts(idx)!!
+      e = stmts(idx).expect("missing stmts")
       e
          [Assign t]
             types::sig_name_matches(t.0, name)
@@ -5224,7 +5224,7 @@ scan_fn_body_of = fns, name, i =>
    i == ?fns
       | ast::Expr(Var, "")
       |
-         fd = fns(i)!!
+         fd = fns(i).expect("missing fns")
          fd.name == name | fd.body | scan_fn_body_of(fns, name, i + 1)
 
 ct_member_index: ast::Expr, String => Int
@@ -5248,7 +5248,7 @@ ct_member_index_stmts = es, ct_name, i =>
    i == ?es
       | -1
       |
-         n = ct_member_index(es(i)!!, ct_name)
+         n = ct_member_index(es(i).expect("missing es"), ct_name)
          n !< 0 | n | ct_member_index_stmts(es, ct_name, i + 1)
 
 check_enum_variant_range: types::Cg, String, Int, Int, Int => ()
@@ -5294,7 +5294,7 @@ sig_param0_name = stmts, name, at =>
    at == ?stmts
       | ""
       |
-         e = stmts(at)!!
+         e = stmts(at).expect("missing stmts")
          e
             [Assign t]
                t.0 == name
@@ -5356,7 +5356,7 @@ record_var_schema_at = cg, stmts, pn, v, i =>
    n = ?stmts
    i != n
       |
-         e = stmts(i)!!
+         e = stmts(i).expect("missing stmts")
          e
             [Assign t]
                t.0 == v
@@ -5392,7 +5392,7 @@ record_schema_fields: types::Cg, ast::RecordExpr, Int, Int, types::Addrs, ast::V
 record_schema_fields = cg, r, i, nf, ftypes, fvts, fnames =>
    i != nf
       |
-         f = r.fields(i)!!
+         f = r.fields(i).expect("missing fields")
          fv = record_field_vt(cg, f)
          is_rec = fv [Record]
          f_ll = is_rec
@@ -5442,7 +5442,7 @@ fn_ret_rec_of_rev = cg, name, i =>
    i < 0
       | <-->
       |
-         pr = types::g.fn_ret_recs(i)!!
+         pr = types::g.fn_ret_recs(i).expect("missing fn ret recs")
          types::sig_name_matches(pr.name, name)
             | <+ pr +>
             | fn_ret_rec_of_rev(cg, name, i - 1)
@@ -5472,7 +5472,7 @@ fn_ret_is_scalar = cg, fname =>
       |
          types::fninfo_index(cg, fname)
             | idx =>
-               fi = cg.fninfos(idx)!!
+               fi = cg.fninfos(idx).expect("missing fninfos")
                types::is_scalar_vt(fi.ret_vt)
             | <->
 
@@ -5536,7 +5536,7 @@ codegen_scan_array_stmt = cg, stmts, i =>
    n = ?stmts
    i != n
       |
-         e = stmts(i)!!
+         e = stmts(i).expect("missing stmts")
          codegen_scan_array_expr(cg, stmts, e)
          codegen_scan_array_stmt(cg, stmts, i + 1)
 
@@ -5559,7 +5559,7 @@ codegen_scan_array_args_of = cg, stmts, c, j =>
    n = ?c.args
    j != n
       |
-         av = c.args(j)!!
+         av = c.args(j).expect("missing args")
          is_arr = av [Var v] types::is_array_vt(types::var_type(cg, v)) | <->
          is_sl = expr_is_slice(cg, stmts, av)
          is_arr
@@ -5602,7 +5602,7 @@ var_assigned_slice_at = cg, stmts, v, i =>
    i == n
       | <->
       |
-         e = stmts(i)!!
+         e = stmts(i).expect("missing stmts")
          hit = e [Assign t] ((t.0 == v) && stmt_is_slice_call(t.5)) | <->
          hit
             | <+>
@@ -5663,7 +5663,7 @@ param_rec_of_at = cg, name, i, n =>
    i == n
       | <-->
       |
-         pr = cg.param_recs(i)!!
+         pr = cg.param_recs(i).expect("missing param recs")
          pr.name == name
             | <+ (pr.rt, pr.fnames, pr.fvts) +>
             | param_rec_of_at(cg, name, i + 1, n)
@@ -5683,9 +5683,9 @@ fninfo_of_at = cg, name, i, n =>
    i == n
       | <-->
       |
-         fi = cg.fninfos(i)!!
+         fi = cg.fninfos(i).expect("missing fninfos")
          (fi.name == name) || types::sig_name_matches(fi.name, name)
-            | <+ (fi.llvm_fn, fi.llvm_type!!, fi.ret_vt) +>
+            | <+ (fi.llvm_fn, fi.llvm_type.expect("missing llvm type"), fi.ret_vt) +>
             | fninfo_of_at(cg, name, i + 1, n)
 
 fninfo_from_fns_at: types::Cg, String, Int, Int => <(<Addr|>, Addr, ast::ValueType)|>
@@ -5693,7 +5693,7 @@ fninfo_from_fns_at = cg, name, i, n =>
    i == n
       | <-->
       |
-         fd = cg.fns(i)!!
+         fd = cg.fns(i).expect("missing fns")
          fd.name == name
             |
                ptypes = infer_param_types(fd, ast::VTypes())
@@ -5762,7 +5762,7 @@ call_hint_direct_at = cg, stmts, names, hints, i, n =>
    i == n
       | <->
       |
-         scan_call(cg, stmts(i)!!, names, hints)
+         scan_call(cg, stmts(i).expect("missing stmts"), names, hints)
             | <+>
             | call_hint_direct_at(cg, stmts, names, hints, i + 1, n)
 
@@ -5789,7 +5789,7 @@ call_passes_arg = cg, c, names =>
                idx = param_index(fd.params, v, 0)
                idx !< 0 && idx < ?c.args
                   |
-                     arg = c.args(idx)!!
+                     arg = c.args(idx).expect("missing args")
                      arg
                         [Var av] name_is_in(names, av)
                         | <->
@@ -5803,7 +5803,7 @@ expr_var_name = e =>
       [Var v] v
       [Block b]
          n = ?b
-         n > 0 | expr_var_name(b(n - 1)!!) | ""
+         n > 0 | expr_var_name(b(n - 1).expect("missing b")) | ""
       | ""
 
 fn_ret_of_name: types::Cg, String => ast::ValueType
@@ -5824,7 +5824,7 @@ choice_first_fn_ret = cg, brs, at =>
    at == ?brs
       | ast::ValueType(Unknown)
       |
-         vn = expr_var_name(brs(at)!!.block)
+         vn = expr_var_name(brs(at).expect("missing brs").block)
          ret = fn_ret_of_name(cg, vn)
          ret != ast::ValueType(Unknown)
             | ret
@@ -5836,7 +5836,7 @@ choice_branches_has_any = cg, brs, names, first_ret, at =>
    at == ?brs
       | <->
       |
-         br = brs(at)!!
+         br = brs(at).expect("missing brs")
          vn = expr_var_name(br.block)
          br_ret = fn_ret_of_name(cg, vn)
          compat = first_ret == ast::ValueType(Unknown) ||
@@ -5851,7 +5851,7 @@ choice_branches_add_names = cg, brs, names, first_ret, at =>
    at == ?brs
       | <->
       |
-         br = brs(at)!!
+         br = brs(at).expect("missing brs")
          vn = expr_var_name(br.block)
          br_ret = fn_ret_of_name(cg, vn)
          compat = first_ret == ast::ValueType(Unknown) ||
@@ -5948,7 +5948,7 @@ call_hint_hof_at = cg, stmts, name, hints, i, n =>
    i == n
       | <->
       |
-         hof_scan(cg, stmts, stmts(i)!!, name, hints, "")
+         hof_scan(cg, stmts, stmts(i).expect("missing stmts"), name, hints, "")
             | <+>
             | call_hint_hof_at(cg, stmts, name, hints, i + 1, n)
 
@@ -5975,7 +5975,7 @@ hof_args_at = cg, stmts, c, name, hints, bound_var, j, n =>
    j == n
       | <->
       |
-         av = c.args(j)!!
+         av = c.args(j).expect("missing args")
          av
             [Var v]
                v == name
@@ -5988,7 +5988,7 @@ hof_flow = cg, stmts, c, j, hints, bound_var =>
    fd = fndef_of(cg.fns, c.fn_name, 0)
    fd.name != "" && j < ?fd.params
       |
-         p = fd.params(j)!!
+         p = fd.params(j).expect("missing params")
          hof_body_scan(cg, stmts, fd.body, fd, p, c, hints, bound_var)
       | <->
 
@@ -5998,7 +5998,7 @@ hof_call_args_scan = cg, stmts, args, fd, p, outer, hints, bound_var, i =>
    i == ?args
       | <->
       |
-         hof_body_scan(cg, stmts, args(i)!!, fd, p, outer,
+         hof_body_scan(cg, stmts, args(i).expect("missing args"), fd, p, outer,
            hints, bound_var)
            | <+>
            | hof_call_args_scan(cg, stmts, args, fd, p, outer, hints,
@@ -6036,7 +6036,7 @@ hof_lam_args_scan = cg, args, fd, lam, p, outer, hints, lam_hints, i =>
    i == ?args
       | <->
       |
-         hof_lam_body_scan(cg, args(i)!!, fd, lam, p, outer,
+         hof_lam_body_scan(cg, args(i).expect("missing args"), fd, lam, p, outer,
            hints, lam_hints)
            | <+>
            | hof_lam_args_scan(cg, args, fd, lam, p, outer, hints,
@@ -6082,7 +6082,7 @@ hof_arg_type = cg, e, fd, outer =>
       [Var w]
          m = param_index(fd.params, w, 0)
          (m !< 0 && m < ?outer.args)
-            | infer_expr_type(cg, outer.args(m)!!)
+            | infer_expr_type(cg, outer.args(m).expect("missing args"))
             | infer_expr_type(cg, e)
       | infer_expr_type(cg, e)
 
@@ -6091,7 +6091,7 @@ param_index = params, w, at =>
    at == ?params
       | -1
       |
-         (params(at)!! == w)
+         (params(at).expect("missing params") == w)
             | at
             | param_index(params, w, at + 1)
 
@@ -6104,7 +6104,7 @@ fndef_of_rev = fns, name, i =>
    i < 0
       | empty_fndef
       |
-         fd = fns(i)!!
+         fd = fns(i).expect("missing fns")
          fd.name == name
             | fd
             | fndef_of_rev(fns, name, i - 1)
@@ -6123,7 +6123,7 @@ infer_call_expr_type = cg, c =>
             |
                types::fninfo_index(cg, rf)
                   | fidx =>
-                     fi = cg.fninfos(fidx)!!
+                     fi = cg.fninfos(fidx).expect("missing fninfos")
                      (fi.ret_vt, ast::TypeInfo(Prim, fi.ret_vt))
                   |
                      is_ut = types::is_user_type(cg, c.fn_name)
@@ -6294,7 +6294,7 @@ tast_branches_has_arena_alloc_d = cg, bs, at, depth =>
    at == ?bs
       | <->
       |
-         br = bs(at)!!
+         br = bs(at).expect("missing bs")
          tast_expr_has_arena_alloc_d(cg, br.body, depth) ||
            tast_branches_has_arena_alloc_d(cg, bs, at + 1, depth)
 
@@ -6429,7 +6429,7 @@ tast_fields_escape = cg, fs, at, threshold =>
    at == ?fs
       | <->
       |
-         f = fs(at)!!
+         f = fs(at).expect("missing fs")
          tast_expr_escapes(cg, f.val, threshold) || tast_fields_escape(cg, fs, at + 1, threshold)
 
 tast_branches_escape: types::Cg, tast::TypedBranches, Int, Int => <>
@@ -6437,7 +6437,7 @@ tast_branches_escape = cg, bs, at, threshold =>
    at == ?bs
       | <->
       |
-         br = bs(at)!!
+         br = bs(at).expect("missing bs")
          tast_exprs_escape(cg, br.case_values, 0, threshold) ||
            tast_opt_escapes(cg, br.pred_fn, threshold) ||
            tast_expr_escapes(cg, br.body, threshold) ||
@@ -6484,7 +6484,7 @@ codegen_typed_eval_block_tail = cg, exprs, tail_k =>
    types::vra_truncate_bounded(nb)
    expr::codegen_restore_scope_leave(cg, mark)
    escapes_addr = types::is_ptr_vt(last.1) ||
-     (?exprs > 0 && tast_expr_has_scoped_addr(cg, exprs(?exprs - 1)!!, var_threshold))
+     (?exprs > 0 && tast_expr_has_scoped_addr(cg, exprs(?exprs - 1).expect("missing exprs"), var_threshold))
    binding != "" | cg.vars = truncate_vars(cg.vars, var_threshold)
    saved_ranges | scope => types::vra_leave_scope(scope)
    has_alloc && escapes_addr
@@ -6565,7 +6565,7 @@ tast_is_block_scoped_addr = cg, expr, threshold =>
          tast_is_block_scoped_addr(cg, b.1, threshold) ||
            tast_is_block_scoped_addr(cg, b.2, threshold)
       [Block exprs]
-         ?exprs == 0 || tast_is_block_scoped_addr(cg, exprs(?exprs - 1)!!, threshold)
+         ?exprs == 0 || tast_is_block_scoped_addr(cg, exprs(?exprs - 1).expect("missing exprs"), threshold)
       [Choice ch]
          tast_branches_have_scoped_addr(cg, ch.1, 0, threshold)
       [Copy cp]
@@ -6574,7 +6574,7 @@ tast_is_block_scoped_addr = cg, expr, threshold =>
       [Call c]
          c.0 == "Addr"
             | ?c.2 > 0
-               | tast_is_addr_arg_scoped(cg, c.2(0)!!, threshold)
+               | tast_is_addr_arg_scoped(cg, c.2(0).expect("required payload"), threshold)
                | <->
             | <+>
       | <->
@@ -6584,7 +6584,7 @@ tast_branches_have_scoped_addr = cg, bs, at, threshold =>
    at == ?bs
       | <->
       |
-         br = bs(at)!!
+         br = bs(at).expect("missing bs")
          tast_expr_has_scoped_addr(cg, br.body, threshold) ||
            tast_branches_have_scoped_addr(cg, bs, at + 1, threshold)
 
@@ -6651,7 +6651,7 @@ tast_body_exprs_use_scoped_addr = cg, params, es, at, threshold =>
    at == ?es
       | <->
       |
-         tast_body_uses_scoped_addr(cg, params, es(at)!!, threshold) ||
+         tast_body_uses_scoped_addr(cg, params, es(at).expect("missing es"), threshold) ||
            tast_body_exprs_use_scoped_addr(cg, params, es, at + 1, threshold)
 
 tast_expr_has_scoped_addr: types::Cg, tast::TypedExpr, Int => <>
@@ -6677,7 +6677,7 @@ tast_expr_has_scoped_addr = cg, expr, threshold =>
             [Choice ch]
                tast_branches_have_scoped_addr(cg, ch.1, 0, threshold)
             [Block exprs]
-               ?exprs > 0 && tast_expr_has_scoped_addr(cg, exprs(?exprs - 1)!!, threshold)
+               ?exprs > 0 && tast_expr_has_scoped_addr(cg, exprs(?exprs - 1).expect("missing exprs"), threshold)
             [Copy cp]
                tast_expr_has_scoped_addr(cg, cp, threshold)
             [Call c]
@@ -6696,7 +6696,7 @@ codegen_typed_check_addr_escape: types::Cg, String, tast::TypedExpr,
 codegen_typed_check_addr_escape = cg, name, val, ti =>
    cg.in_restore_scope > 0 && ?types::g.restore_scope_var_starts > 0
       |
-         threshold = types::g.restore_scope_var_starts(?types::g.restore_scope_var_starts - 1)!!
+         threshold = types::g.restore_scope_var_starts(?types::g.restore_scope_var_starts - 1).expect("missing restore scope var starts")
          tgt_idx = expr::var_index(cg, name)
          is_outer = (tgt_idx !< 0 && tgt_idx < threshold) ||
            types::is_marked_global_name(cg, name)
@@ -6748,7 +6748,7 @@ str_var_exprs_safe = cg, name, es, i, n, safe =>
    i !< n
       | <+>
       |
-         str_var_only_safe_uses(cg, name, es(i)!!, safe) &&
+         str_var_only_safe_uses(cg, name, es(i).expect("missing es"), safe) &&
            str_var_exprs_safe(cg, name, es, i + 1, n, safe)
 
 str_var_branches_safe: types::Cg, String, tast::TypedBranches, Int, Int, <> => <>
@@ -6756,7 +6756,7 @@ str_var_branches_safe = cg, name, brs, i, n, safe =>
    i !< n
       | <+>
       |
-         br = brs(i)!!
+         br = brs(i).expect("missing brs")
          lam_ps = br.body.kind [Lambda l] l.0 | ast::Names()
          eff_body = br.body.kind [Lambda l] l.1 | br.body
          shadowed = names_contain(br.bind_vars, name) || names_contain(lam_ps, name)
@@ -6787,7 +6787,7 @@ str_var_only_safe_uses = cg, name, te, safe =>
            str_var_only_safe_uses(cg, name, ix.1, <->)
       [Call c]
          is_str_idx = <>(c.1) && (?c.2 == 1) &&
-           types::is_str_vt(types::vt_from_ti_cg(cg, c.1!!.ti))
+           types::is_str_vt(types::vt_from_ti_cg(cg, c.1.expect("required payload").ti))
          rec_ok = c.1 | r => str_var_only_safe_uses(cg, name, r, is_str_idx) | <+>
          is_to_str = ! <>(c.1) && (?c.2 == 1) && (c.0 == "%to_str")
          is_inl_ut = safe && (types::g.inline_ret_bb != sys::addr_null) &&
@@ -6802,7 +6802,7 @@ str_var_only_safe_uses = cg, name, te, safe =>
             | <+>
             |
                str_var_exprs_safe(cg, name, exprs, 0, ne - 1, <->) &&
-                 str_var_only_safe_uses(cg, name, exprs(ne - 1)!!, safe)
+                 str_var_only_safe_uses(cg, name, exprs(ne - 1).expect("missing exprs"), safe)
       [Assign a]
          is_safe_loc_lam = (a.5.kind [Lambda]) && !a.2 && !a.3 && !a.4 &&
            typed_refs_name(a.5, name) &&
@@ -6858,7 +6858,7 @@ str_var_only_safe_uses = cg, name, te, safe =>
 choice_branches_bind_or_lam: tast::TypedBranches, Int, Int => <>
 choice_branches_bind_or_lam = brs, i, n =>
    i !< n | --| <->
-   br = brs(i)!!
+   br = brs(i).expect("missing brs")
    (?br.bind_vars > 0) || (br.body.kind [Lambda]) ||
      choice_branches_bind_or_lam(brs, i + 1, n)
 
@@ -6982,7 +6982,7 @@ lookup_fn_effect_summary: types::Cg, String => < types::FnEffectSummary | >
 lookup_fn_effect_summary = cg, fname =>
    idx = lookup_fn_body_index(cg, fname)
    idx !< 0
-      | <+ types::fneff.summaries(idx)!! +>
+      | <+ types::fneff.summaries(idx).expect("missing summaries") +>
       | <-->
 
 lookup_indexed_fn_body: types::Cg, String => <(ast::Names, tast::TypedExpr, String, ast::TypeInfo)|>
@@ -6990,7 +6990,7 @@ lookup_indexed_fn_body = cg, fname =>
    idx = lookup_fn_body_index(cg, fname)
    idx !< 0 && idx < ?types::fneff.entries
       |
-         ent = types::fneff.entries(idx)!!
+         ent = types::fneff.entries(idx).expect("missing entries")
          <+ (ent.params, ent.body, ent.name, ent.fn_ti) +>
       | <-->
 
@@ -7013,7 +7013,7 @@ callee_param_str_safe_d = cg, fname, param_idx, depth =>
 str_var_call_args_safe: types::Cg, String, String, tast::TypedExprs, Int, Int, <> => <>
 str_var_call_args_safe = cg, name, fname, args, i, n, has_rec =>
    i !< n | --| <+>
-   arg_k = args(i)!!
+   arg_k = args(i).expect("missing args")
    is_direct_var = arg_k.kind [Var v] (v.0 == name) | <->
    arg_is_lam = arg_k.kind [Lambda]
    arg_lam_safe = arg_is_lam && !has_rec && (i [0...61]) &&
@@ -7052,21 +7052,21 @@ param_proj_exprs_safe: types::Cg, String, tast::TypedExprs, Int, Int => <>
 param_proj_exprs_safe = cg, pname, es, i, n =>
    i !< n
       | <+>
-      | param_proj_safe(cg, pname, es(i)!!, <->, <->) &&
+      | param_proj_safe(cg, pname, es(i).expect("missing es"), <->, <->) &&
         param_proj_exprs_safe(cg, pname, es, i + 1, n)
 
 param_proj_fields_safe: types::Cg, String, tast::TypedFields, Int, Int => <>
 param_proj_fields_safe = cg, pname, fs, i, n =>
    i !< n
       | <+>
-      | param_proj_safe(cg, pname, fs(i)!!.val, <->, <->) &&
+      | param_proj_safe(cg, pname, fs(i).expect("missing fs").val, <->, <->) &&
         param_proj_fields_safe(cg, pname, fs, i + 1, n)
 
 param_proj_call_args_safe: types::Cg, String, String, tast::TypedExprs, Int,
   Int, <> => <>
 param_proj_call_args_safe = cg, pname, fname, args, i, n, has_rec =>
    i !< n | --| <+>
-   arg_k = args(i)!!
+   arg_k = args(i).expect("missing args")
    is_direct_var = arg_k.kind [Var v] (v.0 == pname) | <->
    arg_is_lam = arg_k.kind [Lambda]
    arg_lam_safe = arg_is_lam && !has_rec && (i [0...61]) &&
@@ -7093,7 +7093,7 @@ param_proj_branches_safe = cg, pname, brs, i, n =>
    i !< n
       | <+>
       |
-         br = brs(i)!!
+         br = brs(i).expect("missing brs")
          lam_ps = br.body.kind [Lambda l] l.0 | ast::Names()
          eff_body = br.body.kind [Lambda l] l.1 | br.body
          shadowed = names_contain(br.bind_vars, pname) || names_contain(lam_ps, pname)
@@ -7127,13 +7127,13 @@ param_proj_safe = cg, pname, te, in_mem, str_ok =>
            param_proj_safe(cg, pname, ix.1, <->, <->)
       [Call c]
          is_str_idx = <>(c.1) && (?c.2 == 1) &&
-           types::is_str_vt(types::vt_from_ti_cg(cg, c.1!!.ti))
+           types::is_str_vt(types::vt_from_ti_cg(cg, c.1.expect("required payload").ti))
          rec_ok = c.1
             | r => param_proj_safe(cg, pname, r, <->, is_str_idx)
             | <+>
          is_to_str = ! <>(c.1) && (?c.2 == 1) && (c.0 == "%to_str")
          args_ok = (is_str_idx || is_to_str)
-            | param_proj_safe(cg, pname, c.2(0)!!, <->, str_ok)
+            | param_proj_safe(cg, pname, c.2(0).expect("required payload"), <->, str_ok)
             | param_proj_call_args_safe(cg, pname, c.0, c.2, 0, ?c.2, <>(c.1))
          rec_ok && args_ok
       [Block es] param_proj_exprs_safe(cg, pname, es, 0, ?es)
@@ -7207,7 +7207,7 @@ rec_var_exprs_safe: types::Cg, String, tast::TypedExprs, Int, Int => <>
 rec_var_exprs_safe = cg, name, es, i, n =>
    i !< n
       | <+>
-      | rec_var_safe_expr(cg, name, es(i)!!, <->) &&
+      | rec_var_safe_expr(cg, name, es(i).expect("missing es"), <->) &&
         rec_var_exprs_safe(cg, name, es, i + 1, n)
 
 rec_var_call_args_safe: types::Cg, String, String, tast::TypedExprs, Int,
@@ -7216,7 +7216,7 @@ rec_var_call_args_safe = cg, name, fname, args, i, n, has_rec =>
    i !< n
       | <+>
       |
-         arg_k = args(i)!!
+         arg_k = args(i).expect("missing args")
          is_direct_var = arg_k.kind [Var v] (v.0 == name) | <->
          arg_is_lam = arg_k.kind [Lambda]
          arg_lam_safe = arg_is_lam && !has_rec && (i [0...61]) &&
@@ -7241,7 +7241,7 @@ rec_var_fields_safe: types::Cg, String, tast::TypedFields, Int, Int => <>
 rec_var_fields_safe = cg, name, fs, i, n =>
    i !< n
       | <+>
-      | rec_var_safe_expr(cg, name, fs(i)!!.val, <->) &&
+      | rec_var_safe_expr(cg, name, fs(i).expect("missing fs").val, <->) &&
         rec_var_fields_safe(cg, name, fs, i + 1, n)
 
 rec_var_branches_safe: types::Cg, String, tast::TypedBranches, Int, Int => <>
@@ -7249,7 +7249,7 @@ rec_var_branches_safe = cg, name, brs, i, n =>
    i !< n
       | <+>
       |
-         br = brs(i)!!
+         br = brs(i).expect("missing brs")
          lam_ps = br.body.kind [Lambda l] l.0 | ast::Names()
          eff_body = br.body.kind [Lambda l] l.1 | br.body
          shadowed = names_contain(br.bind_vars, name) || names_contain(lam_ps, name)
@@ -7412,7 +7412,7 @@ callee_call_may_arena_effect = cg, fname, args =>
                   ((s.param_invoked_mask .&. bit) != 0)
                      |
                         (((s.param_escapes_mask .&. bit) != 0) ||
-                          callback_arg_may_arena_effect(cg, args(i)!!))
+                          callback_arg_may_arena_effect(cg, args(i).expect("missing args")))
                            | cb_eff' = <+>
          cb_eff'
       |
@@ -7422,13 +7422,13 @@ callee_call_may_arena_effect = cg, fname, args =>
 
 typed_exprs_have_restore: types::Cg, tast::TypedExprs, Int, Int => <>
 typed_exprs_have_restore = cg, es, i, n =>
-   i < n && (fn_body_has_arena_restore(cg, es(i)!!) ||
+   i < n && (fn_body_has_arena_restore(cg, es(i).expect("missing es")) ||
      typed_exprs_have_restore(cg, es, i + 1, n))
 
 typed_branches_have_restore: types::Cg, tast::TypedBranches, Int, Int => <>
 typed_branches_have_restore = cg, brs, i, n =>
    i !< n | --| <->
-   br = brs(i)!!
+   br = brs(i).expect("missing brs")
    typed_exprs_have_restore(cg, br.case_values, 0, ?br.case_values) ||
      (br.pred_fn | pf => fn_body_has_arena_restore(cg, pf) | <->) ||
      fn_body_has_arena_restore(cg, br.body) ||
@@ -7489,7 +7489,7 @@ fn_body_has_arena_restore = cg, te =>
             | r => (types::vt_from_ti_cg(cg, r.ti) [Array, Slice, Map, Str, Builder, Record])
             | <->
          c_tgt = !is_idx && <>(c.1)
-            | (c.1!!.kind [Var v] v.0 | "")
+            | (c.1.expect("required payload").kind [Var v] v.0 | "")
             | c.0
          is_param_call = c_tgt != "" &&
            (names_contain(types::g.current_fn_params, c_tgt) || <>(param_clo_ty(cg, c_tgt)))
@@ -7547,14 +7547,14 @@ fneff_param_index: ast::Names, String => Int
 fneff_param_index = params, target =>
    target == "" | --| -1
    ?params @ i =>
-      params(i)!! == target | --| i
+      params(i).expect("missing params") == target | --| i
    -1
 
 // Mutable accumulator passed through `fneff_scan_expr`:
 // (7 integers: 0=mut, 1=inv, 2=esc, 3=rglob, 4=wglob, 5=ret_alias, 6=retained).
 fneff_or_slot: ast::Ints, Int, Int => ()
 fneff_or_slot = acc, slot, bits =>
-   next = acc(slot)!! .|. bits
+   next = acc(slot).expect("missing acc") .|. bits
    acc(slot) = next !| _
 
 fneff_scan_list: types::Cg, ast::Names, tast::TypedExprs, ast::Ints, <> => ()
@@ -7665,7 +7665,7 @@ fneff_scan_expr = cg, params, te, acc, in_tail =>
             |
                fneff_or_slot(acc, 4, 1)
                ?params @ pi =>
-                  pi < 62 && typed_refs_name(a.5, params(pi)!!)
+                  pi < 62 && typed_refs_name(a.5, params(pi).expect("missing params"))
                      |
                         pbit = 1 .<. pi
                         fneff_or_slot(acc, 2, pbit)
@@ -7673,7 +7673,7 @@ fneff_scan_expr = cg, params, te, acc, in_tail =>
          (!is_g_write && (a.2 || a.4))
             |
                ?params @ pi =>
-                  pi < 62 && typed_refs_name(a.5, params(pi)!!)
+                  pi < 62 && typed_refs_name(a.5, params(pi).expect("missing params"))
                      |
                         pbit = 1 .<. pi
                         fneff_or_slot(acc, 2, pbit)
@@ -7682,7 +7682,7 @@ fneff_scan_expr = cg, params, te, acc, in_tail =>
          r_opt | rv =>
             fneff_scan_expr(cg, params, rv, acc, <+>)
             ?params @ pi =>
-               pi < 62 && typed_refs_name(rv, params(pi)!!)
+               pi < 62 && typed_refs_name(rv, params(pi).expect("missing params"))
                   |
                      pbit = 1 .<. pi
                      fneff_or_slot(acc, 2, pbit)
@@ -7690,7 +7690,7 @@ fneff_scan_expr = cg, params, te, acc, in_tail =>
       [Lambda lam]
          fneff_scan_expr(cg, params, lam.1, acc, <->)
          ?params @ pi =>
-            pname = params(pi)!!
+            pname = params(pi).expect("missing params")
             pi < 62 && !names_contain(lam.0, pname) && typed_refs_name(lam.1, pname)
                |
                   pbit = 1 .<. pi
@@ -7715,7 +7715,7 @@ fneff_scan_expr = cg, params, te, acc, in_tail =>
             cs.may_read_global | fneff_or_slot(acc, 3, 1)
             cs.may_write_global | fneff_or_slot(acc, 4, 1)
          ?c.2 @ ai =>
-            arg_e = c.2(ai)!!
+            arg_e = c.2(ai).expect("required payload")
             arg_is_lam = arg_e.kind [Lambda]
             arg_lam_safe = arg_is_lam && !<>(c.1) && (pidx_call < 0) && (ai [0...61]) &&
               (sum_opt
@@ -7776,7 +7776,7 @@ fneff_scan_expr = cg, params, te, acc, in_tail =>
          ne > 0
             |
                ?es @ ei =>
-                  fneff_scan_expr(cg, params, es(ei)!!, acc, (in_tail && (ei == ne - 1)))
+                  fneff_scan_expr(cg, params, es(ei).expect("missing es"), acc, (in_tail && (ei == ne - 1)))
       [Choice ch]
          fneff_scan_expr(cg, params, ch.0, acc, <->)
          ch.1 @ br =>
@@ -7831,7 +7831,7 @@ fneff_scan_expr = cg, params, te, acc, in_tail =>
             fneff_scan_expr(cg, params, pr.key, acc, in_tail)
             fneff_scan_expr(cg, params, pr.val, acc, in_tail)
             ?params @ pi =>
-               pi < 62 && (typed_refs_name(pr.key, params(pi)!!) || typed_refs_name(pr.val, params(pi)!!))
+               pi < 62 && (typed_refs_name(pr.key, params(pi).expect("missing params")) || typed_refs_name(pr.val, params(pi).expect("missing params")))
                   |
                      pbit = 1 .<. pi
                      fneff_or_slot(acc, 2, pbit)
@@ -7862,13 +7862,13 @@ compute_one_fn_summary = cg, fname, params, body, fn_ti =>
    acc = ast::Ints()
    7 @ acc += 0
    fneff_scan_expr(cg, params, body, acc, <+>)
-   mut_mask = acc(0)!!
-   inv_mask = acc(1)!!
-   esc_mask = acc(2)!!
-   rglob = acc(3)!! != 0
-   wglob = acc(4)!! != 0
-   ret_alias_mask = acc(5)!!
-   retained_mask = acc(6)!!
+   mut_mask = acc(0).expect("missing acc")
+   inv_mask = acc(1).expect("missing acc")
+   esc_mask = acc(2).expect("missing acc")
+   rglob = acc(3).expect("missing acc") != 0
+   wglob = acc(4).expect("missing acc") != 0
+   ret_alias_mask = acc(5).expect("missing acc")
+   retained_mask = acc(6).expect("missing acc")
    7 @ si => acc(si) = 0 !| _
    fneff_or_slot(acc, 2, esc_mask .|. ret_alias_mask .|. retained_mask)
    ptis = fn_ti [Fn f] f.1 | ast::VInfos()
@@ -7876,13 +7876,13 @@ compute_one_fn_summary = cg, fname, params, body, fn_ti =>
    nparams @ i =>
       i < 62
          |
-            pname = params(i)!!
+            pname = params(i).expect("missing params")
             bit = 1 .<. i
             no_assign = count_var_assigns(pname, body) == 0
             str_ok = no_assign && ((mut_mask .&. bit) == 0) &&
               ((retained_mask .&. bit) == 0) && ((ret_alias_mask .&. bit) == 0) &&
               str_var_only_safe_uses(cg, pname, body, <->)
-            no_assign && i < ?ptis && types::is_str_vt(types::vt_from_ti_cg(cg, ptis(i)!!))
+            no_assign && i < ?ptis && types::is_str_vt(types::vt_from_ti_cg(cg, ptis(i).expect("missing ptis")))
                |
                   saved_header = types::g.analyzing_str_header
                   types::g.analyzing_str_header = <+>
@@ -7909,13 +7909,13 @@ compute_one_fn_summary = cg, fname, params, body, fn_ti =>
       has_arena,
       rglob,
       wglob,
-      acc(0)!!,
-      acc(1)!!,
+      acc(0).expect("missing acc"),
+      acc(1).expect("missing acc"),
       mut_mask,
       inv_mask,
-      acc(2)!!,
+      acc(2).expect("missing acc"),
       ret_alias_mask,
-      retained_mask .|. acc(6)!!,
+      retained_mask .|. acc(6).expect("missing acc"),
       headers'
    )
 
@@ -7948,7 +7948,7 @@ register_mono_fn_summary = cg, fname, params, body, fn_ti =>
       0
    )
    3 @ _iter =>
-      old_s = types::fneff.summaries(idx)!!
+      old_s = types::fneff.summaries(idx).expect("missing summaries")
       next_s = compute_one_fn_summary(cg, fname, params, body, fn_ti)
       joined = types::FnEffectSummary(
          fname,
@@ -8015,7 +8015,7 @@ run_typed_fn_summaries = cg, prog =>
    // Seed initial optimistic lattice state for functions with bodies in the TU
    // (except direct arena primitive wrappers, which start with may_arena_effect = <+>).
    ?types::fneff.entries @ fi =>
-      ent = types::fneff.entries(fi)!!
+      ent = types::fneff.entries(fi).expect("missing entries")
       fname = ent.name
       ps0 = ent.params
       ct_n0 = sig_ct0_name(types::g.pstmts, fname, 0)
@@ -8052,10 +8052,10 @@ run_typed_fn_summaries = cg, prog =>
    8 @ iter_k =>
       changed' = <->
       ?types::fneff.entries @ fi =>
-         ent = types::fneff.entries(fi)!!
+         ent = types::fneff.entries(fi).expect("missing entries")
          fname = ent.name
          cg.current_module = types::decl_module(fname, 0)
-         old_s = types::fneff.summaries(fi)!!
+         old_s = types::fneff.summaries(fi).expect("missing summaries")
          next_s = compute_one_fn_summary(cg, fname, ent.params, ent.body, ent.fn_ti)
          joined = types::FnEffectSummary(
             fname,
@@ -8131,7 +8131,7 @@ bldr_exprs_safe = name, es, i, n, safe, in_cycle =>
    i !< n
       | (<+>, 0)
       |
-         r0 = builder_var_safe_uses(name, es(i)!!, safe, in_cycle)
+         r0 = builder_var_safe_uses(name, es(i).expect("missing es"), safe, in_cycle)
          !r0.0
             | (<->, 0)
             |
@@ -8143,7 +8143,7 @@ bldr_branches_safe = name, brs, i, n, in_cycle =>
    i !< n
       | (<+>, 0)
       |
-         br = brs(i)!!
+         br = brs(i).expect("missing brs")
          names_contain(br.bind_vars, name) | --| (<->, 0)
          rc = bldr_exprs_safe(name, br.case_values, 0, ?br.case_values, <->, in_cycle)
          !rc.0 | --| (<->, 0)
@@ -8179,7 +8179,7 @@ builder_var_safe_uses = name, te, safe, in_cycle =>
          (r0.0 && r1.0, r0.1 + r1.1)
       [Call c]
          is_b_idx = <>(c.1) && (?c.2 == 1) &&
-           types::is_builder_vt(types::vt_from_ti(c.1!!.ti))
+           types::is_builder_vt(types::vt_from_ti(c.1.expect("required payload").ti))
          rr = c.1
             | r => builder_var_safe_uses(name, r, is_b_idx, in_cycle)
             | (<+>, 0)
@@ -8193,7 +8193,7 @@ builder_var_safe_uses = name, te, safe, in_cycle =>
             |
                r0 = bldr_exprs_safe(name, exprs, 0, ne - 1, <->, in_cycle)
                !r0.0 | --| (<->, 0)
-               r1 = builder_var_safe_uses(name, exprs(ne - 1)!!, safe, in_cycle)
+               r1 = builder_var_safe_uses(name, exprs(ne - 1).expect("missing exprs"), safe, in_cycle)
                (r1.0, r0.1 + r1.1)
       [Assign a]
          (a.0 == name) && !a.2 && !a.4
@@ -8263,7 +8263,7 @@ builder_var_non_escaping = cg, name =>
 closure_var_call_args_safe: types::Cg, String, String, tast::TypedExprs, Int, Int, <> => <>
 closure_var_call_args_safe = cg, name, fname, args, i, n, has_rec =>
    i !< n | --| <+>
-   arg_k = args(i)!!
+   arg_k = args(i).expect("missing args")
    is_direct_var = arg_k.kind [Var v] (v.0 == name) | <->
    arg_is_lam = arg_k.kind [Lambda]
    sum_opt = (!has_rec && (i [0...61])) | lookup_fn_effect_summary(cg, fname) | <-->
@@ -8289,7 +8289,7 @@ closure_var_exprs_safe: types::Cg, String, tast::TypedExprs, Int, Int => <>
 closure_var_exprs_safe = cg, name, es, i, n =>
    i !< n
       | <+>
-      | closure_var_safe_expr(cg, name, es(i)!!) &&
+      | closure_var_safe_expr(cg, name, es(i).expect("missing es")) &&
         closure_var_exprs_safe(cg, name, es, i + 1, n)
 
 closure_var_branches_safe: types::Cg, String, tast::TypedBranches, Int, Int => <>
@@ -8297,7 +8297,7 @@ closure_var_branches_safe = cg, name, brs, i, n =>
    i !< n
       | <+>
       |
-         br = brs(i)!!
+         br = brs(i).expect("missing brs")
          lam_ps = br.body.kind [Lambda l] l.0 | ast::Names()
          eff_body = br.body.kind [Lambda l] l.1 | br.body
          shadowed = names_contain(br.bind_vars, name) || names_contain(lam_ps, name)
@@ -8386,8 +8386,8 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti, new_local =>
                fidx = (!cg.in_fn) | (<>(fidx0) | fidx0 | types::fninfo_index(cg, name)) | <-->
                lr = fidx
                   | idx =>
-                     fi = cg.fninfos(idx)!!
-                     (expr::noncap_closure(cg, name, fi.llvm_fn!!), name)
+                     fi = cg.fninfos(idx).expect("missing fninfos")
+                     (expr::noncap_closure(cg, name, fi.llvm_fn.expect("missing llvm fn")), name)
                   |
                      lam = val.kind [Lambda l] l |
                         (ast::Names(), tast::mk_lit_unit(0, 0),
@@ -8784,7 +8784,7 @@ codegen_typed_eval_condition_cycle = cg, iterable, body_fn, esc_opt, ti =>
       | eb =>
          branch_to(cg, eb.1)
          LLVMPositionBuilderAtEnd(cg.builder, eb.0)
-         esc_e = esc_opt!!
+         esc_e = esc_opt.expect("missing esc opt")
          saved_esc_vars = ?cg.vars
          u_some = codegen_typed_cycle_escape_construct(cg, <+>,
            <+ esc_e +>, ti)
@@ -8916,9 +8916,9 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                                  n_flds = ?r_flds0 > 0 | ?r_flds0 | ?fvs
                                  rc = LLVMConstInt(i64t, n_flds, 0)
                                  def_vt = ast::ValueType(Int)
-                                 fvs0 = ?fvs > 0 | fvs(0)!! | def_vt
+                                 fvs0 = ?fvs > 0 | fvs(0).expect("missing fvs") | def_vt
                                  r_elem_vt = ?r_flds0 > 0
-                                    | types::vt_from_ti(r_flds0(0)!!.rec_type)
+                                    | types::vt_from_ti(r_flds0(0).expect("missing r flds0").rec_type)
                                     | fvs0
                                  (LLVMConstInt(i64t, 0, 0), <+ rc +>, <+ iv'.0 +>, 4,
                                    r_elem_vt)
@@ -8944,7 +8944,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
       | ""
    elem_ti0 = iterable.ti
       [Array a] a.1
-      [Rec r] (?r.0 > 0 | r.0(0)!!.rec_type | ast::TypeInfo(Prim, elem_vt))
+      [Rec r] (?r.0 > 0 | r.0(0).expect("required payload").rec_type | ast::TypeInfo(Prim, elem_vt))
       | ast::TypeInfo(Prim, elem_vt)
    header = LLVMAppendBasicBlock(cg.current_fn, "loop.header." + sc)
    body = LLVMAppendBasicBlock(cg.current_fn, "loop.body." + sc)
@@ -8984,7 +8984,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
    types::emit_cov_edge(cg)
    rel_i = LLVMBuildSub(cg.builder, curr_i, start_val, "loop.rel.i")
    r_dec_opt = iter_mode == 5
-      | <+ codegen_decode_rune_at(cg, s_data_opt!!, curr_i) +>
+      | <+ codegen_decode_rune_at(cg, s_data_opt.expect("missing s data opt"), curr_i) +>
       | <-->
    init_step_val = r_dec_opt
       | rd => rd.1
@@ -8995,7 +8995,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
       |
          iter_mode == 1
             |
-               byte_ptr = types::gep1(cg, LLVMInt8Type!, s_data_opt!!, curr_i,
+               byte_ptr = types::gep1(cg, LLVMInt8Type!, s_data_opt.expect("missing s data opt"), curr_i,
                  "s.byte.gep")
                byte_val = LLVMBuildLoad2(cg.builder,
                  LLVMInt8Type!, byte_ptr, "s.byte")
@@ -9003,7 +9003,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
             |
                iter_mode == 2
                   |
-                     arr_slot = types::gep1(cg, i64t, s_data_opt!!, curr_i, "arr.elem.gep")
+                     arr_slot = types::gep1(cg, i64t, s_data_opt.expect("missing s data opt"), curr_i, "arr.elem.gep")
                      arr_raw = LLVMBuildLoad2(cg.builder, i64t,
                        arr_slot, "arr.elem.raw")
                      runtime::codegen_unpack_slot(cg, arr_raw, elem_vt)
@@ -9013,7 +9013,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                            r_flds' = iterable.ti [Rec r] r.0 |
                               ast::FieldTypes()
                            elem_ti = ?r_flds' > 0
-                              | r_flds'(0)!!.rec_type
+                              | r_flds'(0).expect("missing r flds").rec_type
                               | ast::TypeInfo(Prim, elem_vt)
                            rm = runtime::record_meta_from_ti(cg, elem_ti)
                            sl_elem_ll = rm | m => m.0 | elem_ty
@@ -9021,11 +9021,11 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                            is_rec_elem
                               |
                                  main::slice_load_rec_elem(cg, sl_ptr',
-                                   s_data_opt!!, sl_elem_ll, curr_i,
+                                   s_data_opt.expect("missing s data opt"), sl_elem_ll, curr_i,
                                    "sl.rec.elem")
                               |
                                  sl_slot = main::slice_elem_gep(cg, sl_ptr',
-                                   s_data_opt!!, sl_elem_ll, curr_i,
+                                   s_data_opt.expect("missing s data opt"), sl_elem_ll, curr_i,
                                    "sl.elem.gep")
                                  LLVMBuildLoad2(cg.builder, sl_elem_ll,
                                    sl_slot, "sl.elem.val")
@@ -9035,12 +9035,12 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                                  r_flds' = iterable.ti [Rec r] r.0 |
                                     ast::FieldTypes()
                                  elem_ti = ?r_flds' > 0
-                                    | r_flds'(0)!!.rec_type
+                                    | r_flds'(0).expect("missing r flds").rec_type
                                     | ast::TypeInfo(Prim, elem_vt)
                                  rm = runtime::record_meta_from_ti(cg, elem_ti)
                                  rec_elem_ll = rm | m => m.0 | elem_ty
                                  typed_rec = LLVMBuildPointerCast(
-                                    cg.builder, s_data_opt!!,
+                                    cg.builder, s_data_opt.expect("missing s data opt"),
                                     LLVMPointerType(rec_elem_ll, 0),
                                     "rec.typed")
                                  rec_slot = types::gep1(cg, rec_elem_ll, typed_rec,
@@ -9082,7 +9082,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
       | eb =>
          branch_to(cg, eb.1)
          LLVMPositionBuilderAtEnd(cg.builder, eb.0)
-         esc_te = esc_opt!!
+         esc_te = esc_opt.expect("missing esc opt")
          esc_ranges = types::vra_enter_cycle(params)
          u_some = codegen_typed_cycle_escape_construct(cg, <+>,
            <+ esc_te +>, ti)
@@ -9229,7 +9229,7 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
       | eb =>
          branch_to(cg, eb.1)
          LLVMPositionBuilderAtEnd(cg.builder, eb.0)
-         esc_te = esc_opt!!
+         esc_te = esc_opt.expect("missing esc opt")
          esc_ranges = types::vra_enter_cycle(params)
          u_some = codegen_typed_cycle_escape_construct(cg, <+>,
            <+ esc_te +>, ti)
@@ -9263,8 +9263,8 @@ codegen_typed_eval_cycle_jump = cg, is_break, level =>
                (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             |
                target = is_break
-                  | cg.cycle_breaks(nb - level)!!
-                  | cg.cycle_conts(nb - level)!!
+                  | cg.cycle_breaks(nb - level).expect("missing cycle breaks")
+                  | cg.cycle_conts(nb - level).expect("missing cycle conts")
                branch_to(cg, target)
                (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
 
@@ -9279,7 +9279,7 @@ typed_refs_name_exprs = es, name, i, n =>
    i == n
       | <->
       |
-         typed_refs_name(es(i)!!, name)
+         typed_refs_name(es(i).expect("missing es"), name)
             | <+>
             | typed_refs_name_exprs(es, name, i + 1, n)
 
@@ -9288,7 +9288,7 @@ typed_refs_name_fields = fs, name, i, n =>
    i == n
       | <->
       |
-         tf = fs(i)!!
+         tf = fs(i).expect("missing fs")
          typed_refs_name(tf.val, name)
             | <+>
             | typed_refs_name_fields(fs, name, i + 1, n)
@@ -9298,7 +9298,7 @@ typed_refs_name_branches = bs, name, i, n =>
    i == n
       | <->
       |
-         b = bs(i)!!
+         b = bs(i).expect("missing bs")
          typed_refs_name_exprs(b.case_values, name, 0, ?b.case_values) ||
            typed_refs_name_opt(b.pred_fn, name) ||
            (!param_in(b.bind_vars, name) && typed_refs_name(b.body, name))
@@ -9310,7 +9310,7 @@ typed_refs_name_map = mp, name, i, n =>
    i == n
       | <->
       |
-         p = mp(i)!!
+         p = mp(i).expect("missing mp")
          typed_refs_name(p.key, name) || typed_refs_name(p.val, name)
             | <+>
             | typed_refs_name_map(mp, name, i + 1, n)
@@ -9361,7 +9361,7 @@ typed_lambda_captures_at = cg, params, body, self_name, i, n, acc =>
    i == n
       | acc
       |
-         cv = cg.vars(i)!!
+         cv = cg.vars(i).expect("missing vars")
          (cv.is_local && (self_name == "" || cv.name != self_name) &&
            !param_in(params, cv.name) && typed_refs_name(body, cv.name))
            | acc += cv.name
@@ -9681,7 +9681,7 @@ codegen_typed_eval_map_literal = cg, pairs, ti =>
       | (m, ast::ValueType(Map))
       |
          np @ i =>
-            p = pairs(i)!!
+            p = pairs(i).expect("missing pairs")
             kv = main::codegen_typed_eval(cg, p.key)
             vv = main::codegen_typed_eval(cg, p.val)
             val_st = runtime::codegen_map_pack_val(cg, vv.0, vv.1)

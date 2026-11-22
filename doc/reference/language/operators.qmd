@@ -136,7 +136,7 @@ xs += 3
 xs += 5
 mapped = fp::map(double, xs)
 
-io::out $ shl1(mapped(0)!!)                 // 12
+io::out $ shl1(mapped(0).expect("missing mapped"))                 // 12
 io::out $ get_age(User("Alice", 30))        // 30
 ```
 

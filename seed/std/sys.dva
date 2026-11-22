@@ -13,7 +13,7 @@
    STDOUT = 1
    STDERR = 2
 
-   addr_null = Addr(0)
+   addr_null = ptr(0)
 
    addr_is_null: Addr => <>
    addr_is_null = a => a == addr_null

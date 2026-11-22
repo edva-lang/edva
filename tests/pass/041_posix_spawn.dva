@@ -5,7 +5,7 @@
 path = "/usr/bin/env"
 
 // Construct argv array ["/usr/bin/env", "echo", "Success!", 0] in one go.
-argv = (&path, &"echo", &"Success!", Addr(0))
+argv = (&path, &"echo", &"Success!", ptr(0))
 argv_raw = &argv
 
 // Spawn process

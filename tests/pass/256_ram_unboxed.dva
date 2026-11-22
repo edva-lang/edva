@@ -30,7 +30,7 @@ r2
    | io::out $ "none"
 
 // Test unwrap on unboxed RamPN <Int | >
-val1 = r1!!
+val1 = r1.expect("missing r1")
 io::out $ val1
 
 // Test passing unboxed ram as parameter

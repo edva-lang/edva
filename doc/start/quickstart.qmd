@@ -52,7 +52,7 @@ Edva has **no reserved keywords**. Every control-flow, declaration, and error-ha
 | Ram unit early return | `if c { return false; }` | `|->` `|+>` `|-->` `|++>` | `x < 0 |-->` (returns `<-->`) |
 | Boolean true / false | `true` / `false` | `<+>` / `<->` (type `<>`) | `active = <+>` |
 | Option / Result values | `Some(v)` / `None` / `Ok` / `Err` | `<+ v +>` / `<-->` / `<+ v ->` / `<- e +>` | `res = <+ 42 ->` |
-| Unwrap or abort | `.unwrap()` | Postfix `!!` | `val = res!!` |
+| Unwrap or abort | `.unwrap()` | `.expect("reason")` | `val = res.expect("required value")` |
 | Unwrap or propagate | `?` (Rust) | Postfix `--!` or `$>>` | `fd = open(p)--!` |
 | Functor map (`Result::map` / `map_err`) | `.map()` / `.map_err()` | `$+>` / `$->` | `res $+> (* 2) $-> wrap_err` |
 | Record copy-with-update | `{ ..r, x: 1 }` | `r(x = 1)` / `r $> _(x = 1)` | `s2 = s $> _(col = _.col + 1)` |
@@ -152,7 +152,7 @@ io::out $ "${s} (${?s} bytes)"
 | **Growable Array** | `#type A Int{}` | `xs = A(); xs += 10` | `xs(i)` $\to$ `< Int | Error >`; `?xs` length |
 | **Slice** | `Int[]` | `view = xs(0..2)` | `view(i)` $\to$ `Int`; non-owning `{ len, data }` |
 | **Map** | `#type M String ^ Int` | `m = M(); m ^ "k" = 1` | `m ^ "k"` $\to$ `< Int | Error >`; `m ^? "k"` $\to$ `<>` |
-| **Ramification** | `<>`, `<T|>`, `<|E>`, `<T|E>` | `<+>`, `<+ v +>`, `<+ v ->` | `r | pos | neg`, `r!!`, `r--!` |
+| **Ramification** | `<>`, `<T|>`, `<|E>`, `<T|E>` | `<+>`, `<+ v +>`, `<+ v ->` | `r | pos | neg`, `r.expect("reason")`, `r--!` |
 | **Enum** | `#type E < A(Int), B >` | `E(A, 5)`, `E(B)` / `B` | `e [A x] x [B] 0` (exhaustiveness enforced, `E3102`) |
 
 ```{.dva .run}
@@ -173,5 +173,5 @@ cfg = Config()
 cfg ^ "port" = 8080
 
 io::out $ area(Shape(Circle, 2.0))
-io::out $ xs(0)!! + (cfg ^ "port" | _ | 0)
+io::out $ xs(0).expect("missing xs") + (cfg ^ "port" | _ | 0)
 ```

@@ -490,7 +490,7 @@ has_intermediate_dedent = lines, start_idx, parent_raw, child_raw =>
    n = ?lines
    0.. @
       idx' !< n | -->
-      ln = lines(idx')!!
+      ln = lines(idx').expect("missing lines")
       ln.start_state == 0 && !ln.is_blank && !ln.is_comment_only
          |
             r = ln.raw_indent
@@ -666,7 +666,7 @@ parse_ast_signature = src, filename =>
       | prog =>
          ?diags > 0
             |
-               d = diags(0)!!
+               d = diags(0).expect("missing diags")
                fn = d.file != "" | d.file + ":" | ""
                <- fn + str::from_int(d.line) + ":" + str::from_int(d.col) +
                  ": E" + str::from_int(d.code) + ": " + d.msg +>
@@ -674,7 +674,7 @@ parse_ast_signature = src, filename =>
       |
          ?diags > 0
             |
-               d = diags(0)!!
+               d = diags(0).expect("missing diags")
                fn = d.file != "" | d.file + ":" | ""
                <- fn + str::from_int(d.line) + ":" + str::from_int(d.col) +
                  ": E" + str::from_int(d.code) + ": " + d.msg +>

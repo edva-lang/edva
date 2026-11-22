@@ -26,12 +26,12 @@ m ^- 100 | io::out("FAIL deletion for missing key")
 
 // Verify all values are correct
 0..8 @ i =>
-   (m ^ i)!! != i * 100 | io::out("FAIL value after reinsertion")
+   (m ^ i).expect("required payload") != i * 100 | io::out("FAIL value after reinsertion")
 
 // Insert another key to trigger growth/rebuild
 m ^ 8 = 800
 ?m != 9 | io::out("FAIL count after growth")
-(m ^ 8)!! != 800 | io::out("FAIL value for key 8")
+(m ^ 8).expect("required payload") != 800 | io::out("FAIL value for key 8")
 
 // Delete all keys again
 0..9 @ i =>
@@ -43,6 +43,6 @@ m ^ 8 = 800
 // Insert a single key and verify
 m ^ 42 = 4242
 ?m != 1 | io::out("FAIL count after final insert")
-(m ^ 42)!! != 4242 | io::out("FAIL value after final insert")
+(m ^ 42).expect("required payload") != 4242 | io::out("FAIL value after final insert")
 
 io::out("PASS")

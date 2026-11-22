@@ -62,7 +62,7 @@ String{}("\"\"", "\"a\\\"b\"", "\"a\\\\b\"", "\"a\\nb\"",
    @ source =>
       cur = json::cursor(source)
       actual = json::cursor_read_str(cur)
-      parsed = json::parse(source)!!
+      parsed = json::parse(source).expect("missing parse")
       parsed
          [String expected]
             check((actual |_| "INVALID") == expected, "escaped/Unicode string")

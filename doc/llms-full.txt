@@ -189,7 +189,7 @@ find_target = count, target =>
       target           // evaluates to <+ target +> on break, or <--> on normal completion
 ```
 - Iterables: `N @` (`0..N`), `a..b @ i =>`, `a...b @ i =>`, `arr @ elem =>` / `arr @ elem, i =>`
-  (direct unwrapped element iteration; prefer over `?arr @ i => arr(i)!!`), `str @ byte =>` /
+  (direct unwrapped element iteration; prefer over indexing a counted loop), `str @ byte =>` /
   `str @ byte, i =>` (direct raw UTF-8 byte iteration where `?str` is byte length; prefer over
   `?str @ i => str(i)`), `str @@ rune =>` / `str @@ rune, i =>` (decoded Unicode `Rune` iteration,
   also on `Builder`), `map @ val, key =>`, infinite `0.. @`, and condition cycles `(cond) @ body`.
@@ -232,8 +232,8 @@ find_target = count, target =>
 
 - **Implicit Fallbacks**: Expression choices whose branches all produce `< T | >` or `< | E >`
   synthesize `| <-->` or `| <++>` automatically.
-- **Error Propagation (`--!`) & Unwrap (`!!`)**: `expr--!` unwraps positive payload or early-returns
-  negative error from the enclosing function; `expr!!` unwraps positive payload or aborts on error.
+- **Error propagation and explicit expectations**: `expr--!` unwraps positive payload or early-returns
+  negative error from the enclosing function; `expr.expect("reason")` aborts with a reason. The old `!!` syntax is rejected (E3177).
 - **Monadic Bind (`$>>`) & Functor Maps (`$+>`, `$->`)**: `ram $>> next_fn` threads positive
   payloads through ram-returning stages; `ram $+> f` maps `f: T => U` over the positive slot of
   `< T | E >` or `< T | >`, and `ram $-> g` maps `g: E => F` over the negative slot of `< T | E >`
@@ -380,7 +380,7 @@ field_names = #param T, rec =>
 - `E1001`–`E1019`: Lexical errors (`E1011` tab indentation, `E1017` multiline string margin, `E1018` unterminated multiline/interpolated string, `E1019` `_` in number).
 - `E2001`–`E2109`: Syntax errors (`E2015` missing comma on same line, `E2024` invalid bare `|` position, `E2025` space in range, `E2037` parenthesized fn params, `E2040` explicit `_` param, `E2052` comma in predicate guard, `E2084` single-field record or redundant parens, `E2095` malformed/mismatched pattern guard, `E2096` `|` before `[guard]`, `E2104` `()` used as value, `E2109` `[Variant _]`).
 - `E3004`: Undefined identifier, function, or module symbol.
-- `E3008`: Logical `!` applied to non-`Flag` (use `+b` to freeze `Builder`, `!!` to unwrap, `x ![...]` for negated guard).
+- `E3008`: Logical `!` applied to non-`Flag` (use `+b` to freeze `Builder`, `.expect("reason")` for deliberate aborts, `x ![...]` for negated guard).
 - `E3033`: Reassigning an unprimed immutable binding, or name clash across imports.
 - `E3084`: Type unification failure (including nominal record mismatch or field name mismatch).
 - `E3089` / `E3093` / `E3102`: Ram shape mismatch or inexhaustive expression choice.

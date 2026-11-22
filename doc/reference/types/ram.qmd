@@ -42,7 +42,7 @@ opt = MaybeInt(<+ 42 +>)
 stat = Status(<++>)
 res = Outcome(<+ 100 ->)
 
-io::out $ (flag, opt | _ | 0, stat | "ok" | _, res!!)
+io::out $ (flag, opt | _ | 0, stat | "ok" | _, res.expect("missing res"))
 ```
 
 ## Operations on flags and ramifications
@@ -54,7 +54,7 @@ io::out $ (flag, opt | _ | 0, stat | "ok" | _, res!!)
 | **Flag extraction** | `<>(r)` / `!<>(r)` | Any ram `r` | `<>` | Discards payloads and returns `<+>` if `r` is positive (`!<>(r)` negates) |
 | **Positional choice** | `r | pos | neg` | Any ram `r` | Unified branch type | 1st `|` matches positive slot; 2nd `|` matches negative slot (`_` or `x =>` binds payload) |
 | **Skip-first choice** | `r !| neg_body` | `< | E >` / `<>` | Unified type | Sugar for `r | (void) | neg_body` (e.g. `arr(i) = v !| _` panics on OOB write) |
-| **Unwrap or abort** | `r!!` | `< T | E >` or `< T | >` | `T` | Extracts positive payload `T` or aborts on negative slot (`E3091` on `<|E>` / `<>`) |
+| **Unwrap or abort** | `r.expect("reason")` | `< T | E >` or `< T | >` | `T` | Extracts positive payload `T` or aborts on negative slot (`E3091` on `<|E>` / `<>`) |
 | **Unwrap or propagate** | `r--!` | `< T | E >`, `< T | >`, `< | E >`, `<>` | `T` or `()` | Extracts positive slot or early-returns the negative ram from the enclosing function |
 | **Monadic bind** | `r $>> cont` | `< T | E >` or `< T | >` | Ram returned by `cont` | Calls `cont(val)` on positive slot; propagates negative slot unchanged (`E3091` if `cont` non-ram) |
 | **Positive functor map** | `r $+> fn` | `< T | E >` or `< T | >` | `< U | E >` or `< U | >` | Maps `fn: T => U` (function, section, choice, or free-`_` expr) over positive slot; passes negative slot through unchanged (`E3091` on `<|E>` / `<>`) |
@@ -90,7 +90,7 @@ io::out $ double_pos(-1) | "ok" | _   // err: non-positive
 | `err.file`, `err.line`, `err.col` | `String`, `Int`, `Int` | Source location automatically captured by `Error(code, msg)` at the call site |
 | `err.context` | `(Int, Int)` | Auxiliary context tuple (defaults to `(0, 0)`) |
 | `Error(code, msg)` | Constructor | Captures caller `file`, `line`, `col` automatically |
-| `r | _ | _` on `< T | Error >` | Fatal negative `_` | Extracting a negative `Error` slot with bare `_` aborts execution with `E4011` (like `r!!`); bind a named parameter (`| err => ...`) to handle recoverably |
+| `r | _ | _` on `< T | Error >` | Fatal negative `_` | Extracting a negative `Error` slot with bare `_` aborts execution with `E4011` (like `r.expect("reason")`); bind a named parameter (`| err => ...`) to handle recoverably |
 | **EOF vs Failure in I/O** | `< String | >` vs `< T | Error >` | Line/stream readers (`in::line`) return `< String | >` (`<-->` = normal EOF); filesystem/network calls (`fs::read_file`) return `< String | Error >` |
 
 ```{.dva .run}

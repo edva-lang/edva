@@ -23,8 +23,8 @@ h = heap::new_int!
 heap::push(h, 30)
 heap::push(h, 10)
 heap::push(h, 20)
-io::out $ str::from_int(heap::pop(h)!!)
-io::out $ str::from_int(heap::pop(h)!!)
+io::out $ str::from_int(heap::pop(h).expect("missing pop"))
+io::out $ str::from_int(heap::pop(h).expect("missing pop"))
 ```
 
 ## Types and Function catalog

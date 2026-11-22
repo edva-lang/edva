@@ -264,7 +264,7 @@ pop_inst_frame = ctx =>
    n > 0
       |
          out = InstStack()
-         (n - 1) @ i => out += ctx.inst_stack(i)!!
+         (n - 1) @ i => out += ctx.inst_stack(i).expect("missing inst stack")
          ctx.inst_stack = out
 
 format_inst_loc: String, Int, Int => String
@@ -279,10 +279,10 @@ format_inst_trace = stk =>
    n = ?stk
    n == 0 | --| ""
    b = {64}
-   last = stk(n - 1)!!
+   last = stk(n - 1).expect("missing stk")
    b += " [in specialization '${last.spec_name}' instantiated at ${format_inst_loc(last.call_file, last.call_line, last.call_col)}"
    (n - 1) @ k =>
-      fr = stk(n - 2 - k)!!
+      fr = stk(n - 2 - k).expect("missing stk")
       b += " -> '${fr.spec_name}' at ${format_inst_loc(fr.call_file, fr.call_line, fr.call_col)}"
    b += "]"
    +b
@@ -306,9 +306,9 @@ add_error_loc: Ctx, Int, String, String, Int, Int => ()
 add_error_loc = ctx, code, msg, file, line, col =>
    has_inst = ?ctx.inst_stack > 0
    full_msg = has_inst | "${msg}${format_inst_trace(ctx.inst_stack)}" | msg
-   rf = has_inst | ctx.inst_stack(0)!!.call_file | ""
-   rl = has_inst | ctx.inst_stack(0)!!.call_line | 0
-   rc = has_inst | ctx.inst_stack(0)!!.call_col | 0
+   rf = has_inst | ctx.inst_stack(0).expect("missing inst stack").call_file | ""
+   rl = has_inst | ctx.inst_stack(0).expect("missing inst stack").call_line | 0
+   rc = has_inst | ctx.inst_stack(0).expect("missing inst stack").call_col | 0
    errs = ctx.errors
    errs += TypeError(code, full_msg, file, line, col, rf, rl, rc)
    ctx.errors = errs
@@ -423,7 +423,7 @@ fn_occurs = ctx, v, f =>
 
 rec_occurs: Ctx, Int, UFields => <>
 rec_occurs = ctx, v, r =>
-   (?r > 0 && r(0)!!.rec_name != "")
+   (?r > 0 && r(0).expect("missing r").rec_name != "")
       | <->
       |
          found' = <->
@@ -637,7 +637,7 @@ unify_fn = ctx, f1, f2 =>
       |
          all_ok' = <+>
          f1.params @ p1, i =>
-            p2 = f2.params(i)!!
+            p2 = f2.params(i).expect("missing params")
             ok = unify(ctx, p1, p2)
             !ok | (all_ok' = <->)
          all_ok'
@@ -658,7 +658,7 @@ is_sub_record = ctx, sub_flds, full_flds =>
       idx < 0
          | (all_ok' = <->; -->)
          |
-            f2 = full_flds(idx)!!
+            f2 = full_flds(idx).expect("missing full flds")
             ok = unify(ctx, f1.ut, f2.ut)
             !ok | (all_ok' = <->; -->)
    all_ok'
@@ -679,7 +679,7 @@ merge_open_records = ctx, r1, r2 =>
       idx = find_field_idx(r1, f2.name)
       idx !< 0
          |
-            f1 = r1(idx)!!
+            f1 = r1(idx).expect("missing r1")
             ok = unify(ctx, f1.ut, f2.ut)
             !ok | (ok' = <->; -->)
          | (merged' += f2)
@@ -737,8 +737,8 @@ unify_rec_open = ctx, r1, r2, v1, v2 =>
 
 unify_rec: Ctx, UFields, UFields => <>
 unify_rec = ctx, r1, r2 =>
-   rn1 = ?r1 > 0 | r1(0)!!.rec_name | ""
-   rn2 = ?r2 > 0 | r2(0)!!.rec_name | ""
+   rn1 = ?r1 > 0 | r1(0).expect("missing r1").rec_name | ""
+   rn2 = ?r2 > 0 | r2(0).expect("missing r2").rec_name | ""
    (rn1 != "" && rn2 != "")
       |
          rn1 == rn2
@@ -756,7 +756,7 @@ unify_rec = ctx, r1, r2 =>
             |
                all_ok' = <+>
                r1 @ f1, i =>
-                  f2 = r2(i)!!
+                  f2 = r2(i).expect("missing r2")
                   (f1.name != "" && f2.name != "" && f1.name != f2.name)
                      |
                         add_error(ctx, 3084, "Record field name mismatch: '" +
@@ -824,7 +824,7 @@ unify_enum = ctx, e1, e2 =>
             |
                all_ok' = <+>
                e1.variants @ v1, i =>
-                  v2 = e2.variants(i)!!
+                  v2 = e2.variants(i).expect("missing variants")
                   v1.label != v2.label || v1.has_payload != v2.has_payload
                      |
                         add_error(ctx, 3084, "Enum variant mismatch: " +
@@ -1028,7 +1028,7 @@ is_ground = ctx, t =>
                all_ok'
             | <->
       [Rec r]
-         (?r > 0 && r(0)!!.rec_name != "")
+         (?r > 0 && r(0).expect("missing r").rec_name != "")
             | <+>
             |
                all_ok' = <+>

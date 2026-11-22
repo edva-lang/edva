@@ -43,9 +43,9 @@ raw_bubble_slots = j, is_less, swap =>
 bubble_ints: Ints, Int, Int => ()
 bubble_ints = arr, j, lo =>
    j !> lo | --|
-   arr(j)!! !< arr(j - 1)!! | --|
-   tmp = arr(j)!!
-   arr(j) = arr(j - 1)!!
+   arr(j).expect("missing arr") !< arr(j - 1).expect("missing arr") | --|
+   tmp = arr(j).expect("missing arr")
+   arr(j) = arr(j - 1).expect("missing arr")
    arr(j - 1) = tmp
    bubble_ints(arr, j - 1, lo)
 
@@ -57,17 +57,17 @@ insertion_sort_ints = arr, lo, hi =>
 merge_ints: Ints, Ints, Int, Int, Int => ()
 merge_ints = arr, aux, lo, mid, hi =>
    (hi - lo) @ k =>
-      aux(lo + k) = arr(lo + k)!!
+      aux(lo + k) = arr(lo + k).expect("missing arr")
    i' = lo
    j' = mid
    (hi - lo) @ k =>
       curr = lo + k
-      take_j = (i' !< mid) || (j' < hi && aux(j')!! < aux(i')!!)
+      take_j = (i' !< mid) || (j' < hi && aux(j').expect("missing aux") < aux(i').expect("missing aux"))
       take_j |
-         arr(curr) = aux(j')!!
+         arr(curr) = aux(j').expect("missing aux")
          j' = j' + 1
       |
-         arr(curr) = aux(i')!!
+         arr(curr) = aux(i').expect("missing aux")
          i' = i' + 1
 
 msort_ints: Ints, Ints, Int, Int => ()
@@ -83,9 +83,9 @@ msort_ints = arr, aux, lo, hi =>
 bubble_strings: Strings, Int, Int => ()
 bubble_strings = arr, j, lo =>
    j !> lo | --|
-   str::cmp(arr(j)!!, arr(j - 1)!!) !< 0 | --|
-   tmp = arr(j)!!
-   arr(j) = arr(j - 1)!!
+   str::cmp(arr(j).expect("missing arr"), arr(j - 1).expect("missing arr")) !< 0 | --|
+   tmp = arr(j).expect("missing arr")
+   arr(j) = arr(j - 1).expect("missing arr")
    arr(j - 1) = tmp
    bubble_strings(arr, j - 1, lo)
 
@@ -97,17 +97,17 @@ insertion_sort_strings = arr, lo, hi =>
 merge_strings: Strings, Strings, Int, Int, Int => ()
 merge_strings = arr, aux, lo, mid, hi =>
    (hi - lo) @ k =>
-      aux(lo + k) = arr(lo + k)!!
+      aux(lo + k) = arr(lo + k).expect("missing arr")
    i' = lo
    j' = mid
    (hi - lo) @ k =>
       curr = lo + k
-      take_j = (i' !< mid) || (j' < hi && str::cmp(aux(j')!!, aux(i')!!) < 0)
+      take_j = (i' !< mid) || (j' < hi && str::cmp(aux(j').expect("missing aux"), aux(i').expect("missing aux")) < 0)
       take_j |
-         arr(curr) = aux(j')!!
+         arr(curr) = aux(j').expect("missing aux")
          j' = j' + 1
       |
-         arr(curr) = aux(i')!!
+         arr(curr) = aux(i').expect("missing aux")
          i' = i' + 1
 
 msort_strings: Strings, Strings, Int, Int => ()
@@ -124,10 +124,10 @@ sort_strings_pass: Strings => ()
 sort_strings_pass = out =>
    len = ?out
    len !> 16 |
-      cmp_str = a, b => str::cmp(out(a)!!, out(b)!!) < 0
+      cmp_str = a, b => str::cmp(out(a).expect("missing out"), out(b).expect("missing out")) < 0
       sw_str = a, b =>
-         tmp = out(a)!!
-         out(a) = out(b)!!
+         tmp = out(a).expect("missing out")
+         out(a) = out(b).expect("missing out")
          out(b) = tmp
          0
       raw_sort_slots(len, cmp_str, sw_str)
@@ -140,10 +140,10 @@ sort_ints_pass: Ints => ()
 sort_ints_pass = out =>
    len = ?out
    len !> 16 |
-      cmp_int = a, b => out(a)!! < out(b)!!
+      cmp_int = a, b => out(a).expect("missing out") < out(b).expect("missing out")
       sw_int = a, b =>
-         tmp = out(a)!!
-         out(a) = out(b)!!
+         tmp = out(a).expect("missing out")
+         out(a) = out(b).expect("missing out")
          out(b) = tmp
          0
       raw_sort_slots(len, cmp_int, sw_int)

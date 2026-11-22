@@ -21,8 +21,8 @@ or any user record matching `(buf: T{}, head: Int, tail: Int, count: Int)`.
 dq = deque::new_int!
 deque::push_back(dq, 20)
 deque::push_front(dq, 10)
-io::out $ str::from_int(deque::pop_front(dq)!!)
-io::out $ str::from_int(deque::pop_back(dq)!!)
+io::out $ str::from_int(deque::pop_front(dq).expect("missing pop front"))
+io::out $ str::from_int(deque::pop_back(dq).expect("missing pop back"))
 ```
 
 ## Types and Function catalog

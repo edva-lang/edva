@@ -1,2 +1,2 @@
 flag = <+>
-x = flag!!
+x = flag.expect("missing flag")

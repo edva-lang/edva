@@ -37,7 +37,9 @@ target triple = "x86_64-unknown-linux-gnu"
 @clo.const.6 = internal constant { ptr, ptr } { ptr @"event::del", ptr null }
 @"var.event::del" = global ptr null
 @detached_builder = internal unnamed_addr constant [93 x i8] c"E4013: Builder buffer was detached by freeze. Append data or create a new Builder before &b\0A\00"
+@expect.reason.63 = internal unnamed_addr constant [22 x i8] c"expect: missing idxs\0A\00"
 @dva_thread_rec = external thread_local global ptr
+@expect.reason.65 = internal unnamed_addr constant [25 x i8] c"expect: missing entries\0A\00"
 @clo.const.7 = internal constant { ptr, ptr } { ptr @"event::wait", ptr null }
 @"var.event::wait" = global ptr null
 @clo.const.8 = internal constant { ptr, ptr } { ptr @"event::close", ptr null }
@@ -1453,6 +1455,7 @@ unwrap.pos.62:                                    ; preds = %a.rd.done
   br i1 %a.rd.nonnull221, label %a.rd.check222, label %a.rd.err.null224
 
 unwrap.abort.62:                                  ; preds = %a.rd.done
+  %7 = call i64 @write(i32 2, ptr @expect.reason.63, i64 21)
   %unwrap.pay.abort = extractvalue { i1, i64 } %ram.pay, 1
   %err.ptr = inttoptr i64 %unwrap.pay.abort to ptr
   %err.code.gep206 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr, i32 0, i32 0
@@ -1557,9 +1560,9 @@ a.rd.done226:                                     ; preds = %a.rd.err.oob225, %a
   %ram.tag260 = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag258, 0
   %ram.pay261 = insertvalue { i1, i64 } %ram.tag260, i64 %a.rd.pay259, 1
   %unwrap.is_pos262 = extractvalue { i1, i64 } %ram.pay261, 0
-  br i1 %unwrap.is_pos262, label %unwrap.pos.63, label %unwrap.abort.63
+  br i1 %unwrap.is_pos262, label %unwrap.pos.64, label %unwrap.abort.64
 
-unwrap.pos.63:                                    ; preds = %a.rd.done226
+unwrap.pos.64:                                    ; preds = %a.rd.done226
   %unwrap.pay.pos294 = extractvalue { i1, i64 } %ram.pay261, 1
   %pay.ptr = inttoptr i64 %unwrap.pay.pos294 to ptr
   store ptr %pay.ptr, ptr %var.ev, align 8
@@ -1568,7 +1571,8 @@ unwrap.pos.63:                                    ; preds = %a.rd.done226
   %cmptmp297 = icmp ne i64 %bandtmp296, 0
   br i1 %cmptmp297, label %choice.then298, label %choice.else299
 
-unwrap.abort.63:                                  ; preds = %a.rd.done226
+unwrap.abort.64:                                  ; preds = %a.rd.done226
+  %8 = call i64 @write(i32 2, ptr @expect.reason.65, i64 24)
   %unwrap.pay.abort263 = extractvalue { i1, i64 } %ram.pay261, 1
   %err.ptr264 = inttoptr i64 %unwrap.pay.abort263 to ptr
   %err.code.gep265 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr264, i32 0, i32 0
@@ -1597,7 +1601,7 @@ unwrap.abort.63:                                  ; preds = %a.rd.done226
   %err.is.thread288 = icmp ne ptr %err.thread.rec287, null
   br i1 %err.is.thread288, label %err.thread289, label %err.normal290
 
-err.thread289:                                    ; preds = %unwrap.abort.63
+err.thread289:                                    ; preds = %unwrap.abort.64
   %err.haserr.gep291 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec287, i32 0, i32 6
   store i64 1, ptr %err.haserr.gep291, align 8
   %err.err.gep292 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec287, i32 0, i32 7
@@ -1605,16 +1609,16 @@ err.thread289:                                    ; preds = %unwrap.abort.63
   call void @pthread_exit(ptr null)
   unreachable
 
-err.normal290:                                    ; preds = %unwrap.abort.63
+err.normal290:                                    ; preds = %unwrap.abort.64
   %err.panic.printf293 = call i32 (ptr, ...) @printf(ptr @fmt_error, i64 %err.code266, i32 %err.msg.len32278, ptr %err.msg.data280, i32 %err.file.len32284, ptr %err.file.data286, i64 %err.line272, i64 %err.col274)
   call void @exit(i32 1)
   unreachable
 
-choice.then298:                                   ; preds = %unwrap.pos.63
+choice.then298:                                   ; preds = %unwrap.pos.64
   %var.load301 = load i64, ptr @"var.event::READ", align 8
   br label %choice.exit300
 
-choice.else299:                                   ; preds = %unwrap.pos.63
+choice.else299:                                   ; preds = %unwrap.pos.64
   br label %choice.exit300
 
 choice.exit300:                                   ; preds = %choice.else299, %choice.then298

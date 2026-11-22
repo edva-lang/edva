@@ -38,7 +38,7 @@ arr_len = arr =>
 
 arr_get: #param T: Type, T{}, Int => T
 arr_get = arr, idx =>
-   arr(idx)!!
+   arr(idx).expect("missing arr")
 
 arr_set: #param T: Type, T{}, Int, T => ()
 arr_set = arr, idx, val =>

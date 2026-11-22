@@ -29,13 +29,13 @@ raw_chunked = "HTTP/1.1 100 Continue\r\n\r\n" +
    "1\r\n}\r\n" +
    "0\r\n\r\n"
 
-res1 = http::parse_response(raw_chunked)!!
+res1 = http::parse_response(raw_chunked).expect("missing parse response")
 test::eq(res1.status, 200, "parse_response status after 100 Continue")
 test::eq(res1.reason, "OK", "parse_response reason")
 test::eq(http::response_header(res1, "x-custom") | v => v | "", "Edva-8", "case-insensitive response_header")
 test::eq(res1.body, "{\"msg\":\"chunky\"}", "chunked body decoded")
 
-jv = http::response_json(res1)!!
+jv = http::response_json(res1).expect("missing response json")
 test::eq(json::get_str(jv, "msg") | s => s | "", "chunky", "response_json parsed")
 
 // 2. Server-Sent Events (SSE) encode & parse
@@ -44,8 +44,8 @@ ev2 = http::sse_data("plain-msg")
 sse_wire = ": keepalive\n\n" + http::sse_encode(ev1) + http::sse_encode(ev2)
 parsed_evs = http::sse_parse(sse_wire)
 test::eq(?parsed_evs, 2, "sse_parse count (ignoring comment)")
-pe0 = parsed_evs(0)!!
-pe1 = parsed_evs(1)!!
+pe0 = parsed_evs(0).expect("missing parsed evs")
+pe1 = parsed_evs(1).expect("missing parsed evs")
 test::eq(pe0.id, "42", "sse event 0 id")
 test::eq(pe0.event, "update", "sse event 0 event")
 test::eq(pe0.data, "line1\nline2", "sse event 0 multiline data")
@@ -58,7 +58,7 @@ accept = http::ws_accept_key("dGhlIHNhbXBsZSBub25jZQ==")
 test::eq(accept, "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=", "RFC 6455 Sec-WebSocket-Accept vector")
 
 f_masked = http::ws_encode_frame(http::WS_OP_TEXT, "hello websocket!", <+>)
-df1 = http::ws_decode_frame(f_masked)!!
+df1 = http::ws_decode_frame(f_masked).expect("missing ws decode frame")
 test::eq(df1.opcode, http::WS_OP_TEXT, "decoded masked frame opcode")
 test::ok(df1.fin, "decoded masked frame fin")
 test::eq(df1.payload, "hello websocket!", "decoded masked frame payload")
@@ -66,7 +66,7 @@ test::eq(df1.payload, "hello websocket!", "decoded masked frame payload")
 // 16-bit extended length frame (200 bytes)
 long_str = str::repeat("abcd", 50)
 f_long = http::ws_encode_frame(http::WS_OP_BINARY, long_str, <->)
-df2 = http::ws_decode_frame(f_long)!!
+df2 = http::ws_decode_frame(f_long).expect("missing ws decode frame")
 test::eq(df2.opcode, http::WS_OP_BINARY, "decoded 16-bit frame opcode")
 test::eq(?df2.payload, 200, "decoded 16-bit frame length")
 test::eq(df2.payload, long_str, "decoded 16-bit frame payload")
@@ -126,20 +126,20 @@ net::close_fd(srv_fd')
 base_url = "http://127.0.0.1:" + str::from_int(port')
 client = http::client_new!
 
-r_first = http::client_send(client, http::request_new("GET", base_url + "/first"))!!
+r_first = http::client_send(client, http::request_new("GET", base_url + "/first")).expect("missing client send")
 test::eq(r_first.status, 200, "keep-alive req 1 status")
 test::eq(r_first.body, "hello-world", "keep-alive req 1 chunked body")
 
-r_second = http::client_send(client, http::with_json_body(http::request_new("POST", base_url + "/second"), "{\"ok\":true}"))!!
+r_second = http::client_send(client, http::with_json_body(http::request_new("POST", base_url + "/second"), "{\"ok\":true}")).expect("missing client send")
 test::eq(r_second.status, 201, "keep-alive req 2 status on reused socket")
-ccl_doc = http::response_ccl(r_second)!!
+ccl_doc = http::response_ccl(r_second).expect("missing response ccl")
 test::eq(ccl::get(ccl_doc, "status") | v => v | "", "1", "response_ccl parsed")
 http::client_close(client)
 
 ws_url = "ws://127.0.0.1:" + str::from_int(port') + "/ws"
-wconn = http::ws_connect(ws_url)!!
+wconn = http::ws_connect(ws_url).expect("missing ws connect")
 test::ok(http::ws_send_text(wconn, "edva-ws"), "ws_send_text succeeds")
-wframe = http::ws_recv(wconn)!!
+wframe = http::ws_recv(wconn).expect("missing ws recv")
 test::eq(wframe.opcode, http::WS_OP_TEXT, "ws_recv opcode")
 test::eq(wframe.payload, "echo:edva-ws", "ws_recv echoed payload")
 http::ws_close(wconn)

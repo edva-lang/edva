@@ -63,7 +63,7 @@
          base = &s
          raw_base = Int(base) .&. 0xFFFFFFFFFFFF
          hit = c_memchr(base + st, ch, rem)
-         hit == Addr(0) | -1 | (Int(hit) - raw_base)
+         hit == ptr(0) | -1 | (Int(hit) - raw_base)
 
    find_substring_from: String, String, Int, Int => < Int | >
    find_substring_from = s, needle, start, limit =>
@@ -474,7 +474,7 @@
    join = parts, sep =>
       n = ?parts
       n == 0 | --| ""
-      n == 1 | --| parts(0)!!
+      n == 1 | --| parts(0).expect("missing parts")
       lsep = ?sep
       total = ((n - 1) * lsep, parts) @> acc, p => acc + ?p
       b = {total + 1}

@@ -10,9 +10,9 @@
 msg = "native foreign signature ok\n"
 write(1, msg, ?msg)
 err_ptr = __errno_location!
-io::out $ err_ptr != Addr(0) | "has_errno" | "no_errno"
+io::out $ err_ptr != ptr(0) | "has_errno" | "no_errno"
 
 p = malloc(64)
-io::out $ p != Addr(0) | "malloc_ok" | "malloc_fail"
+io::out $ p != ptr(0) | "malloc_ok" | "malloc_fail"
 my_free(p)
 io::out $ "free_ok"

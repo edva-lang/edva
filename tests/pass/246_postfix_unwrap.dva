@@ -1,4 +1,4 @@
-// Tests postfix unwrap syntax '!!' (issue #14)
+// Explicit expectations retain postfix chaining.
 
 #use io
 
@@ -15,19 +15,19 @@ a = IntArr()
 a += 10
 a += 20
 a += 30
-x = a(0)!!
-y = a(1)!!
-z = a(2)!!
+x = a(0).expect("missing a")
+y = a(1).expect("missing a")
+z = a(2).expect("missing a")
 io::out $ str::from_int(x)
 io::out $ str::from_int(y)
 io::out $ str::from_int(z)
 
-// 2. Member chaining: users(i)!!.name
+// 2. Member chaining: users(i).expect("existing user").name
 users = UserArr()
 users += User("Alice", 30)
 users += User("Bob", 25)
-io::out $ users(0)!!.name
-io::out $ str::from_int(users(1)!!.age)
+io::out $ users(0).expect("missing users").name
+io::out $ str::from_int(users(1).expect("missing users").age)
 
 // 3. Nested unwrap
 row0 = IntArr()
@@ -39,19 +39,19 @@ row1 += 4
 m = Matrix()
 m += row0
 m += row1
-v1 = m(0)!!(1)!!
-v2 = m(1)!!(0)!!
+v1 = m(0).expect("missing m")(1).expect("required payload")
+v2 = m(1).expect("missing m")(0).expect("required payload")
 io::out $ str::from_int(v1)
 io::out $ str::from_int(v2)
 
 // 4. Pipeline flow
-res = a(0)!! $> add_ten
+res = a(0).expect("missing a") $> add_ten
 io::out $ str::from_int(res)
 
 // 5. RamPN unwrap
 r_pn = <+ 42 ->
-io::out $ str::from_int(r_pn!!)
+io::out $ str::from_int(r_pn.expect("missing r pn"))
 
 // 6. RamPP unwrap
 r_pp = <+ "unwrapped string" ->
-io::out $ r_pp!!
+io::out $ r_pp.expect("missing r pp")

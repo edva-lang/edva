@@ -57,10 +57,23 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.dep_graph::build_dep_graph" = global ptr null
 @clo.const.13 = internal constant { ptr, ptr } { ptr @"dep_graph::init_tarjan_state", ptr null }
 @"var.dep_graph::init_tarjan_state" = global ptr null
+@expect.reason.72 = internal unnamed_addr constant [23 x i8] c"expect: missing s ptr\0A\00"
 @clo.const.14 = internal constant { ptr, ptr } { ptr @"dep_graph::push_stack", ptr null }
 @"var.dep_graph::push_stack" = global ptr null
+@expect.reason.74 = internal unnamed_addr constant [23 x i8] c"expect: missing s ptr\0A\00"
+@expect.reason.76 = internal unnamed_addr constant [21 x i8] c"expect: missing stk\0A\00"
 @clo.const.15 = internal constant { ptr, ptr } { ptr @"dep_graph::pop_stack", ptr null }
 @"var.dep_graph::pop_stack" = global ptr null
+@expect.reason.78 = internal unnamed_addr constant [23 x i8] c"expect: missing s cnt\0A\00"
+@expect.reason.80 = internal unnamed_addr constant [23 x i8] c"expect: missing nodes\0A\00"
+@expect.reason.83 = internal unnamed_addr constant [22 x i8] c"expect: missing lows\0A\00"
+@expect.reason.85 = internal unnamed_addr constant [22 x i8] c"expect: missing lows\0A\00"
+@expect.reason.87 = internal unnamed_addr constant [22 x i8] c"expect: missing lows\0A\00"
+@expect.reason.89 = internal unnamed_addr constant [22 x i8] c"expect: missing idxs\0A\00"
+@expect.reason.91 = internal unnamed_addr constant [22 x i8] c"expect: missing lows\0A\00"
+@expect.reason.93 = internal unnamed_addr constant [22 x i8] c"expect: missing idxs\0A\00"
+@expect.reason.96 = internal unnamed_addr constant [23 x i8] c"expect: missing s ptr\0A\00"
+@expect.reason.98 = internal unnamed_addr constant [23 x i8] c"expect: missing nodes\0A\00"
 @clo.const.16 = internal constant { ptr, ptr } { ptr @"dep_graph::tarjan_dfs", ptr null }
 @"var.dep_graph::tarjan_dfs" = global ptr null
 @clo.const.17 = internal constant { ptr, ptr } { ptr @"dep_graph::tarjan_scc", ptr null }
@@ -8256,6 +8269,7 @@ unwrap.pos.71:                                    ; preds = %a.rd.done
   br i1 %a.null35, label %a.create36, label %a.after37
 
 unwrap.abort.71:                                  ; preds = %a.rd.done
+  %2 = call i64 @write(i32 2, ptr @expect.reason.72, i64 22)
   %unwrap.pay.abort = extractvalue { i1, i64 } %ram.pay, 1
   %err.ptr = inttoptr i64 %unwrap.pay.abort to ptr
   %err.code.gep18 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr, i32 0, i32 0
@@ -8745,16 +8759,17 @@ a.rd.done:                                        ; preds = %a.rd.err.oob, %a.rd
   %ram.tag = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag, 0
   %ram.pay = insertvalue { i1, i64 } %ram.tag, i64 %a.rd.pay, 1
   %unwrap.is_pos = extractvalue { i1, i64 } %ram.pay, 0
-  br i1 %unwrap.is_pos, label %unwrap.pos.72, label %unwrap.abort.72
+  br i1 %unwrap.is_pos, label %unwrap.pos.73, label %unwrap.abort.73
 
-unwrap.pos.72:                                    ; preds = %a.rd.done
+unwrap.pos.73:                                    ; preds = %a.rd.done
   %unwrap.pay.pos = extractvalue { i1, i64 } %ram.pay, 1
   store i64 %unwrap.pay.pos, ptr %var.sp, align 8
   %var.load29 = load i64, ptr %var.sp, align 8
   %cmptmp = icmp sgt i64 %var.load29, 0
   br i1 %cmptmp, label %choice.then, label %choice.else
 
-unwrap.abort.72:                                  ; preds = %a.rd.done
+unwrap.abort.73:                                  ; preds = %a.rd.done
+  %1 = call i64 @write(i32 2, ptr @expect.reason.74, i64 22)
   %unwrap.pay.abort = extractvalue { i1, i64 } %ram.pay, 1
   %err.ptr = inttoptr i64 %unwrap.pay.abort to ptr
   %err.code.gep18 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr, i32 0, i32 0
@@ -8783,7 +8798,7 @@ unwrap.abort.72:                                  ; preds = %a.rd.done
   %err.is.thread = icmp ne ptr %err.thread.rec, null
   br i1 %err.is.thread, label %err.thread, label %err.normal
 
-err.thread:                                       ; preds = %unwrap.abort.72
+err.thread:                                       ; preds = %unwrap.abort.73
   %err.haserr.gep = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec, i32 0, i32 6
   store i64 1, ptr %err.haserr.gep, align 8
   %err.err.gep = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec, i32 0, i32 7
@@ -8791,17 +8806,17 @@ err.thread:                                       ; preds = %unwrap.abort.72
   call void @pthread_exit(ptr null)
   unreachable
 
-err.normal:                                       ; preds = %unwrap.abort.72
+err.normal:                                       ; preds = %unwrap.abort.73
   %err.panic.printf = call i32 (ptr, ...) @printf(ptr @fmt_error, i64 %err.code, i32 %err.msg.len32, ptr %err.msg.data25, i32 %err.file.len32, ptr %err.file.data28, i64 %err.line, i64 %err.col)
   call void @exit(i32 1)
   unreachable
 
-choice.then:                                      ; preds = %unwrap.pos.72
+choice.then:                                      ; preds = %unwrap.pos.73
   %var.load30 = load i64, ptr %var.sp, align 8
   %subtmp = sub i64 %var.load30, 1
   br label %choice.exit
 
-choice.else:                                      ; preds = %unwrap.pos.72
+choice.else:                                      ; preds = %unwrap.pos.73
   br label %choice.exit
 
 choice.exit:                                      ; preds = %choice.else, %choice.then
@@ -9033,13 +9048,14 @@ a.rd.done123:                                     ; preds = %a.rd.err.oob122, %a
   %ram.tag156 = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag154, 0
   %ram.pay157 = insertvalue { i1, i64 } %ram.tag156, i64 %a.rd.pay155, 1
   %unwrap.is_pos158 = extractvalue { i1, i64 } %ram.pay157, 0
-  br i1 %unwrap.is_pos158, label %unwrap.pos.73, label %unwrap.abort.73
+  br i1 %unwrap.is_pos158, label %unwrap.pos.75, label %unwrap.abort.75
 
-unwrap.pos.73:                                    ; preds = %a.rd.done123
+unwrap.pos.75:                                    ; preds = %a.rd.done123
   %unwrap.pay.pos190 = extractvalue { i1, i64 } %ram.pay157, 1
   ret i64 %unwrap.pay.pos190
 
-unwrap.abort.73:                                  ; preds = %a.rd.done123
+unwrap.abort.75:                                  ; preds = %a.rd.done123
+  %2 = call i64 @write(i32 2, ptr @expect.reason.76, i64 20)
   %unwrap.pay.abort159 = extractvalue { i1, i64 } %ram.pay157, 1
   %err.ptr160 = inttoptr i64 %unwrap.pay.abort159 to ptr
   %err.code.gep161 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr160, i32 0, i32 0
@@ -9068,7 +9084,7 @@ unwrap.abort.73:                                  ; preds = %a.rd.done123
   %err.is.thread184 = icmp ne ptr %err.thread.rec183, null
   br i1 %err.is.thread184, label %err.thread185, label %err.normal186
 
-err.thread185:                                    ; preds = %unwrap.abort.73
+err.thread185:                                    ; preds = %unwrap.abort.75
   %err.haserr.gep187 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec183, i32 0, i32 6
   store i64 1, ptr %err.haserr.gep187, align 8
   %err.err.gep188 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec183, i32 0, i32 7
@@ -9076,7 +9092,7 @@ err.thread185:                                    ; preds = %unwrap.abort.73
   call void @pthread_exit(ptr null)
   unreachable
 
-err.normal186:                                    ; preds = %unwrap.abort.73
+err.normal186:                                    ; preds = %unwrap.abort.75
   %err.panic.printf189 = call i32 (ptr, ...) @printf(ptr @fmt_error, i64 %err.code162, i32 %err.msg.len32174, ptr %err.msg.data176, i32 %err.file.len32180, ptr %err.file.data182, i64 %err.line168, i64 %err.col170)
   call void @exit(i32 1)
   unreachable
@@ -9094,8 +9110,8 @@ entry:
   %var.s_ptr = alloca ptr, align 8
   %var._i1315 = alloca i64, align 8
   %var._1314 = alloca i64, align 8
-  %loop.step.83 = alloca i64, align 8
-  %loop.idx.83 = alloca i64, align 8
+  %loop.step.94 = alloca i64, align 8
+  %loop.idx.94 = alloca i64, align 8
   %var.is_self_rec = alloca i1, align 1
   %var.scc_names = alloca ptr, align 8
   %var.idx_u = alloca i64, align 8
@@ -9116,8 +9132,8 @@ entry:
   %var._i = alloca i64, align 8
   %var.d_name = alloca ptr, align 8
   %var._449 = alloca ptr, align 8
-  %loop.step.76 = alloca i64, align 8
-  %loop.idx.76 = alloca i64, align 8
+  %loop.step.81 = alloca i64, align 8
+  %loop.idx.81 = alloca i64, align 8
   %var.u_node = alloca ptr, align 8
   %var._336 = alloca ptr, align 8
   %var._335 = alloca ptr, align 8
@@ -9244,9 +9260,9 @@ a.rd.done:                                        ; preds = %a.rd.err.oob, %a.rd
   %ram.tag = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag, 0
   %ram.pay = insertvalue { i1, i64 } %ram.tag, i64 %a.rd.pay, 1
   %unwrap.is_pos = extractvalue { i1, i64 } %ram.pay, 0
-  br i1 %unwrap.is_pos, label %unwrap.pos.74, label %unwrap.abort.74
+  br i1 %unwrap.is_pos, label %unwrap.pos.77, label %unwrap.abort.77
 
-unwrap.pos.74:                                    ; preds = %a.rd.done
+unwrap.pos.77:                                    ; preds = %a.rd.done
   %unwrap.pay.pos = extractvalue { i1, i64 } %ram.pay, 1
   store i64 %unwrap.pay.pos, ptr %var.cnt, align 8
   %var.load39 = load ptr, ptr %var.idxs, align 8
@@ -9254,7 +9270,8 @@ unwrap.pos.74:                                    ; preds = %a.rd.done
   %a.null41 = icmp eq ptr %a.load40, null
   br i1 %a.null41, label %a.create42, label %a.after43
 
-unwrap.abort.74:                                  ; preds = %a.rd.done
+unwrap.abort.77:                                  ; preds = %a.rd.done
+  %3 = call i64 @write(i32 2, ptr @expect.reason.78, i64 22)
   %unwrap.pay.abort = extractvalue { i1, i64 } %ram.pay, 1
   %err.ptr = inttoptr i64 %unwrap.pay.abort to ptr
   %err.code.gep27 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr, i32 0, i32 0
@@ -9283,7 +9300,7 @@ unwrap.abort.74:                                  ; preds = %a.rd.done
   %err.is.thread = icmp ne ptr %err.thread.rec, null
   br i1 %err.is.thread, label %err.thread, label %err.normal
 
-err.thread:                                       ; preds = %unwrap.abort.74
+err.thread:                                       ; preds = %unwrap.abort.77
   %err.haserr.gep = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec, i32 0, i32 6
   store i64 1, ptr %err.haserr.gep, align 8
   %err.err.gep = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec, i32 0, i32 7
@@ -9291,12 +9308,12 @@ err.thread:                                       ; preds = %unwrap.abort.74
   call void @pthread_exit(ptr null)
   unreachable
 
-err.normal:                                       ; preds = %unwrap.abort.74
+err.normal:                                       ; preds = %unwrap.abort.77
   %err.panic.printf = call i32 (ptr, ...) @printf(ptr @fmt_error, i64 %err.code, i32 %err.msg.len3234, ptr %err.msg.data35, i32 %err.file.len32, ptr %err.file.data38, i64 %err.line, i64 %err.col)
   call void @exit(i32 1)
   unreachable
 
-a.create42:                                       ; preds = %unwrap.pos.74
+a.create42:                                       ; preds = %unwrap.pos.77
   %arena.cur44 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.create45 = call ptr @dva_arena_alloc(ptr %arena.cur44, i64 24)
   %arena.cur46 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -9310,7 +9327,7 @@ a.create42:                                       ; preds = %unwrap.pos.74
   store ptr %a.create45, ptr %var.idxs, align 8
   br label %a.after43
 
-a.after43:                                        ; preds = %a.create42, %unwrap.pos.74
+a.after43:                                        ; preds = %a.create42, %unwrap.pos.77
   %a.load251 = load ptr, ptr %var.idxs, align 8
   %var.load52 = load i64, ptr %var.u, align 8
   %var.load53 = load i64, ptr %var.cnt, align 8
@@ -9906,9 +9923,9 @@ a.rd.done376:                                     ; preds = %a.rd.err.oob375, %a
   %ram.tag409 = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag407, 0
   %ram.pay410 = insertvalue { i1, i64 } %ram.tag409, i64 %a.rd.pay408, 1
   %unwrap.is_pos411 = extractvalue { i1, i64 } %ram.pay410, 0
-  br i1 %unwrap.is_pos411, label %unwrap.pos.75, label %unwrap.abort.75
+  br i1 %unwrap.is_pos411, label %unwrap.pos.79, label %unwrap.abort.79
 
-unwrap.pos.75:                                    ; preds = %a.rd.done376
+unwrap.pos.79:                                    ; preds = %a.rd.done376
   %unwrap.pay.pos443 = extractvalue { i1, i64 } %ram.pay410, 1
   %pay.ptr = inttoptr i64 %unwrap.pay.pos443 to ptr
   store ptr %pay.ptr, ptr %var.u_node, align 8
@@ -9919,10 +9936,11 @@ unwrap.pos.75:                                    ; preds = %a.rd.done376
   %arr.cycle.len447 = load i64, ptr %arr.cycle.len, align 8
   %arr.cycle.data = getelementptr inbounds { i64, ptr, i64 }, ptr %fld.load446, i32 0, i32 1
   %arr.cycle.data448 = load ptr, ptr %arr.cycle.data, align 8
-  store i64 0, ptr %loop.idx.76, align 8
-  br label %loop.header.76
+  store i64 0, ptr %loop.idx.81, align 8
+  br label %loop.header.81
 
-unwrap.abort.75:                                  ; preds = %a.rd.done376
+unwrap.abort.79:                                  ; preds = %a.rd.done376
+  %4 = call i64 @write(i32 2, ptr @expect.reason.80, i64 22)
   %unwrap.pay.abort412 = extractvalue { i1, i64 } %ram.pay410, 1
   %err.ptr413 = inttoptr i64 %unwrap.pay.abort412 to ptr
   %err.code.gep414 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr413, i32 0, i32 0
@@ -9951,7 +9969,7 @@ unwrap.abort.75:                                  ; preds = %a.rd.done376
   %err.is.thread437 = icmp ne ptr %err.thread.rec436, null
   br i1 %err.is.thread437, label %err.thread438, label %err.normal439
 
-err.thread438:                                    ; preds = %unwrap.abort.75
+err.thread438:                                    ; preds = %unwrap.abort.79
   %err.haserr.gep440 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec436, i32 0, i32 6
   store i64 1, ptr %err.haserr.gep440, align 8
   %err.err.gep441 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec436, i32 0, i32 7
@@ -9959,19 +9977,19 @@ err.thread438:                                    ; preds = %unwrap.abort.75
   call void @pthread_exit(ptr null)
   unreachable
 
-err.normal439:                                    ; preds = %unwrap.abort.75
+err.normal439:                                    ; preds = %unwrap.abort.79
   %err.panic.printf442 = call i32 (ptr, ...) @printf(ptr @fmt_error, i64 %err.code415, i32 %err.msg.len32427, ptr %err.msg.data429, i32 %err.file.len32433, ptr %err.file.data435, i64 %err.line421, i64 %err.col423)
   call void @exit(i32 1)
   unreachable
 
-loop.header.76:                                   ; preds = %loop.latch.76, %unwrap.pos.75
-  %counter.load = load i64, ptr %loop.idx.76, align 8
+loop.header.81:                                   ; preds = %loop.latch.81, %unwrap.pos.79
+  %counter.load = load i64, ptr %loop.idx.81, align 8
   %loop.cond = icmp slt i64 %counter.load, %arr.cycle.len447
-  br i1 %loop.cond, label %loop.body.76, label %loop.exit.nat.76
+  br i1 %loop.cond, label %loop.body.81, label %loop.exit.nat.81
 
-loop.body.76:                                     ; preds = %loop.header.76
+loop.body.81:                                     ; preds = %loop.header.81
   %loop.rel.i = sub i64 %counter.load, 0
-  store i64 1, ptr %loop.step.76, align 8
+  store i64 1, ptr %loop.step.81, align 8
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data448, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
@@ -9986,29 +10004,29 @@ loop.body.76:                                     ; preds = %loop.header.76
   %cmptmp = icmp sge i64 %var.load452, 0
   br i1 %cmptmp, label %choice.then453, label %choice.exit454
 
-loop.exit.nat.76:                                 ; preds = %loop.header.76
-  br label %loop.exit.76
+loop.exit.nat.81:                                 ; preds = %loop.header.81
+  br label %loop.exit.81
 
-loop.latch.76:                                    ; preds = %choice.exit454
-  %step.val = load i64, ptr %loop.step.76, align 8
+loop.latch.81:                                    ; preds = %choice.exit454
+  %step.val = load i64, ptr %loop.step.81, align 8
   %loop.next = add i64 %counter.load, %step.val
-  store i64 %loop.next, ptr %loop.idx.76, align 8
-  br label %loop.header.76
+  store i64 %loop.next, ptr %loop.idx.81, align 8
+  br label %loop.header.81
 
-loop.exit.76:                                     ; preds = %loop.exit.nat.76
+loop.exit.81:                                     ; preds = %loop.exit.nat.81
   %var.load1120 = load ptr, ptr %var.lows, align 8
   %a.load1121 = load ptr, ptr %var.lows, align 8
   %a.null1122 = icmp eq ptr %a.load1121, null
   br i1 %a.null1122, label %a.create1123, label %a.after1124
 
-choice.then453:                                   ; preds = %loop.body.76
+choice.then453:                                   ; preds = %loop.body.81
   %var.load455 = load ptr, ptr %var.idxs, align 8
   %a.load456 = load ptr, ptr %var.idxs, align 8
   %a.null457 = icmp eq ptr %a.load456, null
   br i1 %a.null457, label %a.create458, label %a.after459
 
-choice.exit454:                                   ; preds = %choice.exit523, %loop.body.76
-  br label %loop.latch.76
+choice.exit454:                                   ; preds = %choice.exit523, %loop.body.81
+  br label %loop.latch.81
 
 a.create458:                                      ; preds = %choice.then453
   %arena.cur460 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -10237,16 +10255,17 @@ a.rd.done560:                                     ; preds = %a.rd.err.oob559, %a
   %ram.tag594 = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag592, 0
   %ram.pay595 = insertvalue { i1, i64 } %ram.tag594, i64 %a.rd.pay593, 1
   %unwrap.is_pos596 = extractvalue { i1, i64 } %ram.pay595, 0
-  br i1 %unwrap.is_pos596, label %unwrap.pos.77, label %unwrap.abort.77
+  br i1 %unwrap.is_pos596, label %unwrap.pos.82, label %unwrap.abort.82
 
-unwrap.pos.77:                                    ; preds = %a.rd.done560
+unwrap.pos.82:                                    ; preds = %a.rd.done560
   %unwrap.pay.pos628 = extractvalue { i1, i64 } %ram.pay595, 1
   %var.load629 = load ptr, ptr %var.lows, align 8
   %a.load630 = load ptr, ptr %var.lows, align 8
   %a.null631 = icmp eq ptr %a.load630, null
   br i1 %a.null631, label %a.create632, label %a.after633
 
-unwrap.abort.77:                                  ; preds = %a.rd.done560
+unwrap.abort.82:                                  ; preds = %a.rd.done560
+  %5 = call i64 @write(i32 2, ptr @expect.reason.83, i64 21)
   %unwrap.pay.abort597 = extractvalue { i1, i64 } %ram.pay595, 1
   %err.ptr598 = inttoptr i64 %unwrap.pay.abort597 to ptr
   %err.code.gep599 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr598, i32 0, i32 0
@@ -10275,7 +10294,7 @@ unwrap.abort.77:                                  ; preds = %a.rd.done560
   %err.is.thread622 = icmp ne ptr %err.thread.rec621, null
   br i1 %err.is.thread622, label %err.thread623, label %err.normal624
 
-err.thread623:                                    ; preds = %unwrap.abort.77
+err.thread623:                                    ; preds = %unwrap.abort.82
   %err.haserr.gep625 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec621, i32 0, i32 6
   store i64 1, ptr %err.haserr.gep625, align 8
   %err.err.gep626 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec621, i32 0, i32 7
@@ -10283,12 +10302,12 @@ err.thread623:                                    ; preds = %unwrap.abort.77
   call void @pthread_exit(ptr null)
   unreachable
 
-err.normal624:                                    ; preds = %unwrap.abort.77
+err.normal624:                                    ; preds = %unwrap.abort.82
   %err.panic.printf627 = call i32 (ptr, ...) @printf(ptr @fmt_error, i64 %err.code600, i32 %err.msg.len32612, ptr %err.msg.data614, i32 %err.file.len32618, ptr %err.file.data620, i64 %err.line606, i64 %err.col608)
   call void @exit(i32 1)
   unreachable
 
-a.create632:                                      ; preds = %unwrap.pos.77
+a.create632:                                      ; preds = %unwrap.pos.82
   %arena.cur634 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.create635 = call ptr @dva_arena_alloc(ptr %arena.cur634, i64 24)
   %arena.cur636 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -10302,7 +10321,7 @@ a.create632:                                      ; preds = %unwrap.pos.77
   store ptr %a.create635, ptr %var.lows, align 8
   br label %a.after633
 
-a.after633:                                       ; preds = %a.create632, %unwrap.pos.77
+a.after633:                                       ; preds = %a.create632, %unwrap.pos.82
   %a.load2641 = load ptr, ptr %var.lows, align 8
   %var.load642 = load i64, ptr %var.v, align 8
   %a.rd.nonnull643 = icmp ne ptr %a.load2641, null
@@ -10335,7 +10354,7 @@ a.rd.err.null646:                                 ; preds = %a.after633
   %err.line.gep663 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc659, i32 0, i32 3
   store i64 303, ptr %err.line.gep663, align 8
   %err.col.gep664 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc659, i32 0, i32 4
-  store i64 52, ptr %err.col.gep664, align 8
+  store i64 73, ptr %err.col.gep664, align 8
   %err.ctx.gep665 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc659, i32 0, i32 5
   %err.ctx0.gep666 = getelementptr inbounds { i64, i64 }, ptr %err.ctx.gep665, i32 0, i32 0
   store i64 0, ptr %err.ctx0.gep666, align 8
@@ -10356,7 +10375,7 @@ a.rd.err.oob647:                                  ; preds = %a.rd.check644
   %err.line.gep674 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc670, i32 0, i32 3
   store i64 303, ptr %err.line.gep674, align 8
   %err.col.gep675 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc670, i32 0, i32 4
-  store i64 52, ptr %err.col.gep675, align 8
+  store i64 73, ptr %err.col.gep675, align 8
   %err.ctx.gep676 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc670, i32 0, i32 5
   %err.ctx0.gep677 = getelementptr inbounds { i64, i64 }, ptr %err.ctx.gep676, i32 0, i32 0
   store i64 %var.load642, ptr %err.ctx0.gep677, align 8
@@ -10371,15 +10390,16 @@ a.rd.done648:                                     ; preds = %a.rd.err.oob647, %a
   %ram.tag682 = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag680, 0
   %ram.pay683 = insertvalue { i1, i64 } %ram.tag682, i64 %a.rd.pay681, 1
   %unwrap.is_pos684 = extractvalue { i1, i64 } %ram.pay683, 0
-  br i1 %unwrap.is_pos684, label %unwrap.pos.78, label %unwrap.abort.78
+  br i1 %unwrap.is_pos684, label %unwrap.pos.84, label %unwrap.abort.84
 
-unwrap.pos.78:                                    ; preds = %a.rd.done648
+unwrap.pos.84:                                    ; preds = %a.rd.done648
   %unwrap.pay.pos716 = extractvalue { i1, i64 } %ram.pay683, 1
   %min = call i64 @llvm.smin.i64(i64 %unwrap.pay.pos628, i64 %unwrap.pay.pos716)
   %a.wr.nonnull717 = icmp ne ptr %a.load2539, null
   br i1 %a.wr.nonnull717, label %a.wr.check718, label %a.wr.err.null720
 
-unwrap.abort.78:                                  ; preds = %a.rd.done648
+unwrap.abort.84:                                  ; preds = %a.rd.done648
+  %6 = call i64 @write(i32 2, ptr @expect.reason.85, i64 21)
   %unwrap.pay.abort685 = extractvalue { i1, i64 } %ram.pay683, 1
   %err.ptr686 = inttoptr i64 %unwrap.pay.abort685 to ptr
   %err.code.gep687 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr686, i32 0, i32 0
@@ -10408,7 +10428,7 @@ unwrap.abort.78:                                  ; preds = %a.rd.done648
   %err.is.thread710 = icmp ne ptr %err.thread.rec709, null
   br i1 %err.is.thread710, label %err.thread711, label %err.normal712
 
-err.thread711:                                    ; preds = %unwrap.abort.78
+err.thread711:                                    ; preds = %unwrap.abort.84
   %err.haserr.gep713 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec709, i32 0, i32 6
   store i64 1, ptr %err.haserr.gep713, align 8
   %err.err.gep714 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec709, i32 0, i32 7
@@ -10416,12 +10436,12 @@ err.thread711:                                    ; preds = %unwrap.abort.78
   call void @pthread_exit(ptr null)
   unreachable
 
-err.normal712:                                    ; preds = %unwrap.abort.78
+err.normal712:                                    ; preds = %unwrap.abort.84
   %err.panic.printf715 = call i32 (ptr, ...) @printf(ptr @fmt_error, i64 %err.code688, i32 %err.msg.len32700, ptr %err.msg.data702, i32 %err.file.len32706, ptr %err.file.data708, i64 %err.line694, i64 %err.col696)
   call void @exit(i32 1)
   unreachable
 
-a.wr.check718:                                    ; preds = %unwrap.pos.78
+a.wr.check718:                                    ; preds = %unwrap.pos.84
   %a.wr.len723 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2539, i32 0, i32 0
   %a.wr.len724 = load i64, ptr %a.wr.len723, align 8
   %a.wr.ge0725 = icmp sge i64 %var.load540, 0
@@ -10436,7 +10456,7 @@ a.wr.ok719:                                       ; preds = %a.wr.check718
   store i64 %min, ptr %a.elem.gep730, align 8
   br label %a.wr.done722
 
-a.wr.err.null720:                                 ; preds = %unwrap.pos.78
+a.wr.err.null720:                                 ; preds = %unwrap.pos.84
   %arena.cur731 = load ptr, ptr @dva_active_arena_tls, align 8
   %err.alloc732 = call ptr @dva_arena_alloc(ptr %arena.cur731, i64 56)
   %err.code.gep733 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc732, i32 0, i32 0
@@ -10750,16 +10770,17 @@ a.rd.done890:                                     ; preds = %a.rd.err.oob889, %a
   %ram.tag924 = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag922, 0
   %ram.pay925 = insertvalue { i1, i64 } %ram.tag924, i64 %a.rd.pay923, 1
   %unwrap.is_pos926 = extractvalue { i1, i64 } %ram.pay925, 0
-  br i1 %unwrap.is_pos926, label %unwrap.pos.79, label %unwrap.abort.79
+  br i1 %unwrap.is_pos926, label %unwrap.pos.86, label %unwrap.abort.86
 
-unwrap.pos.79:                                    ; preds = %a.rd.done890
+unwrap.pos.86:                                    ; preds = %a.rd.done890
   %unwrap.pay.pos958 = extractvalue { i1, i64 } %ram.pay925, 1
   %var.load959 = load ptr, ptr %var.idxs, align 8
   %a.load960 = load ptr, ptr %var.idxs, align 8
   %a.null961 = icmp eq ptr %a.load960, null
   br i1 %a.null961, label %a.create962, label %a.after963
 
-unwrap.abort.79:                                  ; preds = %a.rd.done890
+unwrap.abort.86:                                  ; preds = %a.rd.done890
+  %7 = call i64 @write(i32 2, ptr @expect.reason.87, i64 21)
   %unwrap.pay.abort927 = extractvalue { i1, i64 } %ram.pay925, 1
   %err.ptr928 = inttoptr i64 %unwrap.pay.abort927 to ptr
   %err.code.gep929 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr928, i32 0, i32 0
@@ -10788,7 +10809,7 @@ unwrap.abort.79:                                  ; preds = %a.rd.done890
   %err.is.thread952 = icmp ne ptr %err.thread.rec951, null
   br i1 %err.is.thread952, label %err.thread953, label %err.normal954
 
-err.thread953:                                    ; preds = %unwrap.abort.79
+err.thread953:                                    ; preds = %unwrap.abort.86
   %err.haserr.gep955 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec951, i32 0, i32 6
   store i64 1, ptr %err.haserr.gep955, align 8
   %err.err.gep956 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec951, i32 0, i32 7
@@ -10796,12 +10817,12 @@ err.thread953:                                    ; preds = %unwrap.abort.79
   call void @pthread_exit(ptr null)
   unreachable
 
-err.normal954:                                    ; preds = %unwrap.abort.79
+err.normal954:                                    ; preds = %unwrap.abort.86
   %err.panic.printf957 = call i32 (ptr, ...) @printf(ptr @fmt_error, i64 %err.code930, i32 %err.msg.len32942, ptr %err.msg.data944, i32 %err.file.len32948, ptr %err.file.data950, i64 %err.line936, i64 %err.col938)
   call void @exit(i32 1)
   unreachable
 
-a.create962:                                      ; preds = %unwrap.pos.79
+a.create962:                                      ; preds = %unwrap.pos.86
   %arena.cur964 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.create965 = call ptr @dva_arena_alloc(ptr %arena.cur964, i64 24)
   %arena.cur966 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -10815,7 +10836,7 @@ a.create962:                                      ; preds = %unwrap.pos.79
   store ptr %a.create965, ptr %var.idxs, align 8
   br label %a.after963
 
-a.after963:                                       ; preds = %a.create962, %unwrap.pos.79
+a.after963:                                       ; preds = %a.create962, %unwrap.pos.86
   %a.load2971 = load ptr, ptr %var.idxs, align 8
   %var.load972 = load i64, ptr %var.v, align 8
   %a.rd.nonnull973 = icmp ne ptr %a.load2971, null
@@ -10848,7 +10869,7 @@ a.rd.err.null976:                                 ; preds = %a.after963
   %err.line.gep993 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc989, i32 0, i32 3
   store i64 308, ptr %err.line.gep993, align 8
   %err.col.gep994 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc989, i32 0, i32 4
-  store i64 58, ptr %err.col.gep994, align 8
+  store i64 79, ptr %err.col.gep994, align 8
   %err.ctx.gep995 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc989, i32 0, i32 5
   %err.ctx0.gep996 = getelementptr inbounds { i64, i64 }, ptr %err.ctx.gep995, i32 0, i32 0
   store i64 0, ptr %err.ctx0.gep996, align 8
@@ -10869,7 +10890,7 @@ a.rd.err.oob977:                                  ; preds = %a.rd.check974
   %err.line.gep1004 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc1000, i32 0, i32 3
   store i64 308, ptr %err.line.gep1004, align 8
   %err.col.gep1005 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc1000, i32 0, i32 4
-  store i64 58, ptr %err.col.gep1005, align 8
+  store i64 79, ptr %err.col.gep1005, align 8
   %err.ctx.gep1006 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc1000, i32 0, i32 5
   %err.ctx0.gep1007 = getelementptr inbounds { i64, i64 }, ptr %err.ctx.gep1006, i32 0, i32 0
   store i64 %var.load972, ptr %err.ctx0.gep1007, align 8
@@ -10884,15 +10905,16 @@ a.rd.done978:                                     ; preds = %a.rd.err.oob977, %a
   %ram.tag1012 = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag1010, 0
   %ram.pay1013 = insertvalue { i1, i64 } %ram.tag1012, i64 %a.rd.pay1011, 1
   %unwrap.is_pos1014 = extractvalue { i1, i64 } %ram.pay1013, 0
-  br i1 %unwrap.is_pos1014, label %unwrap.pos.80, label %unwrap.abort.80
+  br i1 %unwrap.is_pos1014, label %unwrap.pos.88, label %unwrap.abort.88
 
-unwrap.pos.80:                                    ; preds = %a.rd.done978
+unwrap.pos.88:                                    ; preds = %a.rd.done978
   %unwrap.pay.pos1046 = extractvalue { i1, i64 } %ram.pay1013, 1
   %min1047 = call i64 @llvm.smin.i64(i64 %unwrap.pay.pos958, i64 %unwrap.pay.pos1046)
   %a.wr.nonnull1048 = icmp ne ptr %a.load2869, null
   br i1 %a.wr.nonnull1048, label %a.wr.check1049, label %a.wr.err.null1051
 
-unwrap.abort.80:                                  ; preds = %a.rd.done978
+unwrap.abort.88:                                  ; preds = %a.rd.done978
+  %8 = call i64 @write(i32 2, ptr @expect.reason.89, i64 21)
   %unwrap.pay.abort1015 = extractvalue { i1, i64 } %ram.pay1013, 1
   %err.ptr1016 = inttoptr i64 %unwrap.pay.abort1015 to ptr
   %err.code.gep1017 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr1016, i32 0, i32 0
@@ -10921,7 +10943,7 @@ unwrap.abort.80:                                  ; preds = %a.rd.done978
   %err.is.thread1040 = icmp ne ptr %err.thread.rec1039, null
   br i1 %err.is.thread1040, label %err.thread1041, label %err.normal1042
 
-err.thread1041:                                   ; preds = %unwrap.abort.80
+err.thread1041:                                   ; preds = %unwrap.abort.88
   %err.haserr.gep1043 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec1039, i32 0, i32 6
   store i64 1, ptr %err.haserr.gep1043, align 8
   %err.err.gep1044 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec1039, i32 0, i32 7
@@ -10929,12 +10951,12 @@ err.thread1041:                                   ; preds = %unwrap.abort.80
   call void @pthread_exit(ptr null)
   unreachable
 
-err.normal1042:                                   ; preds = %unwrap.abort.80
+err.normal1042:                                   ; preds = %unwrap.abort.88
   %err.panic.printf1045 = call i32 (ptr, ...) @printf(ptr @fmt_error, i64 %err.code1018, i32 %err.msg.len321030, ptr %err.msg.data1032, i32 %err.file.len321036, ptr %err.file.data1038, i64 %err.line1024, i64 %err.col1026)
   call void @exit(i32 1)
   unreachable
 
-a.wr.check1049:                                   ; preds = %unwrap.pos.80
+a.wr.check1049:                                   ; preds = %unwrap.pos.88
   %a.wr.len1054 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2869, i32 0, i32 0
   %a.wr.len1055 = load i64, ptr %a.wr.len1054, align 8
   %a.wr.ge01056 = icmp sge i64 %var.load870, 0
@@ -10949,7 +10971,7 @@ a.wr.ok1050:                                      ; preds = %a.wr.check1049
   store i64 %min1047, ptr %a.elem.gep1061, align 8
   br label %a.wr.done1053
 
-a.wr.err.null1051:                                ; preds = %unwrap.pos.80
+a.wr.err.null1051:                                ; preds = %unwrap.pos.88
   %arena.cur1062 = load ptr, ptr @dva_active_arena_tls, align 8
   %err.alloc1063 = call ptr @dva_arena_alloc(ptr %arena.cur1062, i64 56)
   %err.code.gep1064 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc1063, i32 0, i32 0
@@ -11046,7 +11068,7 @@ err.normal1115:                                   ; preds = %choice.else1085
 err.abort1119:                                    ; No predecessors!
   br label %choice.exit1086
 
-a.create1123:                                     ; preds = %loop.exit.76
+a.create1123:                                     ; preds = %loop.exit.81
   %arena.cur1125 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.create1126 = call ptr @dva_arena_alloc(ptr %arena.cur1125, i64 24)
   %arena.cur1127 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -11060,7 +11082,7 @@ a.create1123:                                     ; preds = %loop.exit.76
   store ptr %a.create1126, ptr %var.lows, align 8
   br label %a.after1124
 
-a.after1124:                                      ; preds = %a.create1123, %loop.exit.76
+a.after1124:                                      ; preds = %a.create1123, %loop.exit.81
   %a.load21132 = load ptr, ptr %var.lows, align 8
   %var.load1133 = load i64, ptr %var.u, align 8
   %a.rd.nonnull1134 = icmp ne ptr %a.load21132, null
@@ -11129,9 +11151,9 @@ a.rd.done1139:                                    ; preds = %a.rd.err.oob1138, %
   %ram.tag1173 = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag1171, 0
   %ram.pay1174 = insertvalue { i1, i64 } %ram.tag1173, i64 %a.rd.pay1172, 1
   %unwrap.is_pos1175 = extractvalue { i1, i64 } %ram.pay1174, 0
-  br i1 %unwrap.is_pos1175, label %unwrap.pos.81, label %unwrap.abort.81
+  br i1 %unwrap.is_pos1175, label %unwrap.pos.90, label %unwrap.abort.90
 
-unwrap.pos.81:                                    ; preds = %a.rd.done1139
+unwrap.pos.90:                                    ; preds = %a.rd.done1139
   %unwrap.pay.pos1207 = extractvalue { i1, i64 } %ram.pay1174, 1
   store i64 %unwrap.pay.pos1207, ptr %var.low_u, align 8
   %var.load1208 = load ptr, ptr %var.idxs, align 8
@@ -11139,7 +11161,8 @@ unwrap.pos.81:                                    ; preds = %a.rd.done1139
   %a.null1210 = icmp eq ptr %a.load1209, null
   br i1 %a.null1210, label %a.create1211, label %a.after1212
 
-unwrap.abort.81:                                  ; preds = %a.rd.done1139
+unwrap.abort.90:                                  ; preds = %a.rd.done1139
+  %9 = call i64 @write(i32 2, ptr @expect.reason.91, i64 21)
   %unwrap.pay.abort1176 = extractvalue { i1, i64 } %ram.pay1174, 1
   %err.ptr1177 = inttoptr i64 %unwrap.pay.abort1176 to ptr
   %err.code.gep1178 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr1177, i32 0, i32 0
@@ -11168,7 +11191,7 @@ unwrap.abort.81:                                  ; preds = %a.rd.done1139
   %err.is.thread1201 = icmp ne ptr %err.thread.rec1200, null
   br i1 %err.is.thread1201, label %err.thread1202, label %err.normal1203
 
-err.thread1202:                                   ; preds = %unwrap.abort.81
+err.thread1202:                                   ; preds = %unwrap.abort.90
   %err.haserr.gep1204 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec1200, i32 0, i32 6
   store i64 1, ptr %err.haserr.gep1204, align 8
   %err.err.gep1205 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec1200, i32 0, i32 7
@@ -11176,12 +11199,12 @@ err.thread1202:                                   ; preds = %unwrap.abort.81
   call void @pthread_exit(ptr null)
   unreachable
 
-err.normal1203:                                   ; preds = %unwrap.abort.81
+err.normal1203:                                   ; preds = %unwrap.abort.90
   %err.panic.printf1206 = call i32 (ptr, ...) @printf(ptr @fmt_error, i64 %err.code1179, i32 %err.msg.len321191, ptr %err.msg.data1193, i32 %err.file.len321197, ptr %err.file.data1199, i64 %err.line1185, i64 %err.col1187)
   call void @exit(i32 1)
   unreachable
 
-a.create1211:                                     ; preds = %unwrap.pos.81
+a.create1211:                                     ; preds = %unwrap.pos.90
   %arena.cur1213 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.create1214 = call ptr @dva_arena_alloc(ptr %arena.cur1213, i64 24)
   %arena.cur1215 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -11195,7 +11218,7 @@ a.create1211:                                     ; preds = %unwrap.pos.81
   store ptr %a.create1214, ptr %var.idxs, align 8
   br label %a.after1212
 
-a.after1212:                                      ; preds = %a.create1211, %unwrap.pos.81
+a.after1212:                                      ; preds = %a.create1211, %unwrap.pos.90
   %a.load21220 = load ptr, ptr %var.idxs, align 8
   %var.load1221 = load i64, ptr %var.u, align 8
   %a.rd.nonnull1222 = icmp ne ptr %a.load21220, null
@@ -11264,9 +11287,9 @@ a.rd.done1227:                                    ; preds = %a.rd.err.oob1226, %
   %ram.tag1261 = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag1259, 0
   %ram.pay1262 = insertvalue { i1, i64 } %ram.tag1261, i64 %a.rd.pay1260, 1
   %unwrap.is_pos1263 = extractvalue { i1, i64 } %ram.pay1262, 0
-  br i1 %unwrap.is_pos1263, label %unwrap.pos.82, label %unwrap.abort.82
+  br i1 %unwrap.is_pos1263, label %unwrap.pos.92, label %unwrap.abort.92
 
-unwrap.pos.82:                                    ; preds = %a.rd.done1227
+unwrap.pos.92:                                    ; preds = %a.rd.done1227
   %unwrap.pay.pos1295 = extractvalue { i1, i64 } %ram.pay1262, 1
   store i64 %unwrap.pay.pos1295, ptr %var.idx_u, align 8
   %var.load1296 = load i64, ptr %var.low_u, align 8
@@ -11274,7 +11297,8 @@ unwrap.pos.82:                                    ; preds = %a.rd.done1227
   %cmptmp1298 = icmp eq i64 %var.load1296, %var.load1297
   br i1 %cmptmp1298, label %choice.then1299, label %choice.exit1300
 
-unwrap.abort.82:                                  ; preds = %a.rd.done1227
+unwrap.abort.92:                                  ; preds = %a.rd.done1227
+  %10 = call i64 @write(i32 2, ptr @expect.reason.93, i64 21)
   %unwrap.pay.abort1264 = extractvalue { i1, i64 } %ram.pay1262, 1
   %err.ptr1265 = inttoptr i64 %unwrap.pay.abort1264 to ptr
   %err.code.gep1266 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr1265, i32 0, i32 0
@@ -11303,7 +11327,7 @@ unwrap.abort.82:                                  ; preds = %a.rd.done1227
   %err.is.thread1289 = icmp ne ptr %err.thread.rec1288, null
   br i1 %err.is.thread1289, label %err.thread1290, label %err.normal1291
 
-err.thread1290:                                   ; preds = %unwrap.abort.82
+err.thread1290:                                   ; preds = %unwrap.abort.92
   %err.haserr.gep1292 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec1288, i32 0, i32 6
   store i64 1, ptr %err.haserr.gep1292, align 8
   %err.err.gep1293 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec1288, i32 0, i32 7
@@ -11311,12 +11335,12 @@ err.thread1290:                                   ; preds = %unwrap.abort.82
   call void @pthread_exit(ptr null)
   unreachable
 
-err.normal1291:                                   ; preds = %unwrap.abort.82
+err.normal1291:                                   ; preds = %unwrap.abort.92
   %err.panic.printf1294 = call i32 (ptr, ...) @printf(ptr @fmt_error, i64 %err.code1267, i32 %err.msg.len321279, ptr %err.msg.data1281, i32 %err.file.len321285, ptr %err.file.data1287, i64 %err.line1273, i64 %err.col1275)
   call void @exit(i32 1)
   unreachable
 
-choice.then1299:                                  ; preds = %unwrap.pos.82
+choice.then1299:                                  ; preds = %unwrap.pos.92
   %arena.cur1301 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.new = call ptr @dva_arena_alloc(ptr %arena.cur1301, i64 24)
   %arena.cur1302 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -11334,19 +11358,19 @@ choice.then1299:                                  ; preds = %unwrap.pos.82
   %fld.load1310 = load ptr, ptr %fld.gep1309, align 8
   %call.res1311 = call i1 @"dep_graph::node_has_dep"(ptr %var.load1307, ptr %fld.load1310)
   store i1 %call.res1311, ptr %var.is_self_rec, align 1
-  store i64 0, ptr %loop.idx.83, align 8
-  br label %loop.header.83
+  store i64 0, ptr %loop.idx.94, align 8
+  br label %loop.header.94
 
-choice.exit1300:                                  ; preds = %a.store1639, %unwrap.pos.82
+choice.exit1300:                                  ; preds = %a.store1639, %unwrap.pos.92
   ret void
 
-loop.header.83:                                   ; preds = %loop.latch.83, %choice.then1299
-  %counter.load1312 = load i64, ptr %loop.idx.83, align 8
-  br label %loop.body.83
+loop.header.94:                                   ; preds = %loop.latch.94, %choice.then1299
+  %counter.load1312 = load i64, ptr %loop.idx.94, align 8
+  br label %loop.body.94
 
-loop.body.83:                                     ; preds = %loop.header.83
+loop.body.94:                                     ; preds = %loop.header.94
   %loop.rel.i1313 = sub i64 %counter.load1312, 0
-  store i64 1, ptr %loop.step.83, align 8
+  store i64 1, ptr %loop.step.94, align 8
   store i64 %counter.load1312, ptr %var._1314, align 8
   store i64 %loop.rel.i1313, ptr %var._i1315, align 8
   %var.load1316 = load ptr, ptr %var.state, align 8
@@ -11358,22 +11382,22 @@ loop.body.83:                                     ; preds = %loop.header.83
   %a.null1321 = icmp eq ptr %a.load1320, null
   br i1 %a.null1321, label %a.create1322, label %a.after1323
 
-loop.exit.nat.83:                                 ; No predecessors!
-  br label %loop.exit.83
+loop.exit.nat.94:                                 ; No predecessors!
+  br label %loop.exit.94
 
-loop.latch.83:                                    ; preds = %choice.exit1600
-  %step.val1601 = load i64, ptr %loop.step.83, align 8
+loop.latch.94:                                    ; preds = %choice.exit1600
+  %step.val1601 = load i64, ptr %loop.step.94, align 8
   %loop.next1602 = add i64 %counter.load1312, %step.val1601
-  store i64 %loop.next1602, ptr %loop.idx.83, align 8
-  br label %loop.header.83
+  store i64 %loop.next1602, ptr %loop.idx.94, align 8
+  br label %loop.header.94
 
-loop.exit.83:                                     ; preds = %choice.then1599, %choice.then1407, %loop.exit.nat.83
+loop.exit.94:                                     ; preds = %choice.then1599, %choice.then1407, %loop.exit.nat.94
   %var.load1603 = load ptr, ptr %var.scc_names, align 8
   %a.load1604 = load ptr, ptr %var.scc_names, align 8
   %a.null1605 = icmp eq ptr %a.load1604, null
   br i1 %a.null1605, label %a.create1606, label %a.after1607
 
-a.create1322:                                     ; preds = %loop.body.83
+a.create1322:                                     ; preds = %loop.body.94
   %arena.cur1324 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.create1325 = call ptr @dva_arena_alloc(ptr %arena.cur1324, i64 24)
   %arena.cur1326 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -11387,7 +11411,7 @@ a.create1322:                                     ; preds = %loop.body.83
   store ptr %a.create1325, ptr %var.s_ptr, align 8
   br label %a.after1323
 
-a.after1323:                                      ; preds = %a.create1322, %loop.body.83
+a.after1323:                                      ; preds = %a.create1322, %loop.body.94
   %a.load21331 = load ptr, ptr %var.s_ptr, align 8
   %a.rd.nonnull1332 = icmp ne ptr %a.load21331, null
   br i1 %a.rd.nonnull1332, label %a.rd.check1333, label %a.rd.err.null1335
@@ -11454,16 +11478,17 @@ a.rd.done1337:                                    ; preds = %a.rd.err.oob1336, %
   %ram.tag1370 = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag1368, 0
   %ram.pay1371 = insertvalue { i1, i64 } %ram.tag1370, i64 %a.rd.pay1369, 1
   %unwrap.is_pos1372 = extractvalue { i1, i64 } %ram.pay1371, 0
-  br i1 %unwrap.is_pos1372, label %unwrap.pos.84, label %unwrap.abort.84
+  br i1 %unwrap.is_pos1372, label %unwrap.pos.95, label %unwrap.abort.95
 
-unwrap.pos.84:                                    ; preds = %a.rd.done1337
+unwrap.pos.95:                                    ; preds = %a.rd.done1337
   %unwrap.pay.pos1404 = extractvalue { i1, i64 } %ram.pay1371, 1
   store i64 %unwrap.pay.pos1404, ptr %var.sp, align 8
   %var.load1405 = load i64, ptr %var.sp, align 8
   %cmptmp1406 = icmp eq i64 %var.load1405, 0
   br i1 %cmptmp1406, label %choice.then1407, label %choice.exit1408
 
-unwrap.abort.84:                                  ; preds = %a.rd.done1337
+unwrap.abort.95:                                  ; preds = %a.rd.done1337
+  %11 = call i64 @write(i32 2, ptr @expect.reason.96, i64 22)
   %unwrap.pay.abort1373 = extractvalue { i1, i64 } %ram.pay1371, 1
   %err.ptr1374 = inttoptr i64 %unwrap.pay.abort1373 to ptr
   %err.code.gep1375 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr1374, i32 0, i32 0
@@ -11492,7 +11517,7 @@ unwrap.abort.84:                                  ; preds = %a.rd.done1337
   %err.is.thread1398 = icmp ne ptr %err.thread.rec1397, null
   br i1 %err.is.thread1398, label %err.thread1399, label %err.normal1400
 
-err.thread1399:                                   ; preds = %unwrap.abort.84
+err.thread1399:                                   ; preds = %unwrap.abort.95
   %err.haserr.gep1401 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec1397, i32 0, i32 6
   store i64 1, ptr %err.haserr.gep1401, align 8
   %err.err.gep1402 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec1397, i32 0, i32 7
@@ -11500,15 +11525,15 @@ err.thread1399:                                   ; preds = %unwrap.abort.84
   call void @pthread_exit(ptr null)
   unreachable
 
-err.normal1400:                                   ; preds = %unwrap.abort.84
+err.normal1400:                                   ; preds = %unwrap.abort.95
   %err.panic.printf1403 = call i32 (ptr, ...) @printf(ptr @fmt_error, i64 %err.code1376, i32 %err.msg.len321388, ptr %err.msg.data1390, i32 %err.file.len321394, ptr %err.file.data1396, i64 %err.line1382, i64 %err.col1384)
   call void @exit(i32 1)
   unreachable
 
-choice.then1407:                                  ; preds = %unwrap.pos.84
-  br label %loop.exit.83
+choice.then1407:                                  ; preds = %unwrap.pos.95
+  br label %loop.exit.94
 
-choice.exit1408:                                  ; preds = %unwrap.pos.84
+choice.exit1408:                                  ; preds = %unwrap.pos.95
   %var.load1409 = load ptr, ptr %var.state, align 8
   %call.res1410 = call i64 @"dep_graph::pop_stack"(ptr %var.load1409)
   store i64 %call.res1410, ptr %var.w, align 8
@@ -11717,9 +11742,9 @@ a.rd.done1506:                                    ; preds = %a.rd.err.oob1505, %
   %ram.tag1540 = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag1538, 0
   %ram.pay1541 = insertvalue { i1, i64 } %ram.tag1540, i64 %a.rd.pay1539, 1
   %unwrap.is_pos1542 = extractvalue { i1, i64 } %ram.pay1541, 0
-  br i1 %unwrap.is_pos1542, label %unwrap.pos.85, label %unwrap.abort.85
+  br i1 %unwrap.is_pos1542, label %unwrap.pos.97, label %unwrap.abort.97
 
-unwrap.pos.85:                                    ; preds = %a.rd.done1506
+unwrap.pos.97:                                    ; preds = %a.rd.done1506
   %unwrap.pay.pos1574 = extractvalue { i1, i64 } %ram.pay1541, 1
   %pay.ptr1575 = inttoptr i64 %unwrap.pay.pos1574 to ptr
   store ptr %pay.ptr1575, ptr %var.w_node, align 8
@@ -11730,7 +11755,8 @@ unwrap.pos.85:                                    ; preds = %a.rd.done1506
   %a.null1580 = icmp eq ptr %a.load1579, null
   br i1 %a.null1580, label %a.create1581, label %a.after1582
 
-unwrap.abort.85:                                  ; preds = %a.rd.done1506
+unwrap.abort.97:                                  ; preds = %a.rd.done1506
+  %12 = call i64 @write(i32 2, ptr @expect.reason.98, i64 22)
   %unwrap.pay.abort1543 = extractvalue { i1, i64 } %ram.pay1541, 1
   %err.ptr1544 = inttoptr i64 %unwrap.pay.abort1543 to ptr
   %err.code.gep1545 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.ptr1544, i32 0, i32 0
@@ -11759,7 +11785,7 @@ unwrap.abort.85:                                  ; preds = %a.rd.done1506
   %err.is.thread1568 = icmp ne ptr %err.thread.rec1567, null
   br i1 %err.is.thread1568, label %err.thread1569, label %err.normal1570
 
-err.thread1569:                                   ; preds = %unwrap.abort.85
+err.thread1569:                                   ; preds = %unwrap.abort.97
   %err.haserr.gep1571 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec1567, i32 0, i32 6
   store i64 1, ptr %err.haserr.gep1571, align 8
   %err.err.gep1572 = getelementptr inbounds { i64, ptr, ptr, ptr, ptr, ptr, i64, ptr }, ptr %err.thread.rec1567, i32 0, i32 7
@@ -11767,12 +11793,12 @@ err.thread1569:                                   ; preds = %unwrap.abort.85
   call void @pthread_exit(ptr null)
   unreachable
 
-err.normal1570:                                   ; preds = %unwrap.abort.85
+err.normal1570:                                   ; preds = %unwrap.abort.97
   %err.panic.printf1573 = call i32 (ptr, ...) @printf(ptr @fmt_error, i64 %err.code1546, i32 %err.msg.len321558, ptr %err.msg.data1560, i32 %err.file.len321564, ptr %err.file.data1566, i64 %err.line1552, i64 %err.col1554)
   call void @exit(i32 1)
   unreachable
 
-a.create1581:                                     ; preds = %unwrap.pos.85
+a.create1581:                                     ; preds = %unwrap.pos.97
   %arena.cur1583 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.create1584 = call ptr @dva_arena_alloc(ptr %arena.cur1583, i64 24)
   %arena.cur1585 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -11786,7 +11812,7 @@ a.create1581:                                     ; preds = %unwrap.pos.85
   store ptr %a.create1584, ptr %var.scc_names, align 8
   br label %a.after1582
 
-a.after1582:                                      ; preds = %a.create1581, %unwrap.pos.85
+a.after1582:                                      ; preds = %a.create1581, %unwrap.pos.97
   %a.load21590 = load ptr, ptr %var.scc_names, align 8
   br label %a.check
 
@@ -11819,12 +11845,12 @@ a.store:                                          ; preds = %a.grow, %a.check
   br i1 %cmptmp1598, label %choice.then1599, label %choice.exit1600
 
 choice.then1599:                                  ; preds = %a.store
-  br label %loop.exit.83
+  br label %loop.exit.94
 
 choice.exit1600:                                  ; preds = %a.store
-  br label %loop.latch.83
+  br label %loop.latch.94
 
-a.create1606:                                     ; preds = %loop.exit.83
+a.create1606:                                     ; preds = %loop.exit.94
   %arena.cur1608 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.create1609 = call ptr @dva_arena_alloc(ptr %arena.cur1608, i64 24)
   %arena.cur1610 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -11838,30 +11864,30 @@ a.create1606:                                     ; preds = %loop.exit.83
   store ptr %a.create1609, ptr %var.scc_names, align 8
   br label %a.after1607
 
-a.after1607:                                      ; preds = %a.create1606, %loop.exit.83
+a.after1607:                                      ; preds = %a.create1606, %loop.exit.94
   %a.load21615 = load ptr, ptr %var.scc_names, align 8
   %a.len.query = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21615, i32 0, i32 0
   %a.len.query1616 = load i64, ptr %a.len.query, align 8
   %cmptmp1617 = icmp sgt i64 %a.len.query1616, 1
-  br i1 %cmptmp1617, label %or.86.then, label %or.86.else
+  br i1 %cmptmp1617, label %or.99.then, label %or.99.else
 
-or.86.then:                                       ; preds = %a.after1607
-  br label %or.86.exit
+or.99.then:                                       ; preds = %a.after1607
+  br label %or.99.exit
 
-or.86.else:                                       ; preds = %a.after1607
+or.99.else:                                       ; preds = %a.after1607
   %var.load1618 = load i1, ptr %var.is_self_rec, align 1
-  br label %or.86.exit
+  br label %or.99.exit
 
-or.86.exit:                                       ; preds = %or.86.else, %or.86.then
-  %or.86.phi = phi i1 [ %cmptmp1617, %or.86.then ], [ %var.load1618, %or.86.else ]
-  store i1 %or.86.phi, ptr %var.is_rec, align 1
+or.99.exit:                                       ; preds = %or.99.else, %or.99.then
+  %or.99.phi = phi i1 [ %cmptmp1617, %or.99.then ], [ %var.load1618, %or.99.else ]
+  store i1 %or.99.phi, ptr %var.is_rec, align 1
   %var.load1619 = load ptr, ptr %var.state, align 8
   %var.load1620 = load ptr, ptr %var.scc_names, align 8
   %a.load1621 = load ptr, ptr %var.scc_names, align 8
   %a.null1622 = icmp eq ptr %a.load1621, null
   br i1 %a.null1622, label %a.create1623, label %a.after1624
 
-a.create1623:                                     ; preds = %or.86.exit
+a.create1623:                                     ; preds = %or.99.exit
   %arena.cur1625 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.create1626 = call ptr @dva_arena_alloc(ptr %arena.cur1625, i64 24)
   %arena.cur1627 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -11875,7 +11901,7 @@ a.create1623:                                     ; preds = %or.86.exit
   store ptr %a.create1626, ptr %var.scc_names, align 8
   br label %a.after1624
 
-a.after1624:                                      ; preds = %a.create1623, %or.86.exit
+a.after1624:                                      ; preds = %a.create1623, %or.99.exit
   %a.load21632 = load ptr, ptr %var.scc_names, align 8
   %var.load1633 = load i1, ptr %var.is_rec, align 1
   %arena.cur1634 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -11926,8 +11952,8 @@ entry:
   %var._i = alloca i64, align 8
   %var.i = alloca i64, align 8
   %var._ = alloca i64, align 8
-  %loop.step.87 = alloca i64, align 8
-  %loop.idx.87 = alloca i64, align 8
+  %loop.step.100 = alloca i64, align 8
+  %loop.idx.100 = alloca i64, align 8
   %var.state = alloca ptr, align 8
   %var.n = alloca i64, align 8
   %var.graph = alloca ptr, align 8
@@ -11942,17 +11968,17 @@ entry:
   %call.res = call ptr @"dep_graph::init_tarjan_state"(i64 %var.load2)
   store ptr %call.res, ptr %var.state, align 8
   %var.load3 = load i64, ptr %var.n, align 8
-  store i64 0, ptr %loop.idx.87, align 8
-  br label %loop.header.87
+  store i64 0, ptr %loop.idx.100, align 8
+  br label %loop.header.100
 
-loop.header.87:                                   ; preds = %loop.latch.87, %entry
-  %counter.load = load i64, ptr %loop.idx.87, align 8
+loop.header.100:                                  ; preds = %loop.latch.100, %entry
+  %counter.load = load i64, ptr %loop.idx.100, align 8
   %loop.cond = icmp slt i64 %counter.load, %var.load3
-  br i1 %loop.cond, label %loop.body.87, label %loop.exit.nat.87
+  br i1 %loop.cond, label %loop.body.100, label %loop.exit.nat.100
 
-loop.body.87:                                     ; preds = %loop.header.87
+loop.body.100:                                    ; preds = %loop.header.100
   %loop.rel.i = sub i64 %counter.load, 0
-  store i64 1, ptr %loop.step.87, align 8
+  store i64 1, ptr %loop.step.100, align 8
   store i64 %counter.load, ptr %var._, align 8
   store i64 %counter.load, ptr %var.i, align 8
   store i64 %loop.rel.i, ptr %var._i, align 8
@@ -11965,22 +11991,22 @@ loop.body.87:                                     ; preds = %loop.header.87
   %a.null = icmp eq ptr %a.load, null
   br i1 %a.null, label %a.create, label %a.after
 
-loop.exit.nat.87:                                 ; preds = %loop.header.87
-  br label %loop.exit.87
+loop.exit.nat.100:                                ; preds = %loop.header.100
+  br label %loop.exit.100
 
-loop.latch.87:                                    ; preds = %choice.exit32
-  %step.val = load i64, ptr %loop.step.87, align 8
+loop.latch.100:                                   ; preds = %choice.exit32
+  %step.val = load i64, ptr %loop.step.100, align 8
   %loop.next = add i64 %counter.load, %step.val
-  store i64 %loop.next, ptr %loop.idx.87, align 8
-  br label %loop.header.87
+  store i64 %loop.next, ptr %loop.idx.100, align 8
+  br label %loop.header.100
 
-loop.exit.87:                                     ; preds = %loop.exit.nat.87
+loop.exit.100:                                    ; preds = %loop.exit.nat.100
   %var.load36 = load ptr, ptr %var.state, align 8
   %fld.gep37 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load36, i32 0, i32 6
   %fld.load38 = load ptr, ptr %fld.gep37, align 8
   ret ptr %fld.load38
 
-a.create:                                         ; preds = %loop.body.87
+a.create:                                         ; preds = %loop.body.100
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %a.create8 = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
   %arena.cur9 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -11994,7 +12020,7 @@ a.create:                                         ; preds = %loop.body.87
   store ptr %a.create8, ptr %var.idxs, align 8
   br label %a.after
 
-a.after:                                          ; preds = %a.create, %loop.body.87
+a.after:                                          ; preds = %a.create, %loop.body.100
   %a.load2 = load ptr, ptr %var.idxs, align 8
   %var.load10 = load i64, ptr %var.i, align 8
   %a.rd.nonnull = icmp ne ptr %a.load2, null
@@ -12091,7 +12117,7 @@ choice.then31:                                    ; preds = %choice.exit
   br label %choice.exit32
 
 choice.exit32:                                    ; preds = %choice.then31, %choice.exit
-  br label %loop.latch.87
+  br label %loop.latch.100
 }
 
 attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }

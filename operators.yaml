@@ -709,9 +709,9 @@ operators:
     kind: null
     kind_self: null
     assoc: left
-    operands: "RamPP <A | B> | RamPN <A | >"
-    result: "A (positive payload)"
-    desc: "postfix unwrap: yields positive payload and aborts on negative slot (poisonous Error panic). Sugar for 'x | _ | _'."
+    operands: "retired"
+    result: "compile error E3177"
+    desc: "Retired postfix unwrap. Use propagation, fallback, choice, or a reason-bearing expect."
   - symbol: "--!"
     tier: postfix / apply
     kind: null

@@ -134,7 +134,7 @@ r = io::reader(fd)
          -->
 ```
 
-### Reading with unwrap-or-abort (`!!`)
+### Reading with unwrap-or-abort (`.expect("reason")`)
 
 When expecting a mandatory header or fixed payload where absence represents an unrecoverable failure:
 
@@ -142,7 +142,7 @@ When expecting a mandatory header or fixed payload where absence represents an u
 #use io
 
 r = io::reader(fd)
-header = io::read_line(r, 256)!! // Aborts with stack trace if EOF or error reached
+header = io::read_line(r, 256).expect("missing read line") // Aborts with stack trace if EOF or error reached
 io::out("Received header: " + header)
 ```
 

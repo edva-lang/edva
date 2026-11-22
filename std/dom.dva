@@ -58,7 +58,7 @@ error: Int, String => Error
 error = code, message => Error(code, message, "std/dom", 0, 0, (0, 0))
 
 empty_owned: () => Owned
-empty_owned = !=> Owned(Addr(0), 0, 0)
+empty_owned = !=> Owned(ptr(0), 0, 0)
 
 owned_store: Owned, String => < | Error >
 owned_store = buffer, value =>
@@ -110,7 +110,7 @@ invalidate_attribute = id, name =>
 owned_free: Owned => ()
 owned_free = buffer =>
    libc::free(buffer.data)
-   buffer.data = Addr(0)
+   buffer.data = ptr(0)
    buffer.length = 0
    buffer.capacity = 0
 
@@ -157,7 +157,7 @@ reply_enter = !=>
          prev = mem::set_global!
          replies += Reply(0, 0, 0.0, 0.0, 0.0, 0.0)
          mem::set_current(prev)
-   replies(index)!!
+   replies(index).expect("missing replies")
 
 reply_leave: () => ()
 reply_leave = !=> reply_depth ::= reply_depth - 1
@@ -192,7 +192,7 @@ cache_row = id =>
          row = free_count > 0
             |
                free_count ::= free_count - 1
-               free_rows(free_count)!!
+               free_rows(free_count).expect("missing free rows")
             | Cache(Properties(), <+>, 0)
          row.live = <+>
          row.used = 0
@@ -209,7 +209,7 @@ property = id, op, key =>
    prev = mem::set_global!
    row.used == ?row.properties
       | row.properties += Property(op, empty_owned!, empty_owned!, 0, <->)
-   p = row.properties(row.used)!!
+   p = row.properties(row.used).expect("missing properties")
    row.used = row.used + 1
    p.op = op
    p.valid = <->
@@ -228,7 +228,7 @@ property_owned = id, op, key =>
    prev = mem::set_global!
    row.used == ?row.properties
       | row.properties += Property(op, empty_owned!, empty_owned!, 0, <->)
-   p = row.properties(row.used)!!
+   p = row.properties(row.used).expect("missing properties")
    row.used = row.used + 1
    p.op = op
    p.valid = <->
@@ -419,7 +419,7 @@ serialize = commands, count, wire =>
 
 command_slot: Commands, Int => Command
 command_slot = commands, i =>
-   i < ?commands | --| commands(i)!!
+   i < ?commands | --| commands(i).expect("missing commands")
    prev = mem::set_global!
    command = Command(0, 0, 0, 0, empty_owned!, empty_owned!)
    commands += command
@@ -531,7 +531,7 @@ request = measurements, op, element, key =>
          measurements.results += MeasurementResult(op, Rect(0.0, 0.0, 0.0, 0.0),
             empty_owned!, <->)
          mem::set_current(prev)
-   result = measurements.results(i)!!
+   result = measurements.results(i).expect("missing results")
    result.ready = <->
    result.kind = op
    measurements.count = i + 1
@@ -594,7 +594,7 @@ close_measurements = measurements =>
    dom_commit = index =>
       active_batch
          | current =>
-            command = current.commands(index)!!
+            command = current.commands(index).expect("missing commands")
             command.op [15, 16]
                caches ^ command.a
                   | row => row.properties @ cached =>
@@ -614,7 +614,7 @@ close_measurements = measurements =>
       active_measurements
          | current =>
             r = @[address Reply]
-            result = current.results(index)!!
+            result = current.results(index).expect("missing results")
             result.kind
                [30]
                   result.rect.x = r.x
@@ -755,7 +755,7 @@ register = element, kind, selector, options, callback =>
    prev = mem::set_global!
    index' == ?callbacks | callbacks += CallbackSlot(<-->, <->)
    mem::set_current(prev)
-   slot = callbacks(index')!!
+   slot = callbacks(index').expect("missing callbacks")
    slot.callback = <+ callback +>
    slot.alive = <+>
    bits = (options.capture | 1 | 0) .|. (options.passive | 2 | 0) .|.

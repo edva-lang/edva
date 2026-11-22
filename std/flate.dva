@@ -76,16 +76,16 @@ build_huff = lengths, num_syms =>
       counts += 0
    max_l' = 0
    num_syms @ s =>
-      l = lengths(s)!!
+      l = lengths(s).expect("missing lengths")
       l > 0 |
-         counts(l) = counts(l)!! + 1 !| _
+         counts(l) = counts(l).expect("missing counts") + 1 !| _
          l > max_l' | max_l' = l
    // Validate canonical tree completeness / non-oversubscription
    left' = 1
    over' = <->
    1..16 @ bits =>
       left' = left' .<. 1
-      left' = left' - counts(bits)!!
+      left' = left' - counts(bits).expect("missing counts")
       left' < 0 | over' = <+>
    over' | --| <- flate_err("oversubscribed Huffman code lengths", 0) +>
    offs = Int{}
@@ -93,16 +93,16 @@ build_huff = lengths, num_syms =>
       offs += 0
    acc' = 0
    1..15 @ bits =>
-      acc' = acc' + counts(bits)!!
+      acc' = acc' + counts(bits).expect("missing counts")
       offs(bits + 1) = acc' !| _
-   total_codes = acc' + counts(15)!!
+   total_codes = acc' + counts(15).expect("missing counts")
    symbols = Int{}
    total_codes @
       symbols += 0
    num_syms @ sym =>
-      l = lengths(sym)!!
+      l = lengths(sym).expect("missing lengths")
       l > 0 |
-         idx = offs(l)!!
+         idx = offs(l).expect("missing offs")
          offs(l) = idx + 1 !| _
          symbols(idx) = sym !| _
    <+ HuffTree(counts, symbols, max_l') ->
@@ -118,11 +118,11 @@ decode_sym = br, tree =>
       br.rbuf = br.rbuf .>. 1
       br.nbits = br.nbits - 1
       code' = (code' .<. 1) .|. bit
-      cnt = tree.counts(len)!!
+      cnt = tree.counts(len).expect("missing counts")
       code' - cnt < first'
          |
             sym_idx = index' + (code' - first')
-            --| <+ tree.symbols(sym_idx)!! ->
+            --| <+ tree.symbols(sym_idx).expect("missing symbols") ->
          |
             index' = index' + cnt
             first' = (first' + cnt) .<. 1
@@ -211,7 +211,7 @@ decode_dynamic_trees = br =>
             idx' == 0 | --| <- flate_err("repeat code 16 with no previous length", br.pos) +>
             rep_extra = read_bits(br, 2)--!
             rep = 3 + rep_extra
-            prev = all_lens(idx' - 1)!!
+            prev = all_lens(idx' - 1).expect("missing all lens")
             idx' + rep > total_lens | --| <- flate_err("repeat code 16 exceeds alphabet size", br.pos) +>
             rep @
                all_lens(idx') = prev !| _
@@ -233,10 +233,10 @@ decode_dynamic_trees = br =>
          | --| <- flate_err("invalid code length symbol", br.pos) +>
    lit_lens = Int{}
    hlit @ i =>
-      lit_lens += all_lens(i)!!
+      lit_lens += all_lens(i).expect("missing all lens")
    dist_lens = Int{}
    hdist @ i =>
-      dist_lens += all_lens(hlit + i)!!
+      dist_lens += all_lens(hlit + i).expect("missing all lens")
    lit_t = build_huff(lit_lens, hlit)--!
    dist_t = build_huff(dist_lens, hdist)--!
    <+ (lit_t, dist_t) ->
@@ -404,7 +404,7 @@ deflate_raw = data =>
             pos' = pos' + 1
          |
             h = hash3(data, pos')
-            prev = htab(h)!!
+            prev = htab(h).expect("missing htab")
             htab(h) = pos' !| _
             dist = pos' - prev
             (prev !< 0 && dist > 0 && dist !> 32768 && data(prev) == data(pos') && data(prev + 1) == data(pos' + 1) && data(prev + 2) == data(pos' + 2))

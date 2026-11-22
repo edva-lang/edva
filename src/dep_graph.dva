@@ -261,7 +261,7 @@ init_tarjan_state = n =>
 push_stack: TarjanState, Int => ()
 push_stack = state, u =>
    s_ptr = state.stack_ptr
-   sp = s_ptr(0)!!
+   sp = s_ptr(0).expect("missing s ptr")
    stk = state.stack
    sp < ?stk
       |
@@ -272,11 +272,11 @@ push_stack = state, u =>
 pop_stack: TarjanState => Int
 pop_stack = state =>
    s_ptr = state.stack_ptr
-   sp = s_ptr(0)!!
+   sp = s_ptr(0).expect("missing s ptr")
    new_sp = sp > 0 | sp - 1 | 0
    s_ptr(0) = new_sp !| _
    stk = state.stack
-   stk(new_sp)!!
+   stk(new_sp).expect("missing stk")
 
 tarjan_dfs: DepGraph, TarjanState, Int => ()
 tarjan_dfs = graph, state, u =>
@@ -284,14 +284,14 @@ tarjan_dfs = graph, state, u =>
    lows = state.lowlinks
    ons = state.on_stack
    s_cnt = state.counter
-   cnt = s_cnt(0)!!
+   cnt = s_cnt(0).expect("missing s cnt")
    idxs(u) = cnt !| _
    lows(u) = cnt !| _
    s_cnt(0) = cnt + 1 !| _
    push_stack(state, u)
    ons(u) = <+> !| _
 
-   u_node = graph.nodes(u)!!
+   u_node = graph.nodes(u).expect("missing nodes")
    u_node.deps @ d_name =>
       v = find_node_idx(graph, d_name)
       v !< 0
@@ -300,26 +300,26 @@ tarjan_dfs = graph, state, u =>
             v_idx < 0
                |
                   tarjan_dfs(graph, state, v)
-                  lows(u) = %min(lows(u)!!, lows(v)!!) !| _
+                  lows(u) = %min(lows(u).expect("missing lows"), lows(v).expect("missing lows")) !| _
                |
                   v_on = ons(v) | _ | <->
                   v_on
                      |
-                        lows(u) = %min(lows(u)!!, idxs(v)!!) !| _
+                        lows(u) = %min(lows(u).expect("missing lows"), idxs(v).expect("missing idxs")) !| _
 
-   low_u = lows(u)!!
-   idx_u = idxs(u)!!
+   low_u = lows(u).expect("missing lows")
+   idx_u = idxs(u).expect("missing idxs")
    low_u == idx_u
       |
          scc_names = ast::Names()
          is_self_rec = node_has_dep(u_node, u_node.name)
          0.. @
             s_ptr = state.stack_ptr
-            sp = s_ptr(0)!!
+            sp = s_ptr(0).expect("missing s ptr")
             sp == 0 | -->
             w = pop_stack(state)
             ons(w) = <-> !| _
-            w_node = graph.nodes(w)!!
+            w_node = graph.nodes(w).expect("missing nodes")
             scc_names += w_node.name
             w == u | -->
          is_rec = ?scc_names > 1 || is_self_rec

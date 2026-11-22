@@ -380,12 +380,12 @@ codegen_array_deep_copy = cg, a, name =>
    len_v = builder_len(cg, a, name + ".len")
    cap_v = builder_cap(cg, a, name + ".cap")
    data_v = builder_data(cg, a, name + ".data")
-   raw = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
+   raw = types::call1(cg, cg.malloc_t.expect("missing malloc t"), cg.malloc_fn.expect("missing malloc fn"),
      LLVMConstInt(i64t, 24, 0), name + ".alloc")
    np = LLVMBuildBitCast(cg.builder, raw, LLVMPointerType(bt, 0), name + ".ptr")
    buf_len = LLVMBuildAdd(cg.builder, cap_v, LLVMConstInt(i64t, 1, 0), name + ".buflen")
    buf_size = LLVMBuildMul(cg.builder, buf_len, LLVMConstInt(i64t, 8, 0), name + ".bufsize")
-   buf = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, buf_size, name + ".buf")
+   buf = types::call1(cg, cg.malloc_t.expect("missing malloc t"), cg.malloc_fn.expect("missing malloc fn"), buf_size, name + ".buf")
    copy_len = LLVMBuildMul(cg.builder, len_v, LLVMConstInt(i64t, 8, 0), name + ".copylen")
    LLVMBuildMemCpy(cg.builder, buf, 1, data_v, 1, copy_len, 0)
    LLVMBuildStore(cg.builder, len_v,
@@ -563,7 +563,7 @@ codegen_builder_grow = cg, b =>
      LLVMBuildStructGEP2(cg.builder, builder_struct_type(cg), b, 2, "b.cap.gep"), "b.old.cap")
    new_cap' = LLVMBuildMul(cg.builder, old_cap, LLVMConstInt(i64t, 2, 0), "b.new.cap")
    new_cap' == LLVMConstInt(i64t, 0, 0) | new_cap' = LLVMConstInt(i64t, 8, 0)
-   new_data = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
+   new_data = types::call1(cg, cg.malloc_t.expect("missing malloc t"), cg.malloc_fn.expect("missing malloc fn"),
      LLVMBuildAdd(cg.builder, new_cap', LLVMConstInt(i64t, 1, 0), "b.new.buf"), "b.new.data")
    old_len = builder_len(cg, b, "b.copy.len")
    LLVMBuildMemCpy(cg.builder, new_data, 1, old_data, 1, old_len, 0)
@@ -627,7 +627,7 @@ codegen_builder_append_byte = cg, b, byte_val =>
          new_buf_len = stmt::codegen_add_checked_u64(cg, new_cap, one,
            "b.new.buf.len")
          new_buf = cg.in_restore_scope > 0
-            | types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, new_buf_len, "b.new.buf")
+            | types::call1(cg, cg.malloc_t.expect("missing malloc t"), cg.malloc_fn.expect("missing malloc fn"), new_buf_len, "b.new.buf")
             | expr::codegen_call_arena_alloc(cg, new_buf_len, "b.new.buf")
          LLVMBuildMemCpy(cg.builder, new_buf, 1, data, 1, len, 0)
          LLVMBuildStore(cg.builder,
@@ -680,7 +680,7 @@ codegen_builder_ensure_cap = cg, b, needed =>
    data = builder_data(cg, b, "b.cur.data2")
    buf_len = stmt::codegen_add_checked_u64(cg, new_cap, one, "b.new.buf.len2")
    buf = cg.in_restore_scope > 0
-      | types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, buf_len, "b.new.buf2")
+      | types::call1(cg, cg.malloc_t.expect("missing malloc t"), cg.malloc_fn.expect("missing malloc fn"), buf_len, "b.new.buf2")
       | expr::codegen_call_arena_alloc(cg, buf_len, "b.new.buf2")
    LLVMBuildMemCpy(cg.builder, buf, 1, data, 1, len, 0)
    LLVMBuildStore(cg.builder, LLVMConstInt(LLVMInt8Type!, 0, 0),
@@ -1001,7 +1001,7 @@ codegen_builder_append = cg, b, rhs =>
          handled_fast = ?c.args == 1 && (c.fn_name == "%to_str" || rname ["str::from_int", "str::from_u64"])
          handled_fast
             |
-               arg0 = c.args(0)!!
+               arg0 = c.args(0).expect("missing args")
                avt = types::static_expr_vt(cg, arg0)
                c.fn_name == "%to_str" && types::is_str_vt(avt)
                   | codegen_builder_append(cg, b, arg0)
@@ -1322,7 +1322,7 @@ codegen_clamp_slice_range = cg, raw_start, raw_end, has_start, has_end, len_val 
 // (Follows.)
 codegen_eval_array_index: types::Cg, ast::CallExpr => (Addr, ast::ValueType)
 codegen_eval_array_index = cg, t =>
-   av = t.args(0)!!
+   av = t.args(0).expect("missing args")
    av
       [Range]
          codegen_eval_array_range(cg, t)
@@ -1344,7 +1344,7 @@ range_arg_of = t =>
    ?t.args == 0
       | ast::RangeExpr(<->, <->, ast::Expr(Var, "?"), ast::Expr(Var, "?"), <->)
       |
-         t.args(0)!!
+         t.args(0).expect("missing args")
             [Range r] r
             | ast::RangeExpr(<->, <->, ast::Expr(Var, "?"),
               ast::Expr(Var, "?"), <->)
@@ -1406,7 +1406,7 @@ codegen_eval_array_view = cg, t =>
 codegen_eval_evaluated_array_access: types::Cg, ast::CallExpr,
   Addr => (Addr, ast::ValueType)
 codegen_eval_evaluated_array_access = cg, t, aval =>
-   av = t.args(0)!!
+   av = t.args(0).expect("missing args")
    av
       [Range]
          codegen_eval_array_view_base(cg, t, aval)
@@ -1556,7 +1556,7 @@ slice_store_rec_elem = cg, s, data, elem_ll, idx_i64, val_ptr, name =>
 // read.
 slice_or_range: types::Cg, ast::CallExpr => (Addr, ast::ValueType)
 slice_or_range = cg, t =>
-   arg_is_range = t.args(0)!! [Range]
+   arg_is_range = t.args(0).expect("missing args") [Range]
    arg_is_range
       | codegen_eval_array_range(cg, t)
       | codegen_eval_slice_index(cg, t)
@@ -1565,7 +1565,7 @@ slice_or_range = cg, t =>
 // view's data pointer is always valid over the parent buffer).
 codegen_eval_slice_index: types::Cg, ast::CallExpr => (Addr, ast::ValueType)
 codegen_eval_slice_index = cg, t =>
-   av = t.args(0)!!
+   av = t.args(0).expect("missing args")
    idx_ev = expr::codegen_eval(cg, av)
    sv = types::ptr_var_value_plain(cg, t.fn_name, "rec.ptr")
    data = slice_data(cg, sv, "slice.data")
@@ -1581,7 +1581,7 @@ codegen_eval_slice_index = cg, t =>
 codegen_eval_base_rec_access: types::Cg, ast::CallExpr, Addr, Addr,
   ast::VTypes => (Addr, ast::ValueType)
 codegen_eval_base_rec_access = cg, t, base_ptr, rt, fvs =>
-   arg = t.args(0)!!
+   arg = t.args(0).expect("missing args")
    arg_is_range = arg [Range]
    arg_is_range
       |
@@ -1677,7 +1677,7 @@ codegen_eval_record_range = cg, t =>
 codegen_eval_evaluated_slice_access: types::Cg, ast::CallExpr, Addr => (Addr, ast::ValueType)
 codegen_eval_evaluated_slice_access = cg, t, base_ptr =>
    i64t = LLVMInt64Type!
-   arg = t.args(0)!!
+   arg = t.args(0).expect("missing args")
    sv' = base_ptr
    is_val = LLVMGetTypeKind(LLVMTypeOf(sv')) != 12
    is_val
@@ -1750,7 +1750,7 @@ codegen_eval_base_str_access = cg, t, s_val =>
       | sv =>
          len_val = expr::codegen_string_len_fast(cg, sv, "s.read.len")
          data_ptr = expr::codegen_string_data(cg, sv, "s.read.data")
-         arg = t.args(0)!!
+         arg = t.args(0).expect("missing args")
          arg
             [Range rng]
                start_val' = LLVMConstInt(i64t, 0, 0)
@@ -1796,7 +1796,7 @@ codegen_eval_base_builder_access = cg, t, b_val =>
       | bv =>
          len_val = builder_len(cg, bv, "b.read.len")
          data_ptr = builder_data(cg, bv, "b.read.data")
-         arg = t.args(0)!!
+         arg = t.args(0).expect("missing args")
          arg
             [Range rng]
                start_val' = LLVMConstInt(i64t, 0, 0)
@@ -1921,7 +1921,7 @@ get_or_emit_array_grow = cg =>
          grow_bytes = stmt::codegen_mul_checked_u64(cg, new_cap, esize,
            "a.grow.bytes")
          new_buf = cg.in_restore_scope > 0
-            | types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, grow_bytes, "a.new.buf")
+            | types::call1(cg, cg.malloc_t.expect("missing malloc t"), cg.malloc_fn.expect("missing malloc fn"), grow_bytes, "a.new.buf")
             | expr::codegen_call_arena_alloc(cg, grow_bytes, "a.new.buf")
          copy_bytes = LLVMBuildMul(cg.builder, cur_len, esize,
            "a.copy.bytes")
@@ -2457,7 +2457,7 @@ codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
                atp = LLVMBuildPointerCast(cg.builder, aptr,
                  LLVMPointerType(at, 0), "rec.args.typed")
                nargs @ i =>
-                  av = LLVMBuildLoad2(cg.builder, arg_ts(i)!!,
+                  av = LLVMBuildLoad2(cg.builder, arg_ts(i).expect("missing arg ts"),
                     LLVMBuildStructGEP2(cg.builder, at, atp, i,
                       "rec.arg.gep"), "rec.arg")
                   call_args += av
@@ -2509,7 +2509,7 @@ var_partial_at = cg, name, i =>
    i < 0
       | <->
       |
-         cv = cg.vars(i)!!
+         cv = cg.vars(i).expect("missing vars")
          cv.name == name
             |
                (i !< cg.fn_var_start) && cv.is_local
@@ -2610,9 +2610,9 @@ codegen_eval_spawn = cg, call =>
    fidx = types::fninfo_index(cg, fname')
    fidx
       | idx =>
-         fi = cg.fninfos(idx)!!
-         fn = fi.llvm_fn!!
-         fty = fi.llvm_type!!
+         fi = cg.fninfos(idx).expect("missing fninfos")
+         fn = fi.llvm_fn.expect("missing llvm fn")
+         fty = fi.llvm_type.expect("missing llvm type")
          ret = fi.ret_vt
          np = fi.nparams
          is_cap = !fi.no_capture
@@ -2624,7 +2624,7 @@ codegen_eval_spawn = cg, call =>
             | clo => stmt::closure_env_ptr(cg, clo, "spawn.clo.env")
             | LLVMConstNull(i8p)
          at = runtime::arena_type(cg)
-         arena_raw = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
+         arena_raw = types::call1(cg, cg.malloc_t.expect("missing malloc t"), cg.malloc_fn.expect("missing malloc fn"),
            LLVMSizeOf(at), "thread.arena.malloc")
          atp = LLVMPointerType(at, 0)
          init_t = types::fn_type2(cg, LLVMVoidType!, atp, i64t)
@@ -2634,7 +2634,7 @@ codegen_eval_spawn = cg, call =>
          args = types::Addrs()
          arg_ts = types::Addrs()
          raw_args @ rv, i =>
-            rt = raw_vts(i)!!
+            rt = raw_vts(i).expect("missing raw vts")
             cv = codegen_thread_copy_value(cg, rv, rt, arena_raw)
             pty = LLVMTypeOf(LLVMGetParam(fn,
               (is_cap | i + 1 | i)))
@@ -2654,12 +2654,12 @@ codegen_eval_spawn = cg, call =>
          n > 0
             |
                args_ty = types::struct_type_n(cg, arg_ts, n)
-               araw' = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
+               araw' = types::call1(cg, cg.malloc_t.expect("missing malloc t"), cg.malloc_fn.expect("missing malloc fn"),
                  LLVMSizeOf(args_ty), "thread.args.malloc")
                at_ptr = LLVMBuildPointerCast(cg.builder, araw',
                  LLVMPointerType(args_ty, 0), "thread.args")
                n @ i =>
-                  argv = args(i)!!
+                  argv = args(i).expect("missing args")
                   gep = LLVMBuildStructGEP2(cg.builder, args_ty, at_ptr,
                     i, "thread.args.gep")
                   LLVMBuildStore(cg.builder, argv, gep)
@@ -2668,13 +2668,13 @@ codegen_eval_spawn = cg, call =>
                le_idx = stmt::lambda_env_index(fname')
                le_idx !< 0
                   |
-                     lei = types::g.lambda_env_infos(le_idx)!!
+                     lei = types::g.lambda_env_infos(le_idx).expect("missing lambda env infos")
                      codegen_deep_copy_env(cg, env_ptr, lei.est, lei.nc,
                        lei.vts, arena_raw)
                   | LLVMConstNull(i8p)
             | LLVMConstNull(i8p)
          rec_t = codegen_ensure_pthread(cg)
-         rraw = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
+         rraw = types::call1(cg, cg.malloc_t.expect("missing malloc t"), cg.malloc_fn.expect("missing malloc fn"),
            LLVMConstInt(i64t, 64, 0), "thread.rec.malloc")
          rec = LLVMBuildPointerCast(cg.builder, rraw,
            LLVMPointerType(rec_t, 0), "thread.rec")
@@ -3249,7 +3249,7 @@ codegen_typed_eval = cg, te =>
                   raw_fty = fev0_opt
                      | f0 => LLVMTypeOf(f0)
                      | types::llvm_type_of_vt(fev.1)
-                  decl_rf_opt = has_decl | <+ decl_fts(i)!! +> | <-->
+                  decl_rf_opt = has_decl | <+ decl_fts(i).expect("missing decl fts") +> | <-->
                   decl_vt = decl_rf_opt | rf => runtime::rec_field_vt(cg, rf) | fev.1
                   decl_ll = decl_rf_opt | rf => runtime::rec_field_llvm_type(cg, rf) | raw_fty
                   rec_t' = rm_f | m => m.0 | (cg.last_rt | _ | raw_fty)
@@ -3306,17 +3306,17 @@ codegen_typed_eval = cg, te =>
                      nf @ j =>
                         fgep' = LLVMBuildStructGEP2(cg.builder, st', rec_ptr, j,
                           "rec.fld")
-                        fval_j = fvals(j)!!
+                        fval_j = fvals(j).expect("missing fvals")
                         fld_is_rec = types::is_record_vt(fvts'(j) | _ | ast::ValueType(Unknown))
                         fld_is_rec
                            |
-                              fld_ty = ftypes(j)!!
+                              fld_ty = ftypes(j).expect("missing ftypes")
                               inner_sz' = LLVMSizeOf(fld_ty)
                               LLVMBuildMemCpy(cg.builder, fgep', 1, fval_j, 1,
                                 inner_sz', 0)
                            |
                               store = LLVMBuildStore(cg.builder, fval_j, fgep')
-                              embed_views && (fvts'(j)!! [Str])
+                              embed_views && (fvts'(j).expect("missing fvts") [Str])
                                  | string_stores += store
                      ?string_stores > 0
                         | cg.record_string_fields += types::RecordStringField(rec_ptr, string_stores)

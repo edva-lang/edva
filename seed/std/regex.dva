@@ -564,7 +564,7 @@ mk_ins = op, x, y, flags, bits =>
 emit_ast: Instr{}, AstNode{}, Int => Instr{}
 emit_ast = prog, nodes, idx =>
    idx < 0 | --| prog
-   nd = nodes(idx)!!
+   nd = nodes(idx).expect("missing nodes")
    k = nd.kind
    p' = prog
    k
@@ -653,7 +653,7 @@ emit_ast = prog, nodes, idx =>
 is_anchored_root: AstNode{}, Int => <>
 is_anchored_root = nodes, idx =>
    idx < 0 | --| <->
-   nd = nodes(idx)!!
+   nd = nodes(idx).expect("missing nodes")
    nd.kind
       [AST_ANCHOR] nd.a [ANCHOR_BOL, ANCHOR_START]
       [AST_CAT, AST_GROUP] is_anchored_root(nodes, nd.a)
@@ -668,7 +668,7 @@ is_anchored_root = nodes, idx =>
 
 clone_saved: Int{}, Int, Int => Int{}
 clone_saved = src, slot, val =>
-   ?src @> i => i == slot | val | src(i)!!
+   ?src @> i => i == slot | val | src(i).expect("missing src")
 
 check_anchor: Int, String, Int => <>
 check_anchor = kind, text, sp =>
@@ -686,10 +686,10 @@ check_anchor = kind, text, sp =>
 
 add_thread: Thread{}, Int{}, Int, Instr{}, String, Int, Int, Int{} => Thread{}
 add_thread = list, visited, step_gen, prog, text, sp, pc, saved =>
-   visited(pc)!! == step_gen
+   visited(pc).expect("missing visited") == step_gen
       | --| list
    visited(pc) = step_gen !| _
-   ins = prog(pc)!!
+   ins = prog(pc).expect("missing prog")
    op = ins.op
    op
       [OP_JMP] add_thread(list, visited, step_gen, prog, text, sp, ins.x, saved)
@@ -758,8 +758,8 @@ run_vm = re, text, start_pos =>
       n_threads = ?clist'
       ti' = 0
       (ti' < n_threads) @
-         th = clist'(ti')!!
-         ins = prog(th.pc)!!
+         th = clist'(ti').expect("missing clist")
+         ins = prog(th.pc).expect("missing prog")
          ins.op == OP_MATCH
             |
                matched' = <+>
@@ -782,12 +782,12 @@ run_vm = re, text, start_pos =>
 
 build_match: String, Int{}, Int => Match
 build_match = text, saved, num_groups =>
-   s0 = saved(0)!!
-   e0 = saved(1)!!
+   s0 = saved(0).expect("missing saved")
+   e0 = saved(1).expect("missing saved")
    groups = Span{}
    (num_groups + 1) @ g =>
-      gs = saved(g * 2)!!
-      ge = saved(g * 2 + 1)!!
+      gs = saved(g * 2).expect("missing saved")
+      ge = saved(g * 2 + 1).expect("missing saved")
       (gs !< 0 && ge !< gs)
          | groups += Span(gs, ge, text(gs..ge))
          | groups += Span(-1, -1, "")
@@ -814,7 +814,7 @@ expand_replacement = repl, m =>
                   g_idx = nc - '0
                   g_idx < ?m.groups
                      |
-                        sp = m.groups(g_idx)!!
+                        sp = m.groups(g_idx).expect("missing groups")
                         sp.start !< 0 | out += sp.text
                   i' = i' + 2
                |

@@ -140,10 +140,10 @@ normalize_path = path =>
             ?stack' > 0 |
                next_stack = String{}
                (?stack' - 1) @ k =>
-                  next_stack += stack'(k)!!
+                  next_stack += stack'(k).expect("missing stack")
                stack' = next_stack
          | stack' += seg
-   ends_dot = ?parts > 0 && parts(?parts - 1)!! [".", ".."]
+   ends_dot = ?parts > 0 && parts(?parts - 1).expect("missing parts") [".", ".."]
    b = {?path + 4}
    lead_slash | b += '/
    stack' @ item, idx =>

@@ -30,7 +30,7 @@ numbers += 9
 numbers += 2
 numbers += 5
 ordered = sort::ints(numbers)
-io::out(ordered(0)!!)
+io::out(ordered(0).expect("missing ordered"))
 // => 2
 ```
 

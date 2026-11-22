@@ -55,7 +55,7 @@ eff_batches @ b =>
 sp = mem::provenance(scratch)
 gp = mem::provenance(mem::global_arena!)
 mem::destroy(scratch)
-_s0 = summaries(0)!!
+_s0 = summaries(0).expect("missing summaries")
 final_line = report::format_final_report(summaries, eff_batches)
 dump_alloc
    | io::out $ "alloc_bytes=${str::from_int(total_alloc_bytes')},peak_scratch_bytes=${str::from_int(peak_scratch_bytes')},scratch_chunks=${str::from_int(sp.num_chunks)},scratch_resets=${str::from_int(sp.resets)},global_bytes=${str::from_int(gp.bytes_allocated)}"

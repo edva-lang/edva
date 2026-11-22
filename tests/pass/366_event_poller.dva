@@ -29,7 +29,7 @@ p_res
       evs1 = event::wait(p, 50)
       io::out("after write events=" + str::from_int(?evs1))
       ?evs1 > 0 |
-         e = evs1(0)!!
+         e = evs1(0).expect("missing evs1")
          io::out("fd_match=" + (e.fd == rfd | "true" | "false"))
          io::out("is_read=" + (event::is_read(e) | "true" | "false"))
          io::out("data_match=" + (e.data == 999 | "true" | "false"))

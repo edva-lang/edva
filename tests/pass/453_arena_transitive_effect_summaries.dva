@@ -154,7 +154,7 @@ main_test = !=>
    base_raw = mem::current!
    prev_raw = helper_switch_arena(ar.raw)
    in_ar = mem::current! == ar.raw
-   back_raw = helper_switch_arena(Addr(0))
+   back_raw = helper_switch_arena(ptr(0))
    restored_ok = (prev_raw == base_raw) && (back_raw == ar.raw) && (mem::current! == base_raw)
    flag_s = in_ar && restored_ok | "ok" | "fail"
    io::out $ "select:${flag_s}"

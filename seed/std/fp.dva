@@ -102,7 +102,7 @@
       n = ?xs
       0..n @ i =>
          idx = n - 1 - i
-         out += xs(idx)!!
+         out += xs(idx).expect("missing xs")
       out
 
    // flatten: concatenate an array of arrays into a single-level array.

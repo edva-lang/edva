@@ -9,9 +9,9 @@ on_click = event =>
 
 #export run_smoke: () => ()
 run_smoke = !=>
-   output = dom::find("#out")!!
+   output = dom::find("#out").expect("missing find")
    dom::text(output, "Wasm DOM ready") !| _
-   button = dom::find("#button")!!
+   button = dom::find("#button").expect("missing find")
    dom::on(button, "click", on_click) !| _
 
 #export click_count: () => Int

@@ -124,8 +124,8 @@ url::decode(SearchQuery, "?q=minimal")
 // Map query decode
 url::decode_query(IntMap, "a=10&b=20")
    | mp_dec =>
-      test::eq((mp_dec ^ "a")!!, 10, "mp_dec['a']")
-      test::eq((mp_dec ^ "b")!!, 20, "mp_dec['b']")
+      test::eq((mp_dec ^ "a").expect("required payload"), 10, "mp_dec['a']")
+      test::eq((mp_dec ^ "b").expect("required payload"), 20, "mp_dec['b']")
    | err => test::check(<->, "url::decode_query map failed: " + err.msg)
 
 test::suite("csv")
@@ -135,10 +135,10 @@ raw_csv = "name,quote,notes\nAlice,\"She said \"\"Hi\"\"\",\"line 1\nline 2\"\nB
 csv::read_all(raw_csv)
    | tbl =>
       test::eq(?tbl, 3, "csv table row count")
-      r1 = tbl(1)!!
-      test::eq(r1(0)!!, "Alice", "csv row 1 col 0")
-      test::eq(r1(1)!!, "She said \"Hi\"", "csv row 1 escaped quotes")
-      test::eq(r1(2)!!, "line 1\nline 2", "csv row 1 multiline field")
+      r1 = tbl(1).expect("missing tbl")
+      test::eq(r1(0).expect("missing r1"), "Alice", "csv row 1 col 0")
+      test::eq(r1(1).expect("missing r1"), "She said \"Hi\"", "csv row 1 escaped quotes")
+      test::eq(r1(2).expect("missing r1"), "line 1\nline 2", "csv row 1 multiline field")
       test::eq(csv::write_all(tbl), raw_csv, "csv::write_all round-trip")
    | err => test::check(<->, "csv::read_all failed: " + err.msg)
 
@@ -155,8 +155,8 @@ test::eq(csv_text, "id,name,role,active,score,bio\n1,\"Ada, Countess\",Desc,true
 csv::decode(UserTable, csv_text)
    | users_dec =>
       test::eq(?users_dec, 2, "users_dec len")
-      test::eq(users_dec(0)!!, users(0)!!, "users_dec(0) structural equality")
-      test::eq(users_dec(1)!!, users(1)!!, "users_dec(1) structural equality")
+      test::eq(users_dec(0).expect("missing users dec"), users(0).expect("missing users"), "users_dec(0) structural equality")
+      test::eq(users_dec(1).expect("missing users dec"), users(1).expect("missing users"), "users_dec(1) structural equality")
    | err => test::check(<->, "csv::decode UserTable failed: " + err.msg)
 
 // Reordered columns + default values in CSV header decoding

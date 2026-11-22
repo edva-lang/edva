@@ -294,7 +294,7 @@ lookup_binding_exact = env, name =>
          g_found' = <-->
          ?gls @ k =>
             i = (?gls) - 1 - k
-            b = gls(i)!!
+            b = gls(i).expect("missing gls")
             b.name == name
                | (g_found' = <+ b +>; -->)
          g_found'
@@ -455,7 +455,7 @@ lookup_generic_exact = env, name =>
    res' = <-->
    ?env.generics @ k =>
       i = (?env.generics) - 1 - k
-      g = env.generics(i)!!
+      g = env.generics(i).expect("missing generics")
       g.name == name | (res' = <+ g.ti +>; -->)
    res'
 
@@ -490,7 +490,7 @@ lookup_user_type_exact = env, name =>
    res' = <-->
    ?env.user_types @ k =>
       i = (?env.user_types) - 1 - k
-      u = env.user_types(i)!!
+      u = env.user_types(i).expect("missing user types")
       u.name == name | (res' = <+ u +>; -->)
    res'
 

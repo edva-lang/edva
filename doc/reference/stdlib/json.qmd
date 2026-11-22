@@ -14,7 +14,7 @@ The `json` module provides an RFC 8259 JSON parser, a recursive `json::Value` DO
 #use io
 #use json
 
-value = json::parse("[1, 2, 3]")!!
+value = json::parse("[1, 2, 3]").expect("missing parse")
 value [Array items] io::out(?items) | io::out("not an array")
 ```
 
@@ -51,7 +51,7 @@ u = User("Alice", "admin", <+ "alice@example.com" +>)
 s = json::encode(u)
 io::out(s)
 
-decoded = json::decode(User, "{\"name\":\"Bob\"}")!!
+decoded = json::decode(User, "{\"name\":\"Bob\"}").expect("missing decode")
 io::out(decoded.name + ":" + decoded.role)
 ```
 
@@ -145,13 +145,13 @@ r
    | err => io::out(err.msg) // Recoverable: prints diagnostic message
 ```
 
-- **Fatal extraction (`!!`)**: Postfix `!!` unwraps the successful value or aborts execution with a fatal diagnostic if an `Error` occurs:
+- **Fatal extraction**: `.expect("reason")` unwraps the successful value or aborts execution with a fatal diagnostic if an `Error` occurs:
 
 ```{.dva .partial}
 #use json
 
 // Aborts execution with code 400 if parsing fails:
-val = json::parse(config_text)!!
+val = json::parse(config_text).expect("missing parse")
 ```
 
 ## Supported JSON features

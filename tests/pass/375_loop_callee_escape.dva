@@ -40,7 +40,7 @@ bx.cells += mk(0)
    label = "iteration ${i}"
    put(bx, i + 1)
 junk!
-io::out $ "store via callee:  ${bx.cells(0)!!.a} (expect 3)"
+io::out $ "store via callee:  ${bx.cells(0).expect("missing cells").a} (expect 3)"
 
 // 2. outer variable assigned a record the callee returned
 held' = mk(0)

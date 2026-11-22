@@ -1,4 +1,4 @@
 #type FailRam <| Int >
 
 f: FailRam => Int
-f = r => r!!
+f = r => r.expect("missing r")

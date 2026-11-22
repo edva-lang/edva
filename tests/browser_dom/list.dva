@@ -46,8 +46,8 @@ dispose = state =>
 #export
    list_run: () => Int
    list_run = !=>
-      parent = dom::find("#list")!!
-      rows = list::new(parent, key, create, update, dispose)!!
+      parent = dom::find("#list").expect("missing find")
+      rows = list::new(parent, key, create, update, dispose).expect("missing new")
       first = Item{}
       first += Item(1, "one", 1)
       first += Item(2, "two", 1)
@@ -73,7 +73,7 @@ dispose = state =>
       dom_test_phase(4)
       list::close(rows) !| error => --| report(error)
       dom_test_phase(5)
-      revised = list::new(parent, key, create, update, dispose)!!
+      revised = list::new(parent, key, create, update, dispose).expect("missing new")
       list::with_revisions(revised, revision) !| error => --| report(error)
       list::sync(revised, first(..)) !| error => --| report(error)
       before = updates
@@ -87,13 +87,13 @@ dispose = state =>
       list::sync(revised, second(..)) !| error => --| report(error)
       updates != before + 5 | --| 103
       list::close(revised) !| error => --| report(error)
-      strings = list::new(parent, string_key, create, update, dispose)!!
+      strings = list::new(parent, string_key, create, update, dispose).expect("missing new")
       list::sync(strings, first(..)) !| error => --| report(error)
       list::sync(strings, first(..)) !| error => --| report(error)
       list::close(strings) !| error => --| report(error)
       dom_test_phase(6)
       creates != 10 || disposes != 10 | --| 104
-      recovery = list::new(parent, key, create, update, dispose)!!
+      recovery = list::new(parent, key, create, update, dispose).expect("missing new")
       list::sync(recovery, first(..)) !| error => --| report(error)
       reverse = Item{}
       reverse += Item(3, "THREE", 2)

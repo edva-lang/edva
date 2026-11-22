@@ -292,7 +292,7 @@ sha1_bytes = msg =>
       16 @ j =>
          w(j) = read_u32_be_raw(padded, base + j * 4) !| _
       16..80 @ j =>
-         x = w(j - 3)!! .^. w(j - 8)!! .^. w(j - 14)!! .^. w(j - 16)!!
+         x = w(j - 3).expect("missing w") .^. w(j - 8).expect("missing w") .^. w(j - 14).expect("missing w") .^. w(j - 16).expect("missing w")
          w(j) = rotl32(x, 1) !| _
       a' = h0'
       b' = h1'
@@ -308,7 +308,7 @@ sha1_bytes = msg =>
             (((b' .&. c') .|. (b' .&. d') .|. (c' .&. d')), 0x8f1bbcdc)
          |
             ((b' .^. c' .^. d'), 0xca62c1d6)
-         temp = mask32(rotl32(a', 5) + fk.0 + e' + fk.1 + w(j)!!)
+         temp = mask32(rotl32(a', 5) + fk.0 + e' + fk.1 + w(j).expect("missing w"))
          e' = d'
          d' = c'
          c' = rotl32(b', 30)
@@ -358,11 +358,11 @@ sha256_bytes = msg =>
       16 @ j =>
          w(j) = read_u32_be_raw(padded, base + j * 4) !| _
       16..64 @ j =>
-         w15 = w(j - 15)!!
-         w2  = w(j - 2)!!
+         w15 = w(j - 15).expect("missing w")
+         w2  = w(j - 2).expect("missing w")
          s0 = rotr32(w15, 7) .^. rotr32(w15, 18) .^. (w15 .>. 3)
          s1 = rotr32(w2, 17) .^. rotr32(w2, 19) .^. (w2 .>. 10)
-         w(j) = mask32(w(j - 16)!! + s0 + w(j - 7)!! + s1) !| _
+         w(j) = mask32(w(j - 16).expect("missing w") + s0 + w(j - 7).expect("missing w") + s1) !| _
       a' = h0'
       b' = h1'
       c' = h2'
@@ -374,7 +374,7 @@ sha256_bytes = msg =>
       64 @ j =>
          S1 = rotr32(e', 6) .^. rotr32(e', 11) .^. rotr32(e', 25)
          ch = (e' .&. f') .^. ((.!. e' .&. 0xFFFFFFFF) .&. g')
-         temp1 = mask32(h' + S1 + ch + SHA256_K(j) + w(j)!!)
+         temp1 = mask32(h' + S1 + ch + SHA256_K(j) + w(j).expect("missing w"))
          S0 = rotr32(a', 2) .^. rotr32(a', 13) .^. rotr32(a', 22)
          maj = (a' .&. b') .^. (a' .&. c') .^. (b' .&. c')
          temp2 = mask32(S0 + maj)
@@ -431,11 +431,11 @@ sha512_bytes = msg =>
       16 @ j =>
          w(j) = read_u64_be_raw(padded, base + j * 8) !| _
       16..80 @ j =>
-         w15 = w(j - 15)!!
-         w2  = w(j - 2)!!
+         w15 = w(j - 15).expect("missing w")
+         w2  = w(j - 2).expect("missing w")
          s0 = rotr64(w15, 1u64) .^. rotr64(w15, 8u64) .^. (w15 .>. 7u64)
          s1 = rotr64(w2, 19u64) .^. rotr64(w2, 61u64) .^. (w2 .>. 6u64)
-         w(j) = (w(j - 16)!! + s0 + w(j - 7)!! + s1) !| _
+         w(j) = (w(j - 16).expect("missing w") + s0 + w(j - 7).expect("missing w") + s1) !| _
       a' = h0'
       b' = h1'
       c' = h2'
@@ -447,7 +447,7 @@ sha512_bytes = msg =>
       80 @ j =>
          S1 = rotr64(e', 14u64) .^. rotr64(e', 18u64) .^. rotr64(e', 41u64)
          ch = (e' .&. f') .^. ((.!. e') .&. g')
-         temp1 = h' + S1 + ch + SHA512_K(j) + w(j)!!
+         temp1 = h' + S1 + ch + SHA512_K(j) + w(j).expect("missing w")
          S0 = rotr64(a', 28u64) .^. rotr64(a', 34u64) .^. rotr64(a', 39u64)
          maj = (a' .&. b') .^. (a' .&. c') .^. (b' .&. c')
          temp2 = S0 + maj
@@ -574,9 +574,9 @@ pbkdf2_sha256_bytes = password, salt, iterations, dk_len =>
       (iterations - 1) @
          u' = hmac_sha256_bytes(password, u')
          32 @ i =>
-            acc(i) = (acc(i)!! .^. (u'(i) .&. 0xFF)) !| _
+            acc(i) = (acc(i).expect("missing acc") .^. (u'(i) .&. 0xFF)) !| _
       32 @ i =>
-         out += acc(i)!!
+         out += acc(i).expect("missing acc")
    full = +out
    <+ full(0..dk_len) ->
 
@@ -589,10 +589,10 @@ pbkdf2_sha256 = password, salt, iterations, dk_len =>
 
 chacha_qr: Int{}, Int, Int, Int, Int => ()
 chacha_qr = s, a, b, c, d =>
-   va' = s(a)!!
-   vb' = s(b)!!
-   vc' = s(c)!!
-   vd' = s(d)!!
+   va' = s(a).expect("missing s")
+   vb' = s(b).expect("missing s")
+   vc' = s(c).expect("missing s")
+   vd' = s(d).expect("missing s")
    va' = mask32(va' + vb')
    vd' = rotl32(vd' .^. va', 16)
    vc' = mask32(vc' + vd')
@@ -626,7 +626,7 @@ chacha20_block = key, counter, nonce =>
       init += read_u32_le_raw(nonce, i * 4)
    work = Int{}
    16 @ i =>
-      work += init(i)!!
+      work += init(i).expect("missing init")
    10 @
       chacha_qr(work, 0, 4,  8, 12)
       chacha_qr(work, 1, 5,  9, 13)
@@ -638,7 +638,7 @@ chacha20_block = key, counter, nonce =>
       chacha_qr(work, 3, 4,  9, 14)
    out = {64}
    16 @ i =>
-      binary::write_u32_le(out, mask32(work(i)!! + init(i)!!))
+      binary::write_u32_le(out, mask32(work(i).expect("missing work") + init(i).expect("missing init")))
    <+ +out ->
 
 // Encrypts or decrypts `data` using the RFC 8439 ChaCha20 stream cipher

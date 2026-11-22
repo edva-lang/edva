@@ -14,7 +14,7 @@
    sum_array: Int{} => Int
    sum_array = xs =>
       total = (0, (xs @> (_ * 2 + _i))) @> (a, v, i => a + v + i)
-      total + xs(1)!!
+      total + xs(1).expect("missing xs")
 
 #export fusion_probe: Int => Int
 fusion_probe = n => sum_chain(n)

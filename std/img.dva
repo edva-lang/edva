@@ -166,7 +166,7 @@ encode_qoi = im =>
                run' = 0
             idx = qoi_hash(r, g, b, a)
             packed = (r .<. 24) .|. (g .<. 16) .|. (b .<. 8) .|. a
-            table(idx)!! == packed
+            table(idx).expect("missing table") == packed
                | out += idx // QOI_OP_INDEX (00xxxxxx)
                |
                   table(idx) = packed !| _
@@ -258,7 +258,7 @@ decode_qoi = data =>
                            tag = b1 .&. 0xC0
                            tag
                               [0x00]
-                                 pk = table(b1 .&. 63)!!
+                                 pk = table(b1 .&. 63).expect("missing table")
                                  r' = (pk .>. 24) .&. 0xFF
                                  g' = (pk .>. 16) .&. 0xFF
                                  b' = (pk .>. 8) .&. 0xFF

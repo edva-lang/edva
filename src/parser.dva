@@ -99,7 +99,6 @@ set_target_triple = t =>
    in_comma_list: <>,
    is_explicit_private: <>,
    skip_next_mark: <>,
-   warned_unwrap: <> = <->,
 )
 
 // A binary operator's binding powers + node op, from the precedence tower.
@@ -238,17 +237,6 @@ parser_error = p, code, msg =>
          fn = p.source_file != "" | p.source_file + ":" | ""
          log::error $ fn + str::from_int(p.curr.line) + ":" + str::from_int(p.curr.col) +
            ": E" + str::from_int(code) + ": " + msg
-
-warn_forced_unwrap: Parser => ()
-warn_forced_unwrap = p =>
-   p.warned_unwrap | --|
-   p.warned_unwrap = <+>
-   msg = "'!!' is deprecated. Use --!, |_|, a choice, or expect::some/expect::ok with a reason."
-   diag::is_capturing!
-      | diag::record_diag(3177, p.source_file, p.curr.line, p.curr.col, msg, <+>)
-      |
-         file = p.source_file != "" | "${p.source_file}:" | ""
-         log::warn $ "${file}${p.curr.line}:${p.curr.col}: W3177: ${msg}"
 
 // --- precedence (binary operators) ----------------------------------------
 
@@ -2483,7 +2471,7 @@ build_destructure_stmts = p, src_expr, fields, allow_mut, out_stmts =>
 
 chain_seq_stmts: ast::Exprs => ast::Expr
 chain_seq_stmts = stmts =>
-   acc' = stmts(0)!!
+   acc' = stmts(0).expect("missing stmts")
    stmts @ el_, i =>
       i > 0
          | acc' = ast::Expr(Bin, (ast::BinaryOp(Seq), acc', el_))
@@ -2609,7 +2597,7 @@ parse_trailing_block_expr = p, lhs =>
                n_exprs = ?b
                n_exprs == 1
                   |
-                     first_e = b(0)!!
+                     first_e = b(0).expect("missing b")
                      first_e
                         [Fn]
                            <+ ast::Expr(Bin, (ast::BinaryOp(Apply),
@@ -3487,7 +3475,7 @@ try_pick_target_branch = ch =>
    failed' = <->
    nbr @ bi =>
       found' || failed' | -->
-      br = ch.branches(bi)!!
+      br = ch.branches(bi).expect("missing branches")
       br.kind
          [Case]
             m = try_eval_target_case_match(cond_s, br.case_values)
@@ -4262,7 +4250,7 @@ eval_ct_type_bool = e =>
          res' = <->
          found' = <->
          nbr @ bi =>
-            br = ch.branches(bi)!!
+            br = ch.branches(bi).expect("missing branches")
             !found'
                |
                   is_m = br.kind
@@ -4340,7 +4328,7 @@ eval_ct_type_expr = p, e =>
          picked' = ast::Expr(Int, 0)
          found' = <->
          nbr @ bi =>
-            br = ch.branches(bi)!!
+            br = ch.branches(bi).expect("missing branches")
             !found'
                |
                   is_match = br.kind
@@ -6165,7 +6153,7 @@ parse_mod_param = p =>
    !ok' || ?items == 0
       | <-->
       | ?items == 1
-         | <+ items(0)!! +>
+         | <+ items(0).expect("missing items") +>
          | <+ ast::Expr(Block, items) +>
 
 has_module_sep: String => <>
@@ -6241,6 +6229,24 @@ pp_double_colon = p, lhs =>
            ast::Expr(Var, ""), p.curr.line, p.curr.col)))
       | <-->
 
+// Named assertion for either a positive/negative or a positive/empty ram.
+pp_expect: Parser, ast::Expr => <ast::Expr|>
+pp_expect = p, lhs =>
+   parser_advance(p)
+   reason = p.curr.text
+   !((p.curr.kind [Str]) && ?reason > 0)
+      |
+         parser_error(p, 3177, "expect requires a nonempty string literal reason.")
+         --| <-->
+   parser_advance(p)
+   p.curr.kind ![RParen]
+      |
+         parser_error(p, 3177, "expect takes exactly one reason.")
+         --| <-->
+   parser_advance(p)
+   unary = ast::Expr(Unary, (ast::UnaryOp(Expect, reason), lhs))
+   pp_member(p, unary)
+
 pp_dot: Parser, ast::Expr => <ast::Expr|>
 pp_dot = p, lhs =>
    parser_advance(p)
@@ -6248,6 +6254,7 @@ pp_dot = p, lhs =>
       [Id, Int]
          f = p.curr.text
          parser_advance(p)
+         f == "expect" && (p.curr.kind [LParen]) | --| pp_expect(p, lhs)
          pp_member(p, ast::Expr(Member, ast::MemberExpr(lhs, f, <->,
            ast::Expr(Var, ""), p.curr.line, p.curr.col)))
       |
@@ -6418,15 +6425,8 @@ parse_postfix_calls = p, lhs =>
                         | <-->
                   | <+ lhs +>
             ["!!"]
-               !p.curr.lead
-                  |
-                     warn_forced_unwrap(p)
-                     parser_advance(p)
-                     u = ast::Expr(Unary, (ast::UnaryOp(Unwrap), lhs))
-                     pp_member(p, u)
-                        | mu => parse_postfix_calls(p, mu)
-                        | <-->
-                  | <+ lhs +>
+               parser_error(p, 3177, "The '!!' operator was removed. Use --!, |_|, a choice, or .expect(\"reason\").")
+               <-->
             ["--!"]
                !p.curr.lead
                   |
@@ -7103,10 +7103,10 @@ parse_record_pattern_cont = p, subs =>
             | parse_record_pattern_loop(p, subs)
       [RParen]
          parser_advance(p)
-         s0_pr = pat_rec(subs(0)!!)
+         s0_pr = pat_rec(subs(0).expect("missing subs"))
          is_group = ?subs == 1 && (s0_pr.field_name == "")
          is_group
-            | <+ subs(0)!! +>
+            | <+ subs(0).expect("missing subs") +>
             | <+ pat_record(subs) +>
       |
          parser_error(p, 2095, "Expected ',' or ')' in record pattern")
@@ -7855,7 +7855,7 @@ check_redundant_flag = p, brs, body =>
    has_prev = ?brs > 0
    has_prev && is_neg
       |
-         last = brs(?brs - 1)!!
+         last = brs(?brs - 1).expect("missing brs")
          is_pos = expr_is_pos_flag(last.block)
          is_pos
             |
@@ -9095,7 +9095,7 @@ parse_indented_rhs = p =>
                      blk
                         [Block b]
                            ?b == 1
-                              | <+ b(0)!! +>
+                              | <+ b(0).expect("missing b") +>
                               | <+ blk +>
                         | <+ blk +>
                   | <-->
@@ -9141,7 +9141,7 @@ lookup_const_entry = lst, name =>
    i' = ?lst - 1
    0.. @
       i' < 0 | -->
-      e = lst(i')!!
+      e = lst(i').expect("missing lst")
       e.name == name
          |
             !(e.expr [Var]) | (res' = <+ e.expr +>)

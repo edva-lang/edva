@@ -46,8 +46,8 @@ cli::parse_into(ServerFlags, opts, argv1)
       io::out(f.verbose | "true" | "false")
       io::out(f.config_file | c => c | "none")
       io::out(str::from_int(?f.tag))
-      io::out(f.tag(0)!!)
-      io::out(f.tag(1)!!)
+      io::out(f.tag(0).expect("missing tag"))
+      io::out(f.tag(1).expect("missing tag"))
    | err =>
       io::out("FAIL1: " + err)
 

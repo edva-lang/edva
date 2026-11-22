@@ -15,7 +15,7 @@ matched: dom::Event => < | Error >
 matched = event =>
    element = dom::event_matched(event)--!
    name = dom::attr(element, "data-row")--!
-   name!! != "target" | --| <- Error(90, "Wrong delegated target", "events", 0, 0, (0, 0)) ->
+   name.expect("missing name") != "target" | --| <- Error(90, "Wrong delegated target", "events", 0, 0, (0, 0)) ->
    delegated = delegated + 1
    <++>
 count_once: dom::Event => < | Error >
@@ -35,8 +35,8 @@ handle_error = error => errors = errors + 1
 #export
    setup_events: () => Int
    setup_events = !=>
-      root = dom::find("#events")!!
-      button = dom::find("#event-button")!!
+      root = dom::find("#events").expect("missing find")
+      button = dom::find("#event-button").expect("missing find")
       dom::on_error(handle_error)
       dom::on(button, "click", count) !| error => --| error.code
       dom::delegate(root, "click", "[data-row]", matched) !| error => --| error.code
@@ -56,7 +56,7 @@ handle_error = error => errors = errors + 1
       result = dom::on_with(button, "click", passive, count)
       code = result | listener => -1 | error => error.code
       code != dom::INVALID_OPTIONS | --| 91
-      listener = dom::on(button, "off", count)!!
+      listener = dom::on(button, "off", count).expect("missing on")
       dom::off(listener) !| error => --| error.code
       0
 
@@ -68,4 +68,4 @@ handle_error = error => errors = errors + 1
    final_key = !=> last_key
 
    remove_event_root: () => ()
-   remove_event_root = !=> dom::remove(dom::find("#events")!!) !| _
+   remove_event_root = !=> dom::remove(dom::find("#events").expect("missing find")) !| _

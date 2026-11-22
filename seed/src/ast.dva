@@ -23,7 +23,7 @@
    BitAnd, BitOr, BitXor, Shl, Shr, Seq
 >
 
-#type UnaryOp <Not, BitNot, Length, AddrOf, Freeze, Unwrap, Propagate, RuneCount, Neg>
+#type UnaryOp <Not, BitNot, Length, AddrOf, Freeze, Unwrap, Propagate, RuneCount, Neg, Expect(String)>
 
 // The built-in ramification variant tags (Positive/Negative for the unit
 // flags, Some/Err for payload rams, Succ/Noth for the unit upper variants).

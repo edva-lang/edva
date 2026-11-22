@@ -269,7 +269,7 @@ format_type_info = ti =>
             |
                ?fs > 0
                   |
-                     f0 = fs(0)!!
+                     f0 = fs(0).expect("missing fs")
                      format_type_info(f0.rec_type) + "[]"
                   | "_[]"
             |
@@ -330,8 +330,8 @@ format_type_info = ti =>
             |
                ?p_vts @ idx =>
                   idx > 0 | b += ", "
-                  pti = idx < ?p_tis | format_type_info(p_tis(idx)!!) | "_"
-                  b += (pti != "_" | pti | format_value_type(p_vts(idx)!!))
+                  pti = idx < ?p_tis | format_type_info(p_tis(idx).expect("missing p tis")) | "_"
+                  b += (pti != "_" | pti | format_value_type(p_vts(idx).expect("missing p vts")))
          b += " => "
          rti = format_type_info(r_ti)
          b += (rti != "_" | rti | format_value_type(r_vt))
@@ -400,7 +400,7 @@ extract_symbols = stmts, lines, cols =>
             !is_fwd
                |
                   ?syms @ si =>
-                     prev = syms(si)!!
+                     prev = syms(si).expect("missing syms")
                      prev.name == name && !prev.is_local
                         |
                            new_det = prev.detail != name | prev.detail | detail
@@ -534,7 +534,7 @@ update_sym_type = syms, b_name, ut_str =>
    ut_str != "" && ut_str != "?"
       |
          ?syms @ i =>
-            s = syms(i)!!
+            s = syms(i).expect("missing syms")
             !s.is_local && s.name == b_name && (s.detail == b_name || (?s.detail !< 3 && s.detail(?s.detail - 3..) == "..."))
                |
                   syms(i) = SymEntry(s.name, b_name + ": " + ut_str,
@@ -642,7 +642,7 @@ upsert_doc = uri, fpath, text, syms =>
       docs = open_docs
       found' = <->
       ?docs @ i =>
-         d = docs(i)!!
+         d = docs(i).expect("missing docs")
          d.uri == esc_uri
             |
                docs(i) = DocState(esc_uri, esc_path, esc_text, esc_syms) !| _
@@ -856,7 +856,7 @@ operator_hover_doc = op =>
       ["$+>"] "**Ram positive map** `$+>` *(LBP 40 / RBP 50, left)* — Maps over the positive slot of `< T | E >` or `< T | >`, preserving the negative slot."
       ["$->"] "**Ram negative map** `$->` *(LBP 40 / RBP 50, left)* — Maps over the negative slot of `< T | E >` or `< | E >`, preserving the positive slot."
       [".>"] "**Function composition** `.>` *(LBP 40 / RBP 50, left)* — Left-to-right composition: `(f .> g)(x)` evaluates `g(f(x))`."
-      ["!!"] "**Force-unwrap** `!!` *(LBP 170, postfix, left)* — Unwraps positive ram payload (`< T | E >` / `< T | >`), aborting at runtime if negative."
+      ["!!"] "The `!!` operator was removed. Use `--!`, `|_|`, a choice, or `.expect(\"reason\")`."
       ["!<"] "**Greater-or-equal** `!<` *(LBP 120 / RBP 130, left, chainable)* — Ordered \"not less\" (`>=`); yields `<->` on `NaN`."
       ["!>"] "**Less-or-equal** `!>` *(LBP 120 / RBP 130, left, chainable)* — Ordered \"not greater\" (`<=`); yields `<->` on `NaN`."
       ["=="] "**Structural equality** `==` *(LBP 120 / RBP 130, left)* — Compares scalars, `String`, records, enums, `Type`, and flags (`<>` XNOR)."

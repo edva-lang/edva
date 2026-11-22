@@ -35,7 +35,7 @@ r2 = run_fallible(-3)
 io::out $ r2
 
 // #228: <Int|> (RamPN) and <|Int> (RamNP) unboxed { i1, i64 }
-io::out $ maybe_double(21)!!
+io::out $ maybe_double(21).expect("missing maybe double")
 m1 = maybe_double(7)
    | v => v + 1
    | 0

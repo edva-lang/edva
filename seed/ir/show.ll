@@ -80,131 +80,132 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.37.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.37 }
 @str.38 = internal unnamed_addr constant [2 x i8] c"&\00"
 @str.38.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.38 }
-@str.39 = internal unnamed_addr constant [3 x i8] c"!!\00"
-@str.39.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.39 }
-@str.40 = internal unnamed_addr constant [4 x i8] c"--!\00"
-@str.40.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.40 }
-@str.41 = internal unnamed_addr constant [3 x i8] c"??\00"
-@str.41.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.41 }
+@str.39 = internal unnamed_addr constant [7 x i8] c"unwrap\00"
+@str.39.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.39 }
+@str.40 = internal unnamed_addr constant [8 x i8] c"expect(\00"
+@str.41 = internal unnamed_addr constant [4 x i8] c"--!\00"
+@str.41.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.41 }
+@str.42 = internal unnamed_addr constant [3 x i8] c"??\00"
+@str.42.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.42 }
 @clo.const.2 = internal constant { ptr, ptr } { ptr @"show::show_unop", ptr null }
-@str.42 = internal unnamed_addr constant [9 x i8] c"Variant(\00"
-@str.43 = internal unnamed_addr constant [9 x i8] c"Positive\00"
-@str.43.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.43 }
-@str.44 = internal unnamed_addr constant [9 x i8] c"Negative\00"
+@str.43 = internal unnamed_addr constant [9 x i8] c"Variant(\00"
+@str.44 = internal unnamed_addr constant [9 x i8] c"Positive\00"
 @str.44.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.44 }
-@str.45 = internal unnamed_addr constant [5 x i8] c"Some\00"
-@str.45.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.45 }
-@str.46 = internal unnamed_addr constant [4 x i8] c"Err\00"
-@str.46.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.46 }
-@str.47 = internal unnamed_addr constant [5 x i8] c"Succ\00"
-@str.47.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.47 }
-@str.48 = internal unnamed_addr constant [5 x i8] c"Noth\00"
+@str.45 = internal unnamed_addr constant [9 x i8] c"Negative\00"
+@str.45.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.45 }
+@str.46 = internal unnamed_addr constant [5 x i8] c"Some\00"
+@str.46.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.46 }
+@str.47 = internal unnamed_addr constant [4 x i8] c"Err\00"
+@str.47.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.47 }
+@str.48 = internal unnamed_addr constant [5 x i8] c"Succ\00"
 @str.48.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.48 }
+@str.49 = internal unnamed_addr constant [5 x i8] c"Noth\00"
+@str.49.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.49 }
 @clo.const.3 = internal constant { ptr, ptr } { ptr @"show::show_tag", ptr null }
-@str.49 = internal unnamed_addr constant [1 x i8] zeroinitializer
-@str.49.struct = internal unnamed_addr constant { i64, ptr } { i64 0, ptr @str.49 }
+@str.50 = internal unnamed_addr constant [1 x i8] zeroinitializer
+@str.50.struct = internal unnamed_addr constant { i64, ptr } { i64 0, ptr @str.50 }
 @clo.const.4 = internal constant { ptr, ptr } { ptr @"show::show_exprs", ptr null }
-@str.50 = internal unnamed_addr constant [11 x i8] c"CycleJump(\00"
-@str.51 = internal unnamed_addr constant [6 x i8] c"break\00"
-@str.51.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.51 }
-@str.52 = internal unnamed_addr constant [5 x i8] c"cont\00"
-@str.52.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.52 }
-@str.53 = internal unnamed_addr constant [8 x i8] c"Return(\00"
-@str.54 = internal unnamed_addr constant [4 x i8] c"Fn(\00"
-@str.55 = internal unnamed_addr constant [6 x i8] c"Copy(\00"
-@str.56 = internal unnamed_addr constant [9 x i8] c"Builder(\00"
-@str.57 = internal unnamed_addr constant [13 x i8] c"ArrayCreate(\00"
-@str.58 = internal unnamed_addr constant [8 x i8] c"Assign(\00"
-@str.59 = internal unnamed_addr constant [4 x i8] c"+= \00"
-@str.59.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.59 }
-@str.60 = internal unnamed_addr constant [3 x i8] c"= \00"
-@str.60.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.60 }
-@str.61 = internal unnamed_addr constant [6 x i8] c"<fwd>\00"
-@str.61.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.61 }
+@str.51 = internal unnamed_addr constant [11 x i8] c"CycleJump(\00"
+@str.52 = internal unnamed_addr constant [6 x i8] c"break\00"
+@str.52.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.52 }
+@str.53 = internal unnamed_addr constant [5 x i8] c"cont\00"
+@str.53.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.53 }
+@str.54 = internal unnamed_addr constant [8 x i8] c"Return(\00"
+@str.55 = internal unnamed_addr constant [4 x i8] c"Fn(\00"
+@str.56 = internal unnamed_addr constant [6 x i8] c"Copy(\00"
+@str.57 = internal unnamed_addr constant [9 x i8] c"Builder(\00"
+@str.58 = internal unnamed_addr constant [13 x i8] c"ArrayCreate(\00"
+@str.59 = internal unnamed_addr constant [8 x i8] c"Assign(\00"
+@str.60 = internal unnamed_addr constant [4 x i8] c"+= \00"
+@str.60.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.60 }
+@str.61 = internal unnamed_addr constant [3 x i8] c"= \00"
+@str.61.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.61 }
+@str.62 = internal unnamed_addr constant [6 x i8] c"<fwd>\00"
+@str.62.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.62 }
 @clo.const.5 = internal constant { ptr, ptr } { ptr @"show::show_fwd_name", ptr null }
 @clo.const.6 = internal constant { ptr, ptr } { ptr @"show::show_fwd_rhs", ptr null }
-@str.62 = internal unnamed_addr constant [8 x i8] c"Choice(\00"
-@str.63 = internal unnamed_addr constant [4 x i8] c" | \00"
-@str.63.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.63 }
-@str.64 = internal unnamed_addr constant [25 x i8] c"array is not initialized\00"
-@str.64.struct = internal unnamed_addr constant { i64, ptr } { i64 24, ptr @str.64 }
-@str.65 = internal unnamed_addr constant [9 x i8] c"show.dva\00"
-@str.65.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.65 }
-@str.66 = internal unnamed_addr constant [26 x i8] c"array index out of bounds\00"
-@str.66.struct = internal unnamed_addr constant { i64, ptr } { i64 25, ptr @str.66 }
+@str.63 = internal unnamed_addr constant [8 x i8] c"Choice(\00"
+@str.64 = internal unnamed_addr constant [4 x i8] c" | \00"
+@str.64.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.64 }
+@str.65 = internal unnamed_addr constant [25 x i8] c"array is not initialized\00"
+@str.65.struct = internal unnamed_addr constant { i64, ptr } { i64 24, ptr @str.65 }
+@str.66 = internal unnamed_addr constant [9 x i8] c"show.dva\00"
+@str.66.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.66 }
+@str.67 = internal unnamed_addr constant [26 x i8] c"array index out of bounds\00"
+@str.67.struct = internal unnamed_addr constant { i64, ptr } { i64 25, ptr @str.67 }
 @clo.const.7 = internal constant { ptr, ptr } { ptr @"show::show_var", ptr null }
-@str.67 = internal unnamed_addr constant [5 x i8] c"pred\00"
-@str.67.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.67 }
+@str.68 = internal unnamed_addr constant [5 x i8] c"pred\00"
+@str.68.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.68 }
 @clo.const.8 = internal constant { ptr, ptr } { ptr @"show::show_single", ptr null }
 @clo.const.9 = internal constant { ptr, ptr } { ptr @"show::show_val", ptr null }
-@str.68 = internal unnamed_addr constant [3 x i8] c"[]\00"
-@str.68.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.68 }
-@str.69 = internal unnamed_addr constant [2 x i8] c":\00"
+@str.69 = internal unnamed_addr constant [3 x i8] c"[]\00"
+@str.69.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.69 }
+@str.70 = internal unnamed_addr constant [2 x i8] c":\00"
 @clo.const.10 = internal constant { ptr, ptr } { ptr @"show::show_branch", ptr null }
 @clo.const.11 = internal constant { ptr, ptr } { ptr @"show::show_branches", ptr null }
-@str.70 = internal unnamed_addr constant [7 x i8] c"Block(\00"
-@str.71 = internal unnamed_addr constant [6 x i8] c"Call(\00"
-@str.72 = internal unnamed_addr constant [7 x i8] c"Range(\00"
-@str.73 = internal unnamed_addr constant [2 x i8] c"_\00"
-@str.73.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.73 }
-@str.74 = internal unnamed_addr constant [4 x i8] c"...\00"
-@str.74.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.74 }
-@str.75 = internal unnamed_addr constant [3 x i8] c"..\00"
-@str.75.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.75 }
-@str.76 = internal unnamed_addr constant [11 x i8] c"CycleExpr(\00"
-@str.76.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.76 }
-@str.77 = internal unnamed_addr constant [7 x i8] c"Cycle(\00"
-@str.77.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.77 }
-@str.78 = internal unnamed_addr constant [13 x i8] c"CycleEscape(\00"
-@str.79 = internal unnamed_addr constant [8 x i8] c"Member(\00"
-@str.80 = internal unnamed_addr constant [3 x i8] c"::\00"
-@str.80.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.80 }
-@str.81 = internal unnamed_addr constant [2 x i8] c".\00"
-@str.81.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.81 }
+@str.71 = internal unnamed_addr constant [7 x i8] c"Block(\00"
+@str.72 = internal unnamed_addr constant [6 x i8] c"Call(\00"
+@str.73 = internal unnamed_addr constant [7 x i8] c"Range(\00"
+@str.74 = internal unnamed_addr constant [2 x i8] c"_\00"
+@str.74.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.74 }
+@str.75 = internal unnamed_addr constant [4 x i8] c"...\00"
+@str.75.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.75 }
+@str.76 = internal unnamed_addr constant [3 x i8] c"..\00"
+@str.76.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.76 }
+@str.77 = internal unnamed_addr constant [11 x i8] c"CycleExpr(\00"
+@str.77.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.77 }
+@str.78 = internal unnamed_addr constant [7 x i8] c"Cycle(\00"
+@str.78.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.78 }
+@str.79 = internal unnamed_addr constant [13 x i8] c"CycleEscape(\00"
+@str.80 = internal unnamed_addr constant [8 x i8] c"Member(\00"
+@str.81 = internal unnamed_addr constant [3 x i8] c"::\00"
+@str.81.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.81 }
+@str.82 = internal unnamed_addr constant [2 x i8] c".\00"
+@str.82.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.82 }
 @clo.const.12 = internal constant { ptr, ptr } { ptr @"show::show_member_suffix", ptr null }
-@str.82 = internal unnamed_addr constant [5 x i8] c"Key(\00"
-@str.83 = internal unnamed_addr constant [2 x i8] c"^\00"
-@str.84 = internal unnamed_addr constant [6 x i8] c"Cast(\00"
-@str.85 = internal unnamed_addr constant [8 x i8] c"Record(\00"
-@str.86 = internal unnamed_addr constant [3 x i8] c", \00"
-@str.86.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.86 }
-@str.87 = internal unnamed_addr constant [2 x i8] c"=\00"
-@str.87.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.87 }
+@str.83 = internal unnamed_addr constant [5 x i8] c"Key(\00"
+@str.84 = internal unnamed_addr constant [2 x i8] c"^\00"
+@str.85 = internal unnamed_addr constant [6 x i8] c"Cast(\00"
+@str.86 = internal unnamed_addr constant [8 x i8] c"Record(\00"
+@str.87 = internal unnamed_addr constant [3 x i8] c", \00"
+@str.87.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.87 }
+@str.88 = internal unnamed_addr constant [2 x i8] c"=\00"
+@str.88.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.88 }
 @clo.const.13 = internal constant { ptr, ptr } { ptr @"show::show_fields", ptr null }
-@str.88 = internal unnamed_addr constant [5 x i8] c"Map(\00"
-@str.89 = internal unnamed_addr constant [3 x i8] c"^=\00"
+@str.89 = internal unnamed_addr constant [5 x i8] c"Map(\00"
+@str.90 = internal unnamed_addr constant [3 x i8] c"^=\00"
 @clo.const.14 = internal constant { ptr, ptr } { ptr @"show::show_map_pairs", ptr null }
-@str.90 = internal unnamed_addr constant [5 x i8] c"Raw(\00"
-@str.91 = internal unnamed_addr constant [6 x i8] c"Size(\00"
-@str.92 = internal unnamed_addr constant [4 x i8] c"Int\00"
-@str.92.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.92 }
-@str.93 = internal unnamed_addr constant [7 x i8] c"String\00"
-@str.93.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.93 }
-@str.94 = internal unnamed_addr constant [6 x i8] c"Float\00"
-@str.94.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.94 }
-@str.95 = internal unnamed_addr constant [4 x i8] c"Ram\00"
-@str.95.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.95 }
-@str.96 = internal unnamed_addr constant [7 x i8] c"Record\00"
-@str.96.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.96 }
-@str.97 = internal unnamed_addr constant [3 x i8] c"vt\00"
-@str.97.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.97 }
+@str.91 = internal unnamed_addr constant [5 x i8] c"Raw(\00"
+@str.92 = internal unnamed_addr constant [6 x i8] c"Size(\00"
+@str.93 = internal unnamed_addr constant [4 x i8] c"Int\00"
+@str.93.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.93 }
+@str.94 = internal unnamed_addr constant [7 x i8] c"String\00"
+@str.94.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.94 }
+@str.95 = internal unnamed_addr constant [6 x i8] c"Float\00"
+@str.95.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.95 }
+@str.96 = internal unnamed_addr constant [4 x i8] c"Ram\00"
+@str.96.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.96 }
+@str.97 = internal unnamed_addr constant [7 x i8] c"Record\00"
+@str.97.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.97 }
+@str.98 = internal unnamed_addr constant [3 x i8] c"vt\00"
+@str.98.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.98 }
 @clo.const.15 = internal constant { ptr, ptr } { ptr @"show::show_vt", ptr null }
-@str.98 = internal unnamed_addr constant [7 x i8] c"Align(\00"
-@str.99 = internal unnamed_addr constant [10 x i8] c"NamedArg(\00"
-@str.100 = internal unnamed_addr constant [8 x i8] c"Import(\00"
-@str.101 = internal unnamed_addr constant [10 x i8] c"ModParam(\00"
-@str.102 = internal unnamed_addr constant [9 x i8] c"Foreign(\00"
-@str.103 = internal unnamed_addr constant [10 x i8] c"TypeDecl(\00"
-@str.104 = internal unnamed_addr constant [4 x i8] c"Fp(\00"
-@str.105 = internal unnamed_addr constant [4 x i8] c"all\00"
-@str.105.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.105 }
-@str.106 = internal unnamed_addr constant [5 x i8] c"none\00"
-@str.106.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.106 }
-@str.107 = internal unnamed_addr constant [9 x i8] c"Swizzle(\00"
-@str.108 = internal unnamed_addr constant [6 x i8] c"Warn(\00"
-@str.108.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.108 }
-@str.109 = internal unnamed_addr constant [7 x i8] c"Error(\00"
-@str.109.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.109 }
+@str.99 = internal unnamed_addr constant [7 x i8] c"Align(\00"
+@str.100 = internal unnamed_addr constant [10 x i8] c"NamedArg(\00"
+@str.101 = internal unnamed_addr constant [8 x i8] c"Import(\00"
+@str.102 = internal unnamed_addr constant [10 x i8] c"ModParam(\00"
+@str.103 = internal unnamed_addr constant [9 x i8] c"Foreign(\00"
+@str.104 = internal unnamed_addr constant [10 x i8] c"TypeDecl(\00"
+@str.105 = internal unnamed_addr constant [4 x i8] c"Fp(\00"
+@str.106 = internal unnamed_addr constant [4 x i8] c"all\00"
+@str.106.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.106 }
+@str.107 = internal unnamed_addr constant [5 x i8] c"none\00"
+@str.107.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.107 }
+@str.108 = internal unnamed_addr constant [9 x i8] c"Swizzle(\00"
+@str.109 = internal unnamed_addr constant [6 x i8] c"Warn(\00"
+@str.109.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.109 }
+@str.110 = internal unnamed_addr constant [7 x i8] c"Error(\00"
+@str.110.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.110 }
 @clo.const.16 = internal constant { ptr, ptr } { ptr @"show::show_expr", ptr null }
 @"var.show::show_expr" = global ptr null
 @"var.show::show_fwd_rhs" = global ptr null
@@ -222,90 +223,90 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.show::show_tag" = global ptr null
 @"var.show::show_op" = global ptr null
 @"var.show::show_unop" = global ptr null
-@str.110 = internal unnamed_addr constant [3 x i8] c"  \00"
+@str.111 = internal unnamed_addr constant [3 x i8] c"  \00"
 @clo.const.17 = internal constant { ptr, ptr } { ptr @"show::show_indent", ptr null }
 @"var.show::show_indent" = global ptr null
 @clo.const.18 = internal constant { ptr, ptr } { ptr @"show::show_names", ptr null }
 @"var.show::show_names" = global ptr null
-@str.111 = internal unnamed_addr constant [2 x i8] c"\0A\00"
-@str.111.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.111 }
-@str.112 = internal unnamed_addr constant [3 x i8] c"+=\00"
-@str.112.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.112 }
-@str.113 = internal unnamed_addr constant [3 x i8] c")\0A\00"
-@str.114 = internal unnamed_addr constant [6 x i8] c" =>)\0A\00"
-@str.115 = internal unnamed_addr constant [7 x i8] c"Block\0A\00"
-@str.116 = internal unnamed_addr constant [8 x i8] c"Choice\0A\00"
-@str.117 = internal unnamed_addr constant [9 x i8] c"  Cond:\0A\00"
-@str.118 = internal unnamed_addr constant [13 x i8] c"  Branches:\0A\00"
-@str.119 = internal unnamed_addr constant [2 x i8] c"[\00"
-@str.120 = internal unnamed_addr constant [3 x i8] c"]\0A\00"
+@str.112 = internal unnamed_addr constant [2 x i8] c"\0A\00"
+@str.112.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.112 }
+@str.113 = internal unnamed_addr constant [3 x i8] c"+=\00"
+@str.113.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.113 }
+@str.114 = internal unnamed_addr constant [3 x i8] c")\0A\00"
+@str.115 = internal unnamed_addr constant [6 x i8] c" =>)\0A\00"
+@str.116 = internal unnamed_addr constant [7 x i8] c"Block\0A\00"
+@str.117 = internal unnamed_addr constant [8 x i8] c"Choice\0A\00"
+@str.118 = internal unnamed_addr constant [9 x i8] c"  Cond:\0A\00"
+@str.119 = internal unnamed_addr constant [13 x i8] c"  Branches:\0A\00"
+@str.120 = internal unnamed_addr constant [2 x i8] c"[\00"
+@str.121 = internal unnamed_addr constant [3 x i8] c"]\0A\00"
 @clo.const.19 = internal constant { ptr, ptr } { ptr @"show::show_tree_branches", ptr null }
 @clo.const.20 = internal constant { ptr, ptr } { ptr @"show::show_tree", ptr null }
 @clo.const.21 = internal constant { ptr, ptr } { ptr @"show::show_tree_exprs", ptr null }
 @"var.show::show_tree_exprs" = global ptr null
 @"var.show::show_tree_branches" = global ptr null
 @"var.show::show_tree" = global ptr null
-@str.121 = internal unnamed_addr constant [3 x i8] c": \00"
-@str.122 = internal unnamed_addr constant [8 x i8] c"LitInt(\00"
-@str.123 = internal unnamed_addr constant [10 x i8] c"LitFloat(\00"
-@str.124 = internal unnamed_addr constant [9 x i8] c"LitStr(\22\00"
-@str.125 = internal unnamed_addr constant [9 x i8] c"LitRune(\00"
-@str.126 = internal unnamed_addr constant [9 x i8] c"LitFlag(\00"
-@str.127 = internal unnamed_addr constant [4 x i8] c"<+>\00"
-@str.127.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.127 }
-@str.128 = internal unnamed_addr constant [4 x i8] c"<->\00"
+@str.122 = internal unnamed_addr constant [3 x i8] c": \00"
+@str.123 = internal unnamed_addr constant [8 x i8] c"LitInt(\00"
+@str.124 = internal unnamed_addr constant [10 x i8] c"LitFloat(\00"
+@str.125 = internal unnamed_addr constant [9 x i8] c"LitStr(\22\00"
+@str.126 = internal unnamed_addr constant [9 x i8] c"LitRune(\00"
+@str.127 = internal unnamed_addr constant [9 x i8] c"LitFlag(\00"
+@str.128 = internal unnamed_addr constant [4 x i8] c"<+>\00"
 @str.128.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.128 }
-@str.129 = internal unnamed_addr constant [8 x i8] c"LitUnit\00"
+@str.129 = internal unnamed_addr constant [4 x i8] c"<->\00"
+@str.129.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.129 }
+@str.130 = internal unnamed_addr constant [8 x i8] c"LitUnit\00"
 @clo.const.22 = internal constant { ptr, ptr } { ptr @"show::show_typed_exprs", ptr null }
 @clo.const.23 = internal constant { ptr, ptr } { ptr @"show::show_typed_fields", ptr null }
-@str.130 = internal unnamed_addr constant [13 x i8] c"MemberWrite(\00"
-@str.131 = internal unnamed_addr constant [4 x i8] c" = \00"
-@str.132 = internal unnamed_addr constant [7 x i8] c"Index(\00"
-@str.133 = internal unnamed_addr constant [2 x i8] c"(\00"
-@str.134 = internal unnamed_addr constant [3 x i8] c"))\00"
-@str.135 = internal unnamed_addr constant [12 x i8] c"IndexWrite(\00"
-@str.136 = internal unnamed_addr constant [5 x i8] c") = \00"
-@str.137 = internal unnamed_addr constant [8 x i8] c"Lambda(\00"
-@str.138 = internal unnamed_addr constant [5 x i8] c" => \00"
-@str.139 = internal unnamed_addr constant [4 x i8] c":= \00"
-@str.139.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.139 }
-@str.140 = internal unnamed_addr constant [5 x i8] c"Ram(\00"
-@str.141 = internal unnamed_addr constant [6 x i8] c"Enum(\00"
-@str.142 = internal unnamed_addr constant [12 x i8] c"BuilderNew(\00"
-@str.143 = internal unnamed_addr constant [10 x i8] c"ArrayNew(\00"
-@str.144 = internal unnamed_addr constant [13 x i8] c"PoisonError(\00"
-@str.145 = internal unnamed_addr constant [4 x i8] c", \22\00"
+@str.131 = internal unnamed_addr constant [13 x i8] c"MemberWrite(\00"
+@str.132 = internal unnamed_addr constant [4 x i8] c" = \00"
+@str.133 = internal unnamed_addr constant [7 x i8] c"Index(\00"
+@str.134 = internal unnamed_addr constant [2 x i8] c"(\00"
+@str.135 = internal unnamed_addr constant [3 x i8] c"))\00"
+@str.136 = internal unnamed_addr constant [12 x i8] c"IndexWrite(\00"
+@str.137 = internal unnamed_addr constant [5 x i8] c") = \00"
+@str.138 = internal unnamed_addr constant [8 x i8] c"Lambda(\00"
+@str.139 = internal unnamed_addr constant [5 x i8] c" => \00"
+@str.140 = internal unnamed_addr constant [4 x i8] c":= \00"
+@str.140.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.140 }
+@str.141 = internal unnamed_addr constant [5 x i8] c"Ram(\00"
+@str.142 = internal unnamed_addr constant [6 x i8] c"Enum(\00"
+@str.143 = internal unnamed_addr constant [12 x i8] c"BuilderNew(\00"
+@str.144 = internal unnamed_addr constant [10 x i8] c"ArrayNew(\00"
+@str.145 = internal unnamed_addr constant [13 x i8] c"PoisonError(\00"
+@str.146 = internal unnamed_addr constant [4 x i8] c", \22\00"
 @clo.const.24 = internal constant { ptr, ptr } { ptr @"show::show_typed_expr", ptr null }
 @clo.const.25 = internal constant { ptr, ptr } { ptr @"show::show_typed_target", ptr null }
 @"var.show::show_typed_target" = global ptr null
 @"var.show::show_typed_exprs" = global ptr null
 @"var.show::show_typed_fields" = global ptr null
 @"var.show::show_typed_expr" = global ptr null
-@str.146 = internal unnamed_addr constant [3 x i8] c" [\00"
-@str.147 = internal unnamed_addr constant [3 x i8] c"B]\00"
-@str.148 = internal unnamed_addr constant [5 x i8] c" =>)\00"
-@str.149 = internal unnamed_addr constant [6 x i8] c"Block\00"
-@str.150 = internal unnamed_addr constant [7 x i8] c"Choice\00"
+@str.147 = internal unnamed_addr constant [3 x i8] c" [\00"
+@str.148 = internal unnamed_addr constant [3 x i8] c"B]\00"
+@str.149 = internal unnamed_addr constant [5 x i8] c" =>)\00"
+@str.150 = internal unnamed_addr constant [6 x i8] c"Block\00"
+@str.151 = internal unnamed_addr constant [7 x i8] c"Choice\00"
 @clo.const.26 = internal constant { ptr, ptr } { ptr @"show::show_typed_tree_branches", ptr null }
-@str.151 = internal unnamed_addr constant [9 x i8] c"Member(.\00"
-@str.152 = internal unnamed_addr constant [14 x i8] c"MemberWrite(.\00"
-@str.153 = internal unnamed_addr constant [6 x i8] c"Index\00"
-@str.154 = internal unnamed_addr constant [11 x i8] c"IndexWrite\00"
-@str.155 = internal unnamed_addr constant [6 x i8] c"Cycle\00"
-@str.156 = internal unnamed_addr constant [5 x i8] c"Copy\00"
-@str.157 = internal unnamed_addr constant [11 x i8] c"BuilderNew\00"
-@str.158 = internal unnamed_addr constant [10 x i8] c"RawMemory\00"
+@str.152 = internal unnamed_addr constant [9 x i8] c"Member(.\00"
+@str.153 = internal unnamed_addr constant [14 x i8] c"MemberWrite(.\00"
+@str.154 = internal unnamed_addr constant [6 x i8] c"Index\00"
+@str.155 = internal unnamed_addr constant [11 x i8] c"IndexWrite\00"
+@str.156 = internal unnamed_addr constant [6 x i8] c"Cycle\00"
+@str.157 = internal unnamed_addr constant [5 x i8] c"Copy\00"
+@str.158 = internal unnamed_addr constant [11 x i8] c"BuilderNew\00"
+@str.159 = internal unnamed_addr constant [10 x i8] c"RawMemory\00"
 @clo.const.27 = internal constant { ptr, ptr } { ptr @"show::show_typed_tree", ptr null }
 @clo.const.28 = internal constant { ptr, ptr } { ptr @"show::show_typed_tree_exprs", ptr null }
 @"var.show::show_typed_tree_exprs" = global ptr null
 @"var.show::show_typed_tree_branches" = global ptr null
 @"var.show::show_typed_tree" = global ptr null
-@str.159 = internal unnamed_addr constant [6 x i8] c" ::= \00"
-@str.160 = internal unnamed_addr constant [6 x i8] c"type \00"
+@str.160 = internal unnamed_addr constant [6 x i8] c" ::= \00"
+@str.161 = internal unnamed_addr constant [6 x i8] c"type \00"
 @clo.const.29 = internal constant { ptr, ptr } { ptr @"show::show_typed_stmt", ptr null }
 @"var.show::show_typed_stmt" = global ptr null
-@str.161 = internal unnamed_addr constant [9 x i8] c"Binding(\00"
-@str.162 = internal unnamed_addr constant [15 x i8] c"GlobalBinding(\00"
+@str.162 = internal unnamed_addr constant [9 x i8] c"Binding(\00"
+@str.163 = internal unnamed_addr constant [15 x i8] c"GlobalBinding(\00"
 @clo.const.30 = internal constant { ptr, ptr } { ptr @"show::show_typed_tree_stmt", ptr null }
 @"var.show::show_typed_tree_stmt" = global ptr null
 @clo.const.31 = internal constant { ptr, ptr } { ptr @"show::dump_typed_program", ptr null }
@@ -1190,10 +1191,10 @@ choice.case372:                                   ; preds = %entry
   %fld.load394 = load ptr, ptr %fld.gep393, align 8
   %a.len.query395 = load i64, ptr %fld.load394, align 8
   %cmptmp = icmp slt i64 0, %a.len.query395
-  %str.34.struct.str.49.struct = select i1 %cmptmp, ptr @str.34.struct, ptr @str.49.struct
-  %cat.seg398 = load i64, ptr %str.34.struct.str.49.struct, align 8
+  %str.34.struct.str.50.struct = select i1 %cmptmp, ptr @str.34.struct, ptr @str.50.struct
+  %cat.seg398 = load i64, ptr %str.34.struct.str.50.struct, align 8
   %cat.seg399 = and i64 %cat.seg398, 281474976710655
-  %cat.seg400 = getelementptr inbounds { i64, ptr }, ptr %str.34.struct.str.49.struct, i32 0, i32 1
+  %cat.seg400 = getelementptr inbounds { i64, ptr }, ptr %str.34.struct.str.50.struct, i32 0, i32 1
   %cat.seg401 = load ptr, ptr %cat.seg400, align 8
   %fld.load404 = load ptr, ptr %fld.gep393, align 8
   %call.res405 = call { i64, ptr } @"show::show_exprs"(ptr %fld.load404)
@@ -1248,7 +1249,7 @@ str_overflow_abort435:                            ; preds = %cat.sum.len428
 concat.tot.len440:                                ; preds = %cat.sum.len434
   %arena.cur443 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf444 = call ptr @dva_arena_alloc(ptr %arena.cur443, i64 %sum438)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf444, ptr align 1 @str.42, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf444, ptr align 1 @str.43, i64 8, i1 false)
   %cat.dst446 = getelementptr i8, ptr %concat.buf444, i64 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst446, ptr align 1 %call.res385.fca.1.extract, i64 %cat.seg389, i1 false)
   %cat.off447 = add i64 8, %cat.seg389
@@ -1275,10 +1276,10 @@ choice.case457:                                   ; preds = %entry
   %pay.gep462 = getelementptr inbounds { i64, ptr }, ptr %0, i32 0, i32 1
   %payload.ptr463 = load ptr, ptr %pay.gep462, align 8
   %fld.load469 = load i1, ptr %payload.ptr463, align 1
-  %str.51.struct.str.52.struct = select i1 %fld.load469, ptr @str.51.struct, ptr @str.52.struct
-  %cat.seg475 = load i64, ptr %str.51.struct.str.52.struct, align 8
+  %str.52.struct.str.53.struct = select i1 %fld.load469, ptr @str.52.struct, ptr @str.53.struct
+  %cat.seg475 = load i64, ptr %str.52.struct.str.53.struct, align 8
   %cat.seg476 = and i64 %cat.seg475, 281474976710655
-  %cat.seg477 = getelementptr inbounds { i64, ptr }, ptr %str.51.struct.str.52.struct, i32 0, i32 1
+  %cat.seg477 = getelementptr inbounds { i64, ptr }, ptr %str.52.struct.str.53.struct, i32 0, i32 1
   %cat.seg478 = load ptr, ptr %cat.seg477, align 8
   %fld.gep481 = getelementptr inbounds { i1, i64 }, ptr %payload.ptr463, i32 0, i32 1
   %fld.load482 = load i64, ptr %fld.gep481, align 8
@@ -1331,7 +1332,7 @@ str_overflow_abort508:                            ; preds = %cat.sum.len501
 concat.tot.len513:                                ; preds = %cat.sum.len507
   %arena.cur516 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf517 = call ptr @dva_arena_alloc(ptr %arena.cur516, i64 %sum511)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf517, ptr align 1 @str.50, i64 10, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf517, ptr align 1 @str.51, i64 10, i1 false)
   %cat.dst519 = getelementptr i8, ptr %concat.buf517, i64 10
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst519, ptr align 1 %cat.seg478, i64 %cat.seg476, i1 false)
   %cat.off520 = add i64 10, %cat.seg476
@@ -1370,7 +1371,7 @@ choice.then542:                                   ; preds = %choice.case530
   br label %choice.exit544
 
 choice.exit544:                                   ; preds = %choice.case530, %choice.then542
-  %choice.res550 = phi ptr [ %ret.ub.alloc, %choice.then542 ], [ @str.49.struct, %choice.case530 ]
+  %choice.res550 = phi ptr [ %ret.ub.alloc, %choice.then542 ], [ @str.50.struct, %choice.case530 ]
   %cat.seg552 = load i64, ptr %choice.res550, align 8
   %cat.seg553 = and i64 %cat.seg552, 281474976710655
   %cat.seg554 = getelementptr inbounds { i64, ptr }, ptr %choice.res550, i32 0, i32 1
@@ -1403,7 +1404,7 @@ str_overflow_abort567:                            ; preds = %cat.sum.len560
 concat.tot.len572:                                ; preds = %cat.sum.len566
   %arena.cur575 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf576 = call ptr @dva_arena_alloc(ptr %arena.cur575, i64 %sum570)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf576, ptr align 1 @str.53, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf576, ptr align 1 @str.54, i64 7, i1 false)
   %cat.dst578 = getelementptr i8, ptr %concat.buf576, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst578, ptr align 1 %cat.seg555, i64 %cat.seg553, i1 false)
   %cat.off579 = add i64 7, %cat.seg553
@@ -1457,7 +1458,7 @@ str_overflow_abort616:                            ; preds = %cat.sum.len609
 concat.tot.len621:                                ; preds = %cat.sum.len615
   %arena.cur624 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf625 = call ptr @dva_arena_alloc(ptr %arena.cur624, i64 %sum619)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf625, ptr align 1 @str.54, i64 3, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf625, ptr align 1 @str.55, i64 3, i1 false)
   %cat.dst627 = getelementptr i8, ptr %concat.buf625, i64 3
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst627, ptr align 1 %call.res598.fca.1.extract, i64 %cat.seg602, i1 false)
   %cat.off628 = add i64 3, %cat.seg602
@@ -1509,7 +1510,7 @@ str_overflow_abort663:                            ; preds = %cat.sum.len656
 concat.tot.len668:                                ; preds = %cat.sum.len662
   %arena.cur671 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf672 = call ptr @dva_arena_alloc(ptr %arena.cur671, i64 %sum666)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf672, ptr align 1 @str.55, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf672, ptr align 1 @str.56, i64 5, i1 false)
   %cat.dst674 = getelementptr i8, ptr %concat.buf672, i64 5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst674, ptr align 1 %call.res645.fca.1.extract, i64 %cat.seg649, i1 false)
   %cat.off675 = add i64 5, %cat.seg649
@@ -1561,7 +1562,7 @@ str_overflow_abort710:                            ; preds = %cat.sum.len703
 concat.tot.len715:                                ; preds = %cat.sum.len709
   %arena.cur718 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf719 = call ptr @dva_arena_alloc(ptr %arena.cur718, i64 %sum713)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf719, ptr align 1 @str.56, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf719, ptr align 1 @str.57, i64 8, i1 false)
   %cat.dst721 = getelementptr i8, ptr %concat.buf719, i64 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst721, ptr align 1 %call.res692.fca.1.extract, i64 %cat.seg696, i1 false)
   %cat.off722 = add i64 8, %cat.seg696
@@ -1612,7 +1613,7 @@ str_overflow_abort753:                            ; preds = %cat.sum.len746
 concat.tot.len758:                                ; preds = %cat.sum.len752
   %arena.cur761 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf762 = call ptr @dva_arena_alloc(ptr %arena.cur761, i64 %sum756)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf762, ptr align 1 @str.57, i64 12, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf762, ptr align 1 @str.58, i64 12, i1 false)
   %cat.dst764 = getelementptr i8, ptr %concat.buf762, i64 12
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst764, ptr align 1 %cat.ibuf740, i64 %cat.ilen741, i1 false)
   %cat.off765 = add i64 12, %cat.ilen741
@@ -1639,10 +1640,10 @@ choice.case771:                                   ; preds = %entry
   %cat.seg788 = load ptr, ptr %cat.seg787, align 8
   %fld.gep791 = getelementptr inbounds { ptr, i1, i1, i1, i1, ptr, ptr, ptr, ptr }, ptr %payload.ptr777, i32 0, i32 2
   %fld.load792 = load i1, ptr %fld.gep791, align 1
-  %str.59.struct.str.60.struct = select i1 %fld.load792, ptr @str.59.struct, ptr @str.60.struct
-  %cat.seg798 = load i64, ptr %str.59.struct.str.60.struct, align 8
+  %str.60.struct.str.61.struct = select i1 %fld.load792, ptr @str.60.struct, ptr @str.61.struct
+  %cat.seg798 = load i64, ptr %str.60.struct.str.61.struct, align 8
   %cat.seg799 = and i64 %cat.seg798, 281474976710655
-  %cat.seg800 = getelementptr inbounds { i64, ptr }, ptr %str.59.struct.str.60.struct, i32 0, i32 1
+  %cat.seg800 = getelementptr inbounds { i64, ptr }, ptr %str.60.struct.str.61.struct, i32 0, i32 1
   %cat.seg801 = load ptr, ptr %cat.seg800, align 8
   %fld.gep803 = getelementptr inbounds { ptr, i1, i1, i1, i1, ptr, ptr, ptr, ptr }, ptr %payload.ptr777, i32 0, i32 5
   %fld.load804 = load ptr, ptr %fld.gep803, align 8
@@ -1708,7 +1709,7 @@ str_overflow_abort841:                            ; preds = %cat.sum.len834
 concat.tot.len846:                                ; preds = %cat.sum.len840
   %arena.cur849 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf850 = call ptr @dva_arena_alloc(ptr %arena.cur849, i64 %sum844)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf850, ptr align 1 @str.58, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf850, ptr align 1 @str.59, i64 7, i1 false)
   %cat.dst852 = getelementptr i8, ptr %concat.buf850, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst852, ptr align 1 %cat.seg788, i64 %cat.seg786, i1 false)
   %cat.off853 = add i64 7, %cat.seg786
@@ -1796,7 +1797,7 @@ str_overflow_abort919:                            ; preds = %cat.sum.len912
 concat.tot.len924:                                ; preds = %cat.sum.len918
   %arena.cur927 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf928 = call ptr @dva_arena_alloc(ptr %arena.cur927, i64 %sum922)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf928, ptr align 1 @str.62, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf928, ptr align 1 @str.63, i64 7, i1 false)
   %cat.dst930 = getelementptr i8, ptr %concat.buf928, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst930, ptr align 1 %call.res878.fca.1.extract, i64 %cat.seg882, i1 false)
   %cat.off931 = add i64 7, %cat.seg882
@@ -1871,7 +1872,7 @@ str_overflow_abort973:                            ; preds = %cat.sum.len966
 concat.tot.len978:                                ; preds = %cat.sum.len972
   %arena.cur981 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf982 = call ptr @dva_arena_alloc(ptr %arena.cur981, i64 %sum976)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf982, ptr align 1 @str.70, i64 6, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf982, ptr align 1 @str.71, i64 6, i1 false)
   %cat.dst984 = getelementptr i8, ptr %concat.buf982, i64 6
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst984, ptr align 1 %call.res955.fca.1.extract, i64 %cat.seg959, i1 false)
   %cat.off985 = add i64 6, %cat.seg959
@@ -1900,7 +1901,7 @@ choice.case991:                                   ; preds = %entry
 str.eq.then:                                      ; preds = %choice.case991
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %fld.load1003, i32 0, i32 1
   %eq.lhs.data1007 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data1007, ptr @str.49, i64 %eq.lhs.len1005)
+  %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data1007, ptr @str.50, i64 %eq.lhs.len1005)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br i1 %eq.cmp.zero, label %choice.then1008, label %choice.else1009
 
@@ -1927,10 +1928,10 @@ choice.exit1010:                                  ; preds = %choice.else1009, %c
   %fld.load1028 = load ptr, ptr %fld.gep1027, align 8
   %a.len.query1030 = load i64, ptr %fld.load1028, align 8
   %cmptmp1031 = icmp slt i64 0, %a.len.query1030
-  %str.34.struct.str.49.struct2205 = select i1 %cmptmp1031, ptr @str.34.struct, ptr @str.49.struct
-  %cat.seg1037 = load i64, ptr %str.34.struct.str.49.struct2205, align 8
+  %str.34.struct.str.50.struct2205 = select i1 %cmptmp1031, ptr @str.34.struct, ptr @str.50.struct
+  %cat.seg1037 = load i64, ptr %str.34.struct.str.50.struct2205, align 8
   %cat.seg1038 = and i64 %cat.seg1037, 281474976710655
-  %cat.seg1039 = getelementptr inbounds { i64, ptr }, ptr %str.34.struct.str.49.struct2205, i32 0, i32 1
+  %cat.seg1039 = getelementptr inbounds { i64, ptr }, ptr %str.34.struct.str.50.struct2205, i32 0, i32 1
   %cat.seg1040 = load ptr, ptr %cat.seg1039, align 8
   %fld.load1043 = load ptr, ptr %fld.gep1027, align 8
   %call.res1044 = call { i64, ptr } @"show::show_exprs"(ptr %fld.load1043)
@@ -1985,7 +1986,7 @@ str_overflow_abort1074:                           ; preds = %cat.sum.len1067
 concat.tot.len1079:                               ; preds = %cat.sum.len1073
   %arena.cur1082 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1083 = call ptr @dva_arena_alloc(ptr %arena.cur1082, i64 %sum1077)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1083, ptr align 1 @str.71, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1083, ptr align 1 @str.72, i64 5, i1 false)
   %cat.dst1085 = getelementptr i8, ptr %concat.buf1083, i64 5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1085, ptr align 1 %cat.seg1025, i64 %cat.seg1023, i1 false)
   %cat.off1086 = add i64 5, %cat.seg1023
@@ -2024,17 +2025,17 @@ choice.then1109:                                  ; preds = %choice.case1096
   br label %choice.exit1111
 
 choice.exit1111:                                  ; preds = %choice.case1096, %choice.then1109
-  %choice.res1118 = phi ptr [ %ret.ub.alloc1117, %choice.then1109 ], [ @str.73.struct, %choice.case1096 ]
+  %choice.res1118 = phi ptr [ %ret.ub.alloc1117, %choice.then1109 ], [ @str.74.struct, %choice.case1096 ]
   %cat.seg1120 = load i64, ptr %choice.res1118, align 8
   %cat.seg1121 = and i64 %cat.seg1120, 281474976710655
   %cat.seg1122 = getelementptr inbounds { i64, ptr }, ptr %choice.res1118, i32 0, i32 1
   %cat.seg1123 = load ptr, ptr %cat.seg1122, align 8
   %fld.gep1125 = getelementptr inbounds { i1, i1, ptr, ptr, i1 }, ptr %payload.ptr1102, i32 0, i32 4
   %fld.load1126 = load i1, ptr %fld.gep1125, align 1
-  %str.74.struct.str.75.struct = select i1 %fld.load1126, ptr @str.74.struct, ptr @str.75.struct
-  %cat.seg1132 = load i64, ptr %str.74.struct.str.75.struct, align 8
+  %str.75.struct.str.76.struct = select i1 %fld.load1126, ptr @str.75.struct, ptr @str.76.struct
+  %cat.seg1132 = load i64, ptr %str.75.struct.str.76.struct, align 8
   %cat.seg1133 = and i64 %cat.seg1132, 281474976710655
-  %cat.seg1134 = getelementptr inbounds { i64, ptr }, ptr %str.74.struct.str.75.struct, i32 0, i32 1
+  %cat.seg1134 = getelementptr inbounds { i64, ptr }, ptr %str.75.struct.str.76.struct, i32 0, i32 1
   %cat.seg1135 = load ptr, ptr %cat.seg1134, align 8
   %fld.gep1137 = getelementptr inbounds { i1, i1, ptr, ptr, i1 }, ptr %payload.ptr1102, i32 0, i32 1
   %fld.load1138 = load i1, ptr %fld.gep1137, align 1
@@ -2050,7 +2051,7 @@ choice.then1139:                                  ; preds = %choice.exit1111
   br label %choice.exit1141
 
 choice.exit1141:                                  ; preds = %choice.exit1111, %choice.then1139
-  %choice.res1148 = phi ptr [ %ret.ub.alloc1147, %choice.then1139 ], [ @str.73.struct, %choice.exit1111 ]
+  %choice.res1148 = phi ptr [ %ret.ub.alloc1147, %choice.then1139 ], [ @str.74.struct, %choice.exit1111 ]
   %cat.seg1150 = load i64, ptr %choice.res1148, align 8
   %cat.seg1151 = and i64 %cat.seg1150, 281474976710655
   %cat.seg1152 = getelementptr inbounds { i64, ptr }, ptr %choice.res1148, i32 0, i32 1
@@ -2103,7 +2104,7 @@ str_overflow_abort1177:                           ; preds = %cat.sum.len1170
 concat.tot.len1182:                               ; preds = %cat.sum.len1176
   %arena.cur1185 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1186 = call ptr @dva_arena_alloc(ptr %arena.cur1185, i64 %sum1180)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1186, ptr align 1 @str.72, i64 6, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1186, ptr align 1 @str.73, i64 6, i1 false)
   %cat.dst1188 = getelementptr i8, ptr %concat.buf1186, i64 6
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1188, ptr align 1 %cat.seg1123, i64 %cat.seg1121, i1 false)
   %cat.off1189 = add i64 6, %cat.seg1121
@@ -2131,10 +2132,10 @@ choice.case1199:                                  ; preds = %entry
   %payload.ptr1205 = load ptr, ptr %pay.gep1204, align 8
   %fld.gep1209 = getelementptr inbounds { ptr, ptr, i1, i1 }, ptr %payload.ptr1205, i32 0, i32 3
   %fld.load1210 = load i1, ptr %fld.gep1209, align 1
-  %str.76.struct.str.77.struct = select i1 %fld.load1210, ptr @str.76.struct, ptr @str.77.struct
-  %cat.seg1216 = load i64, ptr %str.76.struct.str.77.struct, align 8
+  %str.77.struct.str.78.struct = select i1 %fld.load1210, ptr @str.77.struct, ptr @str.78.struct
+  %cat.seg1216 = load i64, ptr %str.77.struct.str.78.struct, align 8
   %cat.seg1217 = and i64 %cat.seg1216, 281474976710655
-  %cat.seg1218 = getelementptr inbounds { i64, ptr }, ptr %str.76.struct.str.77.struct, i32 0, i32 1
+  %cat.seg1218 = getelementptr inbounds { i64, ptr }, ptr %str.77.struct.str.78.struct, i32 0, i32 1
   %cat.seg1219 = load ptr, ptr %cat.seg1218, align 8
   %fld.load1222 = load ptr, ptr %payload.ptr1205, align 8
   %call.res1223 = call { i64, ptr } @"show::show_expr"(ptr %fld.load1222)
@@ -2280,7 +2281,7 @@ str_overflow_abort1341:                           ; preds = %cat.sum.len1334
 concat.tot.len1346:                               ; preds = %cat.sum.len1340
   %arena.cur1349 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1350 = call ptr @dva_arena_alloc(ptr %arena.cur1349, i64 %sum1344)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1350, ptr align 1 @str.78, i64 12, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1350, ptr align 1 @str.79, i64 12, i1 false)
   %cat.dst1352 = getelementptr i8, ptr %concat.buf1350, i64 12
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1352, ptr align 1 %call.res1300.fca.1.extract, i64 %cat.seg1304, i1 false)
   %cat.off1353 = add i64 12, %cat.seg1304
@@ -2353,7 +2354,7 @@ str_overflow_abort1408:                           ; preds = %cat.sum.len1401
 concat.tot.len1413:                               ; preds = %cat.sum.len1407
   %arena.cur1416 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1417 = call ptr @dva_arena_alloc(ptr %arena.cur1416, i64 %sum1411)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1417, ptr align 1 @str.79, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1417, ptr align 1 @str.80, i64 7, i1 false)
   %cat.dst1419 = getelementptr i8, ptr %concat.buf1417, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1419, ptr align 1 %call.res1376.fca.1.extract, i64 %cat.seg1380, i1 false)
   %cat.off1420 = add i64 7, %cat.seg1380
@@ -2435,12 +2436,12 @@ str_overflow_abort1482:                           ; preds = %cat.sum.len1475
 concat.tot.len1487:                               ; preds = %cat.sum.len1481
   %arena.cur1490 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1491 = call ptr @dva_arena_alloc(ptr %arena.cur1490, i64 %sum1485)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1491, ptr align 1 @str.82, i64 4, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1491, ptr align 1 @str.83, i64 4, i1 false)
   %cat.dst1493 = getelementptr i8, ptr %concat.buf1491, i64 4
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1493, ptr align 1 %call.res1441.fca.1.extract, i64 %cat.seg1445, i1 false)
   %cat.off1494 = add i64 4, %cat.seg1445
   %cat.dst1495 = getelementptr i8, ptr %concat.buf1491, i64 %cat.off1494
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1495, ptr align 1 @str.83, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1495, ptr align 1 @str.84, i64 1, i1 false)
   %cat.off1496 = add i64 %cat.off1494, 1
   %cat.dst1497 = getelementptr i8, ptr %concat.buf1491, i64 %cat.off1496
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1497, ptr align 1 %call.res1452.fca.1.extract, i64 %cat.seg1456, i1 false)
@@ -2495,7 +2496,7 @@ str_overflow_abort1535:                           ; preds = %cat.sum.len1528
 concat.tot.len1540:                               ; preds = %cat.sum.len1534
   %arena.cur1543 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1544 = call ptr @dva_arena_alloc(ptr %arena.cur1543, i64 %sum1538)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1544, ptr align 1 @str.84, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1544, ptr align 1 @str.85, i64 5, i1 false)
   %cat.dst1546 = getelementptr i8, ptr %concat.buf1544, i64 5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1546, ptr align 1 %call.res1517.fca.1.extract, i64 %cat.seg1521, i1 false)
   %cat.off1547 = add i64 5, %cat.seg1521
@@ -2548,7 +2549,7 @@ str_overflow_abort1584:                           ; preds = %cat.sum.len1577
 concat.tot.len1589:                               ; preds = %cat.sum.len1583
   %arena.cur1592 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1593 = call ptr @dva_arena_alloc(ptr %arena.cur1592, i64 %sum1587)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1593, ptr align 1 @str.85, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1593, ptr align 1 @str.86, i64 7, i1 false)
   %cat.dst1595 = getelementptr i8, ptr %concat.buf1593, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1595, ptr align 1 %call.res1566.fca.1.extract, i64 %cat.seg1570, i1 false)
   %cat.off1596 = add i64 7, %cat.seg1570
@@ -2629,7 +2630,7 @@ str_overflow_abort1657:                           ; preds = %cat.sum.len1650
 concat.tot.len1662:                               ; preds = %cat.sum.len1656
   %arena.cur1665 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1666 = call ptr @dva_arena_alloc(ptr %arena.cur1665, i64 %sum1660)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1666, ptr align 1 @str.90, i64 4, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1666, ptr align 1 @str.91, i64 4, i1 false)
   %cat.dst1668 = getelementptr i8, ptr %concat.buf1666, i64 4
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1668, ptr align 1 %call.res1639.fca.1.extract, i64 %cat.seg1643, i1 false)
   %cat.off1669 = add i64 4, %cat.seg1643
@@ -2682,7 +2683,7 @@ str_overflow_abort1706:                           ; preds = %cat.sum.len1699
 concat.tot.len1711:                               ; preds = %cat.sum.len1705
   %arena.cur1714 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1715 = call ptr @dva_arena_alloc(ptr %arena.cur1714, i64 %sum1709)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1715, ptr align 1 @str.91, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1715, ptr align 1 @str.92, i64 5, i1 false)
   %cat.dst1717 = getelementptr i8, ptr %concat.buf1715, i64 5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1717, ptr align 1 %call.res1688.fca.1.extract, i64 %cat.seg1692, i1 false)
   %cat.off1718 = add i64 5, %cat.seg1692
@@ -2735,7 +2736,7 @@ str_overflow_abort1755:                           ; preds = %cat.sum.len1748
 concat.tot.len1760:                               ; preds = %cat.sum.len1754
   %arena.cur1763 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1764 = call ptr @dva_arena_alloc(ptr %arena.cur1763, i64 %sum1758)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1764, ptr align 1 @str.98, i64 6, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1764, ptr align 1 @str.99, i64 6, i1 false)
   %cat.dst1766 = getelementptr i8, ptr %concat.buf1764, i64 6
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1766, ptr align 1 %call.res1737.fca.1.extract, i64 %cat.seg1741, i1 false)
   %cat.off1767 = add i64 6, %cat.seg1741
@@ -2814,7 +2815,7 @@ str_overflow_abort1825:                           ; preds = %cat.sum.len1818
 concat.tot.len1830:                               ; preds = %cat.sum.len1824
   %arena.cur1833 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1834 = call ptr @dva_arena_alloc(ptr %arena.cur1833, i64 %sum1828)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1834, ptr align 1 @str.99, i64 9, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1834, ptr align 1 @str.100, i64 9, i1 false)
   %cat.dst1836 = getelementptr i8, ptr %concat.buf1834, i64 9
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1836, ptr align 1 %cat.seg1790, i64 %cat.seg1788, i1 false)
   %cat.off1837 = add i64 9, %cat.seg1788
@@ -2873,7 +2874,7 @@ str_overflow_abort1876:                           ; preds = %cat.sum.len1869
 concat.tot.len1881:                               ; preds = %cat.sum.len1875
   %arena.cur1884 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1885 = call ptr @dva_arena_alloc(ptr %arena.cur1884, i64 %sum1879)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1885, ptr align 1 @str.100, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1885, ptr align 1 @str.101, i64 7, i1 false)
   %cat.dst1887 = getelementptr i8, ptr %concat.buf1885, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1887, ptr align 1 %cat.seg1864, i64 %cat.seg1862, i1 false)
   %cat.off1888 = add i64 7, %cat.seg1862
@@ -2926,7 +2927,7 @@ str_overflow_abort1923:                           ; preds = %cat.sum.len1916
 concat.tot.len1928:                               ; preds = %cat.sum.len1922
   %arena.cur1931 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1932 = call ptr @dva_arena_alloc(ptr %arena.cur1931, i64 %sum1926)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1932, ptr align 1 @str.101, i64 9, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1932, ptr align 1 @str.102, i64 9, i1 false)
   %cat.dst1934 = getelementptr i8, ptr %concat.buf1932, i64 9
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1934, ptr align 1 %cat.seg1911, i64 %cat.seg1909, i1 false)
   %cat.off1935 = add i64 9, %cat.seg1909
@@ -2980,7 +2981,7 @@ str_overflow_abort1970:                           ; preds = %cat.sum.len1963
 concat.tot.len1975:                               ; preds = %cat.sum.len1969
   %arena.cur1978 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1979 = call ptr @dva_arena_alloc(ptr %arena.cur1978, i64 %sum1973)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1979, ptr align 1 @str.102, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1979, ptr align 1 @str.103, i64 8, i1 false)
   %cat.dst1981 = getelementptr i8, ptr %concat.buf1979, i64 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1981, ptr align 1 %cat.seg1958, i64 %cat.seg1956, i1 false)
   %cat.off1982 = add i64 8, %cat.seg1956
@@ -3033,7 +3034,7 @@ str_overflow_abort2017:                           ; preds = %cat.sum.len2010
 concat.tot.len2022:                               ; preds = %cat.sum.len2016
   %arena.cur2025 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf2026 = call ptr @dva_arena_alloc(ptr %arena.cur2025, i64 %sum2020)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2026, ptr align 1 @str.103, i64 9, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2026, ptr align 1 @str.104, i64 9, i1 false)
   %cat.dst2028 = getelementptr i8, ptr %concat.buf2026, i64 9
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2028, ptr align 1 %cat.seg2005, i64 %cat.seg2003, i1 false)
   %cat.off2029 = add i64 9, %cat.seg2003
@@ -3061,13 +3062,13 @@ choice.case2035:                                  ; preds = %entry
 str.eq.then2055:                                  ; preds = %choice.case2035
   %eq.lhs.data2058 = getelementptr inbounds { i64, ptr }, ptr %payload.ptr2041, i32 0, i32 1
   %eq.lhs.data2059 = load ptr, ptr %eq.lhs.data2058, align 8
-  %eq.memcmp2061 = call i32 @memcmp(ptr %eq.lhs.data2059, ptr @str.105, i64 %eq.lhs.len2051)
+  %eq.memcmp2061 = call i32 @memcmp(ptr %eq.lhs.data2059, ptr @str.106, i64 %eq.lhs.len2051)
   %eq.cmp.zero2062 = icmp eq i32 %eq.memcmp2061, 0
   br label %str.eq.merge2057
 
 str.eq.merge2057:                                 ; preds = %choice.case2035, %str.eq.then2055
   %str.eq.result2063 = phi i1 [ %eq.cmp.zero2062, %str.eq.then2055 ], [ false, %choice.case2035 ]
-  %choice.res2064 = select i1 %str.eq.result2063, ptr @str.105.struct, ptr @str.106.struct
+  %choice.res2064 = select i1 %str.eq.result2063, ptr @str.106.struct, ptr @str.107.struct
   %cat.seg2066 = load i64, ptr %choice.res2064, align 8
   %cat.seg2067 = and i64 %cat.seg2066, 281474976710655
   %cat.seg2068 = getelementptr inbounds { i64, ptr }, ptr %choice.res2064, i32 0, i32 1
@@ -3100,7 +3101,7 @@ str_overflow_abort2081:                           ; preds = %cat.sum.len2074
 concat.tot.len2086:                               ; preds = %cat.sum.len2080
   %arena.cur2089 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf2090 = call ptr @dva_arena_alloc(ptr %arena.cur2089, i64 %sum2084)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2090, ptr align 1 @str.104, i64 3, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2090, ptr align 1 @str.105, i64 3, i1 false)
   %cat.dst2092 = getelementptr i8, ptr %concat.buf2090, i64 3
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2092, ptr align 1 %cat.seg2069, i64 %cat.seg2067, i1 false)
   %cat.off2093 = add i64 3, %cat.seg2067
@@ -3152,7 +3153,7 @@ str_overflow_abort2126:                           ; preds = %cat.sum.len2119
 concat.tot.len2131:                               ; preds = %cat.sum.len2125
   %arena.cur2134 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf2135 = call ptr @dva_arena_alloc(ptr %arena.cur2134, i64 %sum2129)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2135, ptr align 1 @str.107, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2135, ptr align 1 @str.108, i64 8, i1 false)
   %cat.dst2137 = getelementptr i8, ptr %concat.buf2135, i64 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2137, ptr align 1 %cat.seg2114, i64 %cat.seg2112, i1 false)
   %cat.off2138 = add i64 8, %cat.seg2112
@@ -3173,10 +3174,10 @@ choice.case2144:                                  ; preds = %entry
   %pay.gep2149 = getelementptr inbounds { i64, ptr }, ptr %0, i32 0, i32 1
   %payload.ptr2150 = load ptr, ptr %pay.gep2149, align 8
   %fld.load2154 = load i1, ptr %payload.ptr2150, align 1
-  %str.108.struct.str.109.struct = select i1 %fld.load2154, ptr @str.108.struct, ptr @str.109.struct
-  %cat.seg2160 = load i64, ptr %str.108.struct.str.109.struct, align 8
+  %str.109.struct.str.110.struct = select i1 %fld.load2154, ptr @str.109.struct, ptr @str.110.struct
+  %cat.seg2160 = load i64, ptr %str.109.struct.str.110.struct, align 8
   %cat.seg2161 = and i64 %cat.seg2160, 281474976710655
-  %cat.seg2162 = getelementptr inbounds { i64, ptr }, ptr %str.108.struct.str.109.struct, i32 0, i32 1
+  %cat.seg2162 = getelementptr inbounds { i64, ptr }, ptr %str.109.struct.str.110.struct, i32 0, i32 1
   %cat.seg2163 = load ptr, ptr %cat.seg2162, align 8
   %fld.gep2165 = getelementptr inbounds { i1, ptr, i64, i64 }, ptr %payload.ptr2150, i32 0, i32 1
   %fld.load2166 = load ptr, ptr %fld.gep2165, align 8
@@ -3413,23 +3414,29 @@ choice.next117:                                   ; preds = %entry
 
 define { i64, ptr } @"show::show_unop"(ptr %0) #3 {
 entry:
+  %concat.str = alloca { i64, ptr }, align 8
   %tag.id = load i64, ptr %0, align 8
-  switch i64 %tag.id, label %choice.next37 [
+  switch i64 %tag.id, label %choice.next63 [
     i64 0, label %choice.exit
     i64 1, label %choice.case1
     i64 2, label %choice.case6
     i64 3, label %choice.case11
     i64 4, label %choice.case16
     i64 5, label %choice.case21
-    i64 6, label %choice.case26
-    i64 7, label %choice.case31
-    i64 8, label %choice.case36
+    i64 9, label %choice.case26
+    i64 6, label %choice.case52
+    i64 7, label %choice.case57
+    i64 8, label %choice.case62
   ]
 
-choice.exit:                                      ; preds = %entry, %choice.next37, %choice.case36, %choice.case31, %choice.case26, %choice.case21, %choice.case16, %choice.case11, %choice.case6, %choice.case1
-  %choice.res = phi ptr [ @str.37.struct, %choice.case1 ], [ @str.33.struct, %choice.case6 ], [ @str.38.struct, %choice.case11 ], [ @str.8.struct, %choice.case16 ], [ @str.39.struct, %choice.case21 ], [ @str.40.struct, %choice.case26 ], [ @str.41.struct, %choice.case31 ], [ @str.9.struct, %choice.case36 ], [ @str.33.struct, %choice.next37 ], [ @str.36.struct, %entry ]
-  %ret.pack = load { i64, ptr }, ptr %choice.res, align 8
-  ret { i64, ptr } %ret.pack
+choice.exit:                                      ; preds = %entry, %choice.next63, %choice.case62, %choice.case57, %choice.case52, %concat.tot.len47, %choice.case21, %choice.case16, %choice.case11, %choice.case6, %choice.case1
+  %choice.res = phi ptr [ @str.37.struct, %choice.case1 ], [ @str.33.struct, %choice.case6 ], [ @str.38.struct, %choice.case11 ], [ @str.8.struct, %choice.case16 ], [ @str.39.struct, %choice.case21 ], [ %concat.str, %concat.tot.len47 ], [ @str.41.struct, %choice.case52 ], [ @str.42.struct, %choice.case57 ], [ @str.9.struct, %choice.case62 ], [ @str.33.struct, %choice.next63 ], [ @str.36.struct, %entry ]
+  %ret.pack.fca.0.load = load i64, ptr %choice.res, align 8
+  %ret.pack.fca.0.insert = insertvalue { i64, ptr } poison, i64 %ret.pack.fca.0.load, 0
+  %ret.pack.fca.1.gep = getelementptr inbounds { i64, ptr }, ptr %choice.res, i32 0, i32 1
+  %ret.pack.fca.1.load = load ptr, ptr %ret.pack.fca.1.gep, align 8
+  %ret.pack.fca.1.insert = insertvalue { i64, ptr } %ret.pack.fca.0.insert, ptr %ret.pack.fca.1.load, 1
+  ret { i64, ptr } %ret.pack.fca.1.insert
 
 choice.case1:                                     ; preds = %entry
   br label %choice.exit
@@ -3447,15 +3454,67 @@ choice.case21:                                    ; preds = %entry
   br label %choice.exit
 
 choice.case26:                                    ; preds = %entry
+  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %0, i32 0, i32 1
+  %payload.ptr = load ptr, ptr %pay.gep, align 8
+  %cat.seg33 = load i64, ptr %payload.ptr, align 8
+  %cat.seg34 = and i64 %cat.seg33, 281474976710655
+  %cat.seg35 = getelementptr inbounds { i64, ptr }, ptr %payload.ptr, i32 0, i32 1
+  %cat.seg36 = load ptr, ptr %cat.seg35, align 8
+  %cat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 7, i64 %cat.seg34)
+  %sum = extractvalue { i64, i1 } %cat.sum.len, 0
+  %ovf = extractvalue { i64, i1 } %cat.sum.len, 1
+  br i1 %ovf, label %str_overflow_abort, label %cat.sum.len38
+
+cat.sum.len38:                                    ; preds = %choice.case26
+  %cat.sum.len39 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum, i64 1)
+  %sum40 = extractvalue { i64, i1 } %cat.sum.len39, 0
+  %ovf41 = extractvalue { i64, i1 } %cat.sum.len39, 1
+  br i1 %ovf41, label %str_overflow_abort43, label %cat.sum.len42
+
+str_overflow_abort:                               ; preds = %choice.case26
+  call void @dva_abort_str_overflow_msg()
+  unreachable
+
+cat.sum.len42:                                    ; preds = %cat.sum.len38
+  %concat.tot.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum40, i64 1)
+  %sum45 = extractvalue { i64, i1 } %concat.tot.len, 0
+  %ovf46 = extractvalue { i64, i1 } %concat.tot.len, 1
+  br i1 %ovf46, label %str_overflow_abort48, label %concat.tot.len47
+
+str_overflow_abort43:                             ; preds = %cat.sum.len38
+  call void @dva_abort_str_overflow_msg()
+  unreachable
+
+concat.tot.len47:                                 ; preds = %cat.sum.len42
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
+  %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur, i64 %sum45)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 @str.40, i64 7, i1 false)
+  %cat.dst50 = getelementptr i8, ptr %concat.buf, i64 7
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst50, ptr align 1 %cat.seg36, i64 %cat.seg34, i1 false)
+  %cat.off = add i64 7, %cat.seg34
+  %cat.dst51 = getelementptr i8, ptr %concat.buf, i64 %cat.off
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst51, ptr align 1 @str.1, i64 1, i1 false)
+  %concat.nul = getelementptr i8, ptr %concat.buf, i64 %sum40
+  store i8 0, ptr %concat.nul, align 1
+  store i64 %sum40, ptr %concat.str, align 8
+  %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
+  store ptr %concat.buf, ptr %str.build.data.gep, align 8
   br label %choice.exit
 
-choice.case31:                                    ; preds = %entry
+str_overflow_abort48:                             ; preds = %cat.sum.len42
+  call void @dva_abort_str_overflow_msg()
+  unreachable
+
+choice.case52:                                    ; preds = %entry
   br label %choice.exit
 
-choice.case36:                                    ; preds = %entry
+choice.case57:                                    ; preds = %entry
   br label %choice.exit
 
-choice.next37:                                    ; preds = %entry
+choice.case62:                                    ; preds = %entry
+  br label %choice.exit
+
+choice.next63:                                    ; preds = %entry
   br label %choice.exit
 }
 
@@ -3472,7 +3531,7 @@ entry:
   ]
 
 choice.exit:                                      ; preds = %entry, %choice.next22, %choice.case21, %choice.case16, %choice.case11, %choice.case6, %choice.case1
-  %choice.res = phi ptr [ @str.44.struct, %choice.case1 ], [ @str.45.struct, %choice.case6 ], [ @str.46.struct, %choice.case11 ], [ @str.47.struct, %choice.case16 ], [ @str.48.struct, %choice.case21 ], [ @str.33.struct, %choice.next22 ], [ @str.43.struct, %entry ]
+  %choice.res = phi ptr [ @str.45.struct, %choice.case1 ], [ @str.46.struct, %choice.case6 ], [ @str.47.struct, %choice.case11 ], [ @str.48.struct, %choice.case16 ], [ @str.49.struct, %choice.case21 ], [ @str.33.struct, %choice.next22 ], [ @str.44.struct, %entry ]
   %ret.pack = load { i64, ptr }, ptr %choice.res, align 8
   ret { i64, ptr } %ret.pack
 
@@ -3535,10 +3594,10 @@ loop.body.171:                                    ; preds = %loop.header.171
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
   %cmptmp = icmp sgt i64 %loop.idx.171.0, 0
-  %str.34.struct.str.49.struct = select i1 %cmptmp, ptr @str.34.struct, ptr @str.49.struct
-  %app.str.len8 = load i64, ptr %str.34.struct.str.49.struct, align 8
+  %str.34.struct.str.50.struct = select i1 %cmptmp, ptr @str.34.struct, ptr @str.50.struct
+  %app.str.len8 = load i64, ptr %str.34.struct.str.50.struct, align 8
   %app.str.len9 = and i64 %app.str.len8, 281474976710655
-  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.34.struct.str.49.struct, i32 0, i32 1
+  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.34.struct.str.50.struct, i32 0, i32 1
   %app.str.data10 = load ptr, ptr %app.str.data, align 8
   %b.app.new.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 %app.str.len9)
   %sum12 = extractvalue { i64, i1 } %b.app.new.len, 0
@@ -3689,7 +3748,7 @@ choice.then:                                      ; preds = %entry
   %s.read.data = getelementptr inbounds { i64, ptr }, ptr %0, i32 0, i32 1
   %s.read.data6 = load ptr, ptr %s.read.data, align 8
   %rel.end = add i64 %str.len.query2, 5
-  %eq.memcmp = call i32 @memcmp(ptr %s.read.data6, ptr @str.61, i64 5)
+  %eq.memcmp = call i32 @memcmp(ptr %s.read.data6, ptr @str.62, i64 5)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br i1 %eq.cmp.zero, label %choice.exit, label %choice.else10
 
@@ -3703,7 +3762,7 @@ choice.else:                                      ; preds = %entry
   br label %choice.exit
 
 choice.exit:                                      ; preds = %choice.else10, %choice.then, %choice.else
-  %choice.res16 = phi ptr [ %ret.ub.salloc15, %choice.else ], [ %ret.ub.salloc, %choice.else10 ], [ @str.61.struct, %choice.then ]
+  %choice.res16 = phi ptr [ %ret.ub.salloc15, %choice.else ], [ %ret.ub.salloc, %choice.else10 ], [ @str.62.struct, %choice.then ]
   %ret.pack.fca.0.load = load i64, ptr %choice.res16, align 8
   %ret.pack.fca.0.insert = insertvalue { i64, ptr } poison, i64 %ret.pack.fca.0.load, 0
   %ret.pack.fca.1.gep = getelementptr inbounds { i64, ptr }, ptr %choice.res16, i32 0, i32 1
@@ -3763,10 +3822,10 @@ loop.body.173:                                    ; preds = %loop.header.173
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
   %cmptmp = icmp sgt i64 %loop.idx.173.0, 0
-  %str.63.struct.str.49.struct = select i1 %cmptmp, ptr @str.63.struct, ptr @str.49.struct
-  %app.str.len8 = load i64, ptr %str.63.struct.str.49.struct, align 8
+  %str.64.struct.str.50.struct = select i1 %cmptmp, ptr @str.64.struct, ptr @str.50.struct
+  %app.str.len8 = load i64, ptr %str.64.struct.str.50.struct, align 8
   %app.str.len9 = and i64 %app.str.len8, 281474976710655
-  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.63.struct.str.49.struct, i32 0, i32 1
+  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.64.struct.str.50.struct, i32 0, i32 1
   %app.str.data10 = load ptr, ptr %app.str.data, align 8
   %b.app.new.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 %app.str.len9)
   %sum12 = extractvalue { i64, i1 } %b.app.new.len, 0
@@ -3885,7 +3944,7 @@ entry:
   ]
 
 choice.exit:                                      ; preds = %entry, %choice.next16, %choice.case15, %choice.case7, %choice.case
-  %choice.res = phi ptr [ %ret.ub.salloc, %choice.case ], [ %ret.ub.salloc14, %choice.case7 ], [ @str.68.struct, %choice.case15 ], [ @str.68.struct, %choice.next16 ], [ @str.67.struct, %entry ]
+  %choice.res = phi ptr [ %ret.ub.salloc, %choice.case ], [ %ret.ub.salloc14, %choice.case7 ], [ @str.69.struct, %choice.case15 ], [ @str.69.struct, %choice.next16 ], [ @str.68.struct, %entry ]
   %cat.seg21 = load i64, ptr %choice.res, align 8
   %cat.seg22 = and i64 %cat.seg21, 281474976710655
   %cat.seg23 = getelementptr inbounds { i64, ptr }, ptr %choice.res, i32 0, i32 1
@@ -3950,7 +4009,7 @@ concat.tot.len44:                                 ; preds = %cat.sum.len39
   %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur, i64 %sum42)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 %cat.seg24, i64 %cat.seg22, i1 false)
   %cat.dst47 = getelementptr i8, ptr %concat.buf, i64 %cat.seg22
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst47, ptr align 1 @str.69, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst47, ptr align 1 @str.70, i64 1, i1 false)
   %cat.off48 = add i64 %cat.seg22, 1
   %cat.dst49 = getelementptr i8, ptr %concat.buf, i64 %cat.off48
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst49, ptr align 1 %call.res28.fca.1.extract, i64 %cat.seg32, i1 false)
@@ -3988,9 +4047,9 @@ a.rd.err.null:                                    ; preds = %entry
   %err.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 56)
   store i64 4011, ptr %err.alloc, align 8
   %err.msg.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 1
-  store ptr @str.64.struct, ptr %err.msg.gep, align 8
+  store ptr @str.65.struct, ptr %err.msg.gep, align 8
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
-  store ptr @str.65.struct, ptr %err.file.gep, align 8
+  store ptr @str.66.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
   store i64 0, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
@@ -4007,9 +4066,9 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.alloc4 = call ptr @dva_arena_alloc(ptr %arena.cur3, i64 56)
   store i64 4011, ptr %err.alloc4, align 8
   %err.msg.gep6 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc4, i32 0, i32 1
-  store ptr @str.66.struct, ptr %err.msg.gep6, align 8
+  store ptr @str.67.struct, ptr %err.msg.gep6, align 8
   %err.file.gep7 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc4, i32 0, i32 2
-  store ptr @str.65.struct, ptr %err.file.gep7, align 8
+  store ptr @str.66.struct, ptr %err.file.gep7, align 8
   %err.line.gep8 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc4, i32 0, i32 3
   store i64 0, ptr %err.line.gep8, align 8
   %err.col.gep9 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc4, i32 0, i32 4
@@ -4027,7 +4086,7 @@ a.rd.done:                                        ; preds = %a.rd.err.oob, %a.rd
   %ram.tag = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag, 0
   %ram.pay = insertvalue { i1, i64 } %ram.tag, i64 %a.rd.pay, 1
   %pay.ptr = inttoptr i64 %a.rd.pay to ptr
-  %choice.res = select i1 %a.rd.tag, ptr %pay.ptr, ptr @str.49.struct
+  %choice.res = select i1 %a.rd.tag, ptr %pay.ptr, ptr @str.50.struct
   %ret.pack = load { i64, ptr }, ptr %choice.res, align 8
   ret { i64, ptr } %ret.pack
 }
@@ -4099,9 +4158,9 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.alloc7 = call ptr @dva_arena_alloc(ptr %arena.cur6, i64 56)
   store i64 4011, ptr %err.alloc7, align 8
   %err.msg.gep9 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc7, i32 0, i32 1
-  store ptr @str.66.struct, ptr %err.msg.gep9, align 8
+  store ptr @str.67.struct, ptr %err.msg.gep9, align 8
   %err.file.gep10 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc7, i32 0, i32 2
-  store ptr @str.65.struct, ptr %err.file.gep10, align 8
+  store ptr @str.66.struct, ptr %err.file.gep10, align 8
   %err.line.gep11 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc7, i32 0, i32 3
   store i64 153, ptr %err.line.gep11, align 8
   %err.col.gep12 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc7, i32 0, i32 4
@@ -4181,19 +4240,19 @@ choice.next:                                      ; preds = %entry
 str.eq.then:                                      ; preds = %choice.case
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %payload.ptr, i32 0, i32 1
   %eq.lhs.data5 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data5, ptr @str.49, i64 %eq.lhs.len3)
+  %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data5, ptr @str.50, i64 %eq.lhs.len3)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br i1 %eq.cmp.zero, label %choice.then, label %choice.else
 
 choice.then:                                      ; preds = %str.eq.then
   %fld.gep8 = getelementptr inbounds { ptr, ptr, i1, ptr, i64, i64 }, ptr %0, i32 0, i32 2
   %fld.load9 = load i1, ptr %fld.gep8, align 1
-  %str.80.struct.str.81.struct = select i1 %fld.load9, ptr @str.80.struct, ptr @str.81.struct
+  %str.81.struct.str.82.struct = select i1 %fld.load9, ptr @str.81.struct, ptr @str.82.struct
   %fld.gep14 = getelementptr inbounds { ptr, ptr, i1, ptr, i64, i64 }, ptr %0, i32 0, i32 1
   %fld.load15 = load ptr, ptr %fld.gep14, align 8
-  %concat.lhs16 = load i64, ptr %str.80.struct.str.81.struct, align 8
+  %concat.lhs16 = load i64, ptr %str.81.struct.str.82.struct, align 8
   %concat.lhs17 = and i64 %concat.lhs16, 281474976710655
-  %concat.lhs18 = getelementptr inbounds { i64, ptr }, ptr %str.80.struct.str.81.struct, i32 0, i32 1
+  %concat.lhs18 = getelementptr inbounds { i64, ptr }, ptr %str.81.struct.str.82.struct, i32 0, i32 1
   %concat.lhs19 = load ptr, ptr %concat.lhs18, align 8
   %concat.rhs20 = load i64, ptr %fld.load15, align 8
   %concat.rhs21 = and i64 %concat.rhs20, 281474976710655
@@ -4255,7 +4314,7 @@ str_overflow_abort45:                             ; preds = %choice.else
 concat.tot.len50:                                 ; preds = %concat.sum.len44
   %arena.cur53 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf54 = call ptr @dva_arena_alloc(ptr %arena.cur53, i64 %sum48)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf54, ptr align 1 @str.81, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf54, ptr align 1 @str.82, i64 1, i1 false)
   %concat.mid55 = getelementptr i8, ptr %concat.buf54, i64 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid55, ptr align 1 %call.res.fca.1.extract, i64 %concat.rhs38, i1 false)
   %concat.nul56 = getelementptr i8, ptr %concat.buf54, i64 %sum42
@@ -4282,7 +4341,7 @@ str_overflow_abort78:                             ; preds = %choice.next
 concat.tot.len83:                                 ; preds = %concat.sum.len77
   %arena.cur86 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf87 = call ptr @dva_arena_alloc(ptr %arena.cur86, i64 %sum81)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf87, ptr align 1 @str.81, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf87, ptr align 1 @str.82, i64 1, i1 false)
   %concat.mid88 = getelementptr i8, ptr %concat.buf87, i64 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid88, ptr align 1 %call.res64.fca.1.extract, i64 %concat.rhs71, i1 false)
   %concat.nul89 = getelementptr i8, ptr %concat.buf87, i64 %sum75
@@ -4337,10 +4396,10 @@ loop.body.177:                                    ; preds = %loop.header.177
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
   %cmptmp = icmp sgt i64 %loop.idx.177.0, 0
-  %str.86.struct.str.49.struct = select i1 %cmptmp, ptr @str.86.struct, ptr @str.49.struct
-  %app.str.len8 = load i64, ptr %str.86.struct.str.49.struct, align 8
+  %str.87.struct.str.50.struct = select i1 %cmptmp, ptr @str.87.struct, ptr @str.50.struct
+  %app.str.len8 = load i64, ptr %str.87.struct.str.50.struct, align 8
   %app.str.len9 = and i64 %app.str.len8, 281474976710655
-  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.86.struct.str.49.struct, i32 0, i32 1
+  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.87.struct.str.50.struct, i32 0, i32 1
   %app.str.data10 = load ptr, ptr %app.str.data, align 8
   %b.app.new.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 %app.str.len9)
   %sum12 = extractvalue { i64, i1 } %b.app.new.len, 0
@@ -4406,7 +4465,7 @@ choice.then30:                                    ; preds = %b.grow_done
   br i1 %ovf43, label %str_overflow_abort45, label %concat.sum.len44
 
 choice.exit32:                                    ; preds = %b.grow_done, %concat.tot.len49
-  %choice.res54 = phi ptr [ %concat.str, %concat.tot.len49 ], [ @str.49.struct, %b.grow_done ]
+  %choice.res54 = phi ptr [ %concat.str, %concat.tot.len49 ], [ @str.50.struct, %b.grow_done ]
   %app.str.len56 = load i64, ptr %choice.res54, align 8
   %app.str.len57 = and i64 %app.str.len56, 281474976710655
   %app.str.data58 = getelementptr inbounds { i64, ptr }, ptr %choice.res54, i32 0, i32 1
@@ -4431,7 +4490,7 @@ concat.tot.len49:                                 ; preds = %concat.sum.len44
   %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur52, i64 %sum47)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 %concat.lhs39, i64 %concat.lhs37, i1 false)
   %concat.mid = getelementptr i8, ptr %concat.buf, i64 %concat.lhs37
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid, ptr align 1 @str.87, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid, ptr align 1 @str.88, i64 1, i1 false)
   %concat.nul = getelementptr i8, ptr %concat.buf, i64 %sum42
   store i8 0, ptr %concat.nul, align 1
   %arena.cur53 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -4545,7 +4604,7 @@ entry:
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %b.buf = call ptr @dva_arena_alloc(ptr %arena.cur, i64 17)
   store i8 0, ptr %b.buf, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %b.buf, ptr align 1 @str.88, i64 4, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %b.buf, ptr align 1 @str.89, i64 4, i1 false)
   %b.app.nul = getelementptr i8, ptr %b.buf, i64 4
   store i8 0, ptr %b.app.nul, align 1
   %a.null = icmp eq ptr %0, null
@@ -4639,7 +4698,7 @@ b.grow_done57:                                    ; preds = %b.rec.new.len49, %b
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %b.rec.dst, ptr align 1 %b.str.data79, i64 %b.str.len29, i1 false)
   %b.rec.off = add i64 %builder.new.salloc.sroa.0.0, %b.str.len29
   %b.rec.dst80 = getelementptr i8, ptr %builder.new.salloc.sroa.12.2, i64 %b.rec.off
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %b.rec.dst80, ptr align 1 @str.89, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %b.rec.dst80, ptr align 1 @str.90, i64 2, i1 false)
   %b.rec.off82 = add i64 %b.rec.off, 2
   %b.rec.dst83 = getelementptr i8, ptr %builder.new.salloc.sroa.12.2, i64 %b.rec.off82
   %b.str.data84 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc38, i32 0, i32 1
@@ -4720,7 +4779,7 @@ entry:
   ]
 
 choice.exit:                                      ; preds = %entry, %choice.next22, %choice.case21, %choice.case16, %choice.case11, %choice.case6, %choice.case1
-  %choice.res = phi ptr [ @str.92.struct, %choice.case1 ], [ @str.93.struct, %choice.case6 ], [ @str.94.struct, %choice.case11 ], [ @str.95.struct, %choice.case16 ], [ @str.96.struct, %choice.case21 ], [ @str.97.struct, %choice.next22 ], [ @str.33.struct, %entry ]
+  %choice.res = phi ptr [ @str.93.struct, %choice.case1 ], [ @str.94.struct, %choice.case6 ], [ @str.95.struct, %choice.case11 ], [ @str.96.struct, %choice.case16 ], [ @str.97.struct, %choice.case21 ], [ @str.98.struct, %choice.next22 ], [ @str.33.struct, %entry ]
   %ret.pack = load { i64, ptr }, ptr %choice.res, align 8
   ret { i64, ptr } %ret.pack
 
@@ -4761,7 +4820,7 @@ choice.else:                                      ; preds = %entry
   br i1 %ovf, label %str_overflow_abort, label %concat.sum.len8
 
 choice.exit:                                      ; preds = %entry, %concat.tot.len11
-  %choice.res = phi ptr [ %concat.str, %concat.tot.len11 ], [ @str.49.struct, %entry ]
+  %choice.res = phi ptr [ %concat.str, %concat.tot.len11 ], [ @str.50.struct, %entry ]
   %ret.pack.fca.0.load = load i64, ptr %choice.res, align 8
   %ret.pack.fca.0.insert = insertvalue { i64, ptr } poison, i64 %ret.pack.fca.0.load, 0
   %ret.pack.fca.1.gep = getelementptr inbounds { i64, ptr }, ptr %choice.res, i32 0, i32 1
@@ -4782,7 +4841,7 @@ str_overflow_abort:                               ; preds = %choice.else
 concat.tot.len11:                                 ; preds = %concat.sum.len8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur, i64 %sum9)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 @str.110, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 @str.111, i64 2, i1 false)
   %concat.mid = getelementptr i8, ptr %concat.buf, i64 2
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid, ptr align 1 %call.res.fca.1.extract, i64 %concat.rhs5, i1 false)
   %concat.nul = getelementptr i8, ptr %concat.buf, i64 %sum
@@ -4837,10 +4896,10 @@ loop.body.180:                                    ; preds = %loop.header.180
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
   %cmptmp = icmp sgt i64 %loop.idx.180.0, 0
-  %str.86.struct.str.49.struct = select i1 %cmptmp, ptr @str.86.struct, ptr @str.49.struct
-  %app.str.len8 = load i64, ptr %str.86.struct.str.49.struct, align 8
+  %str.87.struct.str.50.struct = select i1 %cmptmp, ptr @str.87.struct, ptr @str.50.struct
+  %app.str.len8 = load i64, ptr %str.87.struct.str.50.struct, align 8
   %app.str.len9 = and i64 %app.str.len8, 281474976710655
-  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.86.struct.str.49.struct, i32 0, i32 1
+  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.87.struct.str.50.struct, i32 0, i32 1
   %app.str.data10 = load ptr, ptr %app.str.data, align 8
   %b.app.new.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 %app.str.len9)
   %sum12 = extractvalue { i64, i1 } %b.app.new.len, 0
@@ -4981,10 +5040,10 @@ loop.body.181:                                    ; preds = %loop.header.181
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
   %cmptmp = icmp sgt i64 %loop.idx.181.0, 0
-  %str.111.struct.str.49.struct = select i1 %cmptmp, ptr @str.111.struct, ptr @str.49.struct
-  %app.str.len8 = load i64, ptr %str.111.struct.str.49.struct, align 8
+  %str.112.struct.str.50.struct = select i1 %cmptmp, ptr @str.112.struct, ptr @str.50.struct
+  %app.str.len8 = load i64, ptr %str.112.struct.str.50.struct, align 8
   %app.str.len9 = and i64 %app.str.len8, 281474976710655
-  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.111.struct.str.49.struct, i32 0, i32 1
+  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.112.struct.str.50.struct, i32 0, i32 1
   %app.str.data10 = load ptr, ptr %app.str.data, align 8
   %b.app.new.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 %app.str.len9)
   %sum12 = extractvalue { i64, i1 } %b.app.new.len, 0
@@ -5138,16 +5197,16 @@ choice.case:                                      ; preds = %entry
   %payload.ptr = load ptr, ptr %pay.gep, align 8
   %fld.gep = getelementptr inbounds { ptr, i1, i1, i1, i1, ptr, ptr, ptr, ptr }, ptr %payload.ptr, i32 0, i32 2
   %fld.load = load i1, ptr %fld.gep, align 1
-  %str.112.struct.str.87.struct = select i1 %fld.load, ptr @str.112.struct, ptr @str.87.struct
+  %str.113.struct.str.88.struct = select i1 %fld.load, ptr @str.113.struct, ptr @str.88.struct
   %cat.seg6 = and i64 %call.res.fca.0.extract, 281474976710655
   %fld.load11 = load ptr, ptr %payload.ptr, align 8
   %cat.seg13 = load i64, ptr %fld.load11, align 8
   %cat.seg14 = and i64 %cat.seg13, 281474976710655
   %cat.seg15 = getelementptr inbounds { i64, ptr }, ptr %fld.load11, i32 0, i32 1
   %cat.seg16 = load ptr, ptr %cat.seg15, align 8
-  %cat.seg20 = load i64, ptr %str.112.struct.str.87.struct, align 8
+  %cat.seg20 = load i64, ptr %str.113.struct.str.88.struct, align 8
   %cat.seg21 = and i64 %cat.seg20, 281474976710655
-  %cat.seg22 = getelementptr inbounds { i64, ptr }, ptr %str.112.struct.str.87.struct, i32 0, i32 1
+  %cat.seg22 = getelementptr inbounds { i64, ptr }, ptr %str.113.struct.str.88.struct, i32 0, i32 1
   %cat.seg23 = load ptr, ptr %cat.seg22, align 8
   %fld.gep26 = getelementptr inbounds { ptr, i1, i1, i1, i1, ptr, ptr, ptr, ptr }, ptr %payload.ptr, i32 0, i32 5
   %fld.load27 = load ptr, ptr %fld.gep26, align 8
@@ -5226,7 +5285,7 @@ concat.tot.len69:                                 ; preds = %cat.sum.len64
   %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur, i64 %sum67)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 %call.res.fca.1.extract, i64 %cat.seg6, i1 false)
   %cat.dst72 = getelementptr i8, ptr %concat.buf, i64 %cat.seg6
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst72, ptr align 1 @str.58, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst72, ptr align 1 @str.59, i64 7, i1 false)
   %cat.off73 = add i64 %cat.seg6, 7
   %cat.dst74 = getelementptr i8, ptr %concat.buf, i64 %cat.off73
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst74, ptr align 1 %cat.seg16, i64 %cat.seg14, i1 false)
@@ -5238,7 +5297,7 @@ concat.tot.len69:                                 ; preds = %cat.sum.len64
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst78, ptr align 1 %cat.seg23, i64 %cat.seg21, i1 false)
   %cat.off79 = add i64 %cat.off77, %cat.seg21
   %cat.dst80 = getelementptr i8, ptr %concat.buf, i64 %cat.off79
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst80, ptr align 1 @str.113, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst80, ptr align 1 @str.114, i64 2, i1 false)
   %cat.off81 = add i64 %cat.off79, 2
   %cat.dst82 = getelementptr i8, ptr %concat.buf, i64 %cat.off81
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst82, ptr align 1 %call.res29.fca.1.extract, i64 %cat.seg33, i1 false)
@@ -5319,13 +5378,13 @@ concat.tot.len149:                                ; preds = %cat.sum.len143
   %concat.buf153 = call ptr @dva_arena_alloc(ptr %arena.cur152, i64 %sum147)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf153, ptr align 1 %call.res.fca.1.extract, i64 %cat.seg95, i1 false)
   %cat.dst156 = getelementptr i8, ptr %concat.buf153, i64 %cat.seg95
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst156, ptr align 1 @str.54, i64 3, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst156, ptr align 1 @str.55, i64 3, i1 false)
   %cat.off157 = add i64 %cat.seg95, 3
   %cat.dst158 = getelementptr i8, ptr %concat.buf153, i64 %cat.off157
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst158, ptr align 1 %call.res102.fca.1.extract, i64 %cat.seg106, i1 false)
   %cat.off159 = add i64 %cat.off157, %cat.seg106
   %cat.dst160 = getelementptr i8, ptr %concat.buf153, i64 %cat.off159
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst160, ptr align 1 @str.114, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst160, ptr align 1 @str.115, i64 5, i1 false)
   %cat.off161 = add i64 %cat.off159, 5
   %cat.dst162 = getelementptr i8, ptr %concat.buf153, i64 %cat.off161
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst162, ptr align 1 %call.res115.fca.1.extract, i64 %cat.seg119, i1 false)
@@ -5438,13 +5497,13 @@ concat.tot.len258:                                ; preds = %cat.sum.len252
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst267, ptr align 1 %call.res186.fca.1.extract, i64 %cat.seg190, i1 false)
   %cat.off268 = add i64 %cat.off266, %cat.seg190
   %cat.dst269 = getelementptr i8, ptr %concat.buf262, i64 %cat.off268
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst269, ptr align 1 @str.113, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst269, ptr align 1 @str.114, i64 2, i1 false)
   %cat.off270 = add i64 %cat.off268, 2
   %cat.dst271 = getelementptr i8, ptr %concat.buf262, i64 %cat.off270
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst271, ptr align 1 %call.res199.fca.1.extract, i64 %cat.seg203, i1 false)
   %cat.off272 = add i64 %cat.off270, %cat.seg203
   %cat.dst273 = getelementptr i8, ptr %concat.buf262, i64 %cat.off272
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst273, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst273, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off274 = add i64 %cat.off272, 1
   %cat.dst275 = getelementptr i8, ptr %concat.buf262, i64 %cat.off274
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst275, ptr align 1 %call.res212.fca.1.extract, i64 %cat.seg216, i1 false)
@@ -5531,7 +5590,7 @@ concat.tot.len346:                                ; preds = %cat.sum.len340
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst355, ptr align 1 %call.res299.fca.1.extract, i64 %cat.seg303, i1 false)
   %cat.off356 = add i64 %cat.off354, %cat.seg303
   %cat.dst357 = getelementptr i8, ptr %concat.buf350, i64 %cat.off356
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst357, ptr align 1 @str.113, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst357, ptr align 1 @str.114, i64 2, i1 false)
   %cat.off358 = add i64 %cat.off356, 2
   %cat.dst359 = getelementptr i8, ptr %concat.buf350, i64 %cat.off358
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst359, ptr align 1 %call.res312.fca.1.extract, i64 %cat.seg316, i1 false)
@@ -5837,7 +5896,7 @@ choice.case597:                                   ; preds = %entry
 str.eq.then:                                      ; preds = %choice.case597
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %fld.load608, i32 0, i32 1
   %eq.lhs.data612 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data612, ptr @str.49, i64 %eq.lhs.len610)
+  %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data612, ptr @str.50, i64 %eq.lhs.len610)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br i1 %eq.cmp.zero, label %choice.then613, label %choice.else614
 
@@ -5926,7 +5985,7 @@ concat.tot.len667:                                ; preds = %cat.sum.len661
   %concat.buf671 = call ptr @dva_arena_alloc(ptr %arena.cur670, i64 %sum665)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf671, ptr align 1 %call.res.fca.1.extract, i64 %cat.seg635, i1 false)
   %cat.dst674 = getelementptr i8, ptr %concat.buf671, i64 %cat.seg635
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst674, ptr align 1 @str.71, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst674, ptr align 1 @str.72, i64 5, i1 false)
   %cat.off675 = add i64 %cat.seg635, 5
   %cat.dst676 = getelementptr i8, ptr %concat.buf671, i64 %cat.off675
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst676, ptr align 1 %cat.seg644, i64 %cat.seg642, i1 false)
@@ -5989,13 +6048,13 @@ concat.tot.len736:                                ; preds = %cat.sum.len730
   %concat.buf740 = call ptr @dva_arena_alloc(ptr %arena.cur739, i64 %sum734)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf740, ptr align 1 %call.res.fca.1.extract, i64 %cat.seg686, i1 false)
   %cat.dst743 = getelementptr i8, ptr %concat.buf740, i64 %cat.seg686
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst743, ptr align 1 @str.71, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst743, ptr align 1 @str.72, i64 5, i1 false)
   %cat.off744 = add i64 %cat.seg686, 5
   %cat.dst745 = getelementptr i8, ptr %concat.buf740, i64 %cat.off744
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst745, ptr align 1 %cat.seg695, i64 %cat.seg693, i1 false)
   %cat.off746 = add i64 %cat.off744, %cat.seg693
   %cat.dst747 = getelementptr i8, ptr %concat.buf740, i64 %cat.off746
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst747, ptr align 1 @str.113, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst747, ptr align 1 @str.114, i64 2, i1 false)
   %cat.off748 = add i64 %cat.off746, 2
   %cat.dst749 = getelementptr i8, ptr %concat.buf740, i64 %cat.off748
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst749, ptr align 1 %call.res702.fca.1.extract, i64 %cat.seg706, i1 false)
@@ -6066,7 +6125,7 @@ concat.tot.len799:                                ; preds = %cat.sum.len793
   %concat.buf803 = call ptr @dva_arena_alloc(ptr %arena.cur802, i64 %sum797)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf803, ptr align 1 %call.res.fca.1.extract, i64 %cat.seg767, i1 false)
   %cat.dst806 = getelementptr i8, ptr %concat.buf803, i64 %cat.seg767
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst806, ptr align 1 @str.115, i64 6, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst806, ptr align 1 @str.116, i64 6, i1 false)
   %cat.off807 = add i64 %cat.seg767, 6
   %cat.dst808 = getelementptr i8, ptr %concat.buf803, i64 %cat.off807
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst808, ptr align 1 %call.res777.fca.1.extract, i64 %cat.seg781, i1 false)
@@ -6198,25 +6257,25 @@ concat.tot.len919:                                ; preds = %cat.sum.len913
   %concat.buf923 = call ptr @dva_arena_alloc(ptr %arena.cur922, i64 %sum917)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf923, ptr align 1 %call.res.fca.1.extract, i64 %cat.seg825, i1 false)
   %cat.dst926 = getelementptr i8, ptr %concat.buf923, i64 %cat.seg825
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst926, ptr align 1 @str.116, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst926, ptr align 1 @str.117, i64 7, i1 false)
   %cat.off927 = add i64 %cat.seg825, 7
   %cat.dst928 = getelementptr i8, ptr %concat.buf923, i64 %cat.off927
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst928, ptr align 1 %call.res.fca.1.extract, i64 %cat.seg825, i1 false)
   %cat.off929 = add i64 %cat.off927, %cat.seg825
   %cat.dst930 = getelementptr i8, ptr %concat.buf923, i64 %cat.off929
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst930, ptr align 1 @str.117, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst930, ptr align 1 @str.118, i64 8, i1 false)
   %cat.off931 = add i64 %cat.off929, 8
   %cat.dst932 = getelementptr i8, ptr %concat.buf923, i64 %cat.off931
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst932, ptr align 1 %call.res841.fca.1.extract, i64 %cat.seg845, i1 false)
   %cat.off933 = add i64 %cat.off931, %cat.seg845
   %cat.dst934 = getelementptr i8, ptr %concat.buf923, i64 %cat.off933
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst934, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst934, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off935 = add i64 %cat.off933, 1
   %cat.dst936 = getelementptr i8, ptr %concat.buf923, i64 %cat.off935
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst936, ptr align 1 %call.res.fca.1.extract, i64 %cat.seg825, i1 false)
   %cat.off937 = add i64 %cat.off935, %cat.seg825
   %cat.dst938 = getelementptr i8, ptr %concat.buf923, i64 %cat.off937
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst938, ptr align 1 @str.118, i64 12, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst938, ptr align 1 @str.119, i64 12, i1 false)
   %cat.off939 = add i64 %cat.off937, 12
   %cat.dst940 = getelementptr i8, ptr %concat.buf923, i64 %cat.off939
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst940, ptr align 1 %call.res861.fca.1.extract, i64 %cat.seg865, i1 false)
@@ -6318,12 +6377,12 @@ loop.exit.182:                                    ; preds = %loop.header.182
   ret { i64, ptr } %ret.pack.fca.1.insert
 
 choice.exit:                                      ; preds = %loop.body.182, %choice.next26, %choice.case25, %choice.case17, %choice.case
-  %choice.res = phi ptr [ %ret.ub.salloc11, %choice.case ], [ %ret.ub.salloc24, %choice.case17 ], [ @str.68.struct, %choice.case25 ], [ @str.68.struct, %choice.next26 ], [ @str.67.struct, %loop.body.182 ]
+  %choice.res = phi ptr [ %ret.ub.salloc11, %choice.case ], [ %ret.ub.salloc24, %choice.case17 ], [ @str.69.struct, %choice.case25 ], [ @str.69.struct, %choice.next26 ], [ @str.68.struct, %loop.body.182 ]
   %cmptmp = icmp sgt i64 %loop.idx.182.0, 0
-  %str.111.struct.str.49.struct = select i1 %cmptmp, ptr @str.111.struct, ptr @str.49.struct
-  %app.str.len33 = load i64, ptr %str.111.struct.str.49.struct, align 8
+  %str.112.struct.str.50.struct = select i1 %cmptmp, ptr @str.112.struct, ptr @str.50.struct
+  %app.str.len33 = load i64, ptr %str.112.struct.str.50.struct, align 8
   %app.str.len34 = and i64 %app.str.len33, 281474976710655
-  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.111.struct.str.49.struct, i32 0, i32 1
+  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.112.struct.str.50.struct, i32 0, i32 1
   %app.str.data35 = load ptr, ptr %app.str.data, align 8
   %b.app.new.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 %app.str.len34)
   %sum37 = extractvalue { i64, i1 } %b.app.new.len, 0
@@ -6437,13 +6496,13 @@ concat.tot.len85:                                 ; preds = %cat.sum.len80
   %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur88, i64 %sum83)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 %call.res.fca.1.extract, i64 %cat.seg56, i1 false)
   %cat.dst89 = getelementptr i8, ptr %concat.buf, i64 %cat.seg56
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst89, ptr align 1 @str.119, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst89, ptr align 1 @str.120, i64 1, i1 false)
   %cat.off90 = add i64 %cat.seg56, 1
   %cat.dst91 = getelementptr i8, ptr %concat.buf, i64 %cat.off90
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst91, ptr align 1 %cat.seg64, i64 %cat.seg62, i1 false)
   %cat.off92 = add i64 %cat.off90, %cat.seg62
   %cat.dst93 = getelementptr i8, ptr %concat.buf, i64 %cat.off92
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst93, ptr align 1 @str.120, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst93, ptr align 1 @str.121, i64 2, i1 false)
   %concat.nul = getelementptr i8, ptr %concat.buf, i64 %sum78
   store i8 0, ptr %concat.nul, align 1
   %arena.cur94 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -6585,7 +6644,7 @@ str_overflow_abort:                               ; preds = %str_ok
 concat.tot.len11:                                 ; preds = %concat.sum.len8
   %arena.cur14 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur14, i64 %sum9)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 @str.121, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 @str.122, i64 2, i1 false)
   %concat.mid = getelementptr i8, ptr %concat.buf, i64 2
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid, ptr align 1 %concat.rhs7, i64 %concat.rhs5, i1 false)
   %concat.nul = getelementptr i8, ptr %concat.buf, i64 %sum
@@ -6707,7 +6766,7 @@ str_overflow_abort48:                             ; preds = %cat.sum.len41
 concat.tot.len53:                                 ; preds = %cat.sum.len47
   %arena.cur56 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf57 = call ptr @dva_arena_alloc(ptr %arena.cur56, i64 %sum51)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf57, ptr align 1 @str.122, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf57, ptr align 1 @str.123, i64 7, i1 false)
   %cat.dst58 = getelementptr i8, ptr %concat.buf57, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst58, ptr align 1 %cat.ibuf, i64 %cat.ilen, i1 false)
   %cat.off = add i64 7, %cat.ilen
@@ -6817,7 +6876,7 @@ str_overflow_abort125:                            ; preds = %cat.sum.len118
 concat.tot.len130:                                ; preds = %cat.sum.len124
   %arena.cur133 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf134 = call ptr @dva_arena_alloc(ptr %arena.cur133, i64 %sum128)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf134, ptr align 1 @str.123, i64 9, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf134, ptr align 1 @str.124, i64 9, i1 false)
   %cat.dst136 = getelementptr i8, ptr %concat.buf134, i64 9
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst136, ptr align 1 %cat.seg94, i64 %cat.seg85, i1 false)
   %cat.off137 = add i64 9, %cat.seg85
@@ -6914,7 +6973,7 @@ str_overflow_abort201:                            ; preds = %cat.sum.len194
 concat.tot.len206:                                ; preds = %cat.sum.len200
   %arena.cur209 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf210 = call ptr @dva_arena_alloc(ptr %arena.cur209, i64 %sum204)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf210, ptr align 1 @str.124, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf210, ptr align 1 @str.125, i64 8, i1 false)
   %cat.dst212 = getelementptr i8, ptr %concat.buf210, i64 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst212, ptr align 1 %cat.seg170, i64 %cat.seg161, i1 false)
   %cat.off213 = add i64 8, %cat.seg161
@@ -7005,7 +7064,7 @@ str_overflow_abort274:                            ; preds = %cat.sum.len267
 concat.tot.len279:                                ; preds = %cat.sum.len273
   %arena.cur282 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf283 = call ptr @dva_arena_alloc(ptr %arena.cur282, i64 %sum277)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf283, ptr align 1 @str.125, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf283, ptr align 1 @str.126, i64 8, i1 false)
   %cat.dst285 = getelementptr i8, ptr %concat.buf283, i64 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst285, ptr align 1 %cat.ibuf242, i64 %cat.ilen243, i1 false)
   %cat.off286 = add i64 8, %cat.ilen243
@@ -7042,8 +7101,8 @@ pay.int.load306:                                  ; preds = %choice.case298
 
 pay.int.merge308:                                 ; preds = %choice.case298, %pay.int.load306
   %pay.int.phi310 = phi i1 [ %pay.int.val309, %pay.int.load306 ], [ false, %choice.case298 ]
-  %str.127.struct.str.128.struct = select i1 %pay.int.phi310, ptr @str.127.struct, ptr @str.128.struct
-  %cat.seg316 = load i64, ptr %str.127.struct.str.128.struct, align 8
+  %str.128.struct.str.129.struct = select i1 %pay.int.phi310, ptr @str.128.struct, ptr @str.129.struct
+  %cat.seg316 = load i64, ptr %str.128.struct.str.129.struct, align 8
   %cat.seg317 = and i64 %cat.seg316, 281474976710655
   %str.tag318 = lshr i64 %cat.seg316, 48
   %tag.immortal320 = icmp eq i64 %str.tag318, 0
@@ -7053,7 +7112,7 @@ pay.int.merge308:                                 ; preds = %choice.case298, %pa
   br i1 %tag.fast.ok323, label %str_ok319, label %tag.slow_check324
 
 str_ok319:                                        ; preds = %tag.slow_check324, %pay.int.merge308
-  %cat.seg325 = getelementptr inbounds { i64, ptr }, ptr %str.127.struct.str.128.struct, i32 0, i32 1
+  %cat.seg325 = getelementptr inbounds { i64, ptr }, ptr %str.128.struct.str.129.struct, i32 0, i32 1
   %cat.seg326 = load ptr, ptr %cat.seg325, align 8
   %cat.seg330 = load i64, ptr %concat.str, align 8
   %cat.seg331 = and i64 %cat.seg330, 281474976710655
@@ -7112,7 +7171,7 @@ str_overflow_abort357:                            ; preds = %cat.sum.len350
 concat.tot.len362:                                ; preds = %cat.sum.len356
   %arena.cur365 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf366 = call ptr @dva_arena_alloc(ptr %arena.cur365, i64 %sum360)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf366, ptr align 1 @str.126, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf366, ptr align 1 @str.127, i64 8, i1 false)
   %cat.dst368 = getelementptr i8, ptr %concat.buf366, i64 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst368, ptr align 1 %cat.seg326, i64 %cat.seg317, i1 false)
   %cat.off369 = add i64 8, %cat.seg317
@@ -7171,7 +7230,7 @@ str_overflow_abort406:                            ; preds = %str_ok394
 concat.tot.len411:                                ; preds = %concat.sum.len405
   %arena.cur414 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf415 = call ptr @dva_arena_alloc(ptr %arena.cur414, i64 %sum409)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf415, ptr align 1 @str.129, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf415, ptr align 1 @str.130, i64 7, i1 false)
   %concat.mid416 = getelementptr i8, ptr %concat.buf415, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid416, ptr align 1 %concat.rhs401, i64 %concat.rhs392, i1 false)
   %concat.nul417 = getelementptr i8, ptr %concat.buf415, i64 %sum403
@@ -7657,7 +7716,7 @@ tag.slow_check792:                                ; preds = %choice.case772
 str.eq.then:                                      ; preds = %str_ok787
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %fld.load783, i32 0, i32 1
   %eq.lhs.data794 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data794, ptr @str.49, i64 %eq.lhs.len785)
+  %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data794, ptr @str.50, i64 %eq.lhs.len785)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br label %str.eq.merge
 
@@ -7697,8 +7756,8 @@ str_ok815:                                        ; preds = %tag.slow_check820, 
   %fld.load825 = load ptr, ptr %fld.gep824, align 8
   %a.len.query826 = load i64, ptr %fld.load825, align 8
   %cmptmp = icmp slt i64 0, %a.len.query826
-  %str.34.struct.str.49.struct = select i1 %cmptmp, ptr @str.34.struct, ptr @str.49.struct
-  %cat.seg832 = load i64, ptr %str.34.struct.str.49.struct, align 8
+  %str.34.struct.str.50.struct = select i1 %cmptmp, ptr @str.34.struct, ptr @str.50.struct
+  %cat.seg832 = load i64, ptr %str.34.struct.str.50.struct, align 8
   %cat.seg833 = and i64 %cat.seg832, 281474976710655
   %str.tag834 = lshr i64 %cat.seg832, 48
   %tag.immortal836 = icmp eq i64 %str.tag834, 0
@@ -7712,7 +7771,7 @@ tag.slow_check820:                                ; preds = %choice.exit797
   br label %str_ok815
 
 str_ok835:                                        ; preds = %tag.slow_check840, %str_ok815
-  %cat.seg841 = getelementptr inbounds { i64, ptr }, ptr %str.34.struct.str.49.struct, i32 0, i32 1
+  %cat.seg841 = getelementptr inbounds { i64, ptr }, ptr %str.34.struct.str.50.struct, i32 0, i32 1
   %cat.seg842 = load ptr, ptr %cat.seg841, align 8
   %fld.load846 = load ptr, ptr %fld.gep824, align 8
   %call.res847 = call { i64, ptr } @"show::show_typed_exprs"(ptr %0, ptr %fld.load846)
@@ -7812,7 +7871,7 @@ str_overflow_abort904:                            ; preds = %cat.sum.len897
 concat.tot.len909:                                ; preds = %cat.sum.len903
   %arena.cur912 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf913 = call ptr @dva_arena_alloc(ptr %arena.cur912, i64 %sum907)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf913, ptr align 1 @str.71, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf913, ptr align 1 @str.72, i64 5, i1 false)
   %cat.dst915 = getelementptr i8, ptr %concat.buf913, i64 5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst915, ptr align 1 %cat.seg822, i64 %cat.seg813, i1 false)
   %cat.off916 = add i64 5, %cat.seg813
@@ -7936,7 +7995,7 @@ str_overflow_abort991:                            ; preds = %cat.sum.len984
 concat.tot.len996:                                ; preds = %cat.sum.len990
   %arena.cur999 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1000 = call ptr @dva_arena_alloc(ptr %arena.cur999, i64 %sum994)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1000, ptr align 1 @str.85, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1000, ptr align 1 @str.86, i64 7, i1 false)
   %cat.dst1002 = getelementptr i8, ptr %concat.buf1000, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1002, ptr align 1 %cat.seg960, i64 %cat.seg951, i1 false)
   %cat.off1003 = add i64 7, %cat.seg951
@@ -8075,12 +8134,12 @@ str_overflow_abort1101:                           ; preds = %cat.sum.len1094
 concat.tot.len1106:                               ; preds = %cat.sum.len1100
   %arena.cur1109 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1110 = call ptr @dva_arena_alloc(ptr %arena.cur1109, i64 %sum1104)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1110, ptr align 1 @str.79, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1110, ptr align 1 @str.80, i64 7, i1 false)
   %cat.dst1112 = getelementptr i8, ptr %concat.buf1110, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1112, ptr align 1 %cat.seg1042, i64 %cat.seg1033, i1 false)
   %cat.off1113 = add i64 7, %cat.seg1033
   %cat.dst1114 = getelementptr i8, ptr %concat.buf1110, i64 %cat.off1113
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1114, ptr align 1 @str.81, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1114, ptr align 1 @str.82, i64 1, i1 false)
   %cat.off1115 = add i64 %cat.off1113, 1
   %cat.dst1116 = getelementptr i8, ptr %concat.buf1110, i64 %cat.off1115
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1116, ptr align 1 %cat.seg1058, i64 %cat.seg1049, i1 false)
@@ -8261,18 +8320,18 @@ str_overflow_abort1246:                           ; preds = %cat.sum.len1239
 concat.tot.len1251:                               ; preds = %cat.sum.len1245
   %arena.cur1254 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1255 = call ptr @dva_arena_alloc(ptr %arena.cur1254, i64 %sum1249)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1255, ptr align 1 @str.130, i64 12, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1255, ptr align 1 @str.131, i64 12, i1 false)
   %cat.dst1257 = getelementptr i8, ptr %concat.buf1255, i64 12
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1257, ptr align 1 %cat.seg1156, i64 %cat.seg1147, i1 false)
   %cat.off1258 = add i64 12, %cat.seg1147
   %cat.dst1259 = getelementptr i8, ptr %concat.buf1255, i64 %cat.off1258
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1259, ptr align 1 @str.81, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1259, ptr align 1 @str.82, i64 1, i1 false)
   %cat.off1260 = add i64 %cat.off1258, 1
   %cat.dst1261 = getelementptr i8, ptr %concat.buf1255, i64 %cat.off1260
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1261, ptr align 1 %cat.seg1172, i64 %cat.seg1163, i1 false)
   %cat.off1262 = add i64 %cat.off1260, %cat.seg1163
   %cat.dst1263 = getelementptr i8, ptr %concat.buf1255, i64 %cat.off1262
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1263, ptr align 1 @str.131, i64 3, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1263, ptr align 1 @str.132, i64 3, i1 false)
   %cat.off1264 = add i64 %cat.off1262, 3
   %cat.dst1265 = getelementptr i8, ptr %concat.buf1255, i64 %cat.off1264
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1265, ptr align 1 %cat.seg1191, i64 %cat.seg1182, i1 false)
@@ -8415,18 +8474,18 @@ str_overflow_abort1367:                           ; preds = %cat.sum.len1360
 concat.tot.len1372:                               ; preds = %cat.sum.len1366
   %arena.cur1375 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1376 = call ptr @dva_arena_alloc(ptr %arena.cur1375, i64 %sum1370)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1376, ptr align 1 @str.132, i64 6, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1376, ptr align 1 @str.133, i64 6, i1 false)
   %cat.dst1378 = getelementptr i8, ptr %concat.buf1376, i64 6
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1378, ptr align 1 %cat.seg1305, i64 %cat.seg1296, i1 false)
   %cat.off1379 = add i64 6, %cat.seg1296
   %cat.dst1380 = getelementptr i8, ptr %concat.buf1376, i64 %cat.off1379
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1380, ptr align 1 @str.133, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1380, ptr align 1 @str.134, i64 1, i1 false)
   %cat.off1381 = add i64 %cat.off1379, 1
   %cat.dst1382 = getelementptr i8, ptr %concat.buf1376, i64 %cat.off1381
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1382, ptr align 1 %cat.seg1324, i64 %cat.seg1315, i1 false)
   %cat.off1383 = add i64 %cat.off1381, %cat.seg1315
   %cat.dst1384 = getelementptr i8, ptr %concat.buf1376, i64 %cat.off1383
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1384, ptr align 1 @str.134, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1384, ptr align 1 @str.135, i64 2, i1 false)
   %cat.off1385 = add i64 %cat.off1383, 2
   %cat.dst1386 = getelementptr i8, ptr %concat.buf1376, i64 %cat.off1385
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1386, ptr align 1 %cat.seg1338, i64 %cat.seg1329, i1 false)
@@ -8604,18 +8663,18 @@ str_overflow_abort1515:                           ; preds = %cat.sum.len1508
 concat.tot.len1520:                               ; preds = %cat.sum.len1514
   %arena.cur1523 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1524 = call ptr @dva_arena_alloc(ptr %arena.cur1523, i64 %sum1518)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1524, ptr align 1 @str.135, i64 11, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1524, ptr align 1 @str.136, i64 11, i1 false)
   %cat.dst1526 = getelementptr i8, ptr %concat.buf1524, i64 11
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1526, ptr align 1 %cat.seg1422, i64 %cat.seg1413, i1 false)
   %cat.off1527 = add i64 11, %cat.seg1413
   %cat.dst1528 = getelementptr i8, ptr %concat.buf1524, i64 %cat.off1527
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1528, ptr align 1 @str.133, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1528, ptr align 1 @str.134, i64 1, i1 false)
   %cat.off1529 = add i64 %cat.off1527, 1
   %cat.dst1530 = getelementptr i8, ptr %concat.buf1524, i64 %cat.off1529
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1530, ptr align 1 %cat.seg1441, i64 %cat.seg1432, i1 false)
   %cat.off1531 = add i64 %cat.off1529, %cat.seg1432
   %cat.dst1532 = getelementptr i8, ptr %concat.buf1524, i64 %cat.off1531
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1532, ptr align 1 @str.136, i64 4, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1532, ptr align 1 @str.137, i64 4, i1 false)
   %cat.off1533 = add i64 %cat.off1531, 4
   %cat.dst1534 = getelementptr i8, ptr %concat.buf1524, i64 %cat.off1533
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1534, ptr align 1 %cat.seg1460, i64 %cat.seg1451, i1 false)
@@ -8717,7 +8776,7 @@ str_overflow_abort1605:                           ; preds = %cat.sum.len1598
 concat.tot.len1610:                               ; preds = %cat.sum.len1604
   %arena.cur1613 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1614 = call ptr @dva_arena_alloc(ptr %arena.cur1613, i64 %sum1608)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1614, ptr align 1 @str.62, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1614, ptr align 1 @str.63, i64 7, i1 false)
   %cat.dst1616 = getelementptr i8, ptr %concat.buf1614, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1616, ptr align 1 %cat.seg1574, i64 %cat.seg1565, i1 false)
   %cat.off1617 = add i64 7, %cat.seg1565
@@ -8860,12 +8919,12 @@ str_overflow_abort1718:                           ; preds = %cat.sum.len1711
 concat.tot.len1723:                               ; preds = %cat.sum.len1717
   %arena.cur1726 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1727 = call ptr @dva_arena_alloc(ptr %arena.cur1726, i64 %sum1721)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1727, ptr align 1 @str.137, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1727, ptr align 1 @str.138, i64 7, i1 false)
   %cat.dst1729 = getelementptr i8, ptr %concat.buf1727, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1729, ptr align 1 %cat.seg1656, i64 %cat.seg1647, i1 false)
   %cat.off1730 = add i64 7, %cat.seg1647
   %cat.dst1731 = getelementptr i8, ptr %concat.buf1727, i64 %cat.off1730
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1731, ptr align 1 @str.138, i64 4, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1731, ptr align 1 @str.139, i64 4, i1 false)
   %cat.off1732 = add i64 %cat.off1730, 4
   %cat.dst1733 = getelementptr i8, ptr %concat.buf1727, i64 %cat.off1732
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1733, ptr align 1 %cat.seg1675, i64 %cat.seg1666, i1 false)
@@ -8984,7 +9043,7 @@ str_overflow_abort1814:                           ; preds = %cat.sum.len1807
 concat.tot.len1819:                               ; preds = %cat.sum.len1813
   %arena.cur1822 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1823 = call ptr @dva_arena_alloc(ptr %arena.cur1822, i64 %sum1817)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1823, ptr align 1 @str.70, i64 6, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1823, ptr align 1 @str.71, i64 6, i1 false)
   %cat.dst1825 = getelementptr i8, ptr %concat.buf1823, i64 6
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1825, ptr align 1 %cat.seg1783, i64 %cat.seg1774, i1 false)
   %cat.off1826 = add i64 6, %cat.seg1774
@@ -9027,8 +9086,8 @@ str_ok1855:                                       ; preds = %tag.slow_check1860,
   %cat.seg1862 = load ptr, ptr %cat.seg1861, align 8
   %fld.gep1865 = getelementptr inbounds { ptr, i1, i1, i1, i1, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, i1 }, ptr %payload.ptr1844, i32 0, i32 1
   %fld.load1866 = load i1, ptr %fld.gep1865, align 1
-  %str.139.struct.str.60.struct = select i1 %fld.load1866, ptr @str.139.struct, ptr @str.60.struct
-  %cat.seg1872 = load i64, ptr %str.139.struct.str.60.struct, align 8
+  %str.140.struct.str.61.struct = select i1 %fld.load1866, ptr @str.140.struct, ptr @str.61.struct
+  %cat.seg1872 = load i64, ptr %str.140.struct.str.61.struct, align 8
   %cat.seg1873 = and i64 %cat.seg1872, 281474976710655
   %str.tag1874 = lshr i64 %cat.seg1872, 48
   %tag.immortal1876 = icmp eq i64 %str.tag1874, 0
@@ -9042,7 +9101,7 @@ tag.slow_check1860:                               ; preds = %choice.case1838
   br label %str_ok1855
 
 str_ok1875:                                       ; preds = %tag.slow_check1880, %str_ok1855
-  %cat.seg1881 = getelementptr inbounds { i64, ptr }, ptr %str.139.struct.str.60.struct, i32 0, i32 1
+  %cat.seg1881 = getelementptr inbounds { i64, ptr }, ptr %str.140.struct.str.61.struct, i32 0, i32 1
   %cat.seg1882 = load ptr, ptr %cat.seg1881, align 8
   %fld.gep1885 = getelementptr inbounds { ptr, i1, i1, i1, i1, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, i1 }, ptr %payload.ptr1844, i32 0, i32 5
   %call.res1886 = call { i64, ptr } @"show::show_typed_expr"(ptr %0, ptr %fld.gep1885)
@@ -9152,7 +9211,7 @@ str_overflow_abort1949:                           ; preds = %cat.sum.len1942
 concat.tot.len1954:                               ; preds = %cat.sum.len1948
   %arena.cur1957 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf1958 = call ptr @dva_arena_alloc(ptr %arena.cur1957, i64 %sum1952)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1958, ptr align 1 @str.58, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1958, ptr align 1 @str.59, i64 7, i1 false)
   %cat.dst1960 = getelementptr i8, ptr %concat.buf1958, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1960, ptr align 1 %cat.seg1862, i64 %cat.seg1853, i1 false)
   %cat.off1961 = add i64 7, %cat.seg1853
@@ -9303,7 +9362,7 @@ str_overflow_abort2068:                           ; preds = %cat.sum.len2061
 concat.tot.len2073:                               ; preds = %cat.sum.len2067
   %arena.cur2076 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf2077 = call ptr @dva_arena_alloc(ptr %arena.cur2076, i64 %sum2071)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2077, ptr align 1 @str.77, i64 6, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2077, ptr align 1 @str.78, i64 6, i1 false)
   %cat.dst2079 = getelementptr i8, ptr %concat.buf2077, i64 6
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2079, ptr align 1 %cat.seg2006, i64 %cat.seg1997, i1 false)
   %cat.off2080 = add i64 6, %cat.seg1997
@@ -9338,8 +9397,8 @@ choice.case2096:                                  ; preds = %concat.tot.len11
   %pay.gep2101 = getelementptr inbounds { i64, ptr }, ptr %fld.load18, i32 0, i32 1
   %payload.ptr2102 = load ptr, ptr %pay.gep2101, align 8
   %fld.load2108 = load i1, ptr %payload.ptr2102, align 1
-  %str.51.struct.str.52.struct = select i1 %fld.load2108, ptr @str.51.struct, ptr @str.52.struct
-  %cat.seg2114 = load i64, ptr %str.51.struct.str.52.struct, align 8
+  %str.52.struct.str.53.struct = select i1 %fld.load2108, ptr @str.52.struct, ptr @str.53.struct
+  %cat.seg2114 = load i64, ptr %str.52.struct.str.53.struct, align 8
   %cat.seg2115 = and i64 %cat.seg2114, 281474976710655
   %str.tag2116 = lshr i64 %cat.seg2114, 48
   %tag.immortal2118 = icmp eq i64 %str.tag2116, 0
@@ -9349,7 +9408,7 @@ choice.case2096:                                  ; preds = %concat.tot.len11
   br i1 %tag.fast.ok2121, label %str_ok2117, label %tag.slow_check2122
 
 str_ok2117:                                       ; preds = %tag.slow_check2122, %choice.case2096
-  %cat.seg2123 = getelementptr inbounds { i64, ptr }, ptr %str.51.struct.str.52.struct, i32 0, i32 1
+  %cat.seg2123 = getelementptr inbounds { i64, ptr }, ptr %str.52.struct.str.53.struct, i32 0, i32 1
   %cat.seg2124 = load ptr, ptr %cat.seg2123, align 8
   %fld.gep2127 = getelementptr inbounds { i1, i64 }, ptr %payload.ptr2102, i32 0, i32 1
   %fld.load2128 = load i64, ptr %fld.gep2127, align 8
@@ -9431,7 +9490,7 @@ str_overflow_abort2173:                           ; preds = %cat.sum.len2166
 concat.tot.len2178:                               ; preds = %cat.sum.len2172
   %arena.cur2181 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf2182 = call ptr @dva_arena_alloc(ptr %arena.cur2181, i64 %sum2176)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2182, ptr align 1 @str.50, i64 10, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2182, ptr align 1 @str.51, i64 10, i1 false)
   %cat.dst2184 = getelementptr i8, ptr %concat.buf2182, i64 10
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2184, ptr align 1 %cat.seg2124, i64 %cat.seg2115, i1 false)
   %cat.off2185 = add i64 10, %cat.seg2115
@@ -9476,7 +9535,7 @@ choice.then2211:                                  ; preds = %choice.case2201
   br label %choice.exit2213
 
 choice.exit2213:                                  ; preds = %choice.case2201, %choice.then2211
-  %choice.res2221 = phi ptr [ %ret.ub.alloc2220, %choice.then2211 ], [ @str.49.struct, %choice.case2201 ]
+  %choice.res2221 = phi ptr [ %ret.ub.alloc2220, %choice.then2211 ], [ @str.50.struct, %choice.case2201 ]
   %cat.seg2223 = load i64, ptr %choice.res2221, align 8
   %cat.seg2224 = and i64 %cat.seg2223, 281474976710655
   %str.tag2225 = lshr i64 %cat.seg2223, 48
@@ -9546,7 +9605,7 @@ str_overflow_abort2264:                           ; preds = %cat.sum.len2257
 concat.tot.len2269:                               ; preds = %cat.sum.len2263
   %arena.cur2272 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf2273 = call ptr @dva_arena_alloc(ptr %arena.cur2272, i64 %sum2267)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2273, ptr align 1 @str.53, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2273, ptr align 1 @str.54, i64 7, i1 false)
   %cat.dst2275 = getelementptr i8, ptr %concat.buf2273, i64 7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2275, ptr align 1 %cat.seg2233, i64 %cat.seg2224, i1 false)
   %cat.off2276 = add i64 7, %cat.seg2224
@@ -9648,7 +9707,7 @@ str_overflow_abort2346:                           ; preds = %cat.sum.len2339
 concat.tot.len2351:                               ; preds = %cat.sum.len2345
   %arena.cur2354 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf2355 = call ptr @dva_arena_alloc(ptr %arena.cur2354, i64 %sum2349)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2355, ptr align 1 @str.140, i64 4, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2355, ptr align 1 @str.141, i64 4, i1 false)
   %cat.dst2357 = getelementptr i8, ptr %concat.buf2355, i64 4
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2357, ptr align 1 %cat.seg2315, i64 %cat.seg2306, i1 false)
   %cat.off2358 = add i64 4, %cat.seg2306
@@ -9746,7 +9805,7 @@ str_overflow_abort2425:                           ; preds = %cat.sum.len2418
 concat.tot.len2430:                               ; preds = %cat.sum.len2424
   %arena.cur2433 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf2434 = call ptr @dva_arena_alloc(ptr %arena.cur2433, i64 %sum2428)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2434, ptr align 1 @str.141, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2434, ptr align 1 @str.142, i64 5, i1 false)
   %cat.dst2436 = getelementptr i8, ptr %concat.buf2434, i64 5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2436, ptr align 1 %cat.seg2394, i64 %cat.seg2385, i1 false)
   %cat.off2437 = add i64 5, %cat.seg2385
@@ -9847,7 +9906,7 @@ str_overflow_abort2505:                           ; preds = %cat.sum.len2498
 concat.tot.len2510:                               ; preds = %cat.sum.len2504
   %arena.cur2513 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf2514 = call ptr @dva_arena_alloc(ptr %arena.cur2513, i64 %sum2508)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2514, ptr align 1 @str.142, i64 11, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2514, ptr align 1 @str.143, i64 11, i1 false)
   %cat.dst2516 = getelementptr i8, ptr %concat.buf2514, i64 11
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2516, ptr align 1 %cat.seg2474, i64 %cat.seg2465, i1 false)
   %cat.off2517 = add i64 11, %cat.seg2465
@@ -9931,7 +9990,7 @@ str_overflow_abort2573:                           ; preds = %cat.sum.len2566
 concat.tot.len2578:                               ; preds = %cat.sum.len2572
   %arena.cur2581 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf2582 = call ptr @dva_arena_alloc(ptr %arena.cur2581, i64 %sum2576)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2582, ptr align 1 @str.143, i64 9, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2582, ptr align 1 @str.144, i64 9, i1 false)
   %cat.dst2584 = getelementptr i8, ptr %concat.buf2582, i64 9
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2584, ptr align 1 %cat.ibuf2541, i64 %cat.ilen2542, i1 false)
   %cat.off2585 = add i64 9, %cat.ilen2542
@@ -10032,7 +10091,7 @@ str_overflow_abort2654:                           ; preds = %cat.sum.len2647
 concat.tot.len2659:                               ; preds = %cat.sum.len2653
   %arena.cur2662 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf2663 = call ptr @dva_arena_alloc(ptr %arena.cur2662, i64 %sum2657)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2663, ptr align 1 @str.55, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2663, ptr align 1 @str.56, i64 5, i1 false)
   %cat.dst2665 = getelementptr i8, ptr %concat.buf2663, i64 5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2665, ptr align 1 %cat.seg2623, i64 %cat.seg2614, i1 false)
   %cat.off2666 = add i64 5, %cat.seg2614
@@ -10133,7 +10192,7 @@ str_overflow_abort2736:                           ; preds = %cat.sum.len2729
 concat.tot.len2741:                               ; preds = %cat.sum.len2735
   %arena.cur2744 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf2745 = call ptr @dva_arena_alloc(ptr %arena.cur2744, i64 %sum2739)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2745, ptr align 1 @str.90, i64 4, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2745, ptr align 1 @str.91, i64 4, i1 false)
   %cat.dst2747 = getelementptr i8, ptr %concat.buf2745, i64 4
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2747, ptr align 1 %cat.seg2705, i64 %cat.seg2696, i1 false)
   %cat.off2748 = add i64 4, %cat.seg2696
@@ -10264,12 +10323,12 @@ str_overflow_abort2833:                           ; preds = %cat.sum.len2826
 concat.tot.len2838:                               ; preds = %cat.sum.len2832
   %arena.cur2841 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf2842 = call ptr @dva_arena_alloc(ptr %arena.cur2841, i64 %sum2836)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2842, ptr align 1 @str.144, i64 12, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2842, ptr align 1 @str.145, i64 12, i1 false)
   %cat.dst2844 = getelementptr i8, ptr %concat.buf2842, i64 12
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2844, ptr align 1 %cat.ibuf2773, i64 %cat.ilen2774, i1 false)
   %cat.off2845 = add i64 12, %cat.ilen2774
   %cat.dst2846 = getelementptr i8, ptr %concat.buf2842, i64 %cat.off2845
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2846, ptr align 1 @str.145, i64 3, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2846, ptr align 1 @str.146, i64 3, i1 false)
   %cat.off2847 = add i64 %cat.off2845, 3
   %cat.dst2848 = getelementptr i8, ptr %concat.buf2842, i64 %cat.off2847
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2848, ptr align 1 %cat.seg2790, i64 %cat.seg2781, i1 false)
@@ -10381,8 +10440,8 @@ loop.body.187:                                    ; preds = %loop.header.187
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
   %cmptmp = icmp sgt i64 %loop.idx.187.0, 0
-  %str.34.struct.str.49.struct = select i1 %cmptmp, ptr @str.34.struct, ptr @str.49.struct
-  %app.str.len8 = load i64, ptr %str.34.struct.str.49.struct, align 8
+  %str.34.struct.str.50.struct = select i1 %cmptmp, ptr @str.34.struct, ptr @str.50.struct
+  %app.str.len8 = load i64, ptr %str.34.struct.str.50.struct, align 8
   %app.str.len9 = and i64 %app.str.len8, 281474976710655
   %str.tag = lshr i64 %app.str.len8, 48
   %tag.immortal = icmp eq i64 %str.tag, 0
@@ -10399,7 +10458,7 @@ loop.exit.187:                                    ; preds = %loop.header.187
   br i1 %b.freeze.has.chunk, label %b.freeze.check, label %b.freeze.done
 
 str_ok:                                           ; preds = %tag.slow_check, %loop.body.187
-  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.34.struct.str.49.struct, i32 0, i32 1
+  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.34.struct.str.50.struct, i32 0, i32 1
   %app.str.data10 = load ptr, ptr %app.str.data, align 8
   %b.app.new.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 %app.str.len9)
   %sum12 = extractvalue { i64, i1 } %b.app.new.len, 0
@@ -10596,8 +10655,8 @@ loop.body.189:                                    ; preds = %loop.header.189
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
   %cmptmp = icmp sgt i64 %loop.idx.189.0, 0
-  %str.86.struct.str.49.struct = select i1 %cmptmp, ptr @str.86.struct, ptr @str.49.struct
-  %app.str.len8 = load i64, ptr %str.86.struct.str.49.struct, align 8
+  %str.87.struct.str.50.struct = select i1 %cmptmp, ptr @str.87.struct, ptr @str.50.struct
+  %app.str.len8 = load i64, ptr %str.87.struct.str.50.struct, align 8
   %app.str.len9 = and i64 %app.str.len8, 281474976710655
   %str.tag = lshr i64 %app.str.len8, 48
   %tag.immortal = icmp eq i64 %str.tag, 0
@@ -10614,7 +10673,7 @@ loop.exit.189:                                    ; preds = %loop.header.189
   br i1 %b.freeze.has.chunk, label %b.freeze.check, label %b.freeze.done
 
 str_ok:                                           ; preds = %tag.slow_check, %loop.body.189
-  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.86.struct.str.49.struct, i32 0, i32 1
+  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.87.struct.str.50.struct, i32 0, i32 1
   %app.str.data10 = load ptr, ptr %app.str.data, align 8
   %b.app.new.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 %app.str.len9)
   %sum12 = extractvalue { i64, i1 } %b.app.new.len, 0
@@ -10751,7 +10810,7 @@ b.grow_done97:                                    ; preds = %b.app.new.len89, %b
   %builder.new.salloc.sroa.30.3 = phi i64 [ %b.new.cap102, %b.new.buf.len2110 ], [ %builder.new.salloc.sroa.30.2, %b.app.new.len89 ]
   %builder.new.salloc.sroa.15.3 = phi ptr [ %b.new.buf2114, %b.new.buf.len2110 ], [ %builder.new.salloc.sroa.15.2, %b.app.new.len89 ]
   %b.app.dst120 = getelementptr i8, ptr %builder.new.salloc.sroa.15.3, i64 %sum45
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %b.app.dst120, ptr align 1 @str.87, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %b.app.dst120, ptr align 1 @str.88, i64 1, i1 false)
   %b.app.nul121 = getelementptr i8, ptr %builder.new.salloc.sroa.15.3, i64 %sum87
   store i8 0, ptr %b.app.nul121, align 1
   %fld.gep125 = getelementptr inbounds { ptr, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, i64, ptr }, ptr %slot.i2p, i32 0, i32 1
@@ -10914,8 +10973,8 @@ loop.body.190:                                    ; preds = %loop.header.190
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
   %cmptmp = icmp sgt i64 %loop.idx.190.0, 0
-  %str.111.struct.str.49.struct = select i1 %cmptmp, ptr @str.111.struct, ptr @str.49.struct
-  %app.str.len8 = load i64, ptr %str.111.struct.str.49.struct, align 8
+  %str.112.struct.str.50.struct = select i1 %cmptmp, ptr @str.112.struct, ptr @str.50.struct
+  %app.str.len8 = load i64, ptr %str.112.struct.str.50.struct, align 8
   %app.str.len9 = and i64 %app.str.len8, 281474976710655
   %str.tag = lshr i64 %app.str.len8, 48
   %tag.immortal = icmp eq i64 %str.tag, 0
@@ -10932,7 +10991,7 @@ loop.exit.190:                                    ; preds = %loop.header.190
   br i1 %b.freeze.has.chunk, label %b.freeze.check, label %b.freeze.done
 
 str_ok:                                           ; preds = %tag.slow_check, %loop.body.190
-  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.111.struct.str.49.struct, i32 0, i32 1
+  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.112.struct.str.50.struct, i32 0, i32 1
   %app.str.data10 = load ptr, ptr %app.str.data, align 8
   %b.app.new.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 %app.str.len9)
   %sum12 = extractvalue { i64, i1 } %b.app.new.len, 0
@@ -11170,18 +11229,18 @@ str_overflow_abort33:                             ; preds = %cat.sum.len26
 concat.tot.len37:                                 ; preds = %cat.sum.len32
   %arena.cur40 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur40, i64 %sum35)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 @str.121, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 @str.122, i64 2, i1 false)
   %cat.dst41 = getelementptr i8, ptr %concat.buf, i64 2
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst41, ptr align 1 %cat.seg9, i64 %cat.seg7, i1 false)
   %cat.off = add i64 2, %cat.seg7
   %cat.dst42 = getelementptr i8, ptr %concat.buf, i64 %cat.off
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst42, ptr align 1 @str.146, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst42, ptr align 1 @str.147, i64 2, i1 false)
   %cat.off43 = add i64 %cat.off, 2
   %cat.dst44 = getelementptr i8, ptr %concat.buf, i64 %cat.off43
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst44, ptr align 1 %cat.ibuf, i64 %cat.ilen, i1 false)
   %cat.off45 = add i64 %cat.off43, %cat.ilen
   %cat.dst46 = getelementptr i8, ptr %concat.buf, i64 %cat.off45
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst46, ptr align 1 @str.147, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst46, ptr align 1 @str.148, i64 2, i1 false)
   %concat.nul = getelementptr i8, ptr %concat.buf, i64 %sum30
   store i8 0, ptr %concat.nul, align 1
   %arena.cur47 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -11396,7 +11455,7 @@ concat.tot.len179:                                ; preds = %cat.sum.len173
   %concat.buf183 = call ptr @dva_arena_alloc(ptr %arena.cur182, i64 %sum177)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf183, ptr align 1 %cat.seg63, i64 %cat.seg54, i1 false)
   %cat.dst186 = getelementptr i8, ptr %concat.buf183, i64 %cat.seg54
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst186, ptr align 1 @str.58, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst186, ptr align 1 @str.59, i64 7, i1 false)
   %cat.off187 = add i64 %cat.seg54, 7
   %cat.dst188 = getelementptr i8, ptr %concat.buf183, i64 %cat.off187
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst188, ptr align 1 %cat.seg79, i64 %cat.seg70, i1 false)
@@ -11405,7 +11464,7 @@ concat.tot.len179:                                ; preds = %cat.sum.len173
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst190, ptr align 1 @str.34, i64 1, i1 false)
   %cat.off191 = add i64 %cat.off189, 1
   %cat.dst192 = getelementptr i8, ptr %concat.buf183, i64 %cat.off191
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst192, ptr align 1 @str.87, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst192, ptr align 1 @str.88, i64 1, i1 false)
   %cat.off193 = add i64 %cat.off191, 1
   %cat.dst194 = getelementptr i8, ptr %concat.buf183, i64 %cat.off193
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst194, ptr align 1 @str.1, i64 1, i1 false)
@@ -11414,7 +11473,7 @@ concat.tot.len179:                                ; preds = %cat.sum.len173
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst196, ptr align 1 %cat.seg107, i64 %cat.seg98, i1 false)
   %cat.off197 = add i64 %cat.off195, %cat.seg98
   %cat.dst198 = getelementptr i8, ptr %concat.buf183, i64 %cat.off197
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst198, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst198, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off199 = add i64 %cat.off197, 1
   %cat.dst200 = getelementptr i8, ptr %concat.buf183, i64 %cat.off199
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst200, ptr align 1 %cat.seg127, i64 %cat.seg118, i1 false)
@@ -11581,19 +11640,19 @@ concat.tot.len324:                                ; preds = %cat.sum.len318
   %concat.buf328 = call ptr @dva_arena_alloc(ptr %arena.cur327, i64 %sum322)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf328, ptr align 1 %cat.seg230, i64 %cat.seg221, i1 false)
   %cat.dst331 = getelementptr i8, ptr %concat.buf328, i64 %cat.seg221
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst331, ptr align 1 @str.137, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst331, ptr align 1 @str.138, i64 7, i1 false)
   %cat.off332 = add i64 %cat.seg221, 7
   %cat.dst333 = getelementptr i8, ptr %concat.buf328, i64 %cat.off332
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst333, ptr align 1 %cat.seg249, i64 %cat.seg240, i1 false)
   %cat.off334 = add i64 %cat.off332, %cat.seg240
   %cat.dst335 = getelementptr i8, ptr %concat.buf328, i64 %cat.off334
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst335, ptr align 1 @str.148, i64 4, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst335, ptr align 1 @str.149, i64 4, i1 false)
   %cat.off336 = add i64 %cat.off334, 4
   %cat.dst337 = getelementptr i8, ptr %concat.buf328, i64 %cat.off336
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst337, ptr align 1 %cat.seg263, i64 %cat.seg254, i1 false)
   %cat.off338 = add i64 %cat.off336, %cat.seg254
   %cat.dst339 = getelementptr i8, ptr %concat.buf328, i64 %cat.off338
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst339, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst339, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off340 = add i64 %cat.off338, 1
   %cat.dst341 = getelementptr i8, ptr %concat.buf328, i64 %cat.off340
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst341, ptr align 1 %cat.seg284, i64 %cat.seg275, i1 false)
@@ -11813,13 +11872,13 @@ concat.tot.len498:                                ; preds = %cat.sum.len492
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst511, ptr align 1 %cat.seg404, i64 %cat.seg395, i1 false)
   %cat.off512 = add i64 %cat.off510, %cat.seg395
   %cat.dst513 = getelementptr i8, ptr %concat.buf502, i64 %cat.off512
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst513, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst513, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off514 = add i64 %cat.off512, 1
   %cat.dst515 = getelementptr i8, ptr %concat.buf502, i64 %cat.off514
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst515, ptr align 1 %cat.seg425, i64 %cat.seg416, i1 false)
   %cat.off516 = add i64 %cat.off514, %cat.seg416
   %cat.dst517 = getelementptr i8, ptr %concat.buf502, i64 %cat.off516
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst517, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst517, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off518 = add i64 %cat.off516, 1
   %cat.dst519 = getelementptr i8, ptr %concat.buf502, i64 %cat.off518
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst519, ptr align 1 %cat.seg446, i64 %cat.seg437, i1 false)
@@ -11998,7 +12057,7 @@ concat.tot.len643:                                ; preds = %cat.sum.len637
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst656, ptr align 1 %cat.seg582, i64 %cat.seg573, i1 false)
   %cat.off657 = add i64 %cat.off655, %cat.seg573
   %cat.dst658 = getelementptr i8, ptr %concat.buf647, i64 %cat.off657
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst658, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst658, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off659 = add i64 %cat.off657, 1
   %cat.dst660 = getelementptr i8, ptr %concat.buf647, i64 %cat.off659
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst660, ptr align 1 %cat.seg603, i64 %cat.seg594, i1 false)
@@ -12239,7 +12298,7 @@ concat.tot.len836:                                ; preds = %cat.sum.len830
   %concat.buf840 = call ptr @dva_arena_alloc(ptr %arena.cur839, i64 %sum834)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf840, ptr align 1 %cat.seg790, i64 %cat.seg781, i1 false)
   %cat.dst843 = getelementptr i8, ptr %concat.buf840, i64 %cat.seg781
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst843, ptr align 1 @str.122, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst843, ptr align 1 @str.123, i64 7, i1 false)
   %cat.off844 = add i64 %cat.seg781, 7
   %cat.dst845 = getelementptr i8, ptr %concat.buf840, i64 %cat.off844
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst845, ptr align 1 %cat.ibuf793, i64 %cat.ilen794, i1 false)
@@ -12378,7 +12437,7 @@ concat.tot.len937:                                ; preds = %cat.sum.len931
   %concat.buf941 = call ptr @dva_arena_alloc(ptr %arena.cur940, i64 %sum935)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf941, ptr align 1 %cat.seg878, i64 %cat.seg869, i1 false)
   %cat.dst944 = getelementptr i8, ptr %concat.buf941, i64 %cat.seg869
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst944, ptr align 1 @str.123, i64 9, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst944, ptr align 1 @str.124, i64 9, i1 false)
   %cat.off945 = add i64 %cat.seg869, 9
   %cat.dst946 = getelementptr i8, ptr %concat.buf941, i64 %cat.off945
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst946, ptr align 1 %cat.seg895, i64 %cat.seg886, i1 false)
@@ -12504,7 +12563,7 @@ concat.tot.len1035:                               ; preds = %cat.sum.len1029
   %concat.buf1039 = call ptr @dva_arena_alloc(ptr %arena.cur1038, i64 %sum1033)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1039, ptr align 1 %cat.seg979, i64 %cat.seg970, i1 false)
   %cat.dst1042 = getelementptr i8, ptr %concat.buf1039, i64 %cat.seg970
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1042, ptr align 1 @str.124, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1042, ptr align 1 @str.125, i64 8, i1 false)
   %cat.off1043 = add i64 %cat.seg970, 8
   %cat.dst1044 = getelementptr i8, ptr %concat.buf1039, i64 %cat.off1043
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1044, ptr align 1 %cat.seg993, i64 %cat.seg984, i1 false)
@@ -12624,7 +12683,7 @@ concat.tot.len1130:                               ; preds = %cat.sum.len1124
   %concat.buf1134 = call ptr @dva_arena_alloc(ptr %arena.cur1133, i64 %sum1128)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1134, ptr align 1 %cat.seg1084, i64 %cat.seg1075, i1 false)
   %cat.dst1137 = getelementptr i8, ptr %concat.buf1134, i64 %cat.seg1075
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1137, ptr align 1 @str.125, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1137, ptr align 1 @str.126, i64 8, i1 false)
   %cat.off1138 = add i64 %cat.seg1075, 8
   %cat.dst1139 = getelementptr i8, ptr %concat.buf1134, i64 %cat.off1138
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1139, ptr align 1 %cat.ibuf1087, i64 %cat.ilen1088, i1 false)
@@ -12674,8 +12733,8 @@ pay.int.merge1162:                                ; preds = %choice.case1152, %p
 str_ok1171:                                       ; preds = %tag.slow_check1176, %pay.int.merge1162
   %cat.seg1177 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc, i32 0, i32 1
   %cat.seg1178 = load ptr, ptr %cat.seg1177, align 8
-  %str.127.struct.str.128.struct = select i1 %pay.int.phi1164, ptr @str.127.struct, ptr @str.128.struct
-  %cat.seg1183 = load i64, ptr %str.127.struct.str.128.struct, align 8
+  %str.128.struct.str.129.struct = select i1 %pay.int.phi1164, ptr @str.128.struct, ptr @str.129.struct
+  %cat.seg1183 = load i64, ptr %str.128.struct.str.129.struct, align 8
   %cat.seg1184 = and i64 %cat.seg1183, 281474976710655
   %str.tag1185 = lshr i64 %cat.seg1183, 48
   %tag.immortal1187 = icmp eq i64 %str.tag1185, 0
@@ -12689,7 +12748,7 @@ tag.slow_check1176:                               ; preds = %pay.int.merge1162
   br label %str_ok1171
 
 str_ok1186:                                       ; preds = %tag.slow_check1191, %str_ok1171
-  %cat.seg1192 = getelementptr inbounds { i64, ptr }, ptr %str.127.struct.str.128.struct, i32 0, i32 1
+  %cat.seg1192 = getelementptr inbounds { i64, ptr }, ptr %str.128.struct.str.129.struct, i32 0, i32 1
   %cat.seg1193 = load ptr, ptr %cat.seg1192, align 8
   %cat.seg1197 = load i64, ptr %concat.str, align 8
   %cat.seg1198 = and i64 %cat.seg1197, 281474976710655
@@ -12760,7 +12819,7 @@ concat.tot.len1235:                               ; preds = %cat.sum.len1229
   %concat.buf1239 = call ptr @dva_arena_alloc(ptr %arena.cur1238, i64 %sum1233)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1239, ptr align 1 %cat.seg1178, i64 %cat.seg1169, i1 false)
   %cat.dst1242 = getelementptr i8, ptr %concat.buf1239, i64 %cat.seg1169
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1242, ptr align 1 @str.126, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1242, ptr align 1 @str.127, i64 8, i1 false)
   %cat.off1243 = add i64 %cat.seg1169, 8
   %cat.dst1244 = getelementptr i8, ptr %concat.buf1239, i64 %cat.off1243
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1244, ptr align 1 %cat.seg1193, i64 %cat.seg1184, i1 false)
@@ -12848,7 +12907,7 @@ concat.tot.len1304:                               ; preds = %cat.sum.len1298
   %concat.buf1308 = call ptr @dva_arena_alloc(ptr %arena.cur1307, i64 %sum1302)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1308, ptr align 1 %cat.seg1274, i64 %cat.seg1265, i1 false)
   %cat.dst1311 = getelementptr i8, ptr %concat.buf1308, i64 %cat.seg1265
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1311, ptr align 1 @str.129, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1311, ptr align 1 @str.130, i64 7, i1 false)
   %cat.off1312 = add i64 %cat.seg1265, 7
   %cat.dst1313 = getelementptr i8, ptr %concat.buf1308, i64 %cat.off1312
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1313, ptr align 1 %cat.seg1288, i64 %cat.seg1279, i1 false)
@@ -12892,7 +12951,7 @@ tag.slow_check1342:                               ; preds = %choice.case1322
 str.eq.then:                                      ; preds = %str_ok1337
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %fld.load1333, i32 0, i32 1
   %eq.lhs.data1344 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data1344, ptr @str.49, i64 %eq.lhs.len1335)
+  %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data1344, ptr @str.50, i64 %eq.lhs.len1335)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br label %str.eq.merge
 
@@ -13030,7 +13089,7 @@ concat.tot.len1434:                               ; preds = %cat.sum.len1428
   %concat.buf1438 = call ptr @dva_arena_alloc(ptr %arena.cur1437, i64 %sum1432)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1438, ptr align 1 %cat.seg1378, i64 %cat.seg1369, i1 false)
   %cat.dst1441 = getelementptr i8, ptr %concat.buf1438, i64 %cat.seg1369
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1441, ptr align 1 @str.71, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1441, ptr align 1 @str.72, i64 5, i1 false)
   %cat.off1442 = add i64 %cat.seg1369, 5
   %cat.dst1443 = getelementptr i8, ptr %concat.buf1438, i64 %cat.off1442
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1443, ptr align 1 %cat.seg1392, i64 %cat.seg1383, i1 false)
@@ -13186,7 +13245,7 @@ concat.tot.len1558:                               ; preds = %cat.sum.len1552
   %concat.buf1562 = call ptr @dva_arena_alloc(ptr %arena.cur1561, i64 %sum1556)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1562, ptr align 1 %cat.seg1468, i64 %cat.seg1459, i1 false)
   %cat.dst1565 = getelementptr i8, ptr %concat.buf1562, i64 %cat.seg1459
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1565, ptr align 1 @str.71, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1565, ptr align 1 @str.72, i64 5, i1 false)
   %cat.off1566 = add i64 %cat.seg1459, 5
   %cat.dst1567 = getelementptr i8, ptr %concat.buf1562, i64 %cat.off1566
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1567, ptr align 1 %cat.seg1482, i64 %cat.seg1473, i1 false)
@@ -13198,7 +13257,7 @@ concat.tot.len1558:                               ; preds = %cat.sum.len1552
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1571, ptr align 1 %cat.seg1496, i64 %cat.seg1487, i1 false)
   %cat.off1572 = add i64 %cat.off1570, %cat.seg1487
   %cat.dst1573 = getelementptr i8, ptr %concat.buf1562, i64 %cat.off1572
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1573, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1573, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off1574 = add i64 %cat.off1572, 1
   %cat.dst1575 = getelementptr i8, ptr %concat.buf1562, i64 %cat.off1574
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1575, ptr align 1 %cat.seg1518, i64 %cat.seg1509, i1 false)
@@ -13340,13 +13399,13 @@ concat.tot.len1670:                               ; preds = %cat.sum.len1664
   %concat.buf1674 = call ptr @dva_arena_alloc(ptr %arena.cur1673, i64 %sum1668)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1674, ptr align 1 %cat.seg1605, i64 %cat.seg1596, i1 false)
   %cat.dst1677 = getelementptr i8, ptr %concat.buf1674, i64 %cat.seg1596
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1677, ptr align 1 @str.149, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1677, ptr align 1 @str.150, i64 5, i1 false)
   %cat.off1678 = add i64 %cat.seg1596, 5
   %cat.dst1679 = getelementptr i8, ptr %concat.buf1674, i64 %cat.off1678
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1679, ptr align 1 %cat.seg1619, i64 %cat.seg1610, i1 false)
   %cat.off1680 = add i64 %cat.off1678, %cat.seg1610
   %cat.dst1681 = getelementptr i8, ptr %concat.buf1674, i64 %cat.off1680
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1681, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1681, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off1682 = add i64 %cat.off1680, 1
   %cat.dst1683 = getelementptr i8, ptr %concat.buf1674, i64 %cat.off1682
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1683, ptr align 1 %cat.seg1642, i64 %cat.seg1633, i1 false)
@@ -13583,31 +13642,31 @@ concat.tot.len1862:                               ; preds = %cat.sum.len1856
   %concat.buf1866 = call ptr @dva_arena_alloc(ptr %arena.cur1865, i64 %sum1860)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1866, ptr align 1 %cat.seg1713, i64 %cat.seg1704, i1 false)
   %cat.dst1869 = getelementptr i8, ptr %concat.buf1866, i64 %cat.seg1704
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1869, ptr align 1 @str.150, i64 6, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1869, ptr align 1 @str.151, i64 6, i1 false)
   %cat.off1870 = add i64 %cat.seg1704, 6
   %cat.dst1871 = getelementptr i8, ptr %concat.buf1866, i64 %cat.off1870
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1871, ptr align 1 %cat.seg1727, i64 %cat.seg1718, i1 false)
   %cat.off1872 = add i64 %cat.off1870, %cat.seg1718
   %cat.dst1873 = getelementptr i8, ptr %concat.buf1866, i64 %cat.off1872
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1873, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1873, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off1874 = add i64 %cat.off1872, 1
   %cat.dst1875 = getelementptr i8, ptr %concat.buf1866, i64 %cat.off1874
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1875, ptr align 1 %cat.seg1741, i64 %cat.seg1732, i1 false)
   %cat.off1876 = add i64 %cat.off1874, %cat.seg1732
   %cat.dst1877 = getelementptr i8, ptr %concat.buf1866, i64 %cat.off1876
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1877, ptr align 1 @str.117, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1877, ptr align 1 @str.118, i64 8, i1 false)
   %cat.off1878 = add i64 %cat.off1876, 8
   %cat.dst1879 = getelementptr i8, ptr %concat.buf1866, i64 %cat.off1878
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1879, ptr align 1 %cat.seg1762, i64 %cat.seg1753, i1 false)
   %cat.off1880 = add i64 %cat.off1878, %cat.seg1753
   %cat.dst1881 = getelementptr i8, ptr %concat.buf1866, i64 %cat.off1880
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1881, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1881, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off1882 = add i64 %cat.off1880, 1
   %cat.dst1883 = getelementptr i8, ptr %concat.buf1866, i64 %cat.off1882
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1883, ptr align 1 %cat.seg1776, i64 %cat.seg1767, i1 false)
   %cat.off1884 = add i64 %cat.off1882, %cat.seg1767
   %cat.dst1885 = getelementptr i8, ptr %concat.buf1866, i64 %cat.off1884
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1885, ptr align 1 @str.118, i64 12, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1885, ptr align 1 @str.119, i64 12, i1 false)
   %cat.off1886 = add i64 %cat.off1884, 12
   %cat.dst1887 = getelementptr i8, ptr %concat.buf1866, i64 %cat.off1886
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst1887, ptr align 1 %cat.seg1798, i64 %cat.seg1789, i1 false)
@@ -13770,7 +13829,7 @@ concat.tot.len2008:                               ; preds = %cat.sum.len2002
   %concat.buf2012 = call ptr @dva_arena_alloc(ptr %arena.cur2011, i64 %sum2006)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2012, ptr align 1 %cat.seg1917, i64 %cat.seg1908, i1 false)
   %cat.dst2015 = getelementptr i8, ptr %concat.buf2012, i64 %cat.seg1908
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2015, ptr align 1 @str.151, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2015, ptr align 1 @str.152, i64 8, i1 false)
   %cat.off2016 = add i64 %cat.seg1908, 8
   %cat.dst2017 = getelementptr i8, ptr %concat.buf2012, i64 %cat.off2016
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2017, ptr align 1 %cat.seg1933, i64 %cat.seg1924, i1 false)
@@ -13782,7 +13841,7 @@ concat.tot.len2008:                               ; preds = %cat.sum.len2002
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2021, ptr align 1 %cat.seg1947, i64 %cat.seg1938, i1 false)
   %cat.off2022 = add i64 %cat.off2020, %cat.seg1938
   %cat.dst2023 = getelementptr i8, ptr %concat.buf2012, i64 %cat.off2022
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2023, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2023, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off2024 = add i64 %cat.off2022, 1
   %cat.dst2025 = getelementptr i8, ptr %concat.buf2012, i64 %cat.off2024
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2025, ptr align 1 %cat.seg1968, i64 %cat.seg1959, i1 false)
@@ -13986,7 +14045,7 @@ concat.tot.len2179:                               ; preds = %cat.sum.len2173
   %concat.buf2183 = call ptr @dva_arena_alloc(ptr %arena.cur2182, i64 %sum2177)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2183, ptr align 1 %cat.seg2055, i64 %cat.seg2046, i1 false)
   %cat.dst2186 = getelementptr i8, ptr %concat.buf2183, i64 %cat.seg2046
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2186, ptr align 1 @str.152, i64 13, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2186, ptr align 1 @str.153, i64 13, i1 false)
   %cat.off2187 = add i64 %cat.seg2046, 13
   %cat.dst2188 = getelementptr i8, ptr %concat.buf2183, i64 %cat.off2187
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2188, ptr align 1 %cat.seg2071, i64 %cat.seg2062, i1 false)
@@ -13998,13 +14057,13 @@ concat.tot.len2179:                               ; preds = %cat.sum.len2173
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2192, ptr align 1 %cat.seg2085, i64 %cat.seg2076, i1 false)
   %cat.off2193 = add i64 %cat.off2191, %cat.seg2076
   %cat.dst2194 = getelementptr i8, ptr %concat.buf2183, i64 %cat.off2193
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2194, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2194, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off2195 = add i64 %cat.off2193, 1
   %cat.dst2196 = getelementptr i8, ptr %concat.buf2183, i64 %cat.off2195
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2196, ptr align 1 %cat.seg2106, i64 %cat.seg2097, i1 false)
   %cat.off2197 = add i64 %cat.off2195, %cat.seg2097
   %cat.dst2198 = getelementptr i8, ptr %concat.buf2183, i64 %cat.off2197
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2198, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2198, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off2199 = add i64 %cat.off2197, 1
   %cat.dst2200 = getelementptr i8, ptr %concat.buf2183, i64 %cat.off2199
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2200, ptr align 1 %cat.seg2127, i64 %cat.seg2118, i1 false)
@@ -14170,19 +14229,19 @@ concat.tot.len2326:                               ; preds = %cat.sum.len2320
   %concat.buf2330 = call ptr @dva_arena_alloc(ptr %arena.cur2329, i64 %sum2324)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2330, ptr align 1 %cat.seg2230, i64 %cat.seg2221, i1 false)
   %cat.dst2333 = getelementptr i8, ptr %concat.buf2330, i64 %cat.seg2221
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2333, ptr align 1 @str.153, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2333, ptr align 1 @str.154, i64 5, i1 false)
   %cat.off2334 = add i64 %cat.seg2221, 5
   %cat.dst2335 = getelementptr i8, ptr %concat.buf2330, i64 %cat.off2334
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2335, ptr align 1 %cat.seg2244, i64 %cat.seg2235, i1 false)
   %cat.off2336 = add i64 %cat.off2334, %cat.seg2235
   %cat.dst2337 = getelementptr i8, ptr %concat.buf2330, i64 %cat.off2336
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2337, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2337, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off2338 = add i64 %cat.off2336, 1
   %cat.dst2339 = getelementptr i8, ptr %concat.buf2330, i64 %cat.off2338
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2339, ptr align 1 %cat.seg2265, i64 %cat.seg2256, i1 false)
   %cat.off2340 = add i64 %cat.off2338, %cat.seg2256
   %cat.dst2341 = getelementptr i8, ptr %concat.buf2330, i64 %cat.off2340
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2341, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2341, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off2342 = add i64 %cat.off2340, 1
   %cat.dst2343 = getelementptr i8, ptr %concat.buf2330, i64 %cat.off2342
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2343, ptr align 1 %cat.seg2286, i64 %cat.seg2277, i1 false)
@@ -14389,25 +14448,25 @@ concat.tot.len2502:                               ; preds = %cat.sum.len2496
   %concat.buf2506 = call ptr @dva_arena_alloc(ptr %arena.cur2505, i64 %sum2500)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2506, ptr align 1 %cat.seg2373, i64 %cat.seg2364, i1 false)
   %cat.dst2509 = getelementptr i8, ptr %concat.buf2506, i64 %cat.seg2364
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2509, ptr align 1 @str.154, i64 10, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2509, ptr align 1 @str.155, i64 10, i1 false)
   %cat.off2510 = add i64 %cat.seg2364, 10
   %cat.dst2511 = getelementptr i8, ptr %concat.buf2506, i64 %cat.off2510
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2511, ptr align 1 %cat.seg2387, i64 %cat.seg2378, i1 false)
   %cat.off2512 = add i64 %cat.off2510, %cat.seg2378
   %cat.dst2513 = getelementptr i8, ptr %concat.buf2506, i64 %cat.off2512
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2513, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2513, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off2514 = add i64 %cat.off2512, 1
   %cat.dst2515 = getelementptr i8, ptr %concat.buf2506, i64 %cat.off2514
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2515, ptr align 1 %cat.seg2408, i64 %cat.seg2399, i1 false)
   %cat.off2516 = add i64 %cat.off2514, %cat.seg2399
   %cat.dst2517 = getelementptr i8, ptr %concat.buf2506, i64 %cat.off2516
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2517, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2517, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off2518 = add i64 %cat.off2516, 1
   %cat.dst2519 = getelementptr i8, ptr %concat.buf2506, i64 %cat.off2518
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2519, ptr align 1 %cat.seg2429, i64 %cat.seg2420, i1 false)
   %cat.off2520 = add i64 %cat.off2518, %cat.seg2420
   %cat.dst2521 = getelementptr i8, ptr %concat.buf2506, i64 %cat.off2520
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2521, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2521, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off2522 = add i64 %cat.off2520, 1
   %cat.dst2523 = getelementptr i8, ptr %concat.buf2506, i64 %cat.off2522
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2523, ptr align 1 %cat.seg2450, i64 %cat.seg2441, i1 false)
@@ -14573,19 +14632,19 @@ concat.tot.len2649:                               ; preds = %cat.sum.len2643
   %concat.buf2653 = call ptr @dva_arena_alloc(ptr %arena.cur2652, i64 %sum2647)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2653, ptr align 1 %cat.seg2553, i64 %cat.seg2544, i1 false)
   %cat.dst2656 = getelementptr i8, ptr %concat.buf2653, i64 %cat.seg2544
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2656, ptr align 1 @str.155, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2656, ptr align 1 @str.156, i64 5, i1 false)
   %cat.off2657 = add i64 %cat.seg2544, 5
   %cat.dst2658 = getelementptr i8, ptr %concat.buf2653, i64 %cat.off2657
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2658, ptr align 1 %cat.seg2567, i64 %cat.seg2558, i1 false)
   %cat.off2659 = add i64 %cat.off2657, %cat.seg2558
   %cat.dst2660 = getelementptr i8, ptr %concat.buf2653, i64 %cat.off2659
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2660, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2660, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off2661 = add i64 %cat.off2659, 1
   %cat.dst2662 = getelementptr i8, ptr %concat.buf2653, i64 %cat.off2661
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2662, ptr align 1 %cat.seg2588, i64 %cat.seg2579, i1 false)
   %cat.off2663 = add i64 %cat.off2661, %cat.seg2579
   %cat.dst2664 = getelementptr i8, ptr %concat.buf2653, i64 %cat.off2663
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2664, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2664, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off2665 = add i64 %cat.off2663, 1
   %cat.dst2666 = getelementptr i8, ptr %concat.buf2653, i64 %cat.off2665
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2666, ptr align 1 %cat.seg2609, i64 %cat.seg2600, i1 false)
@@ -14621,8 +14680,8 @@ str_ok2689:                                       ; preds = %tag.slow_check2694,
   %cat.seg2695 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc, i32 0, i32 1
   %cat.seg2696 = load ptr, ptr %cat.seg2695, align 8
   %fld.load2700 = load i1, ptr %payload.ptr2681, align 1
-  %str.51.struct.str.52.struct = select i1 %fld.load2700, ptr @str.51.struct, ptr @str.52.struct
-  %cat.seg2706 = load i64, ptr %str.51.struct.str.52.struct, align 8
+  %str.52.struct.str.53.struct = select i1 %fld.load2700, ptr @str.52.struct, ptr @str.53.struct
+  %cat.seg2706 = load i64, ptr %str.52.struct.str.53.struct, align 8
   %cat.seg2707 = and i64 %cat.seg2706, 281474976710655
   %str.tag2708 = lshr i64 %cat.seg2706, 48
   %tag.immortal2710 = icmp eq i64 %str.tag2708, 0
@@ -14636,7 +14695,7 @@ tag.slow_check2694:                               ; preds = %choice.case2675
   br label %str_ok2689
 
 str_ok2709:                                       ; preds = %tag.slow_check2714, %str_ok2689
-  %cat.seg2715 = getelementptr inbounds { i64, ptr }, ptr %str.51.struct.str.52.struct, i32 0, i32 1
+  %cat.seg2715 = getelementptr inbounds { i64, ptr }, ptr %str.52.struct.str.53.struct, i32 0, i32 1
   %cat.seg2716 = load ptr, ptr %cat.seg2715, align 8
   %fld.gep2719 = getelementptr inbounds { i1, i64 }, ptr %payload.ptr2681, i32 0, i32 1
   %fld.load2720 = load i64, ptr %fld.gep2719, align 8
@@ -14730,7 +14789,7 @@ concat.tot.len2776:                               ; preds = %cat.sum.len2770
   %concat.buf2780 = call ptr @dva_arena_alloc(ptr %arena.cur2779, i64 %sum2774)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2780, ptr align 1 %cat.seg2696, i64 %cat.seg2687, i1 false)
   %cat.dst2783 = getelementptr i8, ptr %concat.buf2780, i64 %cat.seg2687
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2783, ptr align 1 @str.50, i64 10, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2783, ptr align 1 @str.51, i64 10, i1 false)
   %cat.off2784 = add i64 %cat.seg2687, 10
   %cat.dst2785 = getelementptr i8, ptr %concat.buf2780, i64 %cat.off2784
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2785, ptr align 1 %cat.seg2716, i64 %cat.seg2707, i1 false)
@@ -14792,7 +14851,7 @@ choice.then2825:                                  ; preds = %str_ok2815
   br label %choice.exit2827
 
 choice.exit2827:                                  ; preds = %str_ok2815, %choice.then2825
-  %choice.res2835 = phi ptr [ %ret.ub.alloc2834, %choice.then2825 ], [ @str.49.struct, %str_ok2815 ]
+  %choice.res2835 = phi ptr [ %ret.ub.alloc2834, %choice.then2825 ], [ @str.50.struct, %str_ok2815 ]
   %cat.seg2837 = load i64, ptr %choice.res2835, align 8
   %cat.seg2838 = and i64 %cat.seg2837, 281474976710655
   %str.tag2839 = lshr i64 %cat.seg2837, 48
@@ -14874,7 +14933,7 @@ concat.tot.len2889:                               ; preds = %cat.sum.len2883
   %concat.buf2893 = call ptr @dva_arena_alloc(ptr %arena.cur2892, i64 %sum2887)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2893, ptr align 1 %cat.seg2822, i64 %cat.seg2813, i1 false)
   %cat.dst2896 = getelementptr i8, ptr %concat.buf2893, i64 %cat.seg2813
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2896, ptr align 1 @str.53, i64 7, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2896, ptr align 1 @str.54, i64 7, i1 false)
   %cat.off2897 = add i64 %cat.seg2813, 7
   %cat.dst2898 = getelementptr i8, ptr %concat.buf2893, i64 %cat.off2897
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst2898, ptr align 1 %cat.seg2847, i64 %cat.seg2838, i1 false)
@@ -15005,13 +15064,13 @@ concat.tot.len2993:                               ; preds = %cat.sum.len2987
   %concat.buf2997 = call ptr @dva_arena_alloc(ptr %arena.cur2996, i64 %sum2991)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf2997, ptr align 1 %cat.seg2931, i64 %cat.seg2922, i1 false)
   %cat.dst3000 = getelementptr i8, ptr %concat.buf2997, i64 %cat.seg2922
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3000, ptr align 1 @str.156, i64 4, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3000, ptr align 1 @str.157, i64 4, i1 false)
   %cat.off3001 = add i64 %cat.seg2922, 4
   %cat.dst3002 = getelementptr i8, ptr %concat.buf2997, i64 %cat.off3001
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3002, ptr align 1 %cat.seg2945, i64 %cat.seg2936, i1 false)
   %cat.off3003 = add i64 %cat.off3001, %cat.seg2936
   %cat.dst3004 = getelementptr i8, ptr %concat.buf2997, i64 %cat.off3003
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3004, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3004, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off3005 = add i64 %cat.off3003, 1
   %cat.dst3006 = getelementptr i8, ptr %concat.buf2997, i64 %cat.off3005
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3006, ptr align 1 %cat.seg2965, i64 %cat.seg2956, i1 false)
@@ -15136,13 +15195,13 @@ concat.tot.len3098:                               ; preds = %cat.sum.len3092
   %concat.buf3102 = call ptr @dva_arena_alloc(ptr %arena.cur3101, i64 %sum3096)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf3102, ptr align 1 %cat.seg3036, i64 %cat.seg3027, i1 false)
   %cat.dst3105 = getelementptr i8, ptr %concat.buf3102, i64 %cat.seg3027
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3105, ptr align 1 @str.157, i64 10, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3105, ptr align 1 @str.158, i64 10, i1 false)
   %cat.off3106 = add i64 %cat.seg3027, 10
   %cat.dst3107 = getelementptr i8, ptr %concat.buf3102, i64 %cat.off3106
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3107, ptr align 1 %cat.seg3050, i64 %cat.seg3041, i1 false)
   %cat.off3108 = add i64 %cat.off3106, %cat.seg3041
   %cat.dst3109 = getelementptr i8, ptr %concat.buf3102, i64 %cat.off3108
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3109, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3109, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off3110 = add i64 %cat.off3108, 1
   %cat.dst3111 = getelementptr i8, ptr %concat.buf3102, i64 %cat.off3110
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3111, ptr align 1 %cat.seg3070, i64 %cat.seg3061, i1 false)
@@ -15249,7 +15308,7 @@ concat.tot.len3188:                               ; preds = %cat.sum.len3182
   %concat.buf3192 = call ptr @dva_arena_alloc(ptr %arena.cur3191, i64 %sum3186)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf3192, ptr align 1 %cat.seg3140, i64 %cat.seg3131, i1 false)
   %cat.dst3195 = getelementptr i8, ptr %concat.buf3192, i64 %cat.seg3131
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3195, ptr align 1 @str.143, i64 9, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3195, ptr align 1 @str.144, i64 9, i1 false)
   %cat.off3196 = add i64 %cat.seg3131, 9
   %cat.dst3197 = getelementptr i8, ptr %concat.buf3192, i64 %cat.off3196
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3197, ptr align 1 %cat.ibuf3145, i64 %cat.ilen3146, i1 false)
@@ -15394,13 +15453,13 @@ concat.tot.len3294:                               ; preds = %cat.sum.len3288
   %concat.buf3298 = call ptr @dva_arena_alloc(ptr %arena.cur3297, i64 %sum3292)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf3298, ptr align 1 %cat.seg3231, i64 %cat.seg3222, i1 false)
   %cat.dst3301 = getelementptr i8, ptr %concat.buf3298, i64 %cat.seg3222
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3301, ptr align 1 @str.158, i64 9, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3301, ptr align 1 @str.159, i64 9, i1 false)
   %cat.off3302 = add i64 %cat.seg3222, 9
   %cat.dst3303 = getelementptr i8, ptr %concat.buf3298, i64 %cat.off3302
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3303, ptr align 1 %cat.seg3245, i64 %cat.seg3236, i1 false)
   %cat.off3304 = add i64 %cat.off3302, %cat.seg3236
   %cat.dst3305 = getelementptr i8, ptr %concat.buf3298, i64 %cat.off3304
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3305, ptr align 1 @str.111, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3305, ptr align 1 @str.112, i64 1, i1 false)
   %cat.off3306 = add i64 %cat.off3304, 1
   %cat.dst3307 = getelementptr i8, ptr %concat.buf3298, i64 %cat.off3306
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst3307, ptr align 1 %cat.seg3266, i64 %cat.seg3257, i1 false)
@@ -15541,10 +15600,10 @@ loop.exit.192:                                    ; preds = %loop.header.192
   br i1 %b.freeze.has.chunk, label %b.freeze.check, label %b.freeze.done
 
 choice.exit:                                      ; preds = %choice.then48, %choice.case39, %loop.body.192, %choice.next60, %choice.case59, %a.rd.done
-  %choice.res64 = phi ptr [ %choice.res, %a.rd.done ], [ @str.68.struct, %choice.case59 ], [ @str.68.struct, %choice.next60 ], [ @str.67.struct, %loop.body.192 ], [ %ret.ub.alloc57, %choice.then48 ], [ @str.49.struct, %choice.case39 ]
+  %choice.res64 = phi ptr [ %choice.res, %a.rd.done ], [ @str.69.struct, %choice.case59 ], [ @str.69.struct, %choice.next60 ], [ @str.68.struct, %loop.body.192 ], [ %ret.ub.alloc57, %choice.then48 ], [ @str.50.struct, %choice.case39 ]
   %cmptmp66 = icmp sgt i64 %loop.idx.192.0, 0
-  %str.111.struct.str.49.struct = select i1 %cmptmp66, ptr @str.111.struct, ptr @str.49.struct
-  %app.str.len71 = load i64, ptr %str.111.struct.str.49.struct, align 8
+  %str.112.struct.str.50.struct = select i1 %cmptmp66, ptr @str.112.struct, ptr @str.50.struct
+  %app.str.len71 = load i64, ptr %str.112.struct.str.50.struct, align 8
   %app.str.len72 = and i64 %app.str.len71, 281474976710655
   %str.tag = lshr i64 %app.str.len71, 48
   %tag.immortal = icmp eq i64 %str.tag, 0
@@ -15575,9 +15634,9 @@ a.rd.err.null:                                    ; preds = %choice.case
   %err.alloc = call ptr @dva_arena_alloc(ptr %arena.cur15, i64 56)
   store i64 4011, ptr %err.alloc, align 8
   %err.msg.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 1
-  store ptr @str.64.struct, ptr %err.msg.gep, align 8
+  store ptr @str.65.struct, ptr %err.msg.gep, align 8
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
-  store ptr @str.65.struct, ptr %err.file.gep, align 8
+  store ptr @str.66.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
   store i64 0, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
@@ -15594,9 +15653,9 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.alloc17 = call ptr @dva_arena_alloc(ptr %arena.cur16, i64 56)
   store i64 4011, ptr %err.alloc17, align 8
   %err.msg.gep19 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc17, i32 0, i32 1
-  store ptr @str.66.struct, ptr %err.msg.gep19, align 8
+  store ptr @str.67.struct, ptr %err.msg.gep19, align 8
   %err.file.gep20 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc17, i32 0, i32 2
-  store ptr @str.65.struct, ptr %err.file.gep20, align 8
+  store ptr @str.66.struct, ptr %err.file.gep20, align 8
   %err.line.gep21 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc17, i32 0, i32 3
   store i64 0, ptr %err.line.gep21, align 8
   %err.col.gep22 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc17, i32 0, i32 4
@@ -15614,7 +15673,7 @@ a.rd.done:                                        ; preds = %a.rd.err.oob, %a.rd
   %ram.tag = insertvalue { i1, i64 } zeroinitializer, i1 %a.rd.tag, 0
   %ram.pay = insertvalue { i1, i64 } %ram.tag, i64 %a.rd.pay, 1
   %pay.ptr = inttoptr i64 %a.rd.pay to ptr
-  %choice.res = select i1 %a.rd.tag, ptr %pay.ptr, ptr @str.49.struct
+  %choice.res = select i1 %a.rd.tag, ptr %pay.ptr, ptr @str.50.struct
   br label %choice.exit
 
 choice.case39:                                    ; preds = %loop.body.192
@@ -15638,7 +15697,7 @@ choice.next60:                                    ; preds = %loop.body.192
   br label %choice.exit
 
 str_ok:                                           ; preds = %tag.slow_check, %choice.exit
-  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.111.struct.str.49.struct, i32 0, i32 1
+  %app.str.data = getelementptr inbounds { i64, ptr }, ptr %str.112.struct.str.50.struct, i32 0, i32 1
   %app.str.data73 = load ptr, ptr %app.str.data, align 8
   %b.app.new.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %builder.new.salloc.sroa.0.0, i64 %app.str.len72)
   %sum75 = extractvalue { i64, i1 } %b.app.new.len, 0
@@ -15759,13 +15818,13 @@ concat.tot.len137:                                ; preds = %cat.sum.len132
   %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur140, i64 %sum135)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 %cat.seg103, i64 %cat.seg94, i1 false)
   %cat.dst141 = getelementptr i8, ptr %concat.buf, i64 %cat.seg94
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst141, ptr align 1 @str.119, i64 1, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst141, ptr align 1 @str.120, i64 1, i1 false)
   %cat.off142 = add i64 %cat.seg94, 1
   %cat.dst143 = getelementptr i8, ptr %concat.buf, i64 %cat.off142
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst143, ptr align 1 %cat.seg116, i64 %cat.seg107, i1 false)
   %cat.off144 = add i64 %cat.off142, %cat.seg107
   %cat.dst145 = getelementptr i8, ptr %concat.buf, i64 %cat.off144
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst145, ptr align 1 @str.120, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst145, ptr align 1 @str.121, i64 2, i1 false)
   %concat.nul = getelementptr i8, ptr %concat.buf, i64 %sum130
   store i8 0, ptr %concat.nul, align 1
   %arena.cur146 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -15917,7 +15976,7 @@ entry:
   ]
 
 choice.exit:                                      ; preds = %entry, %concat.tot.len159, %concat.tot.len109, %concat.tot.len43, %choice.case
-  %choice.res = phi ptr [ %ret.ub.alloc, %choice.case ], [ %concat.str, %concat.tot.len43 ], [ %concat.str121, %concat.tot.len109 ], [ %concat.str166, %concat.tot.len159 ], [ @str.49.struct, %entry ]
+  %choice.res = phi ptr [ %ret.ub.alloc, %choice.case ], [ %concat.str, %concat.tot.len43 ], [ %concat.str121, %concat.tot.len109 ], [ %concat.str166, %concat.tot.len159 ], [ @str.50.struct, %entry ]
   %ret.pack = load { i64, ptr }, ptr %choice.res, align 8
   ret { i64, ptr } %ret.pack
 
@@ -16001,7 +16060,7 @@ concat.tot.len43:                                 ; preds = %cat.sum.len38
   %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur46, i64 %sum41)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 %cat.seg15, i64 %cat.seg13, i1 false)
   %cat.dst47 = getelementptr i8, ptr %concat.buf, i64 %cat.seg13
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst47, ptr align 1 @str.131, i64 3, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst47, ptr align 1 @str.132, i64 3, i1 false)
   %cat.off48 = add i64 %cat.seg13, 3
   %cat.dst49 = getelementptr i8, ptr %concat.buf, i64 %cat.off48
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst49, ptr align 1 %cat.seg33, i64 %cat.seg24, i1 false)
@@ -16092,7 +16151,7 @@ concat.tot.len109:                                ; preds = %cat.sum.len103
   %concat.buf113 = call ptr @dva_arena_alloc(ptr %arena.cur112, i64 %sum107)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf113, ptr align 1 %cat.seg74, i64 %cat.seg65, i1 false)
   %cat.dst116 = getelementptr i8, ptr %concat.buf113, i64 %cat.seg65
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst116, ptr align 1 @str.159, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst116, ptr align 1 @str.160, i64 5, i1 false)
   %cat.off117 = add i64 %cat.seg65, 5
   %cat.dst118 = getelementptr i8, ptr %concat.buf113, i64 %cat.off117
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst118, ptr align 1 %cat.seg93, i64 %cat.seg84, i1 false)
@@ -16150,7 +16209,7 @@ str_overflow_abort154:                            ; preds = %str_ok143
 concat.tot.len159:                                ; preds = %concat.sum.len153
   %arena.cur162 = load ptr, ptr @dva_active_arena_tls, align 8
   %concat.buf163 = call ptr @dva_arena_alloc(ptr %arena.cur162, i64 %sum157)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf163, ptr align 1 @str.160, i64 5, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf163, ptr align 1 @str.161, i64 5, i1 false)
   %concat.mid = getelementptr i8, ptr %concat.buf163, i64 5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid, ptr align 1 %concat.rhs150, i64 %concat.rhs141, i1 false)
   %concat.nul164 = getelementptr i8, ptr %concat.buf163, i64 %sum151
@@ -16185,7 +16244,7 @@ entry:
   ]
 
 choice.exit:                                      ; preds = %entry, %concat.tot.len254, %concat.tot.len173, %concat.tot.len75, %choice.case
-  %choice.res = phi ptr [ %ret.ub.alloc7, %choice.case ], [ %concat.str, %concat.tot.len75 ], [ %concat.str189, %concat.tot.len173 ], [ %concat.str268, %concat.tot.len254 ], [ @str.49.struct, %entry ]
+  %choice.res = phi ptr [ %ret.ub.alloc7, %choice.case ], [ %concat.str, %concat.tot.len75 ], [ %concat.str189, %concat.tot.len173 ], [ %concat.str268, %concat.tot.len254 ], [ @str.50.struct, %entry ]
   %ret.pack = load { i64, ptr }, ptr %choice.res, align 8
   ret { i64, ptr } %ret.pack
 
@@ -16306,13 +16365,13 @@ concat.tot.len75:                                 ; preds = %cat.sum.len70
   %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur78, i64 %sum73)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 %cat.seg20, i64 %cat.seg18, i1 false)
   %cat.dst79 = getelementptr i8, ptr %concat.buf, i64 %cat.seg18
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst79, ptr align 1 @str.161, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst79, ptr align 1 @str.162, i64 8, i1 false)
   %cat.off80 = add i64 %cat.seg18, 8
   %cat.dst81 = getelementptr i8, ptr %concat.buf, i64 %cat.off80
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst81, ptr align 1 %cat.seg33, i64 %cat.seg24, i1 false)
   %cat.off82 = add i64 %cat.off80, %cat.seg24
   %cat.dst83 = getelementptr i8, ptr %concat.buf, i64 %cat.off82
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst83, ptr align 1 @str.113, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst83, ptr align 1 @str.114, i64 2, i1 false)
   %cat.off84 = add i64 %cat.off82, 2
   %cat.dst85 = getelementptr i8, ptr %concat.buf, i64 %cat.off84
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst85, ptr align 1 %cat.seg53, i64 %cat.seg44, i1 false)
@@ -16440,13 +16499,13 @@ concat.tot.len173:                                ; preds = %cat.sum.len167
   %concat.buf177 = call ptr @dva_arena_alloc(ptr %arena.cur176, i64 %sum171)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf177, ptr align 1 %cat.seg108, i64 %cat.seg99, i1 false)
   %cat.dst180 = getelementptr i8, ptr %concat.buf177, i64 %cat.seg99
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst180, ptr align 1 @str.162, i64 14, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst180, ptr align 1 @str.163, i64 14, i1 false)
   %cat.off181 = add i64 %cat.seg99, 14
   %cat.dst182 = getelementptr i8, ptr %concat.buf177, i64 %cat.off181
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst182, ptr align 1 %cat.seg124, i64 %cat.seg115, i1 false)
   %cat.off183 = add i64 %cat.off181, %cat.seg115
   %cat.dst184 = getelementptr i8, ptr %concat.buf177, i64 %cat.off183
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst184, ptr align 1 @str.113, i64 2, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst184, ptr align 1 @str.114, i64 2, i1 false)
   %cat.off185 = add i64 %cat.off183, 2
   %cat.dst186 = getelementptr i8, ptr %concat.buf177, i64 %cat.off185
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst186, ptr align 1 %cat.seg145, i64 %cat.seg136, i1 false)
@@ -16542,7 +16601,7 @@ concat.tot.len254:                                ; preds = %cat.sum.len248
   %concat.buf258 = call ptr @dva_arena_alloc(ptr %arena.cur257, i64 %sum252)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf258, ptr align 1 %cat.seg215, i64 %cat.seg206, i1 false)
   %cat.dst261 = getelementptr i8, ptr %concat.buf258, i64 %cat.seg206
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst261, ptr align 1 @str.103, i64 9, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst261, ptr align 1 @str.104, i64 9, i1 false)
   %cat.off262 = add i64 %cat.seg206, 9
   %cat.dst263 = getelementptr i8, ptr %concat.buf258, i64 %cat.off262
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cat.dst263, ptr align 1 %cat.seg231, i64 %cat.seg222, i1 false)

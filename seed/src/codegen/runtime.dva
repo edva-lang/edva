@@ -437,6 +437,23 @@ emit_abort_msg_inline = cg, msg, gname =>
                dead_bb = LLVMAppendBasicBlock(parent, "abort.dead")
                LLVMPositionBuilderAtEnd(cg.builder, dead_bb)
 
+emit_expect_reason: types::Cg, String => ()
+emit_expect_reason = cg, reason =>
+   cg.opts.no_runtime || types::is_wasm_target(cg) | --|
+   msg = "expect: ${reason}\n"
+   key = "expect.reason.${str::from_int(types::g.tmpc)}"
+   types::g.tmpc = types::g.tmpc + 1
+   data = const_string_global(cg, msg, key)
+   write_fn = types::ensure_write_fn(cg)
+   args = (LLVMConstInt(LLVMInt32Type!, 2, 0), data,
+      LLVMConstInt(LLVMInt64Type!, ?msg, 0))
+   LLVMBuildCall2(cg.builder, write_fn.0, write_fn.1, &args, 3, "")
+
+emit_expect_abort: types::Cg, String => ()
+emit_expect_abort = cg, reason =>
+   emit_expect_reason(cg, reason)
+   emit_abort_msg(cg, diag::E4007_unwrap_empty_or_error!, "unwrap_abort_msg")
+
 // A single cold abort body per diagnostic and module keeps checks small.
 emit_abort_msg: types::Cg, String, String => ()
 emit_abort_msg = cg, msg, gname =>
@@ -873,7 +890,7 @@ codegen_emit_runtime_full = cg =>
    bytes = cg.opts.check_arena_escapes
       | LLVMBuildAdd(cg.builder, cap_phi, prefix_size, "chunk.bytes")
       | cap_phi
-   header = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, bytes, "chunk")
+   header = types::call1(cg, cg.malloc_t.expect("missing malloc t"), cg.malloc_fn.expect("missing malloc fn"), bytes, "chunk")
    chunk_n = LLVMBuildICmp(cg.builder, 32, header, LLVMConstNull(i8p), "malloc_null")
    LLVMBuildCondBr(cg.builder, chunk_n, al_o, al_s)
    LLVMPositionBuilderAtEnd(cg.builder, al_o)
@@ -1615,7 +1632,7 @@ field_vts_step = cg, fields, i, n, acc =>
    i == n
       | acc
       |
-         rf = fields(i)!!
+         rf = fields(i).expect("missing fields")
          acc += rec_field_vt(cg, rf)
          field_vts_step(cg, fields, i + 1, n, acc)
 
@@ -1655,7 +1672,7 @@ build_rec_meta_packed: types::Cg, ast::FieldTypes, Int, Int, types::Addrs, ast::
 build_rec_meta_packed = cg, fields, i, nf, ftypes, fnames, is_packed =>
    (i < nf)
       |
-         rf = fields(i)!!
+         rf = fields(i).expect("missing fields")
          ftypes += rec_field_llvm_type(cg, rf)
          fnames += ++rf.name
          build_rec_meta_packed(cg, fields, i + 1, nf, ftypes, fnames,
@@ -1684,7 +1701,7 @@ codegen_register_types_step: types::Cg, ast::Exprs, Int => ()
 codegen_register_types_step = cg, stmts, i =>
    i < ?stmts
       |
-         e = stmts(i)!!
+         e = stmts(i).expect("missing stmts")
          e
             [TypeDecl t] add_type(cg, t.name, t.type_info)
             [Block b] codegen_register_types(cg, b)
@@ -1792,7 +1809,7 @@ codegen_register_forwards_step: types::Cg, ast::Exprs, Int => ()
 codegen_register_forwards_step = cg, stmts, i =>
    i < ?stmts
       |
-         e = stmts(i)!!
+         e = stmts(i).expect("missing stmts")
          e
             [Assign t]
                is_fwd_expr(cg, t) | codegen_forward_registry(cg, t)
@@ -1895,7 +1912,7 @@ binding_state_at = cg, name, i =>
    i < 0
       | types::BindingState(<->, <->)
       |
-         b = cg.bindings(i)!!
+         b = cg.bindings(i).expect("missing bindings")
          is_cur = (!cg.in_fn && !b.is_local) ||
            (cg.in_fn && b.is_local && (i !< cg.fn_binding_start))
          cur_mut = is_cur | b.mutable | <->
@@ -1926,7 +1943,7 @@ binding_truncate_step = bs, n, i, acc =>
    i == n
       | acc
       |
-         acc += bs(i)!!
+         acc += bs(i).expect("missing bs")
          binding_truncate_step(bs, n, i + 1, acc)
 
 binding_truncate: types::BindingMuts, Int => types::BindingMuts
@@ -1938,7 +1955,7 @@ only_globals_step = cg, bs, n, i, acc =>
    i == n
       | acc
       |
-         b = bs(i)!!
+         b = bs(i).expect("missing bs")
          !b.is_local && (b.mod_name == cg.current_module) | acc += b
          only_globals_step(cg, bs, n, i + 1, acc)
 
@@ -2051,7 +2068,7 @@ rhs_is_inexhaustive_choice: ast::Expr => <>
 rhs_is_inexhaustive_choice = e =>
    e [Choice c]
       nb = ?c.branches
-      last_br = nb > 0 | c.branches(nb - 1)!! | ast::ChoiceBranch(
+      last_br = nb > 0 | c.branches(nb - 1).expect("missing branches") | ast::ChoiceBranch(
          ast::GuardKind(Bare), ast::Exprs(), ast::Expr(Int, 0), ast::Names(),
          ast::Names(), <->, ast::Expr(Int, 0))
       is_bare = last_br.kind [Bare]
@@ -2073,7 +2090,7 @@ codegen_emit_plain_assign_val = cg, t =>
    t.5 [Fn]
       annotated' = expr::var_ti(cg, t.0)
       types::g.ct_bind_names @ name, i =>
-         bound = types::g.ct_bind_tis(i)!!
+         bound = types::g.ct_bind_tis(i).expect("missing ct bind tis")
          annotated' = expr::subst_mono_ti(annotated', name, bound,
            types::vt_from_ti_cg(cg, bound))
       annotated' [Fn] stmt::set_lambda_expected_type(annotated')
@@ -2252,7 +2269,7 @@ find_global_var_type = cg, name, i =>
    i < 0
       | ast::ValueType(Unknown)
       |
-         v = cg.vars(i)!!
+         v = cg.vars(i).expect("missing vars")
          (v.name == name) && !v.is_local
             | v.vt
             | find_global_var_type(cg, name, i - 1)
@@ -2454,8 +2471,8 @@ member_assign_record = cg, root_name, m, t =>
          eff_fname = m.field_name != ""
             | m.field_name
             |
-               idx !< 0 && idx < ?target_fnames && target_fnames(idx)!! != ""
-                  | target_fnames(idx)!!
+               idx !< 0 && idx < ?target_fnames && target_fnames(idx).expect("missing target fnames") != ""
+                  | target_fnames(idx).expect("missing target fnames")
                   | str::from_int(idx)
          m.field_name == "" && main::var_partial(cg, root_name) && idx !< 0
             |
@@ -2580,7 +2597,7 @@ codegen_emit_record_assign = cg, t, call =>
    elem_ll_type = types::var_rt(cg, vname)
       | rt => LLVMStructGetTypeAtIndex(rt, 0)
       | types::llvm_type_of_vt(elem_vt)
-   av = call.args(0)!!
+   av = call.args(0).expect("missing args")
    idx_ev = expr::codegen_eval(cg, av)
    rhs_ev = expr::codegen_eval(cg, t.5)
    is_un = rhs_ev.1 [Unit]
@@ -2615,7 +2632,7 @@ codegen_emit_slice_assign: types::Cg,
   (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo),
   ast::CallExpr => ()
 codegen_emit_slice_assign = cg, t, call =>
-   av = call.args(0)!!
+   av = call.args(0).expect("missing args")
    idx_ev = expr::codegen_eval(cg, av)
    rhs_ev = expr::codegen_eval(cg, t.5)
    is_un = rhs_ev.1 [Unit]
@@ -2640,7 +2657,7 @@ codegen_emit_array_assign: types::Cg,
   ast::CallExpr => ()
 codegen_emit_array_assign = cg, t, call =>
    i64t = LLVMInt64Type!
-   av = call.args(0)!!
+   av = call.args(0).expect("missing args")
    idx_ev = expr::codegen_eval(cg, av)
    rhs_ev = expr::codegen_eval(cg, t.5)
    is_un = rhs_ev.1 [Unit]
@@ -2750,7 +2767,7 @@ update_type_ti = cg, name, ti =>
    idx = indices ^ name | _ | -1
    idx !< 0
       |
-         td = cg.typedefs(idx)!!
+         td = cg.typedefs(idx).expect("missing typedefs")
          cg.typedefs(idx) = types::TypeDef(name, ti, td.rt, td.in_progress, td.fnames) !| _
 
 update_type_rec: types::Cg, String, ast::TypeInfo, <Addr|>, ast::Names => ()

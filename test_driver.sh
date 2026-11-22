@@ -3619,7 +3619,7 @@ shared_view = s =>
 
 #export read_shared: String => Int
 read_shared = s =>
-   req = shared_view(s)!!
+   req = shared_view(s).expect("shared view")
    ?req.kind + ?req.path + ?req.suffix
 
 #export inspect: String, Int => Int
@@ -3627,7 +3627,7 @@ inspect = s, i => ?s + s(i)
 
 #export read_request: String, Int => Int
 read_request = s, i =>
-   req = parse(s)!!
+   req = parse(s).expect("parsed request")
    measure(req.kind, i) + measure(req.path, i) + measure(req.suffix, i)
 
 tiny: () => Int
@@ -3724,7 +3724,7 @@ cat >"$T69_DIR/caller.dva" <<'DVA'
 #foreign("c")
    exit: (code: i32) => ()
 
-pair = views::pair("one:two")!!
+pair = views::pair("one:two").expect("parsed pair")
 !(pair.name == "one" && pair.value == "two") | exit(i32(1))
 DVA
 timeout 30 ./edva "$T69_DIR/views.dva" -O2 -c --module views --no-cache \
@@ -3879,7 +3879,7 @@ read_inverted = value =>
    value | n => n | payload => read_inner(payload)
 
 #export check_outer: Int => Int
-check_outer = n => read_outer(relay(wrap(n)!!))
+check_outer = n => read_outer(relay(wrap(n).expect("nested value")))
 
 #export check_tag: Int => Int
 check_tag = n =>
@@ -3963,11 +3963,20 @@ mode ["some"] | io::out $ expect::some(maybe(0), "required optional value")
 mode ["ok"] | io::out $ expect::ok(result(0), "required result value")
 io::out $ expect::some(maybe(42), "expected positive number")
 io::out $ expect::ok(result(7), "expected successful operation")
-io::out $ maybe(9)!!
+io::out $ maybe(9).expect("positive fixture value")
 DVA
 timeout 30 ./edva "$T72_DIR/expect_check.dva" --no-cache -o "$T72_DIR/expect_check" \
     < /dev/null >"$T72_DIR/build.log" 2>&1
-grep -Eq 'expect_check.dva:[0-9]+:[0-9]+: W3177:.*deprecated' "$T72_DIR/build.log"
+cat >"$T72_DIR/retired_unwrap.dva" <<'DVA'
+value: < Int | >
+value = <+ 9 +>
+n = value!!
+DVA
+status=0
+timeout 30 ./edva "$T72_DIR/retired_unwrap.dva" --no-cache --ir < /dev/null \
+    >"$T72_DIR/retired.log" 2>&1 || status=$?
+[ "$status" -eq 1 ]
+grep -Fq "E3177: The '!!' operator was removed" "$T72_DIR/retired.log"
 timeout 10 "$T72_DIR/expect_check" < /dev/null >"$T72_DIR/out"
 printf '42\n7\n9\n' >"$T72_DIR/expected"
 diff -u "$T72_DIR/expected" "$T72_DIR/out"
@@ -3997,7 +4006,7 @@ cat >"$T72_DIR/addr.dva" <<'DVA'
 #type Nullable < Addr | >
 
 present: Int => Nullable
-present = word => <+ Addr(word) +>
+present = word => <+ ptr(word) +>
 
 read: Nullable => Int
 read = opt =>
@@ -4031,13 +4040,33 @@ timeout 30 ./edva "$T72_DIR/addr.dva" -O2 --no-cache --ir -target wasm32-unknown
 grep -Eq '^declare ptr @fixture_echo\(ptr\)' "$T72_DIR/wasm.ll"
 cat >"$T72_DIR/null_present.dva" <<'DVA'
 bad: () => < Addr | >
-bad = !=> <+ Addr(0) +>
+bad = !=> <+ ptr(0) +>
 DVA
 status=0
 timeout 30 ./edva "$T72_DIR/null_present.dva" --ir --no-cache < /dev/null \
     >"$T72_DIR/bad.log" 2>&1 || status=$?
 [ "$status" -eq 1 ]
 grep -q 'E3178:' "$T72_DIR/bad.log"
+cat >"$T72_DIR/zero_cast.dva" <<'DVA'
+value = Addr(0)
+DVA
+status=0
+timeout 30 ./edva "$T72_DIR/zero_cast.dva" --ir --no-cache < /dev/null \
+    >"$T72_DIR/zero.log" 2>&1 || status=$?
+[ "$status" -eq 1 ]
+grep -q 'E3180:' "$T72_DIR/zero.log"
+cat >"$T72_DIR/dynamic_cast.dva" <<'DVA'
+#use sys
+
+value = Addr(sys::argc - 1)
+DVA
+timeout 30 ./edva "$T72_DIR/dynamic_cast.dva" --no-cache -o "$T72_DIR/dynamic_cast" \
+    < /dev/null >"$T72_DIR/dynamic.log" 2>&1
+status=0
+timeout 10 "$T72_DIR/dynamic_cast" < /dev/null >"$T72_DIR/out" 2>&1 || status=$?
+[ "$status" -eq 1 ]
+grep -q 'E4015:' "$T72_DIR/out"
+timeout 10 "$T72_DIR/dynamic_cast" nonzero < /dev/null
 echo "PASS"
 
 echo "=== All driver tests PASSED ==="

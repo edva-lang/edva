@@ -69,7 +69,7 @@ The core document model represents nested, indentation-delimited key-value entri
 )
 
 text = ccl::encode(ServerCfg("0.0.0.0", 9090, <+>, <+ "/etc/ssl/cert.pem" +>, String{}("api", "prod")))
-cfg = ccl::decode(ServerCfg, text)!!
+cfg = ccl::decode(ServerCfg, text).expect("missing decode")
 ```
 
 ## Document parsing and query helpers
@@ -86,6 +86,6 @@ cfg = ccl::decode(ServerCfg, text)!!
 | `ccl::entries_for` | `CclDoc, String => Strings` | Retrieve all string values for repeated occurrences of a key |
 
 ```{.dva .partial}
-doc = ccl::parse("name = demo\nversion = 0.1.0", "edva.ccl")!!
+doc = ccl::parse("name = demo\nversion = 0.1.0", "edva.ccl").expect("missing parse")
 name = ccl::get(doc, "name") | n => n | "unknown"
 ```

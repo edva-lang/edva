@@ -162,7 +162,7 @@ prop_csv_rt = s =>
       wire = csv::write_all(tbl)
       csv::read_all(wire)
          | back =>
-            ?back == 2 && (back(1)!!)(1)!! == s
+            ?back == 2 && (back(1).expect("missing back"))(1).expect("required payload") == s
          | <->
    )
 

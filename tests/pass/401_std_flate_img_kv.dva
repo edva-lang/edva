@@ -113,14 +113,14 @@ fs::remove(tmp_qoi)
 kv_path = "/tmp/edva_test_401.kv"
 fs::remove(kv_path)
 
-db = kv::open(kv_path)!!
+db = kv::open(kv_path).expect("missing open")
 test::eq(kv::len(db), 0, "new kv store has 0 keys")
 
 kv::put(db, "alpha", "first") !| _
 kv::put(db, "beta", "second") !| _
 kv::put(db, "alpha", "updated_first") !| _
 kv::put(db, "temp", "to_be_deleted") !| _
-del_ok = kv::delete(db, "temp")!!
+del_ok = kv::delete(db, "temp").expect("missing delete")
 test::check(del_ok, "kv::delete existing key returns <+>")
 test::eq(kv::len(db), 2, "kv::len after put + overwrite + delete")
 test::eq(kv::get(db, "alpha") | s => s | "", "updated_first", "kv::get overwritten key")
@@ -129,7 +129,7 @@ test::check(!kv::has(db, "temp"), "deleted key not in keydir")
 // Typed `#` structural serialization in KV store
 u1 = UserProfile(42, "Ada Lovelace", <+>, 99.5)
 kv::put_val(db, "user:42", u1) !| _
-u1_out = kv::get_val(UserProfile, db, "user:42")!!
+u1_out = kv::get_val(UserProfile, db, "user:42").expect("missing get val")
 test::eq(u1_out.id, 42, "kv::get_val struct id")
 test::eq(u1_out.name, "Ada Lovelace", "kv::get_val struct name")
 test::check(u1_out.active, "kv::get_val struct active")
@@ -142,24 +142,24 @@ test::check(size_after_compact < size_before_compact, "kv::compact shrinks log f
 kv::close(db)
 
 // Reopen persisted store from disk and verify state survived
-db2 = kv::open(kv_path)!!
+db2 = kv::open(kv_path).expect("missing open")
 test::eq(kv::len(db2), 3, "reopened kv store has 3 live keys")
 test::eq(kv::get(db2, "alpha") | s => s | "", "updated_first", "reopened alpha value")
 test::eq(kv::get(db2, "beta") | s => s | "", "second", "reopened beta value")
-u2_out = kv::get_val(UserProfile, db2, "user:42")!!
+u2_out = kv::get_val(UserProfile, db2, "user:42").expect("missing get val")
 test::eq(u2_out.name, "Ada Lovelace", "reopened typed struct value")
 all_k = kv::keys(db2)
 test::eq(?all_k, 3, "kv::keys count == 3")
-test::eq(all_k(0)!!, "alpha", "kv::keys sorted [0] == alpha")
-test::eq(all_k(1)!!, "beta", "kv::keys sorted [1] == beta")
-test::eq(all_k(2)!!, "user:42", "kv::keys sorted [2] == user:42")
+test::eq(all_k(0).expect("missing all k"), "alpha", "kv::keys sorted [0] == alpha")
+test::eq(all_k(1).expect("missing all k"), "beta", "kv::keys sorted [1] == beta")
+test::eq(all_k(2).expect("missing all k"), "user:42", "kv::keys sorted [2] == user:42")
 kv::close(db2)
 
 // Verify crash-tolerant torn trailing record recovery (truncated payload + corrupt tail)
-good_raw = fs::read_to_string(kv_path)!!
+good_raw = fs::read_to_string(kv_path).expect("missing read to string")
 torn_raw = good_raw + "\x01\x02\x03\x04\x01\x05\x00\x00\x00\x20\x00\x00\x00part"
 fs::write_file(kv_path, torn_raw)
-db3 = kv::open(kv_path)!!
+db3 = kv::open(kv_path).expect("missing open")
 test::eq(kv::len(db3), 3, "kv::open recovers torn trailing record without losing valid keys")
 test::eq(kv::get(db3, "alpha") | s => s | "", "updated_first", "recovered alpha matches")
 test::eq(kv::size(db3), ?good_raw, "torn trailing bytes truncated back to valid boundary")
@@ -167,11 +167,11 @@ kv::close(db3)
 
 // Verify kv::repair returns trimmed byte count on torn/corrupt tail
 fs::write_file(kv_path, good_raw + "\xFF\xFF\xFF\xFF\x01\x01\x00\x00\x00\x01\x00\x00\x00ab")
-trimmed = kv::repair(kv_path)!!
+trimmed = kv::repair(kv_path).expect("missing repair")
 test::eq(trimmed, 15, "kv::repair trims corrupt trailing record")
 
 // Verify multi-chunk (> 4096 bytes) KV log reopens cleanly without truncation
-db_big = kv::open(kv_path)!!
+db_big = kv::open(kv_path).expect("missing open")
 big_val = {2000}
 2000 @ big_val += 'X
 big_s = +big_val
@@ -181,7 +181,7 @@ big_size = kv::size(db_big)
 test::check(big_size > 8000, "multi-chunk KV log exceeds 8 KiB")
 kv::close(db_big)
 
-db_big2 = kv::open(kv_path)!!
+db_big2 = kv::open(kv_path).expect("missing open")
 test::eq(kv::size(db_big2), big_size, "reopened >8 KiB KV log preserves exact size")
 test::eq(kv::get(db_big2, "big_3") | s => ?s | 0, 2000, "reopened >8 KiB KV log preserves last record")
 kv::close(db_big2)

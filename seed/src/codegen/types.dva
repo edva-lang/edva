@@ -509,7 +509,7 @@ fninfo_index_rev = cg, name, i =>
    i < 0
       | <-->
       |
-         fi = cg.fninfos(i)!!
+         fi = cg.fninfos(i).expect("missing fninfos")
          fi.name == name
             | <+ i +>
             | fninfo_index_rev(cg, name, i - 1)
@@ -527,7 +527,7 @@ fninfo_find_rev = cg, name, i =>
    i < 0
       | <-->
       |
-         fi = cg.fninfos(i)!!
+         fi = cg.fninfos(i).expect("missing fninfos")
          fi.name == name
             | <+ fi +>
             | fninfo_find_rev(cg, name, i - 1)
@@ -569,7 +569,7 @@ view_var_add = name =>
 
 choice_has_view: Cg, ast::Branches, Int => <>
 choice_has_view = cg, bs, i =>
-   i < ?bs && (is_view_expr(cg, (bs(i)!!).block) ||
+   i < ?bs && (is_view_expr(cg, (bs(i).expect("missing bs")).block) ||
      choice_has_view(cg, bs, i + 1))
 
 is_view_expr: Cg, ast::Expr => <>
@@ -577,7 +577,7 @@ is_view_expr = cg, e =>
    e
       [Var v] is_view_var(v)
       [RawMemory rm] rm.rec_name != ""
-      [Block b] ?b > 0 && is_view_expr(cg, b(?b - 1)!!)
+      [Block b] ?b > 0 && is_view_expr(cg, b(?b - 1).expect("missing b"))
       [Choice c] choice_has_view(cg, c.branches, 0)
       | <->
 
@@ -630,7 +630,7 @@ init_has_whole_rec: FieldInitState, Int, String => <>
 init_has_whole_rec = s, i, path =>
    (i < ?s.whole)
       |
-         s.whole(i)!! == path | <+> | init_has_whole_rec(s, i + 1, path)
+         s.whole(i).expect("missing whole") == path | <+> | init_has_whole_rec(s, i + 1, path)
       | <->
 
 init_has_written: FieldInitState, String => <>
@@ -640,7 +640,7 @@ init_has_written_rec: FieldInitState, Int, String => <>
 init_has_written_rec = s, i, path =>
    (i < ?s.written)
       |
-         s.written(i)!! == path | <+> | init_has_written_rec(s, i + 1, path)
+         s.written(i).expect("missing written") == path | <+> | init_has_written_rec(s, i + 1, path)
       | <->
 
 copy_names_at: ast::Names, Int, Int, ast::Names => ast::Names
@@ -704,7 +704,7 @@ init_fully_rec: Cg, String, Int, ast::Names => <>
 init_fully_rec = cg, vname, i, fns =>
    (i < ?fns)
       |
-         key = ++(vname + "." + fns(i)!!)
+         key = ++(vname + "." + fns(i).expect("missing fns"))
          init_has_written(cg.init, key)
             | init_fully_rec(cg, vname, i + 1, fns)
             | <->
@@ -737,14 +737,14 @@ codegen_scan_partial_escape_stmts: Cg, ast::Exprs, Int => ()
 codegen_scan_partial_escape_stmts = cg, stmts, i =>
    i < ?stmts
       |
-         codegen_scan_partial_escape_expr(cg, stmts(i)!!)
+         codegen_scan_partial_escape_expr(cg, stmts(i).expect("missing stmts"))
          codegen_scan_partial_escape_stmts(cg, stmts, i + 1)
 
 codegen_scan_partial_escape_exprs: Cg, ast::Exprs, Int => ()
 codegen_scan_partial_escape_exprs = cg, es, i =>
    i < ?es
       |
-         codegen_scan_partial_escape_expr(cg, es(i)!!)
+         codegen_scan_partial_escape_expr(cg, es(i).expect("missing es"))
          codegen_scan_partial_escape_exprs(cg, es, i + 1)
 
 codegen_scan_partial_escape_expr: Cg, ast::Expr => ()
@@ -787,7 +787,7 @@ choice_branch_reset: Cg => ()
 choice_branch_reset = cg =>
    (?cg.choice_frames > 0)
       |
-         fr = cg.choice_frames(?cg.choice_frames - 1)!!
+         fr = cg.choice_frames(?cg.choice_frames - 1).expect("missing choice frames")
          cg.init = init_snapshot(fr.pre)
 
 choice_branch_capture: Cg => ()
@@ -795,7 +795,7 @@ choice_branch_capture = cg =>
    (?cg.choice_frames > 0)
       |
          i = ?cg.choice_frames - 1
-         fr = cg.choice_frames(i)!!
+         fr = cg.choice_frames(i).expect("missing choice frames")
          fr.started
             | choice_frame_set(cg, i, ChoiceInitFrame(fr.pre,
               init_merge(fr.merged, cg.init), fr.started, fr.exhaustive))
@@ -807,7 +807,7 @@ choice_leave = cg =>
    (?cg.choice_frames > 0)
       |
          i = ?cg.choice_frames - 1
-         fr = cg.choice_frames(i)!!
+         fr = cg.choice_frames(i).expect("missing choice frames")
          merged' = fr.merged
          !fr.started | merged' = init_snapshot(fr.pre)
          !fr.exhaustive | merged' = init_merge(merged', fr.pre)
@@ -819,7 +819,7 @@ choice_frame_set_at = frames, at, fr, j, n, acc =>
    j == n
       | acc
       |
-         j == at | acc += fr | acc += frames(j)!!
+         j == at | acc += fr | acc += frames(j).expect("missing frames")
          choice_frame_set_at(frames, at, fr, j + 1, n, acc)
 
 choice_frame_set: Cg, Int, ChoiceInitFrame => ()
@@ -832,7 +832,7 @@ choice_frame_pop_at = frames, at, j, n, acc =>
    j == n
       | acc
       |
-         j != at | acc += frames(j)!!
+         j != at | acc += frames(j).expect("missing frames")
          choice_frame_pop_at(frames, at, j + 1, n, acc)
 
 choice_frame_pop: Cg, Int => ()
@@ -907,7 +907,7 @@ addrs_buf = xs =>
    buf = {cap}
    sb = &buf
    n @ i =>
-      @[sb + i * 8] = xs(i)!!
+      @[sb + i * 8] = xs(i).expect("missing xs")
    buf
 
 // An LLVM struct type from a list of field LLVM types (dynamic arity, via a
@@ -1069,7 +1069,7 @@ codegen_init = opts =>
          LLVMDisposeTargetData(td)
          l_str
       |
-         err_ptr_opt = llvm_val_opt(Addr(err_raw'))
+         err_ptr_opt = llvm_val_opt(ptr(err_raw'))
          err_s = c_str_opt(err_ptr_opt)
          log::error $ "E3069: No LLVM target registered for triple '" + triple + "'" +
            (?err_s > 0 | ": " + err_s | "")
@@ -1202,7 +1202,7 @@ ensure_printf_fn = cg =>
 ensure_write_fn: Cg => (Addr, Addr)
 ensure_write_fn = cg =>
    cg.write_fn
-      | fn => (cg.write_t!!, fn)
+      | fn => (cg.write_t.expect("missing write t"), fn)
       |
          i64t = LLVMInt64Type!
          i32t = LLVMInt32Type!
@@ -1218,7 +1218,7 @@ ensure_write_fn = cg =>
 ensure_exit_fn: Cg => (Addr, Addr)
 ensure_exit_fn = cg =>
    cg.exit_fn
-      | fn => (cg.exit_t!!, fn)
+      | fn => (cg.exit_t.expect("missing exit t"), fn)
       |
          i32t = LLVMInt32Type!
          e_ty = fn_type1(LLVMVoidType!, i32t)
@@ -1235,7 +1235,7 @@ ensure_exit_fn = cg =>
 ensure_memcmp_fn: Cg => (Addr, Addr)
 ensure_memcmp_fn = cg =>
    cg.memcmp_fn
-      | fn => (cg.memcmp_t!!, fn)
+      | fn => (cg.memcmp_t.expect("missing memcmp t"), fn)
       |
          i64t = LLVMInt64Type!
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
@@ -1450,7 +1450,7 @@ has_local_var_at = cg, name, i, start =>
    i < start
       | <->
       |
-         v = cg.vars(i)!!
+         v = cg.vars(i).expect("missing vars")
          ((v.name == name) && v.is_local)
             | <+>
             | has_local_var_at(cg, name, i - 1, start)
@@ -1463,7 +1463,7 @@ has_var_name_at = cg, name, i =>
    i < 0
       | <->
       |
-         v = cg.vars(i)!!
+         v = cg.vars(i).expect("missing vars")
          (v.name == name) && (!v.is_local || (i !< cg.fn_var_start))
             | <+>
             | has_var_name_at(cg, name, i - 1)
@@ -1474,7 +1474,7 @@ resolve_var_name_pass = cg, name, i, match_mod =>
    i < 0
       | <-->
       |
-         v = cg.vars(i)!!
+         v = cg.vars(i).expect("missing vars")
          hit = !v.is_local && (match_mod
             | (name_matches_module_public(v.name, cg.current_module, name) ||
               name_matches_module_private(v.name, cg.current_module, name))
@@ -1565,7 +1565,7 @@ find_fi_module_name_at = cg, name, i, n =>
    i == n
       | ""
       |
-         fi = cg.fninfos(i)!!
+         fi = cg.fninfos(i).expect("missing fninfos")
          name_matches_module_public(fi.name, cg.current_module, name)
             | fi.name
             |
@@ -1596,7 +1596,7 @@ find_type_bare_name_at = cg, name, i, n =>
    i == n
       | name
       |
-         td = cg.typedefs(i)!!
+         td = cg.typedefs(i).expect("missing typedefs")
          td.name == name
             | td.name
             |
@@ -1765,7 +1765,7 @@ find_var_type = cg, name, i, fallback =>
    i < 0
       | fallback
       |
-         v = cg.vars(i)!!
+         v = cg.vars(i).expect("missing vars")
          v.name == name
             |
                (i !< cg.fn_var_start) && v.is_local
@@ -1804,7 +1804,7 @@ var_is_heap_at = cg, name, i =>
    i < 0
       | <->
       |
-         v = cg.vars(i)!!
+         v = cg.vars(i).expect("missing vars")
          v.name == name
             |
                (i !< cg.fn_var_start) && v.is_local
@@ -1827,7 +1827,7 @@ var_dtype_at = cg, name, i =>
    i < 0
       | ""
       |
-         v = cg.vars(i)!!
+         v = cg.vars(i).expect("missing vars")
          v.name == name
             |
                (i !< cg.fn_var_start) && v.is_local
@@ -1867,7 +1867,7 @@ var_rt_at = cg, name, i =>
    i < 0
       | <-->
       |
-         v = cg.vars(i)!!
+         v = cg.vars(i).expect("missing vars")
          v.name == name
             |
                (i !< cg.fn_var_start) && v.is_local
@@ -1890,7 +1890,7 @@ var_fnames_at = cg, name, i =>
    i < 0
       | ast::Names()
       |
-         v = cg.vars(i)!!
+         v = cg.vars(i).expect("missing vars")
          v.name == name
             |
                (i !< cg.fn_var_start) && v.is_local
@@ -1948,7 +1948,7 @@ find_field: ast::Names, String, Int => <Int|>
 find_field = fnames, name, acc =>
    acc < ?fnames
       |
-         fnames(acc)!! == name | <+ acc +> | find_field(fnames, name, acc + 1)
+         fnames(acc).expect("missing fnames") == name | <+ acc +> | find_field(fnames, name, acc + 1)
       | <-->
 
 // Loads a variable's global/local value, typed by its recorded ValueType (a
@@ -2037,7 +2037,7 @@ find_var_direct = cg, name, i =>
    i < 0
       | <-->
       |
-         v = cg.vars(i)!!
+         v = cg.vars(i).expect("missing vars")
          v.name == name
             |
                (i !< cg.fn_var_start) && v.is_local
@@ -2095,7 +2095,7 @@ find_var_slot = cg, name, i =>
    i < 0
       | <-->
       |
-         v = cg.vars(i)!!
+         v = cg.vars(i).expect("missing vars")
          v.name == name
             |
                (i !< cg.fn_var_start) && v.is_local
@@ -2172,7 +2172,7 @@ typedef_ti = cg, name =>
    indices ^? resolved
       |
          idx = indices ^ resolved | _ | -1
-         td = cg.typedefs(idx)!!
+         td = cg.typedefs(idx).expect("missing typedefs")
          td.ti
             [TypeVar tv]
                tv != name && is_user_type(cg, tv) | typedef_ti(cg, tv) | td.ti
@@ -2273,7 +2273,7 @@ is_unboxed_ret_field_vt = vt =>
 rec_fields_unboxed_ok: Cg, ast::FieldTypes, Int, Int => <>
 rec_fields_unboxed_ok = cg, fields, i, n =>
    i !< n | --| <+>
-   rf = fields(i)!!
+   rf = fields(i).expect("missing fields")
    (rf.rec_type [Align]) || stmt::ti_is_slice(rf.rec_type) | --| <->
    tv_ok = rf.rec_type
       [TypeVar tv] type_name_to_vt(tv).1 || is_user_type(cg, tv)
@@ -2458,7 +2458,7 @@ record_field_ti_by_name = cg, ti, name =>
          idx = member_index_in_fields(flds, name)
          idx !< 0
             |
-               rf = flds(idx)!!
+               rf = flds(idx).expect("missing flds")
                rf.rec_type [TypeVar tv] typedef_ti(cg, tv) | rf.rec_type
             | ast::TypeInfo(Prim, ast::ValueType(Unknown))
       [Prim p]
@@ -2661,7 +2661,7 @@ rec_elem_ti: ast::FieldTypes => ast::TypeInfo
 rec_elem_ti = fields =>
    ?fields > 0
       |
-         f = fields(0)!!
+         f = fields(0).expect("missing fields")
          f.rec_type
       | ast::TypeInfo(Prim, ast::ValueType(Unknown))
 
@@ -2703,7 +2703,7 @@ codegen_struct_size_packed_step = cg, fields, i, n, cur_off =>
    i == n
       | cur_off
       |
-         f = fields(i)!!
+         f = fields(i).expect("missing fields")
          fsz = codegen_type_size(cg, f.val_type, f.rec_type)
          codegen_struct_size_packed_step(cg, fields, i + 1, n, cur_off + fsz)
 
@@ -2716,7 +2716,7 @@ codegen_struct_size_step = cg, fields, i, n, cur_off, max_al =>
    i == n
       | align_to(cur_off, max_al)
       |
-         f = fields(i)!!
+         f = fields(i).expect("missing fields")
          fsz = codegen_type_size(cg, f.val_type, f.rec_type)
          fal = codegen_type_align(cg, f.val_type, f.rec_type)
          off = align_to(cur_off, fal)
@@ -2752,7 +2752,7 @@ codegen_struct_align_step = cg, fields, i, n, max_al =>
    i == n
       | max_al
       |
-         f = fields(i)!!
+         f = fields(i).expect("missing fields")
          fal = codegen_type_align(cg, f.val_type, f.rec_type)
          nal = fal > max_al | fal | max_al
          codegen_struct_align_step(cg, fields, i + 1, n, nal)
@@ -2916,8 +2916,8 @@ rec_fields_equal_at = f1, f2, i, n =>
    i == n
       | <+>
       |
-         f1i = f1(i)!!
-         f2i = f2(i)!!
+         f1i = f1(i).expect("missing f1")
+         f2i = f2(i).expect("missing f2")
          match = f1i.name == f2i.name && f1i.val_type == f2i.val_type &&
            type_info_equal(f1i.rec_type, f2i.rec_type)
          match
@@ -2929,8 +2929,8 @@ enum_slots_equal_at = s1, s2, i, n =>
    i == n
       | <+>
       |
-         s1i = s1(i)!!
-         s2i = s2(i)!!
+         s1i = s1(i).expect("missing s1")
+         s2i = s2(i).expect("missing s2")
          same_p = s1i.has_payload | s2i.has_payload | !s2i.has_payload
          match = s1i.label == s2i.label && same_p &&
            (!s1i.has_payload || (s1i.payload_type == s2i.payload_type &&
@@ -2944,8 +2944,8 @@ fn_params_equal_at = p1, p2, i, n =>
    i == n
       | <+>
       |
-         p1i = p1(i)!!
-         p2i = p2(i)!!
+         p1i = p1(i).expect("missing p1")
+         p2i = p2(i).expect("missing p2")
          type_info_equal(p1i, p2i)
             | fn_params_equal_at(p1, p2, i + 1, n)
             | <->
@@ -3081,12 +3081,12 @@ cursor_member_ti = ti, idx =>
       [Align a] cursor_member_ti(a.1, idx)
       [Rec r]
          idx !< 0 && idx < ?r.0
-            | (field_type_info(r.0(idx)!!), <+>)
+            | (field_type_info(r.0(idx).expect("required payload")), <+>)
             | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       [Enum slots]
          idx !< 0 && idx < ?slots
             |
-               sl = slots(idx)!!
+               sl = slots(idx).expect("missing slots")
                sl.has_payload
                   | (norm_slot_ti(sl.payload_type, sl.payload_record), <+>)
                   | (ast::TypeInfo(Prim, ast::ValueType(Unit)), <+>)
@@ -3109,7 +3109,7 @@ resolve_type_record_index = cg, ti, index_expr =>
                      idx = LLVMConstIntGetZExtValue(iv)
                      idx !< 0 && idx < ?r.0
                         |
-                           fld = r.0(idx)!!
+                           fld = r.0(idx).expect("required payload")
                            (field_type_info(fld), <+>)
                         | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
                   | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
@@ -3196,7 +3196,7 @@ subst_ct_binds_ti = ti =>
 field_types_has_name: ast::FieldTypes, String, Int => <>
 field_types_has_name = fts, name, i =>
    i !< ?fts | --| <->
-   fts(i)!!.name == name | --| <+>
+   fts(i).expect("missing fts").name == name | --| <+>
    field_types_has_name(fts, name, i + 1)
 
 ti_has_member_name: Cg, ast::TypeInfo, String => <>
@@ -3270,7 +3270,7 @@ resolve_type_value_simple = expr =>
                                     | -1
                                  idx_val !< 0 && idx_val < ?r.0
                                     |
-                                       fld = r.0(idx_val)!!
+                                       fld = r.0(idx_val).expect("required payload")
                                        (field_type_info(fld), <+>)
                                     |
                                        (ast::TypeInfo(Prim,
@@ -3385,8 +3385,8 @@ ctfe_eval_type_flag_simple = cond =>
       [Call c]
          c.fn_name == "#has_member" && ?c.args == 2
             |
-               rt = resolve_type_value_simple(c.args(0)!!)
-               mname = c.args(1)!!
+               rt = resolve_type_value_simple(c.args(0).expect("missing args"))
+               mname = c.args(1).expect("missing args")
                   [Var v] v
                   [Str s] s
                   | ""
@@ -3444,15 +3444,15 @@ ctfe_eval_type_flag = cg, cond =>
       [Call c]
          c.fn_name == "#has_member" && ?c.args == 2
             |
-               rt = resolve_type_value(cg, c.args(0)!!)
-               mname0 = c.args(1)!!
+               rt = resolve_type_value(cg, c.args(0).expect("missing args"))
+               mname0 = c.args(1).expect("missing args")
                   [Var v] v
                   [Str s] s
                   | ""
                mname = mname0 != ""
                   | mname0
                   |
-                     ev_m = match::ctfe_eval(cg, c.args(1)!!, CtFrames(), 0)
+                     ev_m = match::ctfe_eval(cg, c.args(1).expect("missing args"), CtFrames(), 0)
                      ev_m.0 [Str ms] ms | ""
                rt.1 && mname != ""
                   | (ti_has_member_name(cg, rt.0, mname) | 1 | 0, <+>)
@@ -3478,7 +3478,7 @@ is_rec_homo_fields = flds, f0_ti, f0_vt, i, n =>
    i == n
       | <+>
       |
-         fi = flds(i)!!
+         fi = flds(i).expect("missing flds")
          fi.val_type == f0_vt && type_info_equal(fi.rec_type, f0_ti)
             | is_rec_homo_fields(flds, f0_ti, f0_vt, i + 1, n)
             | <->
@@ -3492,7 +3492,7 @@ is_rec_homo = ti =>
          nf == 0
             | <->
             |
-               f0 = r.0(0)!!
+               f0 = r.0(0).expect("required payload")
                is_rec_homo_fields(r.0, f0.rec_type, f0.val_type, 1, nf)
       | <->
 
@@ -3537,7 +3537,7 @@ f0_is_unit: ast::FieldTypes => <>
 f0_is_unit = flds =>
    ?flds == 1
       |
-         f0 = flds(0)!!
+         f0 = flds(0).expect("missing flds")
          f0.val_type [Unit]
       | <->
 
@@ -3747,7 +3747,7 @@ ctfe_binds_match_slots_simple = binds, slots, i, n =>
    i == n || i == ?slots
       | <+>
       |
-         ctfe_bind_matches_simple(binds(i)!!, slots(i)!!)
+         ctfe_bind_matches_simple(binds(i).expect("missing binds"), slots(i).expect("missing slots"))
             | ctfe_binds_match_slots_simple(binds, slots, i + 1, n)
             | <->
 
@@ -3756,7 +3756,7 @@ ctfe_binds_match_slots = cg, binds, slots, i, n =>
    i == n || i == ?slots
       | <+>
       |
-         ctfe_bind_matches(cg, binds(i)!!, slots(i)!!)
+         ctfe_bind_matches(cg, binds(i).expect("missing binds"), slots(i).expect("missing slots"))
             | ctfe_binds_match_slots(cg, binds, slots, i + 1, n)
             | <->
 
@@ -3831,7 +3831,7 @@ ctfe_extract_pattern_slots = tag, can_ti =>
                r.1
                   |
                      e_ti = ?r.0 > 0
-                        | field_type_info(r.0(0)!!)
+                        | field_type_info(r.0(0).expect("required payload"))
                         | ast::TypeInfo(Prim, r.3)
                      slots = ast::VInfos()
                      slots += e_ti
@@ -3852,7 +3852,7 @@ ctfe_extract_pattern_slots = tag, can_ti =>
                !r.1 && ?r.0 > 0 && is_rec_homo(can_ti)
                   |
                      slots = ast::VInfos()
-                     slots += field_type_info(r.0(0)!!)
+                     slots += field_type_info(r.0(0).expect("required payload"))
                      (slots, <+>)
                   | (ast::VInfos(), <->)
             | (ast::VInfos(), <->)
@@ -3867,7 +3867,7 @@ ctfe_extract_pattern_slots = tag, can_ti =>
                            !r.1 && ?r.0 == np.0 && is_rec_homo(can_ti)
                               |
                                  slots = ast::VInfos()
-                                 slots += field_type_info(r.0(0)!!)
+                                 slots += field_type_info(r.0(0).expect("required payload"))
                                  (slots, <+>)
                               | (ast::VInfos(), <->)
                         | (ast::VInfos(), <->)
@@ -3879,7 +3879,7 @@ ctfe_push_branch_type_binds_simple = br, cond =>
    is_var = br.kind [Variant]
    is_var && ?br.variant_names > 0 && ?br.bind_vars > 0
       |
-         tag = br.variant_names(0)!!
+         tag = br.variant_names(0).expect("missing variant names")
          ?tag > 6 && tag(0..6) == "#type:"
             |
                cond_ti = resolve_type_value_simple(cond)
@@ -3891,15 +3891,15 @@ ctfe_push_branch_type_binds_simple = br, cond =>
                         |
                            nb = ?br.bind_vars < ?ext.0 | ?br.bind_vars | ?ext.0
                            nb @ i =>
-                              ctfe_bind_push_if_var_simple(br.bind_vars(i)!!,
-                                ext.0(i)!!)
+                              ctfe_bind_push_if_var_simple(br.bind_vars(i).expect("missing bind vars"),
+                                ext.0(i).expect("required payload"))
 
 ctfe_push_branch_type_binds: Cg, ast::ChoiceBranch, ast::Expr => ()
 ctfe_push_branch_type_binds = cg, br, cond =>
    is_var = br.kind [Variant]
    is_var && ?br.variant_names > 0 && ?br.bind_vars > 0
       |
-         tag = br.variant_names(0)!!
+         tag = br.variant_names(0).expect("missing variant names")
          ?tag > 6 && tag(0..6) == "#type:"
             |
                cond_ti = resolve_type_value(cg, cond)
@@ -3911,8 +3911,8 @@ ctfe_push_branch_type_binds = cg, br, cond =>
                         |
                            nb = ?br.bind_vars < ?ext.0 | ?br.bind_vars | ?ext.0
                            nb @ i =>
-                              ctfe_bind_push_if_var(cg, br.bind_vars(i)!!,
-                                ext.0(i)!!)
+                              ctfe_bind_push_if_var(cg, br.bind_vars(i).expect("missing bind vars"),
+                                ext.0(i).expect("required payload"))
 
 ctfe_variant_names_match: Cg, ast::Names, ast::Names, Int, Int,
   ast::TypeInfo => <>
@@ -4116,7 +4116,7 @@ enum_find_index: ast::EnumSlots, String, Int => <Int|>
 enum_find_index = s, label, acc =>
    acc < ?s
       |
-         sl = s(acc)!!
+         sl = s(acc).expect("missing s")
          sl.label == label | <+ acc +> | enum_find_index(s, label, acc + 1)
       | <-->
 
@@ -4128,7 +4128,7 @@ enum_find_payload: ast::EnumSlots, String, ast::ValueType => ast::ValueType
 enum_find_payload = s, label, fallback =>
    enum_find_index(s, label, 0)
       | idx =>
-         sl = s(idx)!!
+         sl = s(idx).expect("missing s")
          sl.payload_type
       | fallback
 
@@ -4140,7 +4140,7 @@ enum_find_ti: ast::EnumSlots, String, ast::TypeInfo => ast::TypeInfo
 enum_find_ti = s, label, fallback =>
    enum_find_index(s, label, 0)
       | idx =>
-         sl = s(idx)!!
+         sl = s(idx).expect("missing s")
          sl.payload_record
       | fallback
 
@@ -4175,7 +4175,7 @@ enum_choice_has_bare = branches, at =>
    at == ?branches
       | <->
       |
-         br = branches(at)!!
+         br = branches(at).expect("missing branches")
          is_bare = br.kind [Bare]
          is_bare | <+> | enum_choice_has_bare(branches, at + 1)
 
@@ -4184,7 +4184,7 @@ enum_choice_missing_labels = slots, branches, at, found =>
    at == ?slots
       | found
       |
-         slot = slots(at)!!
+         slot = slots(at).expect("missing slots")
          has = enum_choice_has_label(branches, slot.label, 0)
          next = enum_choice_missing_next(has, found, slot.label)
          enum_choice_missing_labels(slots, branches, at + 1, next)
@@ -4202,7 +4202,7 @@ enum_choice_has_label = branches, label, at =>
    at == ?branches
       | <->
       |
-         br = branches(at)!!
+         br = branches(at).expect("missing branches")
          is_var = br.kind [Variant]
          is_var
             |
@@ -4237,7 +4237,7 @@ codegen_copy_base_fields: Cg, Addr, Addr, Addr, ast::FieldTypes, ast::VTypes,
   Flags, Int => ()
 codegen_copy_base_fields = cg, dst, base_ev, tgt_rt, flds, tfvts, fin, n =>
    n @ k =>
-      rf_base = flds(k)!!
+      rf_base = flds(k).expect("missing flds")
       src_idx = member_index(cg.last_fnames, rf_base.name)
       src_idx !< 0
          |
@@ -4245,8 +4245,8 @@ codegen_copy_base_fields = cg, dst, base_ev, tgt_rt, flds, tfvts, fin, n =>
             src_gep = record_field_gep(cg, src_rt, cg.last_fvts,
               base_ev, src_idx)
             dst_gep = record_field_gep(cg, tgt_rt, tfvts, dst, k)
-            src_fvt = cg.last_fvts(src_idx)!!
-            tgt_fvt = tfvts(k)!!
+            src_fvt = cg.last_fvts(src_idx).expect("missing last fvts")
+            tgt_fvt = tfvts(k).expect("missing tfvts")
             is_rf_base = src_fvt [Record] || (tgt_fvt [Record])
             is_rf_base
                |
@@ -4330,7 +4330,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                               ev_named = expr::codegen_eval(cg, na.val)
                               dst_gep_named = record_field_gep(cg, rm_0,
                                 tgt_fvts, dst', idx_named)
-                              tgt_fvt_named = tgt_fvts(idx_named)!!
+                              tgt_fvt_named = tgt_fvts(idx_named).expect("missing tgt fvts")
                               is_rf_named = ev_named.1 [Record] ||
                                 (tgt_fvt_named [Record])
                               is_rf_named
@@ -4355,7 +4355,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                               ev_pos = expr::codegen_eval(cg, uarg)
                               dst_gep_pos = record_field_gep(cg, rm_0,
                                 tgt_fvts, dst', i)
-                              tgt_fvt_pos = tgt_fvts(i)!!
+                              tgt_fvt_pos = tgt_fvts(i).expect("missing tgt fvts")
                               is_rf_pos = ev_pos.1 [Record] ||
                                 (tgt_fvt_pos [Record])
                               is_rf_pos
@@ -4375,16 +4375,16 @@ codegen_eval_record_ctor = cg, ti, t =>
                                       cval_pos, dst_gep_pos)
                               f_init(i) = <+> !| _
          tgt_nf @ i =>
-            is_init = f_init(i)!!
+            is_init = f_init(i).expect("missing f init")
             !is_init
                |
-                  rf_def = fields(i)!!
+                  rf_def = fields(i).expect("missing fields")
                   rf_def.has_default
                      |
                         def_ev = expr::codegen_eval(cg, rf_def.default_expr)
                         dst_gep_def = record_field_gep(cg, rm_0, tgt_fvts,
                           dst', i)
-                        tgt_fvt_def = tgt_fvts(i)!!
+                        tgt_fvt_def = tgt_fvts(i).expect("missing tgt fvts")
                         is_rf_def = def_ev.1 [Record] || (tgt_fvt_def [Record])
                         is_rf_def
                            |
@@ -4409,7 +4409,7 @@ codegen_eval_record_ctor = cg, ti, t =>
       |
          nargs == 1
             |
-               arg0 = t.args(0)!!
+               arg0 = t.args(0).expect("missing args")
                src_ev = expr::codegen_eval(cg, arg0)
                src_val = src_ev.0
                src_vt = src_ev.1
@@ -4499,7 +4499,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                LLVMBuildPointerCast(cg.builder, dst',
                  LLVMPointerType(rm_0, 0), "record.ptr")
                tgt_nf @ i =>
-                  av = t.args(i)!!
+                  av = t.args(i).expect("missing args")
                   ev = expr::codegen_eval(cg, av)
                   dst_gep' = record_field_gep(cg, rm_0, tgt_fvts, dst', i)
                   tgt_fvt' = tgt_fvts(i) | _ | ast::ValueType(Unknown)
@@ -4523,7 +4523,7 @@ find_typedef_name_for_ti_at = tds, i, n, ti =>
    i == n
       | ""
       |
-         td = tds(i)!!
+         td = tds(i).expect("missing tds")
          !is_internal_type_name(td.name) && type_info_equal(td.ti, ti)
             | td.name
             | find_typedef_name_for_ti_at(tds, i + 1, n, ti)
@@ -4581,7 +4581,7 @@ type_info_display_name = cg, expr, ti =>
                is_nominal_ti = ti
                   [Enum] <+>
                   [TypeVar] <+>
-                  [Rec r] (!r.1 && ?r.0 > 0 && r.0(0)!!.name != "")
+                  [Rec r] (!r.1 && ?r.0 > 0 && r.0(0).expect("required payload").name != "")
                   | <->
                td_name = is_nominal_ti | find_typedef_name_for_ti(cg, ti) | ""
                td_name != ""
@@ -4601,17 +4601,17 @@ type_info_display_name = cg, expr, ti =>
                            r.1
                               |
                                  e_ti = ?r.0 > 0
-                                    | field_type_info(r.0(0)!!)
+                                    | field_type_info(r.0(0).expect("required payload"))
                                     | ast::TypeInfo(Prim, r.3)
                                  "${type_info_display_name(cg, ast::Expr(Int, 0), e_ti)}[]"
                               | r.2 && r.4 > 0
                                  |
                                     e_ti = ?r.0 > 0
-                                       | field_type_info(r.0(0)!!)
+                                       | field_type_info(r.0(0).expect("required payload"))
                                        | ast::TypeInfo(Prim, r.3)
                                     et = type_info_display_name(cg, ast::Expr(Int, 0), e_ti)
                                     "(${et} * ${r.4})"
-                                 | !r.1 && !r.2 && ?r.0 > 0 && r.0(0)!!.name == ""
+                                 | !r.1 && !r.2 && ?r.0 > 0 && r.0(0).expect("required payload").name == ""
                                     |
                                        b_tup = {64}
                                        r.0 @ el_, i =>
@@ -4657,21 +4657,21 @@ codegen_eval_enum_idx_ctor = cg, eff_tname, slots, t, idx =>
            diag::enum_no_variant(eff_tname, str::from_int(idx)), t.line, t.col)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Enum))
       |
-         sl = slots(idx)!!
+         sl = slots(idx).expect("missing slots")
          na = ?t.args
          !sl.has_payload && na > 1
             | init_error(cg, "E3098",
               diag::enum_unit_payload(eff_tname, sl.label), t.line, t.col)
          sl.has_payload && na > 1
             |
-               actual = static_expr_vt(cg, t.args(1)!!)
+               actual = static_expr_vt(cg, t.args(1).expect("missing args"))
                actual != ast::ValueType(Unknown) && actual != sl.payload_type
                   | init_error(cg, "E3099", diag::enum_payload_type(eff_tname,
                     sl.label, value_type_name(sl.payload_type),
                     value_type_name(actual)), t.line, t.col)
          payargs = ast::Exprs()
          sl.has_payload && na > 1
-            | payargs += t.args(1)!!
+            | payargs += t.args(1).expect("missing args")
          u' = codegen_build_union(cg, idx, payargs, "enum.alloc")
          cg.last_type = eff_tname
          (u', ast::ValueType(Enum))
@@ -4696,7 +4696,7 @@ codegen_eval_ctor_ex = cg, ti, t, allow_cursor =>
          (u', ast::ValueType(Map))
       [Enum s]
          slots = ti [Enum s2] s2 | ast::EnumSlots()
-         lbl = t.args(0)!!
+         lbl = t.args(0).expect("missing args")
          lname = lbl
             [Var v] v
             [Str sv] (allow_cursor | sv | "")
@@ -4718,12 +4718,12 @@ codegen_eval_ctor_ex = cg, ti, t, allow_cursor =>
                   |
                      idx = cur.1
                      sl_has_pay = idx !< 0 && idx < ?slots
-                        | slots(idx)!!.has_payload
+                        | slots(idx).expect("missing slots").has_payload
                         | <->
                      na = ?t.args
                      na > 1 && sl_has_pay
                         |
-                           pv = t.args(1)!!
+                           pv = t.args(1).expect("missing args")
                            payargs = ast::Exprs()
                            payargs += pv
                            u' = codegen_build_union(cg, idx, payargs, "enum.alloc")
@@ -4731,7 +4731,7 @@ codegen_eval_ctor_ex = cg, ti, t, allow_cursor =>
                            (u', ast::ValueType(Enum))
                         |
                            na > 1
-                              | expr::codegen_eval(cg, t.args(1)!!)
+                              | expr::codegen_eval(cg, t.args(1).expect("missing args"))
                            u2 = codegen_build_union(cg, idx, ast::Exprs(), "enum.alloc")
                            cg.last_type = eff_tname
                            (u2, ast::ValueType(Enum))
@@ -4746,7 +4746,7 @@ codegen_eval_ctor_ex = cg, ti, t, allow_cursor =>
                               |
                                  cargs = ast::Exprs()
                                  cargs += ast::Expr(Var, lname)
-                                 ?t.args > 1 | (cargs += t.args(1)!!)
+                                 ?t.args > 1 | (cargs += t.args(1).expect("missing args"))
                                  ast::CallExpr(t.fn_name, t.fn_target, cargs, t.line, t.col)
                               | t
                            codegen_check_enum_ctor(cg, eff_tname, slots, chk_call)
@@ -4754,7 +4754,7 @@ codegen_eval_ctor_ex = cg, ti, t, allow_cursor =>
                            na = ?t.args
                            na > 1
                               |
-                                 pv = t.args(1)!!
+                                 pv = t.args(1).expect("missing args")
                                  payargs = ast::Exprs()
                                  payargs += pv
                                  u' = codegen_build_union(cg, idx, payargs, "enum.alloc")
@@ -4769,7 +4769,7 @@ codegen_eval_ctor_ex = cg, ti, t, allow_cursor =>
       [Ram slots]
          codegen_eval_ram_ctor(cg, t.fn_name, slots, t)
       |
-         arg2 = t.args(0)!!
+         arg2 = t.args(0).expect("missing args")
          expr::codegen_eval(cg, arg2)
 
 codegen_eval_ctor: Cg, ast::TypeInfo, ast::CallExpr => (Addr, ast::ValueType)
@@ -4780,7 +4780,7 @@ codegen_eval_ctor = cg, ti, t => codegen_eval_ctor_ex(cg, ti, t, <->)
 // and payload-schema information remains in the declared TypeInfo here.
 codegen_check_enum_ctor: Cg, String, ast::EnumSlots, ast::CallExpr => ()
 codegen_check_enum_ctor = cg, enum_name, slots, call =>
-   lbl = call.args(0)!!
+   lbl = call.args(0).expect("missing args")
    label = lbl [Var v] v | ""
    idx_opt = enum_slot_index(slots, label)
    has_idx = <>(idx_opt)
@@ -4797,7 +4797,7 @@ codegen_check_enum_ctor = cg, enum_name, slots, call =>
               call.line, call.col)
          has_payload && nargs > 1
             |
-               actual = static_expr_vt(cg, call.args(1)!!)
+               actual = static_expr_vt(cg, call.args(1).expect("missing args"))
                actual != ast::ValueType(Unknown) && actual != payload
                   | init_error(cg, "E3099", diag::enum_payload_type(enum_name,
                     label, value_type_name(payload), value_type_name(actual)),
@@ -4806,7 +4806,7 @@ codegen_check_enum_ctor = cg, enum_name, slots, call =>
 enum_slot_has_payload: ast::EnumSlots, String => <>
 enum_slot_has_payload = slots, label =>
    enum_slot_index(slots, label)
-      | idx => slots(idx)!!.has_payload
+      | idx => slots(idx).expect("missing slots").has_payload
       | <->
 
 // This scanner deliberately leaves unknown values for later unification; it
@@ -4840,7 +4840,7 @@ static_expr_vt = cg, e =>
       [Fn] ast::ValueType(Fn)
       [Call c]
          c.fn_name == "%bitcast" && ?c.args == 2
-            | ((c.args(0)!!) [SizeOf so] vt_from_ti_cg(cg, so.rec_type) | ast::ValueType(Unknown))
+            | ((c.args(0).expect("missing args")) [SizeOf so] vt_from_ti_cg(cg, so.rec_type) | ast::ValueType(Unknown))
             |
                c.fn_name == "Builder" && ?c.args == 0
                   | ast::ValueType(Builder)
@@ -4894,7 +4894,7 @@ value_type_name =
 // while leaving the runtime value as the same erased union/flag representation.
 codegen_eval_ram_ctor: Cg, String, (ast::RamSlotInfo, ast::RamSlotInfo), ast::CallExpr => (Addr, ast::ValueType)
 codegen_eval_ram_ctor = cg, name, slots, call =>
-   arg = call.args(0)!!
+   arg = call.args(0).expect("missing args")
    codegen_check_ram_ctor(cg, name, slots, call, arg)
    res = expr::codegen_eval(cg, arg)
    cg.last_type = name
@@ -4934,7 +4934,7 @@ codegen_check_ram_variant = cg, name, slots, call, variant =>
    slot.has_payload && has_payload
       |
          slot_pt = slot_payload_type(cg, slot)
-         actual = static_expr_vt(cg, variant.args(0)!!)
+         actual = static_expr_vt(cg, variant.args(0).expect("missing args"))
          actual != ast::ValueType(Unknown) && actual != slot_pt
             | init_error(cg, "E3054", "Ramification '" + name + "' slot '" +
               ram_slot_name(variant.tag_name) + "' expects payload of type " +
@@ -4997,7 +4997,7 @@ enum_label_owner_count_at = cg, label, i, n, seen =>
    i == n
       | seen
       |
-         td = cg.typedefs(i)!!
+         td = cg.typedefs(i).expect("missing typedefs")
          has_lbl = td.ti [Enum slots] (<>(enum_slot_index(slots, label)) | 1 | 0) | 0
          enum_label_owner_count_at(cg, label, i + 1, n, seen + has_lbl)
 
@@ -5009,7 +5009,7 @@ codegen_map_literal_insert_rest: Cg, Addr, ast::MapPairs, Int, Int, ast::ValueTy
 codegen_map_literal_insert_rest = cg, m, pairs, i, n, key_vt =>
    i != n
       |
-         p = pairs(i)!!
+         p = pairs(i).expect("missing pairs")
          kv = expr::codegen_eval(cg, p.key)
          vv = expr::codegen_eval(cg, p.value)
          runtime::codegen_map_insert(cg, m, kv.0, vv.0, key_vt)
@@ -5025,7 +5025,7 @@ codegen_eval_map_literal = cg, pairs =>
    np == 0
       | (m, ast::ValueType(Map))
       |
-         first = pairs(0)!!
+         first = pairs(0).expect("missing pairs")
          kv0 = expr::codegen_eval(cg, first.key)
          vv0 = expr::codegen_eval(cg, first.value)
          key_vt = kv0.1
@@ -5108,8 +5108,8 @@ codegen_check_map_pairs: Cg, ast::MapPairs, Int => ()
 codegen_check_map_pairs = cg, pairs, at =>
    at < ?pairs
       |
-         first = pairs(0)!!
-         pair = pairs(at)!!
+         first = pairs(0).expect("missing pairs")
+         pair = pairs(at).expect("missing pairs")
          first_key = static_expr_vt(cg, first.key)
          first_val = static_expr_vt(cg, first.value)
          key = static_expr_vt(cg, pair.key)
@@ -5159,7 +5159,7 @@ codegen_build_union = cg, tid, args, alloc_name =>
    na = ?args
    na > 0
       |
-         av = args(0)!!
+         av = args(0).expect("missing args")
          ev = expr::codegen_eval(cg, av)
          ev_dt = ev.1 [Str] "String" [Int] "Int" [Float] "Float" |
             (cg.last_type != "" | cg.last_type | "")
@@ -5206,8 +5206,8 @@ record_field_gep_opt = cg, rt, fvts, base, idx =>
    ! <>(b_opt) || ! <>(rt_opt)
       | <-->
       |
-         base_val = b_opt!!
-         rt_val = rt_opt!!
+         base_val = b_opt.expect("missing b opt")
+         rt_val = rt_opt.expect("missing rt opt")
          base_ptr = LLVMGetTypeKind(LLVMTypeOf(base_val)) == 8
             | LLVMBuildIntToPtr(cg.builder, base_val,
               LLVMPointerType(LLVMInt8Type!, 0), "rec.base.ptr")
@@ -5243,7 +5243,7 @@ codegen_eval_record = cg, r =>
       r.fields @ field, i =>
          !field.has_name | matches' = <->
          i < ?schema.0
-            | schema.0(i)!!.name != field.name | matches' = <->
+            | schema.0(i).expect("required payload").name != field.name | matches' = <->
       matches'
          |
             args = ast::Exprs()
@@ -5301,9 +5301,9 @@ codegen_eval_record_inferred = cg, r =>
          |
             inner_sz = LLVMSizeOf(ft)
             LLVMBuildMemCpy(cg.builder, fgep, 1,
-              fvals(i)!!, 1, inner_sz, 0)
+              fvals(i).expect("missing fvals"), 1, inner_sz, 0)
          |
-            cval = stmt::coerce_int(cg, fvals(i)!!, ft)
+            cval = stmt::coerce_int(cg, fvals(i).expect("missing fvals"), ft)
             LLVMBuildStore(cg.builder, cval, fgep)
    (rp, ast::ValueType(Record))
 
@@ -5322,7 +5322,7 @@ rec_meta = cg, vt =>
 
 td_record_meta: Cg, Int => <(Addr, ast::Names)|>
 td_record_meta = cg, idx =>
-   td = cg.typedefs(idx)!!
+   td = cg.typedefs(idx).expect("missing typedefs")
    td.in_progress
       | <-->
       |
@@ -5355,7 +5355,7 @@ typedef_name_of_rt_at = cg, rt, i, n =>
          meta
             | m =>
                m.0 == rt
-                  | cg.typedefs(i)!!.name
+                  | cg.typedefs(i).expect("missing typedefs").name
                   | typedef_name_of_rt_at(cg, rt, i + 1, n)
             | typedef_name_of_rt_at(cg, rt, i + 1, n)
 
@@ -5378,7 +5378,7 @@ record_field_ti = cg, ti, idx =>
          fields = rr.0
          (idx < ?fields)
             |
-               rf = fields(idx)!!
+               rf = fields(idx).expect("missing fields")
                rf.rec_type
                   [TypeVar name] typedef_ti(cg, name)
                   | rf.rec_type
@@ -5396,7 +5396,7 @@ find_any_typedef_name_for_ti_at = tds, i, n, ti =>
    i == n
       | ""
       |
-         td = tds(i)!!
+         td = tds(i).expect("missing tds")
          !(?td.name !< 10 && td.name(0..10) == "#heap_ram_") &&
            type_info_equal(td.ti, ti)
            | td.name
@@ -5432,7 +5432,7 @@ record_field_dtype = cg, ti, idx =>
          fields = rr.0
          idx < ?fields
             |
-               rf = fields(idx)!!
+               rf = fields(idx).expect("missing fields")
                rf.rec_type
                   [TypeVar name] resolve_type_name(cg, name)
                   [Rec rr2]
@@ -5668,10 +5668,10 @@ vra_mul = a, b =>
    p10 = vra_checked_mul(a.hi, b.lo)
    p11 = vra_checked_mul(a.hi, b.hi)
    !(<>(p00) && <>(p01) && <>(p10) && <>(p11)) | --| vra_top!
-   v0 = p00!!
-   v1 = p01!!
-   v2 = p10!!
-   v3 = p11!!
+   v0 = p00.expect("missing p00")
+   v1 = p01.expect("missing p01")
+   v2 = p10.expect("missing p10")
+   v3 = p11.expect("missing p11")
    lo0 = v0 < v1 | v0 | v1
    lo1 = v2 < v3 | v2 | v3
    hi0 = v0 > v1 | v0 | v1
@@ -5685,8 +5685,8 @@ vra_square = a =>
    p_lo = vra_checked_mul(a.lo, a.lo)
    p_hi = vra_checked_mul(a.hi, a.hi)
    !(<>(p_lo) && <>(p_hi)) | --| vra_top!
-   s_lo = p_lo!!
-   s_hi = p_hi!!
+   s_lo = p_lo.expect("missing p lo")
+   s_hi = p_hi.expect("missing p hi")
    a.lo !< 0
       | VraRange(1, s_lo, s_hi)
       | a.hi !> 0
@@ -5841,12 +5841,12 @@ vra_ti_sig_d = cg, ti, depth =>
          nf = ?flds
          r.1
             |
-               fsig0 = nf > 0 | vra_ti_sig_d(cg, vra_rf_ti(flds(0)!!), depth + 1) | ""
+               fsig0 = nf > 0 | vra_ti_sig_d(cg, vra_rf_ti(flds(0).expect("missing flds")), depth + 1) | ""
                "sl[${vra_vt_tag(r.3)}:${fsig0}]"
             | r.2 && r.4 > 0
                |
                   fsig0 = nf > 0
-                     | vra_ti_sig_d(cg, vra_rf_ti(flds(0)!!), depth + 1)
+                     | vra_ti_sig_d(cg, vra_rf_ti(flds(0).expect("missing flds")), depth + 1)
                      | vra_vt_tag(r.3)
                   "rep${str::from_int(r.4)}[${fsig0}]"
                | nf > 32
@@ -5856,7 +5856,7 @@ vra_ti_sig_d = cg, ti, depth =>
                      b += "rec${str::from_int(nf)}["
                      nf @ i =>
                         i > 0 | b += ","
-                        rf = flds(i)!!
+                        rf = flds(i).expect("missing flds")
                         b += vra_ti_sig_d(cg, vra_rf_ti(rf), depth + 1)
                      b += "]"
                      +b
@@ -5946,7 +5946,7 @@ vra_poison_ti_shapes_d = cg, ti, depth =>
                   | vra_add_poison_shape("anon::${vra_ti_sig_d(cg, ti, depth)}")
                lim = r.2 | (nf > 0 | 1 | 0) | %min(nf, 32)
                lim @ i =>
-                  rf = r.0(i)!!
+                  rf = r.0(i).expect("required payload")
                   fti = vra_rf_ti(rf)
                   vra_poison_ti_shapes_d(cg, fti, depth + 1)
             [Array a] vra_poison_ti_shapes_d(cg, norm_slot_ti(a.0, a.1), depth + 1)
@@ -5976,7 +5976,7 @@ vra_join_slot = idx_map, rngs, key, nr =>
                pos = idx_map ^ key | _ | -1
                pos !< 0
                   |
-                     old = rngs(pos)!!
+                     old = rngs(pos).expect("missing rngs")
                      merged = vra_join(old, nr)
                      !vra_eq(old, merged)
                         |
@@ -6017,8 +6017,8 @@ vra_read_slot = idx_map, live_rngs, snap_rngs, key =>
    pos = idx_map ^ key | _ | -1
    pos < 0 | --| vra_bot!
    vra.in_narrow && pos < ?snap_rngs
-      | snap_rngs(pos)!!
-      | live_rngs(pos)!!
+      | snap_rngs(pos).expect("missing snap rngs")
+      | live_rngs(pos).expect("missing live rngs")
 
 vra_lookup_field: Cg, ast::TypeInfo, Int, <> => VraRange
 vra_lookup_field = cg, rec_ti, fidx, bot_as_top =>
@@ -6055,7 +6055,7 @@ vra_lookup_param_for_codegen = fn_name, pidx =>
    has_str(vra.poison_fns, fn_name) | --| vra_top!
    key = "${fn_name}::${str::from_int(pidx)}"
    !(vra.param_idx ^? key) | --| vra_top!
-   r = vra.param_rngs(vra.param_idx ^ key | _ | 0)!!
+   r = vra.param_rngs(vra.param_idx ^ key | _ | 0).expect("missing param rngs")
    r.state == 0 | vra_top! | r
 
 vra_lookup_fn_ret: String, <> => VraRange
@@ -6082,11 +6082,11 @@ vra_finalize_anon_merges = !=>
                fk = "${ns.shape_key}::${kstr}"
                vra.anon_idx ^? ak
                   |
-                     ar = vra.anon_rngs(vra.anon_idx ^ ak | _ | 0)!!
+                     ar = vra.anon_rngs(vra.anon_idx ^ ak | _ | 0).expect("missing anon rngs")
                      vra_join_slot(vra.field_idx, vra.field_rngs, fk, ar)
                vra.field_idx ^? fk
                   |
-                     fr = vra.field_rngs(vra.field_idx ^ fk | _ | 0)!!
+                     fr = vra.field_rngs(vra.field_idx ^ fk | _ | 0).expect("missing field rngs")
                      vra.anon_idx ^? ak
                         | vra_join_slot(vra.anon_idx, vra.anon_rngs, ak, fr)
 
@@ -6138,7 +6138,7 @@ vra_truncate_locals = n =>
    ?vra.locals > n
       |
          out = VraLocals()
-         n @ i => out += vra.locals(i)!!
+         n @ i => out += vra.locals(i).expect("missing locals")
          vra.locals = out
 
 vra_truncate_bounded: Int => ()
@@ -6146,7 +6146,7 @@ vra_truncate_bounded = n =>
    ?vra.bounded_idxs > n
       |
          out = BoundedStrIdxs()
-         n @ i => out += vra.bounded_idxs(i)!!
+         n @ i => out += vra.bounded_idxs(i).expect("missing bounded idxs")
          vra.bounded_idxs = out
 
 vra_truncate_len_vars: Int => ()
@@ -6154,7 +6154,7 @@ vra_truncate_len_vars = n =>
    ?vra.len_vars > n
       |
          out = LenVarEntries()
-         n @ i => out += vra.len_vars(i)!!
+         n @ i => out += vra.len_vars(i).expect("missing len vars")
          vra.len_vars = out
 
 vra_find_str_idx: ast::Names, String => Int
@@ -6172,7 +6172,7 @@ vra_bump_bind = bnames, bcnts, nm, delta =>
          pos = vra_find_str_idx(bnames, nm)
          pos !< 0
             |
-               bcnts(pos) = bcnts(pos)!! + delta !| _
+               bcnts(pos) = bcnts(pos).expect("missing bcnts") + delta !| _
             |
                bnames += nm
                bcnts += delta
@@ -6265,8 +6265,8 @@ vra_collect_mut_vars = fn_params, body =>
    muts += "_"
    muts += "_i"
    ?bnames @ i =>
-      nm = bnames(i)!!
-      cnt = bcnts(i)!!
+      nm = bnames(i).expect("missing bnames")
+      cnt = bcnts(i).expect("missing bcnts")
       in_cyc = has_str(cyc_vars, nm)
       cnt !< 2 || (cnt !< 1 && in_cyc)
          | muts += nm
@@ -6281,12 +6281,12 @@ vra_expr_always_exits = te =>
       [Block bk]
          ?bk == 0
             | <->
-            | vra_expr_always_exits(bk(?bk - 1)!!)
+            | vra_expr_always_exits(bk(?bk - 1).expect("missing bk"))
       [Choice ch]
          ?ch.1 == 0
             | <->
             |
-               last_br = ch.1(?ch.1 - 1)!!
+               last_br = ch.1(?ch.1 - 1).expect("required payload")
                last_br.kind [Bare]
                   |
                      all_ex' = <+>
@@ -6338,7 +6338,7 @@ vra_lookup_local_var = cg, vname =>
    n = ?vra.locals
    n @ rev_i =>
       i = n - 1 - rev_i
-      e = vra.locals(i)!!
+      e = vra.locals(i).expect("missing locals")
       e.name == vname | --| e.rng
    vra_top!
 
@@ -6368,7 +6368,7 @@ vra_len_var_bound = name =>
    has_str(vra.cur_muts, name) | --| <-->
    n = ?vra.len_vars
    n @ rev_i =>
-      lv = vra.len_vars(n - 1 - rev_i)!!
+      lv = vra.len_vars(n - 1 - rev_i).expect("missing len vars")
       lv.len_var == name | --| <+ StrLenBound(lv.str_var, lv.slack) +>
    <-->
 
@@ -6394,8 +6394,8 @@ vra_str_len_bound = cg, te =>
       [Call c]
          c.0 == "%min" && ?c.2 == 2
             |
-               first = vra_str_len_bound(cg, c.2(0)!!)
-               <>(first) | first | vra_str_len_bound(cg, c.2(1)!!)
+               first = vra_str_len_bound(cg, c.2(0).expect("required payload"))
+               <>(first) | first | vra_str_len_bound(cg, c.2(1).expect("required payload"))
             | <-->
       | <-->
 
@@ -6414,7 +6414,7 @@ vra_bound_after_guard = cg, te =>
    te.kind [Choice ch]
       ?ch.1 == 1
          |
-            br = ch.1(0)!!
+            br = ch.1(0).expect("required payload")
             br.kind [Bare] && vra_expr_always_exits(br.body)
                |
                   vra_narrow_cond(cg, ch.0, <->, ast::Names())
@@ -6541,8 +6541,8 @@ vra_push_cycle_bounds_in: Cg, tast::TypedExpr, <>, ast::Names, <>, ast::Names =>
 vra_push_cycle_bounds_in = cg, iterable, is_rune, params, rec_eff, fn_names =>
    vra.enabled
       |
-         p0 = ?params > 0 | params(0)!! | ""
-         p1 = ?params > 1 | params(1)!! | ""
+         p0 = ?params > 0 | params(0).expect("missing params") | ""
+         p1 = ?params > 1 | params(1).expect("missing params") | ""
          p0_track = p0 != "" && p0 != "_" && !has_str(vra.cur_muts, p0)
          p1_track = p1 != "" && p1 != "_" && !has_str(vra.cur_muts, p1)
          bound_pushed' = <->
@@ -6639,8 +6639,8 @@ vra_eval_intrinsic_call: Cg, String, tast::TypedExprs, <>, ast::Names => <VraRan
 vra_eval_intrinsic_call = cg, fname, args, rec_eff, fn_names =>
    fname == "%min" && ?args == 2
       |
-         r0 = vra_walk_expr(cg, args(0)!!, rec_eff, fn_names)
-         r1 = vra_walk_expr(cg, args(1)!!, rec_eff, fn_names)
+         r0 = vra_walk_expr(cg, args(0).expect("missing args"), rec_eff, fn_names)
+         r1 = vra_walk_expr(cg, args(1).expect("missing args"), rec_eff, fn_names)
          res = r0.state == 0 || r1.state == 0
             | vra_bot!
             | r0.state == 1 && r1.state == 1
@@ -6654,8 +6654,8 @@ vra_eval_intrinsic_call = cg, fname, args, rec_eff, fn_names =>
          --| <+ res +>
    fname == "%max" && ?args == 2
       |
-         r0 = vra_walk_expr(cg, args(0)!!, rec_eff, fn_names)
-         r1 = vra_walk_expr(cg, args(1)!!, rec_eff, fn_names)
+         r0 = vra_walk_expr(cg, args(0).expect("missing args"), rec_eff, fn_names)
+         r1 = vra_walk_expr(cg, args(1).expect("missing args"), rec_eff, fn_names)
          res = r0.state == 0 || r1.state == 0
             | vra_bot!
             | r0.state == 1 && r1.state == 1
@@ -6669,9 +6669,9 @@ vra_eval_intrinsic_call = cg, fname, args, rec_eff, fn_names =>
          --| <+ res +>
    fname == "%clamp" && ?args == 3
       |
-         rv = vra_walk_expr(cg, args(0)!!, rec_eff, fn_names)
-         rl = vra_walk_expr(cg, args(1)!!, rec_eff, fn_names)
-         rh = vra_walk_expr(cg, args(2)!!, rec_eff, fn_names)
+         rv = vra_walk_expr(cg, args(0).expect("missing args"), rec_eff, fn_names)
+         rl = vra_walk_expr(cg, args(1).expect("missing args"), rec_eff, fn_names)
+         rh = vra_walk_expr(cg, args(2).expect("missing args"), rec_eff, fn_names)
          res = rv.state == 0 || rl.state == 0 || rh.state == 0
             | vra_bot!
             | rl.state == 1 && rh.state == 1 && rl.hi !> rh.lo
@@ -6796,14 +6796,14 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
                      [Choice ch]
                         ?ch.1 == 1
                            |
-                              b0 = ch.1(0)!!
+                              b0 = ch.1(0).expect("required payload")
                               b0.kind [Bare] && vra_expr_always_exits(b0.body)
                                  | vra_narrow_cond(cg, ch.0, <->, fn_names)
                            |
                               ?ch.1 == 2
                                  |
-                                    b0 = ch.1(0)!!
-                                    b1 = ch.1(1)!!
+                                    b0 = ch.1(0).expect("required payload")
+                                    b1 = ch.1(1).expect("required payload")
                                     b0.kind [Bare] && b1.kind [Bare]
                                        |
                                           ex0 = vra_expr_always_exits(b0.body)
@@ -6868,14 +6868,14 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
       [Choice ch]
          vra_walk_expr(cg, ch.0, rec_eff, fn_names)
          nb = ?ch.1
-         is_two_bare = nb == 2 && (ch.1(0)!!.kind [Bare]) && (ch.1(1)!!.kind [Bare])
-         is_one_bare = nb == 1 && (ch.1(0)!!.kind [Bare])
+         is_two_bare = nb == 2 && (ch.1(0).expect("required payload").kind [Bare]) && (ch.1(1).expect("required payload").kind [Bare])
+         is_one_bare = nb == 1 && (ch.1(0).expect("required payload").kind [Bare])
          c_var = vra_imm_var(cg, ch.0, <+>)
          res_r' = vra_bot!
          any_non_exit' = <->
          has_bare' = <->
          nb @ i =>
-            br = ch.1(i)!!
+            br = ch.1(i).expect("required payload")
             br.kind [Bare] | has_bare' = <+>
             saved_br_locs = ?vra.locals
             is_two_bare
@@ -6892,7 +6892,7 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
                         vra_narrow_local_var(cg, c_var, case_r')
             br.kind ![Case]
                | ?br.case_values @ ci =>
-                  vra_walk_expr(cg, br.case_values(ci)!!, rec_eff, fn_names)
+                  vra_walk_expr(cg, br.case_values(ci).expect("missing case values"), rec_eff, fn_names)
             br_r = vra_walk_expr(cg, br.body, rec_eff, fn_names)
             vra_truncate_locals(saved_br_locs)
             !vra_expr_always_exits(br.body)
@@ -6958,7 +6958,7 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
             | ""
          is_known_fn = callee != "" && !has_str(vra.poison_fns, callee)
          ?c.2 @ ai =>
-            arg_te = c.2(ai)!!
+            arg_te = c.2(ai).expect("required payload")
             ar = vra_walk_expr(cg, arg_te, rec_eff, fn_names)
             rec_eff && is_known_fn && vra_is_tracked_int_vt(vt_from_ti_cg(cg, arg_te.ti))
                | vra_join_slot(vra.param_idx, vra.param_rngs,
@@ -7010,7 +7010,7 @@ vra_has_bounded_str_idx = idx_name, str_name, offset =>
    n = ?vra.bounded_idxs
    n @ rev_i =>
       i = n - 1 - rev_i
-      entry = vra.bounded_idxs(i)!!
+      entry = vra.bounded_idxs(i).expect("missing bounded idxs")
       entry.idx_var == idx_name
          | --| (entry.str_var == str_name && offset !> entry.slack)
    <->
@@ -7237,8 +7237,8 @@ vra_seed_top_fn_params = cg, fn_name, params, fn_ti =>
    p_tis = fn_ti [Fn f] f.1 | ast::VInfos()
    missing_bot' = <->
    ?params @ i =>
-      pname = params(i)!!
-      pti = i < ?p_tis | p_tis(i)!! | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+      pname = params(i).expect("missing params")
+      pti = i < ?p_tis | p_tis(i).expect("missing p tis") | ast::TypeInfo(Prim, ast::ValueType(Unknown))
       pvt = vt_from_ti_cg(cg, pti)
       vra_is_tracked_int_vt(pvt) && !has_str(vra.cur_muts, pname)
          |
@@ -7267,8 +7267,8 @@ vra_widen_table_for_narrow: VraRanges, VraRanges => VraRanges
 vra_widen_table_for_narrow = live_rngs, prev_rngs =>
    out = VraRanges()
    ?live_rngs @ i =>
-      cur = live_rngs(i)!!
-      prev = i < ?prev_rngs | prev_rngs(i)!! | vra_bot!
+      cur = live_rngs(i).expect("missing live rngs")
+      prev = i < ?prev_rngs | prev_rngs(i).expect("missing prev rngs") | vra_bot!
       prev.state != 0 && !vra_eq(cur, prev)
          |
             out += vra_top!
@@ -7286,15 +7286,15 @@ vra_prepare_widen_narrow = !=>
 vra_restore_bot_from_snap: VraRanges, VraRanges => ()
 vra_restore_bot_from_snap = live_rngs, snap_rngs =>
    ?live_rngs @ i =>
-      live_rngs(i)!!.state == 0 && i < ?snap_rngs && snap_rngs(i)!!.state == 2
+      live_rngs(i).expect("missing live rngs").state == 0 && i < ?snap_rngs && snap_rngs(i).expect("missing snap rngs").state == 2
          | live_rngs(i) = vra_top! !| _
 
 vra_widen_unconverged_table: VraRanges, VraRanges => <>
 vra_widen_unconverged_table = live_rngs, snap_rngs =>
    any' = <->
    ?live_rngs @ i =>
-      cur = live_rngs(i)!!
-      prev = i < ?snap_rngs | snap_rngs(i)!! | vra_bot!
+      cur = live_rngs(i).expect("missing live rngs")
+      prev = i < ?snap_rngs | snap_rngs(i).expect("missing snap rngs") | vra_bot!
       !vra_eq(cur, prev) && cur.state != 2
          |
             live_rngs(i) = vra_top! !| _
@@ -7314,24 +7314,24 @@ vra_run_one_pass: Cg, tast::TypedExprs, ast::Names, ast::Names,
 vra_run_one_pass = cg, top_stmts, top_mods, fn_names, fn_lams, fn_tis =>
    vra.changed = <->
    ?top_stmts @ i =>
-      cg.current_module = top_mods(i)!!
+      cg.current_module = top_mods(i).expect("missing top mods")
       vra.cur_fn_name = ""
       vra.locals = VraLocals()
       vra.bounded_idxs = BoundedStrIdxs()
       vra.len_vars = LenVarEntries()
-      te = top_stmts(i)!!
+      te = top_stmts(i).expect("missing top stmts")
       vra.cur_muts = vra_collect_mut_vars(ast::Names(), te)
       vra_walk_expr(cg, te, <+>, fn_names)
    ?fn_names @ fi =>
-      fname = fn_names(fi)!!
+      fname = fn_names(fi).expect("missing fn names")
       cg.current_module = decl_module(fname, 0)
       vra.cur_fn_name = fname
       vra.locals = VraLocals()
       vra.bounded_idxs = BoundedStrIdxs()
       vra.len_vars = LenVarEntries()
-      lam = fn_lams(fi)!!.kind [Lambda l] l |
+      lam = fn_lams(fi).expect("missing fn lams").kind [Lambda l] l |
          (ast::Names(), tast::mk_lit_unit(0, 0), tast::TypedCaptures())
-      fn_ti = fn_tis(fi)!!
+      fn_ti = fn_tis(fi).expect("missing fn tis")
       vra.cur_muts = vra_collect_mut_vars(lam.0, lam.1)
       run_body = vra_seed_top_fn_params(cg, fname, lam.0, fn_ti)
       run_body
@@ -7349,15 +7349,15 @@ vra_widen_unvisited_bot_params: Cg, ast::Names, tast::TypedExprs, ast::VInfos =>
 vra_widen_unvisited_bot_params = cg, fn_names, fn_lams, fn_tis =>
    widened' = <->
    ?fn_names @ fi =>
-      fname = fn_names(fi)!!
+      fname = fn_names(fi).expect("missing fn names")
       !has_str(vra.poison_fns, fname)
          |
-            lam = fn_lams(fi)!!.kind [Lambda l] l |
+            lam = fn_lams(fi).expect("missing fn lams").kind [Lambda l] l |
                (ast::Names(), tast::mk_lit_unit(0, 0), tast::TypedCaptures())
-            fn_ti = fn_tis(fi)!!
+            fn_ti = fn_tis(fi).expect("missing fn tis")
             p_tis = fn_ti [Fn f] f.1 | ast::VInfos()
             ?lam.0 @ pi =>
-               pti = pi < ?p_tis | p_tis(pi)!! |
+               pti = pi < ?p_tis | p_tis(pi).expect("missing p tis") |
                   ast::TypeInfo(Prim, ast::ValueType(Unknown))
                vra_is_tracked_int_vt(vt_from_ti_cg(cg, pti))
                   |
@@ -7368,7 +7368,7 @@ vra_widen_unvisited_bot_params = cg, fn_names, fn_lams, fn_tis =>
                            widened' = <+>
                         |
                            pos = vra.param_idx ^ key | _ | -1
-                           pos !< 0 && (vra.param_rngs(pos)!!.state == 0)
+                           pos !< 0 && (vra.param_rngs(pos).expect("missing param rngs").state == 0)
                               |
                                  vra_join_slot(vra.param_idx, vra.param_rngs, key, vra_top!)
                                  widened' = <+>
@@ -7429,15 +7429,15 @@ run_typed_vra = cg, prog =>
          (?g.pexports > 0)
             |
                ?fn_names @ fi =>
-                  fname = fn_names(fi)!!
+                  fname = fn_names(fi).expect("missing fn names")
                   <>(stmt::find_export_symbol(g.pexports, fname))
                      |
                         vra_add_poison_fn(fname)
-                        vra_poison_fn_sig_shapes(cg, fn_tis(fi)!!)
+                        vra_poison_fn_sig_shapes(cg, fn_tis(fi).expect("missing fn tis"))
          g.foreign_fn_names @ el_ => vra_add_poison_fn(el_)
          ?fn_names @ fi =>
-            fn_tis(fi)!!
-               [Fn f] (?f.4 > 0 | vra_add_poison_fn(fn_names(fi)!!))
+            fn_tis(fi).expect("missing fn tis")
+               [Fn f] (?f.4 > 0 | vra_add_poison_fn(fn_names(fi).expect("missing fn names")))
          g.pstmts @ pe =>
             pe
                [Foreign fd]
@@ -7450,13 +7450,13 @@ run_typed_vra = cg, prog =>
                     (t.5 [Fn fe] (?fe.ct_params > 0) | <->)
                   has_cp | vra_add_poison_fn(t.0)
          ?top_stmts @ i =>
-            cg.current_module = top_mods(i)!!
-            vra_poison_scan_expr(cg, top_stmts(i)!!, fn_names, <->)
+            cg.current_module = top_mods(i).expect("missing top mods")
+            vra_poison_scan_expr(cg, top_stmts(i).expect("missing top stmts"), fn_names, <->)
          ?fn_names @ fi =>
-            cg.current_module = decl_module(fn_names(fi)!!, 0)
+            cg.current_module = decl_module(fn_names(fi).expect("missing fn names"), 0)
             vra.changed = <->
-            vra_poison_scan_expr(cg, fn_lams(fi)!!, fn_names, <+>)
-            vra.changed | vra_poison_fn_sig_shapes(cg, fn_tis(fi)!!)
+            vra_poison_scan_expr(cg, fn_lams(fi).expect("missing fn lams"), fn_names, <+>)
+            vra.changed | vra_poison_fn_sig_shapes(cg, fn_tis(fi).expect("missing fn tis"))
          vra.changed = <->
          vra_finalize_anon_merges!
          // Phase 1: 4 Gauss-Seidel passes; if still changing, widen & narrow.

@@ -74,7 +74,7 @@ core = !=>
    dom::attr(el, "DATA-CASE", "second")--!
    dom::attr(el, "data-case", "first")--!
    case_attr = dom::attr(el, "data-case")--!
-   check(case_attr!! == "first", "Attribute aliases")--!
+   check(case_attr.expect("missing case attr") == "first", "Attribute aliases")--!
    long = {20000}
    6000 @ i => long += "ā😀"
    content = +long
@@ -104,7 +104,7 @@ core = !=>
    dom::queue_attr(batch, el, "data-case", "first")--!
    dom::flush(batch)--!
    final_attr = dom::attr(el, "data-case")--!
-   check(final_attr!! == "first", "Batch must retain writes that restore a value")--!
+   check(final_attr.expect("missing final attr") == "first", "Batch must retain writes that restore a value")--!
    dom::close_batch(batch)--!
    expect_error(dom::flush(batch), dom::CLOSED)--!
    measures = dom::measurements!
@@ -133,19 +133,19 @@ core = !=>
 
    expired_code: () => Int
    expired_code = !=>
-      event = saved_event!!
+      event = saved_event.expect("missing saved event")
       dom::event_key(event) | key => -1 | failure => failure.code
 
    restore_form: () => ()
    restore_form = !=>
-      input = dom::find("#input")!!
+      input = dom::find("#input").expect("missing find")
       dom::value(input, "hello") !| _
-      box = dom::find("#check")!!
+      box = dom::find("#check").expect("missing find")
       dom::checked(box, <+>) !| _
 
    cache_bench: Int => ()
    cache_bench = repetitions =>
-      el = dom::find("#out")!!
+      el = dom::find("#out").expect("missing find")
       dom::text(el, "tracked") !| _
       dom::attr(el, "data-a", "a") !| _
       dom::attr(el, "data-b", "b") !| _

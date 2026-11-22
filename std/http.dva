@@ -232,7 +232,7 @@ parse_head_block: String => < (status: Int, reason: String, headers: Headers) | 
 parse_head_block = head_str =>
    lines = str::split(head_str, "\r\n")
    ?lines == 0 | --| <- "empty HTTP response" +>
-   status_line = lines(0)!!
+   status_line = lines(0).expect("missing lines")
    sp1_opt = str::find(status_line, " ")
    sp1_opt
       | sp1 =>
@@ -243,7 +243,7 @@ parse_head_block = head_str =>
          str::parse_int(code_str)
             | status =>
                hdrs = 1..?lines @> i =>
-                  ln = lines(i)!!
+                  ln = lines(i).expect("missing lines")
                   (?ln > 0 | str::find(ln, ":") | <-->)
                      $+> colon => Header(str::trim(ln(0..colon)), str::trim(ln((colon + 1)..)))
                <+ (status = status, reason = reason, headers = hdrs) ->

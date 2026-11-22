@@ -242,7 +242,7 @@ decode_one_row = hdr, row, has_hdr, line_no =>
             col_idx = has_hdr | find_col_idx(hdr, f.name) | f.idx
             (col_idx !< 0 && col_idx < ?row)
                |
-                  raw_cell = row(col_idx)!!
+                  raw_cell = row(col_idx).expect("missing row")
                   (?raw_cell == 0)
                      |
                         f.default
@@ -276,10 +276,10 @@ decode_table_into = tbl =>
       [(..)]
          #members RowType @ f =>
             f.idx == 0 && f.name != "" | has_hdr' = <+>
-   hdr = has_hdr' | tbl(0)!! | Row()
+   hdr = has_hdr' | tbl(0).expect("missing tbl") | Row()
    start_idx = has_hdr' | 1 | 0
    start_idx..?tbl @ r_idx =>
-      r_row = tbl(r_idx)!!
+      r_row = tbl(r_idx).expect("missing tbl")
       out' += decode_one_row(RowType, hdr, r_row, has_hdr', r_idx + 1)--!
    <+ out' ->
 
@@ -338,8 +338,8 @@ decode_delim = text, delim =>
                      has_hdr' && ?tbl < 2
                         | <- csv_err("no data rows after header in CSV", 1, 1) +>
                         |
-                           hdr = has_hdr' | tbl(0)!! | Row()
-                           data_row = has_hdr' | tbl(1)!! | tbl(0)!!
+                           hdr = has_hdr' | tbl(0).expect("missing tbl") | Row()
+                           data_row = has_hdr' | tbl(1).expect("missing tbl") | tbl(0).expect("missing tbl")
                            line_no = has_hdr' | 2 | 1
                            decode_one_row(T, hdr, data_row, has_hdr', line_no)
             | err => <- err +>

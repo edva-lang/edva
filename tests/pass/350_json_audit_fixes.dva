@@ -2,7 +2,7 @@
 #use json
 
 // 1. Isolated nested containers
-v = json::parse("[1, [2], 3]")!!
+v = json::parse("[1, [2], 3]").expect("missing parse")
 v
    [Array xs]
       io::out $ ?xs
@@ -13,7 +13,7 @@ v
             | io::out("other")
    | io::out("bad")
 
-obj = json::parse("{\"outer\":{\"inner\":1},\"last\":2}")!!
+obj = json::parse("{\"outer\":{\"inner\":1},\"last\":2}").expect("missing parse")
 obj
    [Object ps]
       io::out $ ?ps
@@ -21,7 +21,7 @@ obj
    | io::out("bad")
 
 // 2. Surrogate pair decoding
-u = json::parse("\"\\uD83D\\uDE00\"")!!
+u = json::parse("\"\\uD83D\\uDE00\"").expect("missing parse")
 u
    [String s]
       io::out $ ?s
@@ -29,7 +29,7 @@ u
    | io::out("bad")
 
 // 3. Subnormal float parsing
-sub = json::parse("1e-309")!!
+sub = json::parse("1e-309").expect("missing parse")
 sub
    [Number n] io::out $ n == 0.0
    | io::out("bad")

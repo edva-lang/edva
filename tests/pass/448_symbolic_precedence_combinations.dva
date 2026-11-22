@@ -71,5 +71,5 @@ io::out $ (parse_pos(7) |_| 99)
 io::out $ (parse_pos(4) $>> step_double $+> (* 10)) | v => str::from_int(v) | "err"
 io::out $ compose_val
 io::out $ "${tier_tag(3)}:${tier_tag(5)}:${tier_tag(20)}:${tier_tag(0)}"
-io::out $ "${str::from_int(doubled(2)!!)}:${str::from_int(?evens)}:${str::from_int(filtered_sum)}"
+io::out $ "${str::from_int(doubled(2).expect("missing doubled"))}:${str::from_int(?evens)}:${str::from_int(filtered_sum)}"
 io::out $ (esc | s => s | "full")

@@ -121,9 +121,9 @@ res
 #use os
 
 opts = os::with_env(os::with_cwd(os::spawn_opts!, "/tmp"), "EDVA_MODE", "fast")
-c0 = os::spawn_piped_opts("sh", os::Args("-c", "printf '%s' \"$EDVA_MODE\""), opts)!!
-c1 = os::spawn_piped("printf", os::Args("parallel-ok"))!!
+c0 = os::spawn_piped_opts("sh", os::Args("-c", "printf '%s' \"$EDVA_MODE\""), opts).expect("missing spawn piped opts")
+c1 = os::spawn_piped("printf", os::Args("parallel-ok")).expect("missing spawn piped")
 
 results = os::multiplex_children(os::Children(c0, c1), 2000)
-io::out $ (results(0)!!).stdout + ":" + (results(1)!!).stdout
+io::out $ (results(0).expect("missing results")).stdout + ":" + (results(1).expect("missing results")).stdout
 ```

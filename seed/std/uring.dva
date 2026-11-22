@@ -152,7 +152,7 @@
    new = entries =>
       pbuf = 0u64 {16}
       paddr = &pbuf
-      fd = libc::syscall(SYS_IO_URING_SETUP, Addr(entries), paddr,
+      fd = libc::syscall(SYS_IO_URING_SETUP, ptr(entries), paddr,
          sys::addr_null, sys::addr_null, sys::addr_null, sys::addr_null)
       fd < 0 | --| <- "io_uring_setup failed" +>
 
@@ -278,7 +278,7 @@
 
    prep_cancel: Ring, Int, Int => <>
    prep_cancel = ring, target_user_data, user_data =>
-      prep_sqe_flags(ring, OP_ASYNC_CANCEL, -1, 0, Addr(target_user_data), 0, 0, user_data)
+      prep_sqe_flags(ring, OP_ASYNC_CANCEL, -1, 0, ptr(target_user_data), 0, 0, user_data)
 
    prep_timeout: Ring, Addr, Int, Int, Int => <>
    prep_timeout = ring, ts_ptr, count, flags, user_data =>
@@ -314,8 +314,8 @@
       tail = @[ring.sq_ptr + ring.sq_tail_off u32]
       to_submit = Int(tail - head) .&. 0b1{32}
       flags = wait_nr > 0 | IORING_ENTER_GETEVENTS | 0
-      libc::syscall(SYS_IO_URING_ENTER, Addr(ring.fd), Addr(to_submit),
-         Addr(wait_nr), Addr(flags), sys::addr_null, sys::addr_null)
+      libc::syscall(SYS_IO_URING_ENTER, ptr(ring.fd), ptr(to_submit),
+         ptr(wait_nr), ptr(flags), sys::addr_null, sys::addr_null)
 
    submit: Ring => Int
    submit = ring => submit_and_wait(ring, 0)

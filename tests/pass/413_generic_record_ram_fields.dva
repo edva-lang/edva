@@ -9,9 +9,9 @@ get: Item => Int
 get = item => item.id
 run: #param T: Type, Callbacks(T), T => Int
 run = callbacks, item =>
-   callback = callbacks.callback!!
+   callback = callbacks.callback.expect("missing callback")
    callback(item)
-callbacks = wrapped(get)!!
+callbacks = wrapped(get).expect("missing wrapped")
 io::out(run(callbacks, Item(8, "eight")))
 callbacks.callback = <-->
 io::out $ <>(callbacks.callback) | "present" | "absent"

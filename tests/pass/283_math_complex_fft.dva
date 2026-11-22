@@ -52,28 +52,28 @@ sig += complex::from_real(3.0)
 sig += complex::from_real(4.0)
 
 spectrum = complex::fft(sig)
-io::out $ complex::real(spectrum(0)!!)
-io::out $ complex::imag(spectrum(0)!!)
+io::out $ complex::real(spectrum(0).expect("missing spectrum"))
+io::out $ complex::imag(spectrum(0).expect("missing spectrum"))
 
-io::out $ complex::real(spectrum(1)!!)
-io::out $ complex::imag(spectrum(1)!!)
+io::out $ complex::real(spectrum(1).expect("missing spectrum"))
+io::out $ complex::imag(spectrum(1).expect("missing spectrum"))
 
-io::out $ complex::real(spectrum(2)!!)
-io::out $ complex::imag(spectrum(2)!!)
+io::out $ complex::real(spectrum(2).expect("missing spectrum"))
+io::out $ complex::imag(spectrum(2).expect("missing spectrum"))
 
-io::out $ complex::real(spectrum(3)!!)
-io::out $ complex::imag(spectrum(3)!!)
+io::out $ complex::real(spectrum(3).expect("missing spectrum"))
+io::out $ complex::imag(spectrum(3).expect("missing spectrum"))
 
 // Power spectrum: |X[k]|^2
 ps = complex::power_spectrum(spectrum)
-io::out $ ps(0)!!
-io::out $ ps(1)!!
-io::out $ ps(2)!!
-io::out $ ps(3)!!
+io::out $ ps(0).expect("missing ps")
+io::out $ ps(1).expect("missing ps")
+io::out $ ps(2).expect("missing ps")
+io::out $ ps(3).expect("missing ps")
 
 // Inverse FFT roundtrip recovery
 rec = complex::ifft(spectrum)
-io::out $ complex::real(rec(0)!!)
-io::out $ complex::real(rec(1)!!)
-io::out $ complex::real(rec(2)!!)
-io::out $ complex::real(rec(3)!!)
+io::out $ complex::real(rec(0).expect("missing rec"))
+io::out $ complex::real(rec(1).expect("missing rec"))
+io::out $ complex::real(rec(2).expect("missing rec"))
+io::out $ complex::real(rec(3).expect("missing rec"))

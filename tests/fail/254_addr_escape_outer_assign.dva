@@ -1,5 +1,5 @@
 outer: Addr
-outer = Addr(0)
+outer = ptr(0)
 res =
    b = {32}
    b += "test"

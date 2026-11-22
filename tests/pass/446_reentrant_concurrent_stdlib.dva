@@ -26,8 +26,8 @@ decode_embedded_entry: json::Value => String
 decode_embedded_entry = v =>
    name = json::get_str(v, "name") |_| "?"
    raw_inner = json::get_str(v, "payload") |_| "{}"
-   cfg = json::decode(InnerCfg, raw_inner)!!
-   arr_val = json::parse("[10, 20, 30]")!!
+   cfg = json::decode(InnerCfg, raw_inner).expect("missing decode")
+   arr_val = json::parse("[10, 20, 30]").expect("missing parse")
    tag = cfg.enabled | "on" | "off"
    arr_len = json::array_len(arr_val)
    "${name}=${cfg.host}:${str::from_int(cfg.port)}(${tag},n=${str::from_int(arr_len)})"
@@ -40,7 +40,7 @@ test_reentrant_json = !=>
         {"name": "replica", "payload": "{\\"host\\":\\"db2.local\\",\\"port\\":5433,\\"enabled\\":false}"}
       ]
       """
-   outer = json::parse(doc_str)!!
+   outer = json::parse(doc_str).expect("missing parse")
    outer
       [Array items]
          parts = items @> decode_embedded_entry
@@ -65,19 +65,19 @@ run_worker = wid, main_ga_raw =>
    0..8 @ iter =>
       escaped = mem::with_value(req, !=>
          jtxt = "{\"host\":\"n${str::from_int(wid)}.internal\",\"port\":${str::from_int(8000 + iter)}}"
-         jcfg = json::decode(InnerCfg, jtxt)!!
-         jraw = json::parse("{\"items\":[1,2,${str::from_int(wid)}]}")!!
+         jcfg = json::decode(InnerCfg, jtxt).expect("missing decode")
+         jraw = json::parse("{\"items\":[1,2,${str::from_int(wid)}]}").expect("missing parse")
          jcnt = json::get(jraw, "items") | iv => json::array_len(iv) | 0
 
-         cdoc = ccl::parse("service = svc_${str::from_int(wid)}\nmode = fast\n", "w.ccl")!!
+         cdoc = ccl::parse("service = svc_${str::from_int(wid)}\nmode = fast\n", "w.ccl").expect("missing parse")
          svc = ccl::get(cdoc, "service") |_| "?"
 
-         tbl = csv::read_all("id,role\n${str::from_int(wid)},worker_${str::from_int(iter)}\n")!!
-         row1 = tbl(1)!!
-         csv_role = row1(1)!!
+         tbl = csv::read_all("id,role\n${str::from_int(wid)},worker_${str::from_int(iter)}\n").expect("missing read all")
+         row1 = tbl(1).expect("missing tbl")
+         csv_role = row1(1).expect("missing row1")
 
-         u = url::parse("https://api.example.com:8443/v1/items?id=${str::from_int(wid)}")!!
-         re = regex::compile("item-([0-9]+)")!!
+         u = url::parse("https://api.example.com:8443/v1/items?id=${str::from_int(wid)}").expect("missing parse")
+         re = regex::compile("item-([0-9]+)").expect("missing compile")
          m = regex::find(re, "id=item-${str::from_int(wid * 10 + iter)}")
          re_txt = m | hit => hit.text | "none"
 
@@ -111,10 +111,10 @@ main_fn = !=>
    t3 = task::spawn(run_worker(3, main_ga))
    t4 = task::spawn(run_worker(4, main_ga))
 
-   r1 = task::join(t1)!!
-   r2 = task::join(t2)!!
-   r3 = task::join(t3)!!
-   r4 = task::join(t4)!!
+   r1 = task::join(t1).expect("missing join")
+   r2 = task::join(t2).expect("missing join")
+   r3 = task::join(t3).expect("missing join")
+   r4 = task::join(t4).expect("missing join")
 
    io::out $ r1
    io::out $ r2

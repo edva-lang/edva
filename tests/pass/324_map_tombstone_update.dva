@@ -15,7 +15,7 @@ m ^? 0 | io::out("FAIL 0 still present")
 // Update 8 (should overwrite slot 1, not insert at tombstone slot 0)
 m ^ 8 = 30
 ?m != 1 | io::out("FAIL count after update 8")
-(m ^ 8)!! != 30 | io::out("FAIL value of 8 after update")
+(m ^ 8).expect("required payload") != 30 | io::out("FAIL value of 8 after update")
 
 // Delete 8
 deleted8 = m ^- 8
@@ -33,6 +33,6 @@ m ^ 8 = 200
 deleted8_2 = m ^- 8
 m ^ 0 = 101
 ?m != 1 | io::out("FAIL count after second update")
-(m ^ 0)!! != 101 | io::out("FAIL value of 0 after second update")
+(m ^ 0).expect("required payload") != 101 | io::out("FAIL value of 0 after second update")
 
 io::out("PASS")

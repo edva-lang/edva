@@ -25,7 +25,7 @@ rows = Items()
 rows += Item(1, "Widget, Large", 19.5)
 text = csv::encode(rows)
 csv::decode(Items, text) | dec =>
-   r0 = dec(0)!!
+   r0 = dec(0).expect("missing dec")
    io::out $ r0.name + " $" + str::from_float(r0.price)
 ```
 

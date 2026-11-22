@@ -43,7 +43,7 @@ ps @ (p_a, p_b) =>
 io::out $ str::from_int(sum_all')
 
 sums = ps @> (p_a, p_b) => p_a * 10 + p_b
-io::out $ str::from_int(sums(0)!!) + "," + str::from_int(sums(1)!!) + "," + str::from_int(sums(2)!!)
+io::out $ str::from_int(sums(0).expect("missing sums")) + "," + str::from_int(sums(1).expect("missing sums")) + "," + str::from_int(sums(2).expect("missing sums"))
 
 folded = (0, ps) @> acc, (p_a, p_b) => acc + p_a * p_b
 io::out $ str::from_int(folded)

@@ -59,4 +59,4 @@ half(8)
    | io::out $ str::from_int(sub3(sub3(_, 1), 0))
    | io::out $ "none"
 ys = (1, 2, 3) @> sub3(sub3(_, 1), 10)
-io::out $ str::from_int(ys(0)!!) + " " + str::from_int(ys(2)!!)
+io::out $ str::from_int(ys(0).expect("missing ys")) + " " + str::from_int(ys(2).expect("missing ys"))

@@ -68,21 +68,21 @@ binary::write_sleb128(vb, -123456)
 binary::write_sleb128(vb, 987654321)
 vraw = +vb
 
-r0 = binary::read_uleb128(vraw, 0)!!
+r0 = binary::read_uleb128(vraw, 0).expect("missing read uleb128")
 test::eq(Int(r0.0), 0, "uleb 0")
-r1 = binary::read_uleb128(vraw, r0.1)!!
+r1 = binary::read_uleb128(vraw, r0.1).expect("missing read uleb128")
 test::eq(Int(r1.0), 127, "uleb 127")
-r2 = binary::read_uleb128(vraw, r1.1)!!
+r2 = binary::read_uleb128(vraw, r1.1).expect("missing read uleb128")
 test::eq(Int(r2.0), 128, "uleb 128")
-r3 = binary::read_uleb128(vraw, r2.1)!!
+r3 = binary::read_uleb128(vraw, r2.1).expect("missing read uleb128")
 test::eq(Int(r3.0), 624485, "uleb 624485")
-s0 = binary::read_sleb128(vraw, r3.1)!!
+s0 = binary::read_sleb128(vraw, r3.1).expect("missing read sleb128")
 test::eq(s0.0, 0, "sleb 0")
-s1 = binary::read_sleb128(vraw, s0.1)!!
+s1 = binary::read_sleb128(vraw, s0.1).expect("missing read sleb128")
 test::eq(s1.0, -1, "sleb -1")
-s2 = binary::read_sleb128(vraw, s1.1)!!
+s2 = binary::read_sleb128(vraw, s1.1).expect("missing read sleb128")
 test::eq(s2.0, -123456, "sleb -123456")
-s3 = binary::read_sleb128(vraw, s2.1)!!
+s3 = binary::read_sleb128(vraw, s2.1).expect("missing read sleb128")
 test::eq(s3.0, 987654321, "sleb 987654321")
 test::eq(s3.1, ?vraw, "varint offset consumed")
 
