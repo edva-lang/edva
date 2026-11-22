@@ -6,27 +6,33 @@
 [![License](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](LICENSE)
 
 > *edva — an implementation of dva*  
-> *A zero-keyword, expression-oriented systems language*
+> *A zero-bare-keyword, expression-oriented systems language*
 
 Edva is a statically typed, expression-oriented systems language with significant
-indentation and zero reserved keywords. The self-hosted compiler (`edva`) lowers
-Edva source (`.dva`) to LLVM IR and invokes `clang` to produce high-performance
-native executables.
+indentation and zero bare reserved keywords (ordinary words like `if`, `fn`,
+`for`, `while`, and `return` are unreserved identifiers; meta-level directives
+live in the `#`-prefixed namespace such as `#use`, `#type`, and `#foreign`).
+The self-hosted compiler (`edva`) lowers Edva source (`.dva`) to LLVM IR and
+invokes `clang` to produce high-performance native and WebAssembly binaries.
 
 ---
 
 ## Highlights
 
-- **Zero Keywords**: Identifiers like `if`, `fn`, `for`, `while`, `return` are ordinary names. All control flow is expressed through pure syntax and symbolic operators (e.g. `@` cycles, choices, cycle escapes `>--`).
+- **Zero Bare Keywords**: Identifiers like `if`, `fn`, `for`, `while`, `return` are ordinary names; meta-level directives live in the `#`-prefixed namespace (`#use`, `#type`, `#foreign`, `#const`). All control flow is expressed through pure syntax and symbolic operators (e.g. `@` cycles, choices, cycle escapes `>--`).
 - **Fully Expression-Oriented**: Blocks, choices, bindings, loops, and assignments evaluate to values.
 - **Unboxed Algebraic Datatypes**: First-class ramifications and variants with zero runtime type descriptors (no RTTI, fully static unification).
 - **Self-Hosting Compiler**: The entire compiler is written in Dva and targets LLVM 18 with 2-stage fixed-point verification.
 
 ---
 
-## Requirements
+## Tested Targets & Requirements
 
-- **Linux** (x86_64 or aarch64)
+**Tested targets**: **Linux**, **Apple Silicon (macOS)**, and **WebAssembly (WASM)**.
+
+Build requirements:
+
+- **Linux** or **Apple Silicon (macOS)** host
 - **libLLVM-18** installed system-wide
 - **Clang** on `PATH` (used for code generation and linking)
 - **Nushell** (`nu`) for code generation utilities

@@ -1,7 +1,8 @@
 # Edva Programming Language (llms.txt)
 
-> Edva is a zero-keyword, expression-oriented systems programming language featuring
-> deterministic memory, algebraic ramifications, and native LLVM code generation.
+> Edva is a zero-bare-keyword, expression-oriented systems programming language featuring
+> deterministic memory, algebraic ramifications, and LLVM code generation.
+> Tested targets include Linux, Apple Silicon (macOS), and WebAssembly (WASM).
 > This file is a curated language guide and reference index. For the extended language
 > specification and core standard library guide, see [llms-full.txt](llms-full.txt).
 > Complete module-by-module references are maintained under `doc/reference/stdlib/`.

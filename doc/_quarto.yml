@@ -7,7 +7,7 @@ project:
 
 book:
   title: "Edva"
-  subtitle: "A zero-keyword, expression-oriented systems language"
+  subtitle: "A zero-bare-keyword, expression-oriented systems language"
   author: "baldgeorge"
   sidebar:
     collapse-level: 1

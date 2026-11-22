@@ -8,14 +8,15 @@ meta:
 
 # Edva
 
-Edva (`.dva`) is a statically typed, expression-oriented systems language with significant indentation, **zero reserved keywords**, unboxed two-slot ramifications, arena-backed memory management, and a self-hosted LLVM 18 compiler.
+Edva (`.dva`) is a statically typed, expression-oriented systems language with significant indentation, **zero bare reserved keywords**, unboxed two-slot ramifications, arena-backed memory management, and a self-hosted LLVM 18 compiler.
 
 ## Core language invariants
 
 | Invariant | Formal Specification |
 |---|---|
 | **Source suffix & encoding** | UTF-8 text in `.dva` files; space-only indentation (`E1011` on tabs) |
-| **No reserved keywords** | All control flow, branching, iteration, and returns use symbolic operators (`|`, `[...]`, `@`, `-->`, `--^`, `>--`, `--|`); directives use `#` (`#type`, `#use`, `#public`, `#private`, `#foreign`, `#export`, `#pragma`, `#infix`, `#param`, `#const`, `#os`, `#size`, `#align`, `#name`, `#zero`, `#arity`, `#members`, `#member`, `#has_member`) |
+| **Zero bare keywords** | All control flow, branching, iteration, and returns use symbolic operators (`|`, `[...]`, `@`, `-->`, `--^`, `>--`, `--|`); bare words like `if`, `fn`, `for`, `return` are ordinary identifiers while directives live in the `#`-prefixed namespace (`#type`, `#use`, `#public`, `#private`, `#foreign`, `#export`, `#pragma`, `#infix`, `#param`, `#const`, `#os`, `#size`, `#align`, `#name`, `#zero`, `#arity`, `#members`, `#member`, `#has_member`) |
+| **Tested targets** | **Linux**, **Apple Silicon (macOS)**, and **WebAssembly (WASM)** |
 | **Bindings & mutability** | Immutable by default (`x = v`); explicit mutability/rebinding via trailing primes (`x' = v`) or marked module globals (`::g = v`). Inline `x: T = v` is forbidden (`E2009`) |
 | **Separate signatures** | Function types are declared on a separate line (`f: A, B => R`) preceding `f = a, b => body`. Unannotated functions use Hindley-Milner-style unification and **never default unknown types to `Int`** (`E3103` / `E3128`) |
 | **Fixed 64-bit `Int`** | `Int` is strictly 64-bit signed (`i64`) on all targets (including 32-bit `wasm32`); only `Addr` scales with target pointer width |
