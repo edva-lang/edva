@@ -160,13 +160,13 @@ walk = e, table, locals, cur_mod =>
                   | ""
                fam != ""
                   | walk(expanded, table, locals, cur_mod)
-                  | ast::Expr(Bin, (b.0, walk(b.1, table, locals, cur_mod),
-                    walk(b.2, table, locals, cur_mod)))
-            | ast::Expr(Bin, (b.0, walk(b.1, table, locals, cur_mod),
-              walk(b.2, table, locals, cur_mod)))
+                  | ast::Expr(Bin, ast::BinExpr(b.0, walk(b.1, table, locals, cur_mod),
+                    walk(b.2, table, locals, cur_mod), b.line, b.col))
+            | ast::Expr(Bin, ast::BinExpr(b.0, walk(b.1, table, locals, cur_mod),
+              walk(b.2, table, locals, cur_mod), b.line, b.col))
       [Unary u]
-         ast::Expr(Unary, (u.0,
-           walk(u.1, table, locals, cur_mod)))
+         ast::Expr(Unary, ast::UnaryExpr(u.0,
+           walk(u.1, table, locals, cur_mod), u.line, u.col))
       [Fn fe]
          fn_locals = ++locals
          fn_locals += "#overload_local"

@@ -10,6 +10,7 @@
 #use mem
 #use sys
 #use ./types
+#use ./debug
 #use ./runtime
 #use ./expr
 #use ./match
@@ -2573,7 +2574,7 @@ str_used = e, name, env_p, env_t =>
       [Block b] str_used_block(b, name, env_p, env_t)
       | <->
 
-str_used_bin: (ast::BinaryOp, ast::Expr, ast::Expr), String, ast::Names,
+str_used_bin: ast::BinExpr, String, ast::Names,
   ast::VTypes => <>
 str_used_bin = t, name, env_p, env_t =>
    s1 = e_is_str(t.1, env_p, env_t)
@@ -3188,7 +3189,7 @@ fn_ret_call_override = cg, body, c, cur =>
                                                 | expr::fn_ret_vt_of(cg, fname)
 
 fn_ret_bin_override: types::Cg, ast::Expr,
-  (ast::BinaryOp, ast::Expr, ast::Expr), ast::ValueType => ast::ValueType
+  ast::BinExpr, ast::ValueType => ast::ValueType
 fn_ret_bin_override = cg, last, t, cur =>
    is_app = t.0 [Feed, Apply]
    is_app
@@ -3444,7 +3445,7 @@ flt_used_block = b, name, env_p, env_t =>
    nb = ?b
    nb > 0 | flt_used((b(nb - 1) | _ | ast::Expr(Var, "")), name, env_p, env_t) | <->
 
-flt_used_bin: (ast::BinaryOp, ast::Expr, ast::Expr), String, ast::Names, ast::VTypes => <>
+flt_used_bin: ast::BinExpr, String, ast::Names, ast::VTypes => <>
 flt_used_bin = t, name, env_p, env_t =>
    f1 = e_is_flt(t.1, env_p, env_t)
    f2 = e_is_flt(t.2, env_p, env_t)
@@ -3465,7 +3466,7 @@ int_used_block = b, name, env_p, env_t =>
    nb > 0 | int_used((b(nb - 1) | _ | ast::Expr(Var, "")), name,
      env_p, env_t) | <->
 
-int_used_bin: (ast::BinaryOp, ast::Expr, ast::Expr), String, ast::Names,
+int_used_bin: ast::BinExpr, String, ast::Names,
   ast::VTypes => <>
 int_used_bin = t, name, env_p, env_t =>
    int1 = e_is_int(t.1, env_p, env_t)
@@ -9381,6 +9382,7 @@ codegen_typed_compile_fn: types::Cg, String, ast::Names, tast::TypedExpr,
   ast::TypeInfo, String => (Addr, String)
 codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    is_anon = ?name > 0 && name(0) == '$
+   saved_loc = debug::current_location(cg)
    saved_in_fn = cg.in_fn
    is_top = !saved_in_fn && !is_anon
    can_capture = !is_top
@@ -9517,6 +9519,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    types::g.current_fn_params = params
    entry = LLVMAppendBasicBlock(fn, "entry")
    LLVMPositionBuilderAtEnd(cg.builder, entry)
+   debug::function(cg, fn, name, fn_ll_name, body.line, body.col)
    types::emit_cov_edge(cg)
    cg.fninfos += types::FnInfo(name, <+ fn +>, <+ fty +>, nparams, param_types, ret_vt,
      <+>, <->, <+>, !is_cap)
@@ -9629,6 +9632,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    cg.fn_binding_start = saved_binding_start
    cg.active_fn = saved_fn
    LLVMPositionBuilderAtEnd(cg.builder, saved_bb)
+   debug::position(cg, saved_loc)
    cg.current_module = saved_module
    types::g.last_compiling_fn = saved_last_fn
    types::g.alloc_rec_names = types::truncate_names(types::g.alloc_rec_names, saved_nalloc_rec)

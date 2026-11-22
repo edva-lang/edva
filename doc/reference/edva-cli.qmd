@@ -25,6 +25,7 @@ edva lsp
 |---|---|---|---|
 | `-o`, `--output` | `<str>` | `<stem>` | Output binary, `.o` object, `.so` shared library, `.wasm`, or `.ll` path |
 | `-r`, `--run` | — | `<->` | Run compiled binary immediately after linking (uses `node` for `.wasm` targets) |
+| `-g`, `--debug` | — | `<->` | Emit DWARF source locations and native panic stack traces |
 | `--ir` | — | `<->` | Emit LLVM IR (`.ll`) only; do not invoke `clang` |
 | `-c`, `--compile-only` | — | `<->` | Compile module to object file (`.o`) only (implies `--no-main`) |
 | `--shared` | — | `<->` | Build a shared library (`.so`, implies `--no-main`) |
@@ -50,6 +51,24 @@ edva lsp
 | `-v`, `--version` | — | — | Display compiler version (`edva <version>`) and exit |
 | `-h`, `--help` | — | — | Display formatted CLI help and exit |
 
+### Source-level debugging
+
+Compile with `-g -O0` for source breakpoints and stepping in GDB or LLDB.
+The compiler emits function names and instruction locations in DWARF,
+including locations in imported and specialized functions. Optimized builds
+also support `-g` and may inline or eliminate source statements.
+
+```sh
+edva -g -O0 src/main.dva -o app
+gdb -ex 'break main.dva:10' ./app
+```
+
+Native debug builds write the panic site and Edva caller frames to stderr
+when a source-level panic or checked runtime abort terminates the program.
+Each entry shows the file, line, and column. Debug information is also
+included in `--ir` and `-c` output. For separately compiled programs, pass
+`-g` when compiling each module whose source you want to inspect.
+
 ### Compiler configuration
 
 Use `--no-typed-opt` to skip typed rewrites for differential testing. It leaves
@@ -74,7 +93,7 @@ All package and cache commands are first-class top-level subcommands (`edva <com
 | `edva init` | `[dir] [-n/--name <name>] [--lib]` | Scaffolds `edva.ccl`, `src/<name>.dva`, and (unless `--lib`) `src/main.dva` in `[dir]` (default: `.`) | `E7020`: `edva.ccl` already exists |
 | `edva add` | `[<alias>] <spec> [--as <alias>] [--rev <r>]`<br>`[<alias>] --path <p>`<br>`[<alias>] --git <url> [--rev <r>]`<br>`[<alias>] --url <u> --hash <h>` | Transactionally adds dependency to `edva.ccl` (auto-inferring alias from `edva.ccl` `name` or repo/dir basename when omitted, supporting `<spec>@<rev>`, `owner/repo`, and `host/owner/repo` shorthand), resolves graph, and updates `edva.lock.ccl` (rolls back `edva.ccl` on failure) | `E7021`: rollback on fetch/resolve failure |
 | `edva rm` | `<alias> [dir]` (alias `remove`) | Removes `<alias>` from `edva.ccl` and updates `edva.lock.ccl` and `.edva/imports.ccl` | `E7004`: dependency not found |
-| `edva build` | `[dir \| file.dva] [-o <out>] [-t <triple>] [-O <opt>] [--cflag <f>] [--locked] [--offline] [--store <d>] [--cache <d>] [--no-cache]` | Dual-mode: builds package targets from `edva.ccl` (or `src/main.dva` $\to$ `./<name>`) or compiles a single `.dva` file | `E5039`: missing `pkg-config` lib |
+| `edva build` | `[dir \| file.dva] [-o <out>] [-t <triple>] [-O <opt>] [-g] [--cflag <f>] [--locked] [--offline] [--store <d>] [--cache <d>] [--no-cache]` | Dual-mode: builds package targets from `edva.ccl` (or `src/main.dva` $\to$ `./<name>`) or compiles a single `.dva` file | `E5039`: missing `pkg-config` lib |
 | `edva run` | `[dir \| file.dva] [options] [-- <args...>]` | Dual-mode: builds and executes the package binary or single `.dva` file, forwarding arguments after `--` to the program | `E7019`: missing source or target |
 | `edva test` | `[dir \| file.dva] [--fuzz] [--locked] [--offline] [--store <d>] [--cache <d>] [--no-cache]` | Compiles and runs all `tests/*.dva` in a package, or a single test `.dva` file (`--fuzz` enables coverage instrumentation and runs the test in fuzz mode) | — |
 | `edva fetch` | `[dir] [--locked] [--offline] [--store <d>] [--cache <d>] [--no-cache]` | Resolves dependencies, populates content store, writes `edva.lock.ccl` and `.edva/imports.ccl` | `E7007`: lockfile out of date (`--locked`) |
@@ -146,7 +165,7 @@ term::print("ok")
 
 Edva caches generated LLVM IR under `~/.cache/edva/ir/entries/<sha256>` (`key_version = 4`) and atomically renames completed temporary files into place so concurrent readers never observe partial `.ll` or cache metadata:
 
-- **Invalidation inputs**: Every key hashes the canonical target path, sorted canonical source paths and file content digests across `#use` dependencies, target triple, optimization level (`-O0`..`-Oz`), compiler executable fingerprint, LLVM major version, module/runtime codegen flags (`is_module`, `is_shared`, `no_runtime`, `no_main`, `module_name`), native `libs`/`pkg-config`, `--fuzz-cov`, `--cflag` values, `#export` symbols, and `#use(dynamic)` modules.
+- **Invalidation inputs**: Every key hashes the canonical target path, sorted canonical source paths and file content digests across `#use` dependencies, target triple, optimization level (`-O0`..`-Oz`), compiler executable fingerprint, LLVM major version, module/runtime codegen flags (`is_module`, `is_shared`, `no_runtime`, `no_main`, `module_name`), native `libs`/`pkg-config`, `--fuzz-cov`, `--debug`, `--cflag` values, `#export` symbols, and `#use(dynamic)` modules.
 - **Native optimization**: Profile-use builds hash a private snapshot of the indexed profile. Native PGO and LTO builds also fingerprint Clang, its linker, and explicit object inputs. See the [native optimization workflow](../compiler/native-optimization.qmd).
 - **Parallel isolation**: Without `--ir`, `-c --module <name> -o dir/mod.o` writes its transient IR at `<outpath>.ll` rather than `<module>.ll` in the current working directory, allowing parallel `make -j` and concurrent package builds to share a cache directory without colliding on CWD files.
 - **Offline & locked builds**: `edva vendor` copies all resolved Git, archive, and path dependencies into `vendor/` alongside `vendor/vendor.ccl`; subsequent `edva fetch --offline --locked`, `edva build --offline --locked`, and `edva test --offline --locked` verify recorded tree hashes with zero network access. Generator tools invoked via `@<alias>` automatically rebuild when dependency sources or the active `edva` compiler binary become newer than the cached tool binary.

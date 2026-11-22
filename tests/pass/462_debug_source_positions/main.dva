@@ -1,0 +1,9 @@
+#use io
+#use ./helper
+
+wrapper: Int => Int
+wrapper = input =>
+   helper::compute(input)
+
+input' = 0
+io::out(wrapper(input'))

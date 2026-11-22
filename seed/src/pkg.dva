@@ -130,7 +130,8 @@
    is_update: <>,
    update_alias: String,
    target_filter: String,
-   fuzz: <> = <->
+   fuzz: <> = <->,
+   debug_info: <> = <->
 )
 
 #type AddOpts (
@@ -1987,7 +1988,8 @@
       eff_cache = cache_s != "" | cache_s | default_cache!
       no_cache = cli::flag(p, "no-cache")
       fuzz = cli::flag(p, "fuzz")
-      PkgOpts(eff_root, locked, offline, eff_store, eff_git, eff_cache, no_cache, <->, "", "", fuzz)
+      debug_info = cli::flag(p, "debug")
+      PkgOpts(eff_root, locked, offline, eff_store, eff_git, eff_cache, no_cache, <->, "", "", fuzz, debug_info)
 
    cmd_init: String, String, <> => Int
    cmd_init = dir_arg, name_arg, is_lib =>
@@ -2369,6 +2371,7 @@
          |
             opt_flag = opt_level(0) == '- | opt_level | "-" + opt_level
             cmd' = cmd' + " " + sq(opt_flag)
+      opts.debug_info | cmd' = cmd' + " --debug"
       cflags @ cf =>
          cmd' = cmd' + " -cflag " + sq(cf)
       opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)

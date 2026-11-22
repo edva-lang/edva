@@ -10,6 +10,7 @@
 #use mem
 #use sys
 #use ./types
+#use ./debug
 #use ./expr
 #use ./match
 #use ./stmt
@@ -437,6 +438,24 @@ emit_abort_msg_inline = cg, msg, gname =>
                dead_bb = LLVMAppendBasicBlock(parent, "abort.dead")
                LLVMPositionBuilderAtEnd(cg.builder, dead_bb)
 
+emit_panic_site: types::Cg => ()
+emit_panic_site = cg =>
+   cg.opts.no_runtime || types::is_wasm_target(cg) | --|
+   cg.debug | dbg =>
+      loc = dbg.loc
+      fn = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
+      loc.line > 0 && <>(LLVMGetSubprogram(fn))
+         |
+            msg = "panic at ${loc.file}:${str::from_int(loc.line)}:${str::from_int(loc.col)}\n"
+            key = "panic.site.${str::from_int(types::g.tmpc)}"
+            types::g.tmpc = types::g.tmpc + 1
+            data = const_string_global(cg, msg, key)
+            write_fn = types::ensure_write_fn(cg)
+            args = (LLVMConstInt(LLVMInt32Type!, 2, 0), data,
+               LLVMConstInt(LLVMInt64Type!, ?msg, 0))
+            LLVMBuildCall2(cg.builder, write_fn.0, write_fn.1, &args, 3, "")
+            debug::emit_trace(cg)
+
 emit_expect_reason: types::Cg, String => ()
 emit_expect_reason = cg, reason =>
    cg.opts.no_runtime || types::is_wasm_target(cg) | --|
@@ -457,6 +476,7 @@ emit_expect_abort = cg, reason =>
 // A single cold abort body per diagnostic and module keeps checks small.
 emit_abort_msg: types::Cg, String, String => ()
 emit_abort_msg = cg, msg, gname =>
+   emit_panic_site(cg)
    cg.opts.no_runtime
       | emit_abort_msg_inline(cg, msg, gname)
       |
@@ -3203,6 +3223,7 @@ codegen_finish = cg, out_path =>
          codegen_register_global_ctor(cg, mfn)
       |
          LLVMBuildRet(cg.builder, LLVMConstInt(LLVMInt32Type!, 0, 0))
+   debug::finish(cg)
    verify_emitted_ir(cg)
    cg.error | --|
    optimize_emitted_ir(cg)

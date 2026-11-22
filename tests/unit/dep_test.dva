@@ -2,29 +2,29 @@
 
 #use ../../src/ast
 #use ../../src/dep_graph
+#use io
 #use str
 #use sys
 
 assert_true: <>, String => ()
 assert_true = cond, msg =>
    cond
-      | print $ "PASS: " + msg
+      | io::out $ "PASS: ${msg}"
       |
-         print $ "FAIL: " + msg
+         io::out $ "FAIL: ${msg}"
          sys::exit(1)
 
 assert_int_eq: Int, Int, String => ()
 assert_int_eq = actual, expected, msg =>
    actual == expected
-      | print $ "PASS: " + msg
+      | io::out $ "PASS: ${msg}"
       |
-         print $ "FAIL: " + msg + " (expected " + str::from_int(expected) +
-            ", got " + str::from_int(actual) + ")"
+         io::out $ "FAIL: ${msg} (expected ${expected}, got ${actual})"
          sys::exit(1)
 
 main: () => ()
 main = !=>
-   print $ "=== Running Dependency Graph & Tarjan SCC Tests ==="
+   io::out $ "=== Running Dependency Graph & Tarjan SCC Tests ==="
 
    // Test 1: has_name and copy_names
    nms = ast::Names()
@@ -40,7 +40,7 @@ main = !=>
    // Test 2: collect_expr_refs ignores local parameters
    fn_params = ast::Names()
    fn_params += "x"
-   fn_body = ast::Expr(Bin, (ast::BinaryOp(Add), ast::Expr(Var, "x"),
+   fn_body = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Add), ast::Expr(Var, "x"),
       ast::Expr(Var, "global_val")))
    fn_expr = ast::Expr(Fn, ast::FnExpr(fn_params, ast::Names(), fn_body))
    refs = ast::Names()
@@ -54,7 +54,7 @@ main = !=>
    // f = x => x + 1
    p1 = ast::Names()
    p1 += "x"
-   b1 = ast::Expr(Bin, (ast::BinaryOp(Add), ast::Expr(Var, "x"),
+   b1 = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Add), ast::Expr(Var, "x"),
       ast::Expr(Int, 1)))
    f1 = ast::Expr(Fn, ast::FnExpr(p1, ast::Names(), b1))
    stmts1 += ast::Expr(Assign, ("f", <->, <->, <->, <->, f1, ast::Expr(Int, 0),
@@ -62,7 +62,7 @@ main = !=>
    // g = y => y * 2
    p2 = ast::Names()
    p2 += "y"
-   b2 = ast::Expr(Bin, (ast::BinaryOp(Mul), ast::Expr(Var, "y"),
+   b2 = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Mul), ast::Expr(Var, "y"),
       ast::Expr(Int, 2)))
    f2 = ast::Expr(Fn, ast::FnExpr(p2, ast::Names(), b2))
    stmts1 += ast::Expr(Assign, ("g", <->, <->, <->, <->, f2, ast::Expr(Int, 0),
@@ -187,6 +187,6 @@ main = !=>
    assert_true(dep_graph::has_name(tri0.names, "b"), "contains b")
    assert_true(dep_graph::has_name(tri0.names, "c"), "contains c")
 
-   print $ "ALL DEPENDENCY GRAPH & TARJAN SCC TESTS PASSED!"
+   io::out $ "ALL DEPENDENCY GRAPH & TARJAN SCC TESTS PASSED!"
 
 main!

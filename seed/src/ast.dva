@@ -192,13 +192,16 @@
 
 // One variant per ExprKind. Multi-field nodes use tuple payloads (a variant
 // payload is a single type); list children use the named array types above.
+#type BinExpr (op: BinaryOp, lhs: Expr, rhs: Expr, line: Int = 0, col: Int = 0)
+#type UnaryExpr (op: UnaryOp, operand: Expr, line: Int = 0, col: Int = 0)
+
 #type Expr <
    Int(Int)
    Float(Float)
    Str(String)
    Var(String)
    Rune(Int)
-   Bin(BinaryOp, Expr, Expr)
+   Bin(BinExpr)
    Assign(String, <>, <>, <>, <>, Expr, Expr, String, TypeInfo)
    Choice(ChoiceExpr)
    Block(Exprs)
@@ -217,7 +220,7 @@
    Foreign(ForeignFnDecl)
    TypeCast(CastExpr)
    TypeDecl(TypeDeclExpr)
-   Unary(UnaryOp, Expr)
+   Unary(UnaryExpr)
    Copy(Expr)
    SizeOf(SizeOfExpr)
    BuilderCreate(Expr)

@@ -1,0 +1,8 @@
+#use io
+
+#public
+   compute: #param T: Type, T => T
+   compute = input =>
+      x = input + 1
+      io::out(x)
+      5 / input

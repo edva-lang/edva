@@ -1001,7 +1001,7 @@ entry:
 
 define ptr @"tast::mk_typed_local_binding"(ptr %0, ptr %1) #2 {
 entry:
-  %var.__ctor_arg_107 = alloca ptr, align 8
+  %var.__ctor_arg_111 = alloca ptr, align 8
   %var.unit = alloca ptr, align 8
   %var.value = alloca ptr, align 8
   %var.name = alloca ptr, align 8
@@ -1033,8 +1033,8 @@ entry:
   %rec.fld8 = getelementptr inbounds { ptr, i1, i1, i1, i1, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, i1 }, ptr %rec.alloc, i32 0, i32 6
   store i1 true, ptr %rec.fld8, align 1
   store ptr %rec.alloc, ptr %pay.gep, align 8
-  store ptr %enum.alloc, ptr %var.__ctor_arg_107, align 8
-  %var.load9 = load ptr, ptr %var.__ctor_arg_107, align 8
+  store ptr %enum.alloc, ptr %var.__ctor_arg_111, align 8
+  %var.load9 = load ptr, ptr %var.__ctor_arg_111, align 8
   %var.load10 = load ptr, ptr %var.unit, align 8
   %fld.gep = getelementptr inbounds { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr %var.load10, i32 0, i32 1
   %fld.load = load ptr, ptr %fld.gep, align 8
@@ -1123,7 +1123,7 @@ a.rd.err.null:                                    ; preds = %a.after
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
   store ptr @str.1.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
-  store i64 263, ptr %err.line.gep, align 8
+  store i64 265, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
   store i64 12, ptr %err.col.gep, align 8
   %err.ctx.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 5
@@ -1144,7 +1144,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep10 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc7, i32 0, i32 2
   store ptr @str.1.struct, ptr %err.file.gep10, align 8
   %err.line.gep11 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc7, i32 0, i32 3
-  store i64 263, ptr %err.line.gep11, align 8
+  store i64 265, ptr %err.line.gep11, align 8
   %err.col.gep12 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc7, i32 0, i32 4
   store i64 12, ptr %err.col.gep12, align 8
   %err.ctx.gep13 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc7, i32 0, i32 5

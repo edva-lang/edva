@@ -663,10 +663,10 @@ expr_has_arena_alloc_d = cg, e, depth =>
       [Exit x] expr_has_arena_alloc_d(cg, x, depth)
       | <->
 
-expr_has_arena_alloc_bin: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr) => <>
+expr_has_arena_alloc_bin: types::Cg, ast::BinExpr => <>
 expr_has_arena_alloc_bin = cg, t => expr_has_arena_alloc_bin_d(cg, t, 0)
 
-expr_has_arena_alloc_bin_d: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr),
+expr_has_arena_alloc_bin_d: types::Cg, ast::BinExpr,
   Int => <>
 expr_has_arena_alloc_bin_d = cg, t, depth =>
    string_add = t.0 [Add]
@@ -1446,7 +1446,7 @@ codegen_eval_block_step = cg, exprs, i, n, saved_discard =>
             | v
             | codegen_eval_block_step(cg, exprs, i + 1, n, saved_discard)
 
-codegen_eval_bin: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr) => (Addr, ast::ValueType)
+codegen_eval_bin: types::Cg, ast::BinExpr => (Addr, ast::ValueType)
 codegen_eval_bin = cg, t =>
    op = t.0
    op
@@ -1464,7 +1464,7 @@ codegen_eval_bin = cg, t =>
          r
 
 codegen_eval_bin_op: types::Cg, ast::BinaryOp,
-  (ast::BinaryOp, ast::Expr, ast::Expr) => (Addr, ast::ValueType)
+  ast::BinExpr => (Addr, ast::ValueType)
 codegen_eval_bin_op = cg, op, t =>
    op
       [And]
@@ -1482,8 +1482,8 @@ codegen_eval_bin_op = cg, op, t =>
          x_name = "_comp_x_" + str::from_int(types::g.tmpc)
          params = ast::Names()
          params += x_name
-         step1 = ast::Expr(Bin, (ast::BinaryOp(Feed), ast::Expr(Var, x_name), t.1))
-         step2 = ast::Expr(Bin, (ast::BinaryOp(Feed), step1, t.2))
+         step1 = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Feed), ast::Expr(Var, x_name), t.1))
+         step2 = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Feed), step1, t.2))
          codegen_eval(cg, ast::Expr(Fn, ast::FnExpr(params, ast::Names(), step2)))
       [Bind]
          b_res = codegen_emit_bind(cg, t)
@@ -1503,7 +1503,7 @@ codegen_eval_bin_op = cg, op, t =>
 ram_slot_has_payload: ast::RamSlotInfo => <>
 ram_slot_has_payload = slot => slot.has_payload
 
-codegen_emit_bind: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr) => < (Addr, ast::ValueType) | >
+codegen_emit_bind: types::Cg, ast::BinExpr => < (Addr, ast::ValueType) | >
 codegen_emit_bind = cg, t =>
    dtype = match::ram_expr_dtype(cg, t.1)
    slots = match::ram_slots_of(cg, dtype)
@@ -1518,7 +1518,7 @@ codegen_emit_bind_slot_error = cg =>
      "a positive payload slot.", 0, 0)
    <-->
 
-codegen_emit_bind_valid: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr),
+codegen_emit_bind_valid: types::Cg, ast::BinExpr,
   String => < (Addr, ast::ValueType) | >
 codegen_emit_bind_valid = cg, t, dtype =>
    // Keep $>> as syntax sugar, not a separate lowering.  The reference
@@ -1529,7 +1529,7 @@ codegen_emit_bind_valid = cg, t, dtype =>
    dtype != "" | cg.last_type = dtype
    <+ res +>
 
-bind_choice: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr), String => ast::ChoiceExpr
+bind_choice: types::Cg, ast::BinExpr, String => ast::ChoiceExpr
 bind_choice = cg, t, dtype =>
    branches = ast::Branches()
    branches += bind_choice_branch(bind_positive_body(t.2))
@@ -1568,12 +1568,12 @@ wrap_functor_rhs_cg = tag, rhs =>
          v_body = ast::Expr(Variant, ast::VariantExpr(tag, v_args))
          ast::Expr(Fn, ast::FnExpr(fe.params, fe.ct_params, v_body))
       |
-         fed = ast::Expr(Bin, (ast::BinaryOp(Feed), ast::Expr(Var, "_"), rhs))
+         fed = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Feed), ast::Expr(Var, "_"), rhs))
          v_args = ast::Exprs()
          v_args += fed
          ast::Expr(Variant, ast::VariantExpr(tag, v_args))
 
-codegen_emit_map_pos: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr) => < (Addr, ast::ValueType) | >
+codegen_emit_map_pos: types::Cg, ast::BinExpr => < (Addr, ast::ValueType) | >
 codegen_emit_map_pos = cg, t =>
    dtype = match::ram_expr_dtype(cg, t.1)
    slots = match::ram_slots_of(cg, dtype)
@@ -1585,7 +1585,7 @@ codegen_emit_map_pos = cg, t =>
    res = match::codegen_eval_choice(cg, ast::ChoiceExpr(t.1, <+>, branches))
    <+ res +>
 
-codegen_emit_map_neg: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr) => < (Addr, ast::ValueType) | >
+codegen_emit_map_neg: types::Cg, ast::BinExpr => < (Addr, ast::ValueType) | >
 codegen_emit_map_neg = cg, t =>
    dtype = match::ram_expr_dtype(cg, t.1)
    slots = match::ram_slots_of(cg, dtype)
@@ -1677,8 +1677,8 @@ subst_compose_var = pname, replacement, e =>
    e
       [Var v] (v == pname | replacement | e)
       [Bin b]
-         ast::Expr(Bin, (b.0, subst_compose_var(pname, replacement, b.1),
-           subst_compose_var(pname, replacement, b.2)))
+         ast::Expr(Bin, ast::BinExpr(b.0, subst_compose_var(pname, replacement, b.1),
+           subst_compose_var(pname, replacement, b.2), b.line, b.col))
       | e
 
 // "$>" (feed, reverse application) / "$" (infix apply). The fn side is a bare
@@ -1686,7 +1686,7 @@ subst_compose_var = pname, replacement, e =>
 // "f(x, a)", "f(a) $ b" == "f(a, b)") — the value side is prepended (feed) or
 // appended (apply) to the call's args.
 codegen_emit_apply_feed: types::Cg, ast::BinaryOp,
-  (ast::BinaryOp, ast::Expr, ast::Expr) => (Addr, ast::ValueType)
+  ast::BinExpr => (Addr, ast::ValueType)
 codegen_emit_apply_feed = cg, op, t =>
    is_feed = op [Feed]
    vside = is_feed | t.1 | t.2
@@ -2617,7 +2617,7 @@ codegen_emit_unassignable_binop_error = cg =>
    (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 codegen_emit_arith: types::Cg, ast::BinaryOp,
-  (ast::BinaryOp, ast::Expr, ast::Expr) => (Addr, ast::ValueType)
+  ast::BinExpr => (Addr, ast::ValueType)
 codegen_emit_arith = cg, op, t =>
    lr = codegen_eval(cg, t.1)
    l_rt = cg.last_rt
@@ -2840,7 +2840,7 @@ codegen_eval_int_arith = cg, op, l, r, is_u =>
 // --- comparisons -------------------------------------------------------------
 
 codegen_emit_bitwise: types::Cg, ast::BinaryOp,
-  (ast::BinaryOp, ast::Expr, ast::Expr) => (Addr, ast::ValueType)
+  ast::BinExpr => (Addr, ast::ValueType)
 codegen_emit_bitwise = cg, op, t =>
    lr = codegen_eval(cg, t.1)
    rr = codegen_eval(cg, t.2)
@@ -2929,7 +2929,7 @@ ti_rec_or_enum_len = ti =>
       [Enum s] ?s
       | -1
 
-codegen_eval_unary: types::Cg, (ast::UnaryOp, ast::Expr) => (Addr, ast::ValueType)
+codegen_eval_unary: types::Cg, ast::UnaryExpr => (Addr, ast::ValueType)
 codegen_eval_unary = cg, t =>
    saved_discard = cg.discard_result
    cg.discard_result = <->
@@ -4498,9 +4498,9 @@ typed_expr_to_ast = te =>
       [LitRune r] ast::Expr(Rune, r)
       [Var v] ast::Expr(Var, v.0)
       [Bin b]
-         ast::Expr(Bin, (b.0, typed_expr_to_ast(b.1), typed_expr_to_ast(b.2)))
+         ast::Expr(Bin, ast::BinExpr(b.0, typed_expr_to_ast(b.1), typed_expr_to_ast(b.2), te.line, te.col))
       [Unary u]
-         ast::Expr(Unary, (u.0, typed_expr_to_ast(u.1)))
+         ast::Expr(Unary, ast::UnaryExpr(u.0, typed_expr_to_ast(u.1), te.line, te.col))
       | ast::Expr(Var, "")
 
 typed_expr_to_ct_val: types::Cg, tast::TypedExpr => types::CtVal
@@ -7225,7 +7225,7 @@ find_typed_rec_factory = cg, rname, fname, nargs, is_niche_rec =>
 try_inline_rec_factory_call: types::Cg, String, String, tast::TypedExprs,
   ast::TypeInfo, <>, <> => <(Addr, ast::ValueType)|>
 try_inline_rec_factory_call = cg, rname, fname, args, ti, is_generic, want_stack =>
-   !want_stack || !cg.in_fn || cg.in_restore_scope > 0 || is_generic | --| <-->
+   cg.opts.debug_info || !want_stack || !cg.in_fn || cg.in_restore_scope > 0 || is_generic | --| <-->
    stmt::is_foreign_fn(fname) || stmt::is_module_dynamic(cg, rname) | --| <-->
    ?stmt::fn_signature_cparams(types::g.pstmts, rname) > 0 | --| <-->
    ret_vt = types::vt_from_ti_cg(cg, ti)

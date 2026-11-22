@@ -291,7 +291,7 @@ seq_loop = p, lhs =>
          parse_cycle(p)
             | r =>
                p.is_stmt = <->
-               n = ast::Expr(Bin, (ast::BinaryOp(Seq), lhs, r))
+               n = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Seq), lhs, r))
                seq_loop(p, n)
             | <-->
       | <+ lhs +>
@@ -504,7 +504,7 @@ seq_cont_loop = p, lhs =>
          parser_advance(p)
          parse_range(p)
             | r =>
-               n = ast::Expr(Bin, (ast::BinaryOp(Seq), lhs, r))
+               n = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Seq), lhs, r))
                seq_cont_loop(p, n)
             | <-->
       | <+ lhs +>
@@ -692,10 +692,10 @@ subst_free_underscore = e, rvar =>
             | ast::Expr(Fn, ast::FnExpr(f.params, f.ct_params,
                 subst_free_underscore(f.body, rvar), f.line, f.col))
       [Bin t]
-         ast::Expr(Bin, (t.0, subst_free_underscore(t.1, rvar),
-           subst_free_underscore(t.2, rvar)))
+         ast::Expr(Bin, ast::BinExpr(t.0, subst_free_underscore(t.1, rvar),
+           subst_free_underscore(t.2, rvar), t.line, t.col))
       [Unary t]
-         ast::Expr(Unary, (t.0, subst_free_underscore(t.1, rvar)))
+         ast::Expr(Unary, ast::UnaryExpr(t.0, subst_free_underscore(t.1, rvar), t.line, t.col))
       [Assign t]
          ast::Expr(Assign, (t.0, t.1, t.2, t.3, t.4,
            subst_free_underscore(t.5, rvar),
@@ -803,16 +803,16 @@ subst_free_underscore_map = ps, rvar =>
         subst_free_underscore(pr.value, rvar))
    out
 
-mk_feed_expr: Parser, ast::Expr, ast::Expr => ast::Expr
-mk_feed_expr = p, lhs, rhs =>
+mk_feed_expr: Parser, ast::Expr, ast::Expr, Int, Int => ast::Expr
+mk_feed_expr = p, lhs, rhs, line, col =>
    is_fn_or_choice = rhs [Fn, Choice]
    !is_fn_or_choice && has_free_underscore(rhs)
       |
          tmp = fresh_dp_var(p)
          asgn = mk_assign(tmp, lhs)
          sub_rhs = subst_free_underscore(rhs, tmp)
-         ast::Expr(Bin, (ast::BinaryOp(Seq), asgn, sub_rhs))
-      | ast::Expr(Bin, (ast::BinaryOp(Feed), lhs, rhs))
+         ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Seq), asgn, sub_rhs, line, col))
+      | ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Feed), lhs, rhs, line, col))
 
 mk_compose_fn: Parser, ast::Expr, ast::Expr => ast::Expr
 mk_compose_fn = p, lhs_raw, rhs_raw =>
@@ -822,14 +822,14 @@ mk_compose_fn = p, lhs_raw, rhs_raw =>
       |
          lhs
             [Fn fe]
-               next_body = mk_feed_expr(p, fe.body, rhs)
+               next_body = mk_feed_expr(p, fe.body, rhs, 0, 0)
                ast::Expr(Fn, ast::FnExpr(fe.params, ast::Names(), next_body))
             | lhs
       |
          param = fresh_compose_var(p)
          pvar = ast::Expr(Var, param)
-         step1 = mk_feed_expr(p, pvar, lhs)
-         step2 = mk_feed_expr(p, step1, rhs)
+         step1 = mk_feed_expr(p, pvar, lhs, 0, 0)
+         step2 = mk_feed_expr(p, step1, rhs, 0, 0)
          params = ast::Names()
          params += param
          ast::Expr(Fn, ast::FnExpr(params, ast::Names(), step2))
@@ -890,32 +890,32 @@ parse_bp_rhs = p, i =>
 is_cmp_atom: ast::Expr => <>
 is_cmp_atom = [Int, Float, Rune, Str, Var]
 
-chain_cmp: Parser, ast::Expr, ast::BinaryOp, ast::Expr => ast::Expr
-chain_cmp = p, prev, op2, rhs =>
+chain_cmp: Parser, ast::Expr, ast::BinaryOp, ast::Expr, Int, Int => ast::Expr
+chain_cmp = p, prev, op2, rhs, line, col =>
    prev
       [Bin b]
          b.0
             [Seq]
-               new_r = chain_cmp(p, b.2, op2, rhs)
-               ast::Expr(Bin, (ast::BinaryOp(Seq), b.1, new_r))
+               new_r = chain_cmp(p, b.2, op2, rhs, line, col)
+               ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Seq), b.1, new_r))
             [And]
-               new_r = chain_cmp(p, b.2, op2, rhs)
-               ast::Expr(Bin, (ast::BinaryOp(And), b.1, new_r))
+               new_r = chain_cmp(p, b.2, op2, rhs, line, col)
+               ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(And), b.1, new_r))
             |
                mid = b.2
                is_cmp_atom(mid)
                   |
-                     cmp2 = ast::Expr(Bin, (op2, mid, rhs))
-                     ast::Expr(Bin, (ast::BinaryOp(And), prev, cmp2))
+                     cmp2 = ast::Expr(Bin, ast::BinExpr(op2, mid, rhs, line, col))
+                     ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(And), prev, cmp2))
                   |
                      tmp = fresh_dp_var(p)
                      tmp_var = ast::Expr(Var, tmp)
                      asgn = mk_assign(tmp, mid)
-                     cmp1 = ast::Expr(Bin, (b.0, b.1, tmp_var))
-                     cmp2 = ast::Expr(Bin, (op2, tmp_var, rhs))
-                     and_e = ast::Expr(Bin, (ast::BinaryOp(And), cmp1, cmp2))
-                     ast::Expr(Bin, (ast::BinaryOp(Seq), asgn, and_e))
-      | ast::Expr(Bin, (op2, prev, rhs))
+                     cmp1 = ast::Expr(Bin, ast::BinExpr(b.0, b.1, tmp_var, b.line, b.col))
+                     cmp2 = ast::Expr(Bin, ast::BinExpr(op2, tmp_var, rhs, line, col))
+                     and_e = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(And), cmp1, cmp2))
+                     ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Seq), asgn, and_e))
+      | ast::Expr(Bin, ast::BinExpr(op2, prev, rhs, line, col))
 
 // Consume one binary operator (the token is an Op whose BinOpInfo is in hand):
 // bound check, comparison same-line check, advance, parse the right operand,
@@ -927,6 +927,7 @@ bp_cont = p, res, min_bp, cmp_line, entry_indent, i =>
       | <+ res +>
       |
          op_line = p.curr.line
+         op_col = p.curr.col
          op_text = p.curr.text
          parser_advance(p)
          (i.op [Apply]) && tok_is_nl(p.curr)
@@ -945,11 +946,11 @@ bp_cont = p, res, min_bp, cmp_line, entry_indent, i =>
                            <-->
                         |
                            node = i.same_line && cmp_line != -1
-                              | chain_cmp(p, res, i.op, cae)
+                              | chain_cmp(p, res, i.op, cae, op_line, op_col)
                               |
                                  i.op
                                     [Compose] mk_compose_fn(p, res, cae)
-                                    [Feed] mk_feed_expr(p, res, cae)
+                                    [Feed] mk_feed_expr(p, res, cae, op_line, op_col)
                                     [Bind, MapPos, MapNeg]
                                        is_fn_or_ch = cae [Fn, Choice]
                                        rhs_norm = !is_fn_or_ch && has_free_underscore(cae)
@@ -958,8 +959,8 @@ bp_cont = p, res, min_bp, cmp_line, entry_indent, i =>
                                              u_params += "_"
                                              ast::Expr(Fn, ast::FnExpr(u_params, ast::Names(), cae))
                                           | cae
-                                       ast::Expr(Bin, (i.op, res, rhs_norm))
-                                    | ast::Expr(Bin, (i.op, res, cae))
+                                       ast::Expr(Bin, ast::BinExpr(i.op, res, rhs_norm, op_line, op_col))
+                                    | ast::Expr(Bin, ast::BinExpr(i.op, res, cae, op_line, op_col))
                            nc = i.same_line | op_line | -1
                            bp_loop(p, node, min_bp, nc, entry_indent)
                   | <-->
@@ -1038,26 +1039,34 @@ parse_unary_op = p =>
 // "!x" — logical negation (a RamNN flag).
 atom_neg: Parser => <ast::Expr|>
 atom_neg = p =>
+   line = p.curr.line
+   col = p.curr.col
    parser_advance(p)
-   parse_unary(p) $+> oe => ast::Expr(Unary, (ast::UnaryOp(Not), oe))
+   parse_unary(p) $+> oe => ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(Not), oe, line, col))
 
 // "+x" — Builder freeze into String (no trailing whitespace).
 atom_freeze: Parser => <ast::Expr|>
 atom_freeze = p =>
+   line = p.curr.line
+   col = p.curr.col
    parser_advance(p)
-   parse_unary(p) $+> fe => ast::Expr(Unary, (ast::UnaryOp(Freeze), fe))
+   parse_unary(p) $+> fe => ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(Freeze), fe, line, col))
 
 // "&x" — address of a Builder's writable buffer or String pointer (no trailing whitespace).
 atom_addrof: Parser => <ast::Expr|>
 atom_addrof = p =>
+   line = p.curr.line
+   col = p.curr.col
    parser_advance(p)
-   parse_unary(p) $+> ae => ast::Expr(Unary, (ast::UnaryOp(AddrOf), ae))
+   parse_unary(p) $+> ae => ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(AddrOf), ae, line, col))
 
 // ".!.x" — bitwise NOT (integerish).
 atom_bitnot: Parser => <ast::Expr|>
 atom_bitnot = p =>
+   line = p.curr.line
+   col = p.curr.col
    parser_advance(p)
-   parse_unary(p) $+> be => ast::Expr(Unary, (ast::UnaryOp(BitNot), be))
+   parse_unary(p) $+> be => ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(BitNot), be, line, col))
 
 // "++x" — the copy operator.
 atom_copy: Parser => <ast::Expr|>
@@ -1181,7 +1190,7 @@ atom_binding_call = p, c =>
       bound_args += idx_var
    bound_call = ast::Expr(Call, ast::CallExpr("", arr_var, bound_args,
      c.line, c.col))
-   unwrapped = ast::Expr(Unary, (ast::UnaryOp(Unwrap), bound_call))
+   unwrapped = ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(Unwrap), bound_call, c.line, c.col))
    get_fn = ast::Expr(Fn, ast::FnExpr(ast::Names(), ast::Names(), unwrapped))
    val_var = ast::Expr(Var, "_v")
    set_assign = ast::Expr(Assign, ("", <->, <->, <->, <->,
@@ -1291,8 +1300,10 @@ atom_minus_rune = p =>
 
 atom_minus_other: Parser => <ast::Expr|>
 atom_minus_other = p =>
+   line = p.curr.line
+   col = p.curr.col
    parser_advance(p)
-   parse_unary(p) $+> oe => ast::Expr(Unary, (ast::UnaryOp(Neg), oe))
+   parse_unary(p) $+> oe => ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(Neg), oe, line, col))
 
 atom_to_ram: <ast::Expr|> => < ast::Expr | Error >
 atom_to_ram = r =>
@@ -2260,7 +2271,7 @@ parse_bin_section = p =>
          params += p1
          body = operators::bin_info(op_text)
             | opb =>
-               ast::Expr(Bin, (opb.op, ast::Expr(Var, p0), ast::Expr(Var, p1)))
+               ast::Expr(Bin, ast::BinExpr(opb.op, ast::Expr(Var, p0), ast::Expr(Var, p1), op_line, op_col))
             |
                args = ast::Exprs()
                args += ast::Expr(Var, p0)
@@ -2474,7 +2485,7 @@ chain_seq_stmts = stmts =>
    acc' = stmts(0).expect("missing stmts")
    stmts @ el_, i =>
       i > 0
-         | acc' = ast::Expr(Bin, (ast::BinaryOp(Seq), acc', el_))
+         | acc' = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Seq), acc', el_))
    acc'
 
 pr_record_field_loop: Parser, ast::Fields => <ast::Expr|>
@@ -2590,9 +2601,9 @@ parse_trailing_block_expr = p, lhs =>
       | be =>
          be
             [Fn]
-               <+ ast::Expr(Bin, (ast::BinaryOp(Apply), lhs, be)) +>
+               <+ ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Apply), lhs, be)) +>
             [Record]
-               <+ ast::Expr(Bin, (ast::BinaryOp(Apply), lhs, be)) +>
+               <+ ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Apply), lhs, be)) +>
             [Block b]
                n_exprs = ?b
                n_exprs == 1
@@ -2600,26 +2611,26 @@ parse_trailing_block_expr = p, lhs =>
                      first_e = b(0).expect("missing b")
                      first_e
                         [Fn]
-                           <+ ast::Expr(Bin, (ast::BinaryOp(Apply),
+                           <+ ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Apply),
                              lhs, first_e)) +>
                         |
                            fields' = ast::Fields()
                            fields' = trailing_block_field(fields', first_e)
                            rec = ast::Expr(Record,
                              ast::RecordExpr(fields', <->))
-                           <+ ast::Expr(Bin, (ast::BinaryOp(Apply),
+                           <+ ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Apply),
                              lhs, rec)) +>
                   |
                      fields' = ast::Fields()
                      b @ e =>
                         fields' = trailing_block_field(fields', e)
                      rec = ast::Expr(Record, ast::RecordExpr(fields', <->))
-                     <+ ast::Expr(Bin, (ast::BinaryOp(Apply), lhs, rec)) +>
+                     <+ ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Apply), lhs, rec)) +>
             |
                fields' = ast::Fields()
                fields' = trailing_block_field(fields', be)
                rec = ast::Expr(Record, ast::RecordExpr(fields', <->))
-               <+ ast::Expr(Bin, (ast::BinaryOp(Apply), lhs, rec)) +>
+               <+ ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Apply), lhs, rec)) +>
       | <-->
 
 // "(expr)" with no top-level comma: a grouping that unwraps to its inner
@@ -2937,17 +2948,19 @@ atom_length_op = p =>
    orr = parse_unary(p)
    orr
       | oe =>
-         <+ ast::Expr(Unary, (ast::UnaryOp(Length), oe)) +>
+         <+ ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(Length), oe)) +>
       | <-->
 
 // "??operand" — String codepoint count (a Unary RuneCount).
 atom_rune_count: Parser => <ast::Expr|>
 atom_rune_count = p =>
+   line = p.curr.line
+   col = p.curr.col
    parser_advance(p)
    orr = parse_unary(p)
    orr
       | oe =>
-         <+ ast::Expr(Unary, (ast::UnaryOp(RuneCount), oe)) +>
+         <+ ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(RuneCount), oe, line, col)) +>
       | <-->
 
 // "op rhs" — an operator section: a lambda over the implicit "_" param.
@@ -2968,8 +2981,8 @@ atom_section = p =>
                   | rre =>
                      params = ast::Names()
                      params += "_"
-                     body = ast::Expr(Bin, (opb.op, ast::Expr(Var, "_"),
-                       rre))
+                     body = ast::Expr(Bin, ast::BinExpr(opb.op, ast::Expr(Var, "_"),
+                       rre, op_line, op_col))
                      <+ ast::Expr(Fn, ast::FnExpr(params, ast::Names(), body, op_line, op_col)) +>
                   | <-->
             |
@@ -3540,7 +3553,7 @@ prune_target_expr = e =>
    e
       [Int, Float, Str, Var, Rune, CycleJump, Import, FastMathPragma,
        SwizzlePragma, ModParam, Foreign] e
-      [Unary u] ast::Expr(Unary, (u.0, prune_target_expr(u.1)))
+      [Unary u] ast::Expr(Unary, ast::UnaryExpr(u.0, prune_target_expr(u.1), u.line, u.col))
       [Copy cp] ast::Expr(Copy, prune_target_expr(cp))
       [BuilderCreate bc] ast::Expr(BuilderCreate, prune_target_expr(bc))
       [CompileTime ct] ast::Expr(CompileTime, prune_target_expr(ct))
@@ -3556,8 +3569,8 @@ prune_target_expr = e =>
          prune_target_type_info(td.type_info)))
       [TypeCast tc] ast::Expr(TypeCast, ast::CastExpr(tc.target_type,
          prune_target_expr(tc.expr)))
-      [Bin b] ast::Expr(Bin, (b.0, prune_target_expr(b.1),
-         prune_target_expr(b.2)))
+      [Bin b] ast::Expr(Bin, ast::BinExpr(b.0, prune_target_expr(b.1),
+         prune_target_expr(b.2), b.line, b.col))
       [Assign a] ast::Expr(Assign, (a.0, a.1, a.2, a.3, a.4,
          prune_target_expr(a.5), prune_target_expr(a.6), a.7,
          prune_target_type_info(a.8)))
@@ -6230,8 +6243,8 @@ pp_double_colon = p, lhs =>
       | <-->
 
 // Named assertion for either a positive/negative or a positive/empty ram.
-pp_expect: Parser, ast::Expr => <ast::Expr|>
-pp_expect = p, lhs =>
+pp_expect: Parser, ast::Expr, Int, Int => <ast::Expr|>
+pp_expect = p, lhs, line, col =>
    parser_advance(p)
    reason = p.curr.text
    !((p.curr.kind [Str]) && ?reason > 0)
@@ -6244,17 +6257,19 @@ pp_expect = p, lhs =>
          parser_error(p, 3177, "expect takes exactly one reason.")
          --| <-->
    parser_advance(p)
-   unary = ast::Expr(Unary, (ast::UnaryOp(Expect, reason), lhs))
+   unary = ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(Expect, reason), lhs, line, col))
    pp_member(p, unary)
 
 pp_dot: Parser, ast::Expr => <ast::Expr|>
 pp_dot = p, lhs =>
+   line = p.curr.line
+   col = p.curr.col
    parser_advance(p)
    p.curr.kind
       [Id, Int]
          f = p.curr.text
          parser_advance(p)
-         f == "expect" && (p.curr.kind [LParen]) | --| pp_expect(p, lhs)
+         f == "expect" && (p.curr.kind [LParen]) | --| pp_expect(p, lhs, line, col)
          pp_member(p, ast::Expr(Member, ast::MemberExpr(lhs, f, <->,
            ast::Expr(Var, ""), p.curr.line, p.curr.col)))
       |
@@ -6431,7 +6446,7 @@ parse_postfix_calls = p, lhs =>
                !p.curr.lead
                   |
                      parser_advance(p)
-                     u = ast::Expr(Unary, (ast::UnaryOp(Propagate), lhs))
+                     u = ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(Propagate), lhs))
                      pp_member(p, u)
                         | mu => parse_postfix_calls(p, mu)
                         | <-->
@@ -7262,7 +7277,7 @@ pat_match_cond = p, target, pat_in =>
          PatCondResult(ast::Exprs(),
            ast::Expr(Variant, (ast::Tag(Positive), ast::Exprs())))
       [Lit]
-         cond = ast::Expr(Bin, (ast::BinaryOp(Eq), target, pat.lit_val))
+         cond = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Eq), target, pat.lit_val))
          PatCondResult(ast::Exprs(), cond)
       [Variant]
          ?pat.subpatterns == 0
@@ -7310,7 +7325,7 @@ pat_match_cond = p, target, pat_in =>
                   stmts += mk_assign(cond_var, sub_res.cond)
                   cond_ref = ast::Expr(Var, cond_var)
                   acc_cond' = has_cond'
-                     | ast::Expr(Bin, (ast::BinaryOp(And), acc_cond', cond_ref))
+                     | ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(And), acc_cond', cond_ref))
                      | cond_ref
                   has_cond' = <+>
          PatCondResult(stmts, acc_cond')
@@ -7331,7 +7346,7 @@ pat_match_cond = p, target, pat_in =>
                   stmts += mk_assign(cond_var, sub_res.cond)
                   cond_ref = ast::Expr(Var, cond_var)
                   acc_cond' = has_cond'
-                     | ast::Expr(Bin, (ast::BinaryOp(Or), acc_cond', cond_ref))
+                     | ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Or), acc_cond', cond_ref))
                      | cond_ref
                   has_cond' = <+>
                PatCondResult(stmts, acc_cond')
@@ -7599,7 +7614,7 @@ parse_pos_guard_choice = p, lhs =>
 parse_neg_guard_choice = p, lhs =>
    parser_advance(p)
    parse_pos_guard_choice(p, lhs)
-      | ce => <+ ast::Expr(Unary, (ast::UnaryOp(Not), ce)) +>
+      | ce => <+ ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(Not), ce)) +>
       | <-->
 
 choice_cont: Parser, ast::Expr => <ast::Expr|>
@@ -8495,7 +8510,7 @@ choice_same_line_seq_loop = p, lhs =>
          parser_advance(p)
          choice_same_line(p)
             | r =>
-               n = ast::Expr(Bin, (ast::BinaryOp(Seq), lhs, r))
+               n = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Seq), lhs, r))
                choice_same_line_seq_loop(p, n)
             | <-->
       | <+ lhs +>
@@ -9162,8 +9177,10 @@ lookup_const_int = lst, name =>
             | <-->
       | <-->
 
-fold_const_unary: ast::UnaryOp, ast::Expr => ast::Expr
-fold_const_unary = op, fo =>
+fold_const_unary: ast::UnaryExpr, ast::Expr => ast::Expr
+fold_const_unary = u, fo =>
+   op = u.op
+   orig = ast::Expr(Unary, u(operand = fo))
    op
       [Neg]
          fo
@@ -9177,8 +9194,8 @@ fold_const_unary = op, fo =>
                   [Float f]
                      ast::Expr(TypeCast, ast::CastExpr(tc.target_type,
                        ast::Expr(Float, 0.0 - f)))
-                  | ast::Expr(Unary, (op, fo))
-            | ast::Expr(Unary, (op, fo))
+                  | orig
+            | orig
       [BitNot]
          fo
             [Int n] ast::Expr(Int, .!.n)
@@ -9187,9 +9204,9 @@ fold_const_unary = op, fo =>
                   [Int n]
                      ast::Expr(TypeCast, ast::CastExpr(tc.target_type,
                        ast::Expr(Int, .!.n)))
-                  | ast::Expr(Unary, (op, fo))
-            | ast::Expr(Unary, (op, fo))
-      | ast::Expr(Unary, (op, fo))
+                  | orig
+            | orig
+      | orig
 
 fold_const_bin_int_val: ast::BinaryOp, Int, Int => <Int|>
 fold_const_bin_int_val = op, a, b =>
@@ -9228,9 +9245,10 @@ fold_const_bin_float_val = op, a, b =>
       [Div] <+ a / b +>
       | <-->
 
-fold_const_bin: ast::BinaryOp, ast::Expr, ast::Expr => ast::Expr
-fold_const_bin = op, fl, fr =>
-   orig = ast::Expr(Bin, (op, fl, fr))
+fold_const_bin: ast::BinExpr, ast::Expr, ast::Expr => ast::Expr
+fold_const_bin = b, fl, fr =>
+   op = b.op
+   orig = ast::Expr(Bin, b(lhs = fl, rhs = fr))
    fl
       [Int a]
          fr
@@ -9352,9 +9370,9 @@ fold_const_expr = consts, e =>
             ["#target"] ast::Expr(Str, cur_target_triple)
             | (lookup_const_entry(consts, v) | ce => ce | e)
       [Unary u]
-         fold_const_unary(u.0, fold_const_expr(consts, u.1))
+         fold_const_unary(u, fold_const_expr(consts, u.1))
       [Bin b]
-         fold_const_bin(b.0, fold_const_expr(consts, b.1),
+         fold_const_bin(b, fold_const_expr(consts, b.1),
            fold_const_expr(consts, b.2))
       [TypeCast tc]
          fold_const_cast(tc.target_type, fold_const_expr(consts, tc.expr))
@@ -9401,9 +9419,9 @@ fold_const_expr_mod = consts, cur_mod, e =>
             ["#target"] ast::Expr(Str, cur_target_triple)
             | (lookup_const_entry_mod(consts, cur_mod, v) | ce => ce | e)
       [Unary u]
-         fold_const_unary(u.0, fold_const_expr_mod(consts, cur_mod, u.1))
+         fold_const_unary(u, fold_const_expr_mod(consts, cur_mod, u.1))
       [Bin b]
-         fold_const_bin(b.0, fold_const_expr_mod(consts, cur_mod, b.1),
+         fold_const_bin(b, fold_const_expr_mod(consts, cur_mod, b.1),
            fold_const_expr_mod(consts, cur_mod, b.2))
       [TypeCast tc]
          fold_const_cast(tc.target_type, fold_const_expr_mod(consts, cur_mod, tc.expr))

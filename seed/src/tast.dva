@@ -131,6 +131,8 @@
 >
 #type TypedStmts TypedStmt{}
 #type TypedProgram TypedStmt{}
+#type SourceLoc (file: String, line: Int, col: Int)
+#type SourceLocs SourceLoc{}
 
 // --- Layout Constructors ---------------------------------------------------
 

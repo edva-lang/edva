@@ -76,11 +76,11 @@ is_cmp_eq_op: ast::BinaryOp => <>
 is_cmp_eq_op = op => op [Eq, NotEq]
 
 codegen_emit_cmp: types::Cg, ast::BinaryOp,
-  (ast::BinaryOp, ast::Expr, ast::Expr) => (Addr, ast::ValueType)
+  ast::BinExpr => (Addr, ast::ValueType)
 codegen_emit_cmp = cg, op, t =>
    is_cmp_eq_op(op)
       |
-         ct_flag = types::ctfe_eval_type_flag(cg, ast::Expr(Bin, (op, t.1, t.2)))
+         ct_flag = types::ctfe_eval_type_flag(cg, ast::Expr(Bin, ast::BinExpr(op, t.1, t.2)))
          ct_flag.1
             |
                i1t = LLVMInt1Type!
@@ -111,7 +111,7 @@ expr_enum_dtype = cg, e =>
       | ""
 
 codegen_emit_cmp_eval: types::Cg, ast::BinaryOp,
-  (ast::BinaryOp, ast::Expr, ast::Expr) => (Addr, ast::ValueType)
+  ast::BinExpr => (Addr, ast::ValueType)
 codegen_emit_cmp_eval = cg, op, t =>
    lr = expr::codegen_eval(cg, t.1)
    l_rt = cg.last_rt
@@ -1759,7 +1759,7 @@ codegen_emit_icmp = cg, op, l, r, is_unsigned =>
 // --- bitwise -----------------------------------------------------------------
 
 codegen_emit_logical: types::Cg, <>,
-  (ast::BinaryOp, ast::Expr, ast::Expr) => (Addr, ast::ValueType)
+  ast::BinExpr => (Addr, ast::ValueType)
 codegen_emit_logical = cg, is_and, t =>
    lr = expr::codegen_eval(cg, t.1)
    l_rt = cg.last_rt
@@ -1778,7 +1778,7 @@ codegen_emit_logical = cg, is_and, t =>
       | codegen_emit_logical_scalar(cg, is_and, lr, t)
 
 codegen_emit_logical_scalar: types::Cg, <>, (Addr, ast::ValueType),
-  (ast::BinaryOp, ast::Expr, ast::Expr) => (Addr, ast::ValueType)
+  ast::BinExpr => (Addr, ast::ValueType)
 codegen_emit_logical_scalar = cg, is_and, lr, t =>
    codegen_check_logical_ram_layout(cg, is_and, t.1, t.2)
    rname = ram_expr_dtype(cg, t.2)
@@ -1881,7 +1881,7 @@ ram_expr_dtype = cg, e =>
       [Bin b] ram_bin_dtype(cg, b)
       | ram_expr_call_dtype(cg, e)
 
-ram_bin_dtype: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr) => String
+ram_bin_dtype: types::Cg, ast::BinExpr => String
 ram_bin_dtype = cg, b =>
    b.0
       [And, Or] ram_expr_dtype(cg, b.2)

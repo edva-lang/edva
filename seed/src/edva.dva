@@ -1352,7 +1352,7 @@ rewrite_import_expr = e, table, locals =>
                r1 = rewrite_import_expr(b.1, table, seq_locals)
                collect_assigned_locals(b.1, seq_locals)
                r2 = rewrite_import_expr(b.2, table, seq_locals)
-               ast::Expr(Bin, (b.0, r1, r2))
+               ast::Expr(Bin, ast::BinExpr(b.0, r1, r2, b.line, b.col))
             [Apply]
                fname = member_chain_name(b.1)
                r1 = rewrite_import_expr(b.1, table, locals)
@@ -1363,7 +1363,7 @@ rewrite_import_expr = e, table, locals =>
                      one = ast::Exprs()
                      one += r2
                      try_lower_std_call(canon, one) | lowered => --| lowered
-               ast::Expr(Bin, (b.0, r1, r2))
+               ast::Expr(Bin, ast::BinExpr(b.0, r1, r2, b.line, b.col))
             [Feed]
                fname = member_chain_name(b.2)
                r1 = rewrite_import_expr(b.1, table, locals)
@@ -1374,14 +1374,14 @@ rewrite_import_expr = e, table, locals =>
                      one = ast::Exprs()
                      one += r1
                      try_lower_std_call(canon, one) | lowered => --| lowered
-               ast::Expr(Bin, (b.0, r1, r2))
+               ast::Expr(Bin, ast::BinExpr(b.0, r1, r2, b.line, b.col))
             |
-               ast::Expr(Bin, (b.0,
+               ast::Expr(Bin, ast::BinExpr(b.0,
                  rewrite_import_expr(b.1, table, locals),
-                 rewrite_import_expr(b.2, table, locals)))
+                 rewrite_import_expr(b.2, table, locals), b.line, b.col))
       [Unary u]
-         ast::Expr(Unary, (u.0,
-           rewrite_import_expr(u.1, table, locals)))
+         ast::Expr(Unary, ast::UnaryExpr(u.0,
+           rewrite_import_expr(u.1, table, locals), u.line, u.col))
       [Fn fe]
          fn_locals = ++locals
          fe.params @ p => (p != "" | fn_locals += p)
@@ -1798,10 +1798,10 @@ qualify_decl_type_infos = e, table =>
            qualify_decl_type_infos(c.fn_target, table),
            new_args, c.line, c.col))
       [Bin b]
-         ast::Expr(Bin, (b.0, qualify_decl_type_infos(b.1, table),
-           qualify_decl_type_infos(b.2, table)))
+         ast::Expr(Bin, ast::BinExpr(b.0, qualify_decl_type_infos(b.1, table),
+           qualify_decl_type_infos(b.2, table), b.line, b.col))
       [Unary u]
-         ast::Expr(Unary, (u.0, qualify_decl_type_infos(u.1, table)))
+         ast::Expr(Unary, ast::UnaryExpr(u.0, qualify_decl_type_infos(u.1, table), u.line, u.col))
       [ArrayCreate ac]
          ast::Expr(ArrayCreate, ast::ArrayCreateExpr(
            qualify_type_info_map(ac.elem_type, table), ac.cap))
@@ -2464,7 +2464,8 @@ collect_link_libs = stmts =>
    timings: <> = <->,
    load_parse_ns: Int = 0,
    no_typed_opt: <> = <->,
-   check_arena_escapes: <> = <->
+   check_arena_escapes: <> = <->,
+   debug_info: <> = <->
 )
 
 init_opts: Int => CliOpts
@@ -2868,6 +2869,7 @@ dom_is_reachable = prog, exports =>
 build_cache_summary: CliOpts, ast::Names, ast::Names => String
 build_cache_summary = opts, exports, dyn_mods =>
    b = {256}
+   opts.debug_info | b += "debug_info=1\n"
    opts.fuzz_cov | b += "fuzz_cov=1\n"
    opts.no_typed_opt | b += "typed_opt=off\n"
    opts.check_arena_escapes | b += "check_arena_escapes=1\n"
@@ -3001,10 +3003,10 @@ compile_with_backend = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlibs
    want_timings = opts.timings
    cg_err = opts.repl_mode | 6002 | 5011
    clang_err = opts.repl_mode | 6003 | 5013
-   cg_opts = codegen::CodegenOpts(opts.triple, opts.no_runtime, opts.no_main,
+   base_cg_opts = codegen::CodegenOpts(opts.triple, opts.no_runtime, opts.no_main,
      dynamic_mods, dynamic_paths, opts.is_shared, compiler_exe_path,
      opts.is_module, opts.module_name, opts.fuzz_cov, opts.no_typed_opt,
-     opts.opt != "-O0", opts.check_arena_escapes)
+     opts.opt != "-O0", opts.check_arena_escapes, opts.debug_info)
    src_f = opts.target != "" | opts.target | "<eval>"
    annotate::set_source_file(src_f)
    annotate::set_target_triple(opts.triple)
@@ -3023,6 +3025,7 @@ compile_with_backend = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlibs
    cache_key' = ++""
    el_res
       | succ =>
+         cg_opts = base_cg_opts(source_locs = succ.locs)
          !use_cache
             |
                cg_ok' = codegen::codegen_typed_program_opts(succ.prog, prog,
@@ -3122,6 +3125,7 @@ compile_with_backend = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlibs
                            clang_args += "-w"
                            clang_args += (opts.opt != "" | opts.opt | "-O2")
                            clang_args += "--target=" + target_triple
+                           opts.debug_info | clang_args += "-g"
                            opts.cflags @ cf =>
                               clang_args += cf
                            clang_args += "-c"
@@ -3194,6 +3198,7 @@ compile_with_backend = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlibs
                            !backend.uses_profile | clang_base += "-w"
                            clang_base += (opts.opt != "" | opts.opt | "-O2")
                            clang_base += "--target=" + target_triple
+                           opts.debug_info | clang_base += "-g"
                            backend.flags @ cf =>
                               !(backend.uses_profile && cf == "-w") | clang_base += cf
                            is_darwin = is_darwin_triple(target_triple)
@@ -3958,6 +3963,7 @@ compiler_cli_opts = !=>
          cli::opt("o:output", "", "Output binary path", not_flag),
          cli::opt("t:target", "", "Target triple (e.g. x86_64-unknown-linux-gnu)", not_flag),
          cli::opt("O:opt", "", "Optimization level (0, 1, 2, 3, s, z)", valid_opt_level),
+         cli::opt("g:debug", <->, "Emit DWARF source locations and show panic sites"),
          cli::opt("cflag", cli::Args(), "Pass additional flag to clang"),
          cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
          cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
@@ -3970,6 +3976,7 @@ compiler_cli_opts = !=>
          cli::opt("o:output", "", "Output binary path", not_flag),
          cli::opt("t:target", "", "Target triple (e.g. x86_64-unknown-linux-gnu)", not_flag),
          cli::opt("O:opt", "", "Optimization level (0, 1, 2, 3, s, z)", valid_opt_level),
+         cli::opt("g:debug", <->, "Emit DWARF source locations and show panic sites"),
          cli::opt("cflag", cli::Args(), "Pass additional flag to clang"),
          cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
          cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
@@ -4048,6 +4055,7 @@ compiler_cli_opts = !=>
       // Direct compilation options
       cli::opt("o:output", "", "Output binary or object path", not_flag),
       cli::opt("r:run", <->, "Run binary immediately after linking"),
+      cli::opt("g:debug", <->, "Emit DWARF source locations and show panic sites"),
       cli::opt("ir", <->, "Emit LLVM IR (.ll) only; do not invoke clang"),
       cli::opt("c:compile-only", <->, "Compile to object file (.o) only"),
       cli::opt("shared", <->, "Build a shared library (.so)"),
@@ -4120,6 +4128,7 @@ parse_and_dispatch_cli = !=>
    out_flag != "" | opts.outpath = out_flag
 
    opts.run_exec = cli::flag(res, "run")
+   opts.debug_info = cli::flag(res, "debug")
    opts.ir_only = cli::flag(res, "ir")
    opts.no_runtime = cli::flag(res, "no-runtime")
    opts.no_typed_opt = cli::flag(res, "no-typed-opt")

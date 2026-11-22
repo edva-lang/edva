@@ -68,7 +68,7 @@ POLL_BACKEND ?= poll
 # --- Modules and Objects -----------------------------------------------------
 STD_MODULES      := const ascii utf str mem sys libc unicode io ccl json uring event path fs cli time log
 COMPILER_MODULES := poll diag ast llvm operators dep_graph layout tast typedopt lexer unify type_env show parser overloads annotate version pkg backend_opt formatter lsp \
-                    codegen/types codegen/runtime codegen/expr codegen/match codegen/stmt codegen/main codegen
+                    codegen/types codegen/debug codegen/runtime codegen/expr codegen/match codegen/stmt codegen/main codegen
 ENTRY_MODULE     := edva
 
 STD_OBJS      := $(patsubst %, build/obj/%.o, $(STD_MODULES))

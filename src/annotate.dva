@@ -1920,9 +1920,9 @@ rename_ast_expr = e, old_ns, new_ns =>
          new_lhs = lookup_rename(old_ns, new_ns, a.0)
          ast::Expr(Assign, (new_lhs, a.1, a.2, a.3, a.4, new_rhs, new_init, a.7, a.8))
       [Block bs] ast::Expr(Block, rename_ast_exprs(bs, old_ns, new_ns))
-      [Bin b] ast::Expr(Bin, (b.0, rename_ast_expr(b.1, old_ns, new_ns),
-         rename_ast_expr(b.2, old_ns, new_ns)))
-      [Unary u] ast::Expr(Unary, (u.0, rename_ast_expr(u.1, old_ns, new_ns)))
+      [Bin b] ast::Expr(Bin, ast::BinExpr(b.0, rename_ast_expr(b.1, old_ns, new_ns),
+         rename_ast_expr(b.2, old_ns, new_ns), b.line, b.col))
+      [Unary u] ast::Expr(Unary, ast::UnaryExpr(u.0, rename_ast_expr(u.1, old_ns, new_ns), u.line, u.col))
       [Call c]
          new_fn = lookup_rename(old_ns, new_ns, c.fn_name)
          ast::Expr(Call, ast::CallExpr(new_fn,
@@ -2437,12 +2437,12 @@ prepend_feed_arg = arg_e, body_e =>
          is_f = b.0 [Feed]
          is_f
             |
-               ast::Expr(Bin, (ast::BinaryOp(Feed),
+               ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Feed),
                  prepend_feed_arg(arg_e, b.1), b.2))
             |
-               ast::Expr(Bin, (ast::BinaryOp(Feed), arg_e, body_e))
+               ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Feed), arg_e, body_e))
       |
-         ast::Expr(Bin, (ast::BinaryOp(Feed), arg_e, body_e))
+         ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Feed), arg_e, body_e))
 
 is_pointfree_leaf: unify::Ctx, type_env::TypeEnv, ast::Expr => <>
 is_pointfree_leaf = ctx, env, leaf =>
@@ -3068,7 +3068,7 @@ wrap_functor_rhs = tag, rhs =>
          v_body = ast::Expr(Variant, ast::VariantExpr(tag, v_args))
          ast::Expr(Fn, ast::FnExpr(fe.params, fe.ct_params, v_body, fe.line, fe.col))
       |
-         fed = ast::Expr(Bin, (ast::BinaryOp(Feed), ast::Expr(Var, "_"), rhs))
+         fed = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Feed), ast::Expr(Var, "_"), rhs))
          v_args = ast::Exprs()
          v_args += fed
          ast::Expr(Variant, ast::VariantExpr(tag, v_args))
@@ -3468,8 +3468,7 @@ annotate_expr = ctx, env, expr =>
                is_fn = pos_body' [Fn]
                !is_fn
                   |
-                     pos_body' = ast::Expr(Bin,
-                       (ast::BinaryOp(Feed), ast::Expr(Var, "_"), pos_body'))
+                     pos_body' = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Feed), ast::Expr(Var, "_"), pos_body'))
                b0 = ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
                  ast::Expr(Var, "?"), ast::Names(), ast::Names(), <->,
                  pos_body')
@@ -3588,7 +3587,11 @@ annotate_expr = ctx, env, expr =>
                      is_inline_choice_fn = b.2 [Fn fe_cf] (fe_cf.body [Choice]) | (b.2 [Choice])
                      saved_feed_exp = cur_expected_ut
                      is_feed && is_inline_choice_fn | (cur_expected_ut ::= <-->)
-                     call_te = annotate_call(ctx, env, ce)
+                     generated = annotate_call(ctx, env, ce)
+                     // The synthetic call uses line zero for constructor checks.
+                     call_te = b.line > 0 && generated.line == 0
+                        | generated(line = b.line, col = b.col)
+                        | generated
                      cur_expected_ut ::= saved_feed_exp
                      c_call = unify::canon(ctx, call_te.ut)
                      is_comp_lhs = b.1
@@ -3642,7 +3645,7 @@ annotate_expr = ctx, env, expr =>
                      ti1 = unify::type_info_from_utype(ctx, res_ut1)
                      lay1 = layout::compute_layout(ctx, res_ut1)
                      tast::mk_typed_bin(op1, lhs1, rhs1, res_ut1, ti1,
-                       lay1, 0, 0)
+                       lay1, b.line, b.col)
             |
                op2 = b.0
                is_type_eq = op2 [Eq, NotEq]
@@ -3660,7 +3663,7 @@ annotate_expr = ctx, env, expr =>
                res_ut2 = annotate_bin_op(ctx, op2, lhs2.ut, rhs2.ut)
                ti2 = unify::type_info_from_utype(ctx, res_ut2)
                lay2 = layout::compute_layout(ctx, res_ut2)
-               tast::mk_typed_bin(op2, lhs2, rhs2, res_ut2, ti2, lay2, 0, 0)
+               tast::mk_typed_bin(op2, lhs2, rhs2, res_ut2, ti2, lay2, b.line, b.col)
       [Block be]
          annotate_block(ctx, env, be, cur_disc)
       [Assign a]
@@ -4026,7 +4029,7 @@ annotate_expr = ctx, env, expr =>
          res_ut = annotate_unary_op(ctx, env, op, inner_te.ut, u.1)
          ti = unify::type_info_from_utype(ctx, res_ut)
          lay = layout::compute_layout(ctx, res_ut)
-         tast::mk_typed_unary(op, inner_te, res_ut, ti, lay, 0, 0)
+         tast::mk_typed_unary(op, inner_te, res_ut, ti, lay, u.line, u.col)
       [Member m]
          m.line > 0 | unify::set_pos(ctx, m.line, m.col)
          m.is_module_access
@@ -7328,15 +7331,15 @@ range_to_cmp_ast = r =>
    rhs_op = r.is_inclusive | ast::BinaryOp(NotGt) | ast::BinaryOp(Lt)
    r.has_lhs && r.has_rhs
       |
-         c1 = ast::Expr(Bin, (ast::BinaryOp(NotLt), u, r.lhs))
-         c2 = ast::Expr(Bin, (rhs_op, u, r.rhs))
-         ast::Expr(Bin, (ast::BinaryOp(And), c1, c2))
+         c1 = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(NotLt), u, r.lhs))
+         c2 = ast::Expr(Bin, ast::BinExpr(rhs_op, u, r.rhs))
+         ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(And), c1, c2))
       |
          r.has_lhs
-            | ast::Expr(Bin, (ast::BinaryOp(NotLt), u, r.lhs))
+            | ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(NotLt), u, r.lhs))
             |
                r.has_rhs
-                  | ast::Expr(Bin, (rhs_op, u, r.rhs))
+                  | ast::Expr(Bin, ast::BinExpr(rhs_op, u, r.rhs))
                   | ast::Expr(Variant, (ast::Tag(Positive), ast::Exprs()))
 
 all_tb_unit: unify::Ctx, tast::TypedBranches => <>
@@ -8910,11 +8913,12 @@ print_program_errors = errs =>
       err_res | err =>
          log::error $ unify::format_error(err)
 
-#type ElabProgCtx (prog: tast::TypedProgram, ctx: unify::Ctx)
+#type ElabProgCtx (prog: tast::TypedProgram, ctx: unify::Ctx, locs: tast::SourceLocs)
 #type ElabSuccess (
    prog: tast::TypedProgram,
    stats: ElabStats,
-   ctx: unify::Ctx
+   ctx: unify::Ctx,
+   locs: tast::SourceLocs
 )
 #type ElabProgResult < ElabSuccess | unify::TypeErrors >
 
@@ -10596,7 +10600,11 @@ elaborate_program_with_ctx = exprs =>
 
    unify::has_errors(ctx)
       | <- ctx.errors +>
-      | <+ ElabProgCtx(final_stmts, ctx) ->
+      |
+         locs = final_stmts @> _st, i =>
+            tast::SourceLoc(mono_res.files(i) | _ | cur_source_file,
+               mono_res.lines(i) | _ | 0, mono_res.cols(i) | _ | 0)
+         <+ ElabProgCtx(final_stmts, ctx, locs) ->
 
 elaborate_program: ast::Exprs => < tast::TypedProgram | unify::TypeErrors >
 elaborate_program = exprs =>
@@ -10615,7 +10623,7 @@ annotate_exprs = exprs =>
          nodes = count_program_nodes(tp)
          sz = program_layout_size(tp)
          stats = ElabStats(?tp, nodes, ctx.next_var, sz)
-         <+ ElabSuccess(tp, stats, ctx) ->
+         <+ ElabSuccess(tp, stats, ctx, pair.locs) ->
       | errs =>
          <- errs +>
 

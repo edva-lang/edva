@@ -10,6 +10,7 @@
 #use ../../src/type_env
 #use ../../src/layout
 #use ../../src/annotate
+#use io
 #use str
 
 test_count: Int
@@ -24,9 +25,9 @@ assert_true = cond, desc =>
    cond
       |
          pass_count ::= pass_count + 1
-         print $ "PASS: " + desc
+         io::out $ "PASS: ${desc}"
       |
-         print $ "FAIL: " + desc
+         io::out $ "FAIL: ${desc}"
 
 assert_eq_int: Int, Int, String => ()
 assert_eq_int = actual, expected, desc =>
@@ -34,16 +35,15 @@ assert_eq_int = actual, expected, desc =>
    actual == expected
       |
          pass_count ::= pass_count + 1
-         print $ "PASS: " + desc
+         io::out $ "PASS: ${desc}"
       |
-         print $ "FAIL: " + desc + " (expected " + str::from_int(expected) +
-            ", got " + str::from_int(actual) + ")"
+         io::out $ "FAIL: ${desc} (expected ${expected}, got ${actual})"
 
 // --- Test Suite ------------------------------------------------------------
 
 main: () => ()
 main = !=>
-   print $ "=== Running Stage 2 (Typed AST & Annotation) Tests ==="
+   io::out $ "=== Running Stage 2 (Typed AST & Annotation) Tests ==="
 
    ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
    // 1. Literal typing and layout
@@ -66,14 +66,14 @@ main = !=>
    assert_eq_int(te_str.layout.align, 8, "String literal align is 8")
 
    // 2. Binary operator typing
-   bin_add = ast::Expr(Bin, (ast::BinaryOp(Add), e_int, ast::Expr(Int, 10)))
+   bin_add = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Add), e_int, ast::Expr(Int, 10)))
    te_add = annotate::annotate_expr(ctx, env, bin_add)
    assert_eq_int(te_add.layout.size, 8, "Int addition result size is 8")
    c_add = unify::canon(ctx, te_add.ut)
    is_int = c_add [Prim p] p == unify::UPrim(Int) | <->
    assert_true(is_int, "Int addition produces Int type")
 
-   bin_cmp = ast::Expr(Bin, (ast::BinaryOp(Lt), e_int, ast::Expr(Int, 100)))
+   bin_cmp = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Lt), e_int, ast::Expr(Int, 100)))
    te_cmp = annotate::annotate_expr(ctx, env, bin_cmp)
    assert_eq_int(te_cmp.layout.size, 1, "Comparison result size is 1 (Flag)")
    c_cmp = unify::canon(ctx, te_cmp.ut)
@@ -116,7 +116,7 @@ main = !=>
    // 5. Type mismatch in arithmetic
    ctx_mismatch = unify::new_ctx!
    env_mismatch = type_env::new_env!
-   bad_bin = ast::Expr(Bin, (ast::BinaryOp(Add), ast::Expr(Int, 5),
+   bad_bin = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Add), ast::Expr(Int, 5),
       ast::Expr(Str, "bad")))
    annotate::annotate_expr(ctx_mismatch, env_mismatch, bad_bin)
    assert_true(unify::has_errors(ctx_mismatch),
@@ -159,7 +159,7 @@ main = !=>
    env_lam = type_env::new_env!
    lam_params = ast::Names()
    lam_params += "a"
-   lam_body = ast::Expr(Bin, (ast::BinaryOp(Add), ast::Expr(Var, "a"),
+   lam_body = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Add), ast::Expr(Var, "a"),
       ast::Expr(Int, 1)))
    lam_expr = ast::FnExpr(lam_params, ast::Names(), lam_body)
    te_lam = annotate::annotate_fn(ctx_lam, env_lam, lam_expr, <->)
@@ -188,10 +188,10 @@ main = !=>
    // 10. Whole Program Elaboration Pass
    prog_stmts = ast::Exprs()
    prog_stmts += ast::Expr(Assign, ("val", <->, <->, <->, <->,
-      ast::Expr(Bin, (ast::BinaryOp(Mul), ast::Expr(Int, 6),
+      ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Mul), ast::Expr(Int, 6),
          ast::Expr(Int, 7))),
       ast::Expr(Int, 0), "", ast::TypeInfo(Prim, ast::ValueType(Unknown))))
-   prog_stmts += ast::Expr(Bin, (ast::BinaryOp(Add), ast::Expr(Var, "val"),
+   prog_stmts += ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Add), ast::Expr(Var, "val"),
       ast::Expr(Int, 8)))
 
    elab_res = annotate::elaborate_program(prog_stmts)
@@ -203,21 +203,21 @@ main = !=>
    // 11. Unary Operations
    ctx_u = unify::new_ctx!
    env_u = type_env::new_env!
-   u_not = ast::Expr(Unary, (ast::UnaryOp(Not),
-      ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Int, 1),
+   u_not = ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(Not),
+      ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Eq), ast::Expr(Int, 1),
          ast::Expr(Int, 1)))))
    te_not = annotate::annotate_expr(ctx_u, env_u, u_not)
    c_not = unify::canon(ctx_u, te_not.ut)
    is_not_flag = c_not [Prim p] p == unify::UPrim(Flag) | <->
    assert_true(is_not_flag, "Negation of flag produces Flag")
 
-   u_len = ast::Expr(Unary, (ast::UnaryOp(Length), ast::Expr(Str, "abc")))
+   u_len = ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(Length), ast::Expr(Str, "abc")))
    te_len = annotate::annotate_expr(ctx_u, env_u, u_len)
    c_len = unify::canon(ctx_u, te_len.ut)
    is_len_int = c_len [Prim p] p == unify::UPrim(Int) | <->
    assert_true(is_len_int, "Length of string produces Int")
 
-   u_bnot = ast::Expr(Unary, (ast::UnaryOp(BitNot), ast::Expr(Int, 42)))
+   u_bnot = ast::Expr(Unary, ast::UnaryExpr(ast::UnaryOp(BitNot), ast::Expr(Int, 42)))
    te_bnot = annotate::annotate_expr(ctx_u, env_u, u_bnot)
    c_bnot = unify::canon(ctx_u, te_bnot.ut)
    is_bnot_int = c_bnot [Prim p] p == unify::UPrim(Int) | <->
@@ -238,7 +238,7 @@ main = !=>
    // 13. Cycle and CycleEscape
    ctx_cyc = unify::new_ctx!
    env_cyc = type_env::new_env!
-   cyc_body = ast::Expr(Fn, (ast::Names(), ast::Names(), ast::Expr(Int, 0)))
+   cyc_body = ast::Expr(Fn, ast::FnExpr(ast::Names(), ast::Names(), ast::Expr(Int, 0)))
    cyc_expr = ast::Expr(Cycle,
       ast::CycleExpr(ast::Expr(Int, 5), cyc_body, <->))
    te_cyc = annotate::annotate_expr(ctx_cyc, env_cyc, cyc_expr)
@@ -250,8 +250,14 @@ main = !=>
       ast::Expr(Int, 99)))
    te_esc = annotate::annotate_expr(ctx_cyc, env_cyc, esc_expr)
    c_esc = unify::canon(ctx_cyc, te_esc.ut)
-   is_esc_int = c_esc [Prim p] p == unify::UPrim(Int) | <->
-   assert_true(is_esc_int, "CycleEscape expression yields branch type (Int)")
+   is_esc_int = c_esc
+      [Ram r]
+         pos_is_int = unify::canon(ctx_cyc, r.pos.ut)
+            [Prim p] p == unify::UPrim(Int)
+            | <->
+         r.pos.has_payload && !r.neg.has_payload && pos_is_int
+      | <->
+   assert_true(is_esc_int, "CycleEscape expression yields an optional Int")
 
    // 14. Ramification Logical Operations (&& and ||)
    // Valid &&: <Int|> && <Float|> => <Float|>
@@ -343,10 +349,10 @@ main = !=>
       ast::Expr(Member, ast::MemberExpr(ast::Expr(Var, "obj3"),
          "id", <->, ast::Expr(Int, 0), 0, 0)),
       "", ast::TypeInfo(Prim, ast::ValueType(Unknown))))
-   br1_block = ast::Expr(Block, ast::BlockExpr(br1_exprs))
+   br1_block = ast::Expr(Block, br1_exprs)
    br2_exprs = ast::Exprs()
    br2_exprs += ast::Expr(Int, 0)
-   br2_block = ast::Expr(Block, ast::BlockExpr(br2_exprs))
+   br2_block = ast::Expr(Block, br2_exprs)
    choice_brs = ast::Branches()
    choice_brs += ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
       ast::Expr(Int, 0), ast::Names(), ast::Names(), <->, br1_block)
@@ -368,7 +374,7 @@ main = !=>
    callee_args += ast::Expr(Var, "x")
    callee_call = ast::Expr(Call, ast::CallExpr("callee", ast::Expr(Int, 0),
       callee_args, 0, 0))
-   caller_body = ast::Expr(Bin, (ast::BinaryOp(Add), callee_call,
+   caller_body = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Add), callee_call,
       ast::Expr(Int, 1)))
    fe_caller = ast::FnExpr(caller_params, ast::Names(), caller_body)
    assign_caller = ast::Expr(Assign, ("caller", <->, <->, <->, <->,
@@ -377,7 +383,7 @@ main = !=>
 
    callee_params = ast::Names()
    callee_params += "y"
-   callee_body = ast::Expr(Bin, (ast::BinaryOp(Mul), ast::Expr(Var, "y"),
+   callee_body = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Mul), ast::Expr(Var, "y"),
       ast::Expr(Int, 2)))
    fe_callee = ast::FnExpr(callee_params, ast::Names(), callee_body)
    assign_callee = ast::Expr(Assign, ("callee", <->, <->, <->, <->,
@@ -396,14 +402,14 @@ main = !=>
    // 16.2 Mutual recursion without annotations (is_even and is_odd)
    even_params = ast::Names()
    even_params += "n"
-   even_cond = ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Var, "n"),
+   even_cond = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Eq), ast::Expr(Var, "n"),
       ast::Expr(Int, 0)))
    even_br1 = ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
       ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
-      ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Int, 1),
+      ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Eq), ast::Expr(Int, 1),
          ast::Expr(Int, 1))))
    odd_args = ast::Exprs()
-   odd_args += ast::Expr(Bin, (ast::BinaryOp(Sub), ast::Expr(Var, "n"),
+   odd_args += ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Sub), ast::Expr(Var, "n"),
       ast::Expr(Int, 1)))
    odd_call = ast::Expr(Call, ast::CallExpr("is_odd", ast::Expr(Int, 0),
       odd_args, 0, 0))
@@ -421,14 +427,14 @@ main = !=>
 
    odd_params = ast::Names()
    odd_params += "n"
-   odd_cond = ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Var, "n"),
+   odd_cond = ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Eq), ast::Expr(Var, "n"),
       ast::Expr(Int, 0)))
    odd_br1 = ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
       ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
-      ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Int, 1),
+      ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Eq), ast::Expr(Int, 1),
          ast::Expr(Int, 0))))
    even_args = ast::Exprs()
-   even_args += ast::Expr(Bin, (ast::BinaryOp(Sub), ast::Expr(Var, "n"),
+   even_args += ast::Expr(Bin, ast::BinExpr(ast::BinaryOp(Sub), ast::Expr(Var, "n"),
       ast::Expr(Int, 1)))
    even_call = ast::Expr(Call, ast::CallExpr("is_even", ast::Expr(Int, 0),
       even_args, 0, 0))
@@ -482,11 +488,11 @@ main = !=>
    assert_eq_int(rm_te.layout.size, 4, "RawMemory I32 size is 4")
    assert_eq_int(rm_te.layout.align, 4, "RawMemory I32 align is 4")
 
-   print $ "=== Summary ==="
-   print $ "Total tests: " + str::from_int(test_count)
-   print $ "Passed:      " + str::from_int(pass_count)
+   io::out $ "=== Summary ==="
+   io::out $ "Total tests: ${test_count}"
+   io::out $ "Passed:      ${pass_count}"
    test_count == pass_count
-      | print $ "ALL STAGE 2 TESTS PASSED!"
-      | print $ "SOME TESTS FAILED!"
+      | io::out $ "ALL STAGE 2 TESTS PASSED!"
+      | io::out $ "SOME TESTS FAILED!"
 
 main!

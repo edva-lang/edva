@@ -4223,4 +4223,49 @@ else
 fi
 echo "PASS"
 
+# --- Test 74: DWARF source locations and panic diagnostics ---
+echo -n "Testing DVA-19 debug information and panic sites... "
+t74="$TMPDIR/debug-info"
+mkdir -p "$t74"
+cp tests/pass/462_debug_source_positions/{main,helper}.dva "$t74/"
+timeout 30 ./edva "$t74/main.dva" -g -O0 --cache "$t74/cache"     -o "$t74/app" >"$t74/build.log" 2>&1
+grep -Fq '!DICompileUnit(' "$t74/app.ll"
+grep -Fq '!DIFile(filename: "helper.dva"' "$t74/app.ll"
+grep -Fq '!DISubprogram(name: "helper::compute$Int"' "$t74/app.ll"
+grep -Fq '!DILocation(line: 8, column: 9,' "$t74/app.ll"
+status=0
+timeout 10 "$t74/app" >"$t74/out" 2>"$t74/err" || status=$?
+test "$status" -eq 1
+grep -Fxq "panic at $t74/helper.dva:8:9" "$t74/err"
+grep -Fxq 'E4012: integer division by zero' "$t74/err"
+grep -Fq "  at wrapper ($t74/main.dva:6:" "$t74/err"
+grep -Fq "  at main ($t74/main.dva:9:" "$t74/err"
+timeout 30 ./edva "$t74/main.dva" --debug --ir --no-cache \
+    -o "$t74/program.ll" >"$t74/ir.log" 2>&1
+grep -Fq '!DICompileUnit(' "$t74/program.ll"
+timeout 30 ./edva "$t74/main.dva" --debug -O0 --cache "$t74/cache" --timings     -o "$t74/app" >"$t74/cached.log" 2>&1
+grep -q '"artifact_cache_hit":true' "$t74/cached.log"
+
+if command -v llvm-dwarfdump >/dev/null; then
+    timeout 15 llvm-dwarfdump --verify "$t74/app" >"$t74/dwarf.log" 2>&1
+    timeout 15 llvm-dwarfdump --debug-line "$t74/app" >"$t74/lines.log"
+    grep -Fq 'helper.dva' "$t74/lines.log"
+fi
+
+timeout 30 ./edva "$t74/main.dva" -O0 --cache "$t74/cache" --timings     -o "$t74/app" >"$t74/release.log" 2>&1
+grep -q '"artifact_cache_hit":false' "$t74/release.log"
+if grep -Fq '!DICompileUnit(' "$t74/app.ll"; then
+    echo "FAIL (debug metadata in a build without -g)"
+    exit 1
+fi
+
+timeout 30 ./edva build "$t74/main.dva" --debug --no-cache     -o "$t74/optimized" >"$t74/package.log" 2>&1
+status=0
+timeout 10 "$t74/optimized" >"$t74/out" 2>"$t74/err" || status=$?
+test "$status" -eq 1
+grep -Fxq "panic at $t74/helper.dva:8:9" "$t74/err"
+grep -Fq "  at wrapper ($t74/main.dva:6:" "$t74/err"
+grep -Fq "  at main ($t74/main.dva:9:" "$t74/err"
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="

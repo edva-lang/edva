@@ -1,0 +1,273 @@
+// DWARF line tables and source positions for native panic diagnostics.
+#use(import) ../llvm
+#use ./types
+#use ./runtime
+#use ../tast
+#use fs
+#use path
+#use str
+
+#private
+   file_metadata: types::DebugState, String => Addr
+   file_metadata = dbg, file =>
+      absolute = path::is_abs(file) | file | path::normalize(path::join(dbg.cwd, file))
+      dbg.files ^ absolute
+         | md => md
+         |
+            base = path::basename(absolute)
+            dir = path::dirname(absolute)
+            md = LLVMDIBuilderCreateFile(dbg.builder, base, ?base, dir, ?dir)
+            dbg.files ^ absolute = md
+            md
+
+   loc_metadata: Addr, Int, Int => Addr
+   loc_metadata = scope, line, col =>
+      LLVMDIBuilderCreateDebugLocation(LLVMGetGlobalContext!, i32(line),
+         i32(col), scope, <-->)
+
+   location_scope: types::DebugState, Addr, Addr, String => Addr
+   location_scope = dbg, sp, file, source_file =>
+      LLVMDIScopeGetFile(sp) == file | --| sp
+      key = "${str::from_int(Int(sp))}:${str::from_int(Int(file))}"
+      dbg.scopes ^ key
+         | scope => scope
+         |
+            scope = LLVMDIBuilderCreateLexicalBlockFile(dbg.builder, sp, file, 0)
+            dbg.scopes ^ key = scope
+            parent = (dbg.scope_info ^ Int(sp)).expect("missing debug subprogram")
+            dbg.scope_info ^ Int(scope) = parent(file = source_file)
+            scope
+
+   module_flag: Addr, String, Int => ()
+   module_flag = module, name, value =>
+      LLVMAddModuleFlag(module, 1, name, ?name,
+         LLVMValueAsMetadata(LLVMConstInt(LLVMInt32Type!, value, 0)))
+
+   stack_trace_name = "__edva_debug_print_stack"
+
+   stack_head: types::Cg => Addr
+   stack_head = cg =>
+      name = "__edva_debug_frames"
+      ptr_ty = LLVMPointerType(LLVMInt8Type!, 0)
+      LLVMGetNamedGlobalNullable(cg.module, name)
+         | existing => existing
+         |
+            head = LLVMAddGlobal(cg.module, ptr_ty, name)
+            LLVMSetInitializer(head, LLVMConstNull(ptr_ty))
+            LLVMSetThreadLocal(head, 1)
+            // Link-once ODR shares the thread-local chain across Edva objects.
+            LLVMSetLinkage(head, 3)
+            head
+
+   frame_type: () => Addr
+   frame_type = !=>
+      ptr_ty = LLVMPointerType(LLVMInt8Type!, 0)
+      fields = (ptr_ty, ptr_ty, LLVMInt64Type!)
+      LLVMStructType(&fields, 3, 0)
+
+   define_trace: types::Cg, Addr, Addr => ()
+   define_trace = cg, head, fn =>
+      b = cg.builder
+      ptr_ty = LLVMPointerType(LLVMInt8Type!, 0)
+      node_ty = frame_type!
+      entry = LLVMAppendBasicBlock(fn, "entry")
+      loop = LLVMAppendBasicBlock(fn, "loop")
+      body = LLVMAppendBasicBlock(fn, "frame")
+      done = LLVMAppendBasicBlock(fn, "done")
+      LLVMPositionBuilderAtEnd(b, entry)
+      LLVMSetCurrentDebugLocation2(b, <-->)
+      first = LLVMBuildLoad2(b, ptr_ty, head, "first")
+      LLVMBuildBr(b, loop)
+      LLVMPositionBuilderAtEnd(b, loop)
+      node = LLVMBuildPhi(b, ptr_ty, "node")
+      is_end = LLVMBuildICmp(b, 32, node, LLVMConstNull(ptr_ty), "is.end")
+      LLVMBuildCondBr(b, is_end, done, body)
+      LLVMPositionBuilderAtEnd(b, body)
+      prev = LLVMBuildLoad2(b, ptr_ty, LLVMBuildStructGEP2(b, node_ty, node, 0, ""), "previous")
+      msg = LLVMBuildLoad2(b, ptr_ty, LLVMBuildStructGEP2(b, node_ty, node, 1, ""), "message")
+      len = LLVMBuildLoad2(b, LLVMInt64Type!, LLVMBuildStructGEP2(b, node_ty, node, 2, ""), "length")
+      wr = types::ensure_write_fn(cg)
+      args = (LLVMConstInt(LLVMInt32Type!, 2, 0), msg, len)
+      LLVMBuildCall2(b, wr.0, wr.1, &args, 3, "")
+      LLVMBuildBr(b, loop)
+      nodes = (first, prev)
+      blocks = (entry, body)
+      LLVMAddIncoming(node, &nodes, &blocks, 2)
+      LLVMPositionBuilderAtEnd(b, done)
+      LLVMBuildRetVoid(b)
+
+   traceable_call: Addr, <Addr|> => <>
+   traceable_call = inst, trace =>
+      LLVMIsACallInst(inst)
+         | call =>
+            callee = LLVMGetCalledValue(call)
+            is_trace = trace | fn => fn == callee | <->
+            !is_trace && (LLVMIsAFunction(callee) | fn => LLVMGetIntrinsicID(fn) == 0i32 | <+>)
+         | <->
+
+   save_callsite: types::Cg, Addr, Addr, Addr, Addr, String => ()
+   save_callsite = cg, head, frame, inst, following, msg =>
+      b = cg.builder
+      ptr_ty = LLVMPointerType(LLVMInt8Type!, 0)
+      node_ty = frame_type!
+      name = "__edva_debug_site.${str::from_int(types::g.tmpc)}"
+      types::g.tmpc = types::g.tmpc + 1
+      text = runtime::const_string_global(cg, msg, name)
+      LLVMPositionBuilderBefore(b, inst)
+      LLVMSetCurrentDebugLocation2(b, <-->)
+      prev = LLVMBuildLoad2(b, ptr_ty, head, "debug.previous")
+      LLVMBuildStore(b, prev, LLVMBuildStructGEP2(b, node_ty, frame, 0, ""))
+      LLVMBuildStore(b, text, LLVMBuildStructGEP2(b, node_ty, frame, 1, ""))
+      LLVMBuildStore(b, LLVMConstInt(LLVMInt64Type!, ?msg, 0),
+         LLVMBuildStructGEP2(b, node_ty, frame, 2, ""))
+      LLVMBuildStore(b, frame, head)
+      LLVMPositionBuilderBefore(b, following)
+      LLVMSetCurrentDebugLocation2(b, <-->)
+      LLVMBuildStore(b, prev, head)
+
+   trace_frame: types::Cg, Addr => <Addr|>
+   trace_frame = cg, fn =>
+      LLVMGetFirstBasicBlock(fn) $>> entry =>
+         LLVMGetFirstInstructionNullable(entry) $+> first =>
+            LLVMPositionBuilderBefore(cg.builder, first)
+            LLVMSetCurrentDebugLocation2(cg.builder, <-->)
+            LLVMBuildAlloca(cg.builder, frame_type!, "debug.frame")
+
+   finish_function: types::Cg, types::DebugState, Addr, <Addr|>, <Addr|> => ()
+   finish_function = cg, dbg, fn, head, trace =>
+      // Several LLVM helpers use the shared instruction builder. Remove
+      // source locations inherited from the current user function.
+      sp = LLVMGetSubprogram(fn)
+      frame = <>(sp) && <>(head) | trace_frame(cg, fn) | <-->
+      next_bb' = LLVMGetFirstBasicBlock(fn)
+      0.. @
+         next_bb'
+            | bb =>
+               next_inst' = LLVMGetFirstInstructionNullable(bb)
+               0.. @
+                  next_inst'
+                     | inst =>
+                        next_inst' = LLVMGetNextInstruction(inst)
+                        LLVMInstructionGetDebugLoc(inst) | loc =>
+                           scope = dbg.scope_info ^ Int(LLVMDILocationGetScope(loc))
+                           valid = scope
+                              | info =>
+                                 sp
+                                    | sub => info.subprogram == sub
+                                    | <->
+                              | <->
+                           valid
+                              |
+                                 frame | slot =>
+                                    next_inst' | following =>
+                                       line = Int(LLVMDILocationGetLine(loc))
+                                       line > 0 && traceable_call(inst, trace)
+                                          |
+                                             info = scope.expect("missing call site scope")
+                                             col = Int(LLVMDILocationGetColumn(loc))
+                                             msg = "  at ${info.name} (${info.file}:${str::from_int(line)}:${str::from_int(col)})\n"
+                                             save_callsite(cg, head.expect("missing trace chain"),
+                                                slot, inst, following, msg)
+                              | LLVMInstructionSetDebugLoc(inst, <-->)
+                     | -->
+               next_bb' = LLVMGetNextBasicBlock(bb)
+            | -->
+
+#public
+   init: types::Cg, tast::TypedProgram => ()
+   init = cg, prog =>
+      !cg.opts.debug_info | --|
+      builder = LLVMCreateDIBuilder(cg.module)
+      dbg = types::DebugState(builder, types::DebugFiles(), types::DebugSources(),
+         tast::SourceLoc(cg.source_file, 1, 0), fs::cwd!, types::DebugFiles(), types::DebugScopes())
+      cg.debug = <+ dbg +>
+      prog @ st, i =>
+         loc = cg.opts.source_locs(i) | _ | dbg.loc
+         st [Binding b]
+            b.2.kind [Lambda]
+               |
+                  lambda = b.2
+                  start = lambda.line > 0
+                     | tast::SourceLoc(loc.file, lambda.line, lambda.col)
+                     | loc
+                  dbg.functions ^ b.0 = start
+      file = file_metadata(dbg, cg.source_file)
+      // Use DW_LANG_C as the debugger's expression-language fallback.
+      LLVMDIBuilderCreateCompileUnit(builder, 1, file, "Edva", 4,
+         (cg.opts.optimize_closures | 1 | 0), "", 0, 0, "", 0, 1, 0, 1, 1, "", 0, "", 0)
+      module_flag(cg.module, "Debug Info Version", 3)
+      module_flag(cg.module, "Dwarf Version", 4)
+
+   current_location: types::Cg => tast::SourceLoc
+   current_location = cg =>
+      cg.debug
+         | dbg =>
+            loc = dbg.loc
+            tast::SourceLoc(loc.file, loc.line, loc.col)
+         | tast::SourceLoc("", 0, 0)
+
+   position: types::Cg, tast::SourceLoc => ()
+   position = cg, loc =>
+      cg.debug
+         | dbg =>
+            dbg.loc = loc
+            fn = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
+            LLVMGetSubprogram(fn)
+               | sp =>
+                  file = file_metadata(dbg, loc.file)
+                  scope = location_scope(dbg, sp, file, loc.file)
+                  LLVMSetCurrentDebugLocation2(cg.builder,
+                     <+ loc_metadata(scope, loc.line, loc.col) +>)
+               | LLVMSetCurrentDebugLocation2(cg.builder, <-->)
+
+   function: types::Cg, Addr, String, String, Int, Int => ()
+   function = cg, fn, name, linkage, line, col =>
+      cg.debug
+         | dbg =>
+            loc = dbg.functions ^ name
+               | source => source
+               | name == "" | tast::SourceLoc(cg.source_file, 1, 0) | dbg.loc
+            start = line > 0 && !(dbg.functions ^? name)
+               | tast::SourceLoc(loc.file, line, col)
+               | loc
+            file = file_metadata(dbg, start.file)
+            ty = LLVMDIBuilderCreateSubroutineType(dbg.builder, file, <-->, 0, 0)
+            display = name == "" | linkage | name
+            optimized = cg.opts.optimize_closures | 1 | 0
+            local = LLVMGetLinkage(fn) == 8 | 1 | 0
+            source_line = i32(%max(1, start.line))
+            sp = LLVMDIBuilderCreateFunction(dbg.builder, file, display, ?display,
+               linkage, ?linkage, file, source_line, ty, local, 1, source_line, 0, optimized)
+            LLVMSetSubprogram(fn, sp)
+            dbg.scope_info ^ Int(sp) = types::DebugScope(sp, start.file, display)
+            position(cg, start)
+
+   emit_trace: types::Cg => ()
+   emit_trace = cg =>
+      ty = types::fn_type0(LLVMVoidType!)
+      fn = LLVMGetNamedFunctionNullable(cg.module, stack_trace_name)
+         | existing => existing
+         |
+            fresh = LLVMAddFunction(cg.module, stack_trace_name, ty)
+            LLVMSetLinkage(fresh, 8)
+            fresh
+      types::call0(cg, ty, fn, "")
+
+   finish: types::Cg => ()
+   finish = cg =>
+      cg.debug | dbg =>
+         trace = LLVMGetNamedFunctionNullable(cg.module, stack_trace_name)
+         native_stack = !cg.opts.no_runtime && !types::is_wasm_target(cg)
+            | <+ stack_head(cg) +>
+            | <-->
+         native_stack | head =>
+            trace | fn => define_trace(cg, head, fn)
+         next_fn' = LLVMGetFirstFunction(cg.module)
+         0.. @
+            next_fn'
+               | fn =>
+                  finish_function(cg, dbg, fn, native_stack, trace)
+                  next_fn' = LLVMGetNextFunction(fn)
+               | -->
+         LLVMSetCurrentDebugLocation2(cg.builder, <-->)
+         LLVMDIBuilderFinalize(dbg.builder)

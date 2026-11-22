@@ -12,6 +12,7 @@
 #use mem
 #use time
 #use ./types
+#use ./debug
 #use ./runtime
 #use ./expr
 #use ./match
@@ -2209,6 +2210,7 @@ codegen_emit_error_panic = cg, err_ptr =>
          types::call1(cg, types::fn_type1(LLVMVoidType!, i8p), pfn, LLVMConstNull(i8p), "")
          LLVMBuildUnreachable(cg.builder)
          LLVMPositionBuilderAtEnd(cg.builder, normal_bb)
+         runtime::emit_panic_site(cg)
          pf = types::ensure_printf_fn(cg)
          ef = types::ensure_exit_fn(cg)
          LLVMBuildCall2(cg.builder,
@@ -2894,6 +2896,7 @@ codegen_program = prog, out_path, exports, source_file =>
 
 codegen_destroy: types::Cg => ()
 codegen_destroy = cg =>
+   cg.debug | dbg => LLVMDisposeDIBuilder(dbg.builder)
    types::llvm_val_opt(cg.builder) | b => LLVMDisposeBuilder(b)
    types::llvm_val_opt(cg.module) | m => LLVMDisposeModule(m)
    cg.target_machine | tm => LLVMDisposeTargetMachine(tm)
@@ -2918,6 +2921,17 @@ fuse_collection_block = cg, te, original =>
 
 codegen_typed_eval: types::Cg, tast::TypedExpr => (Addr, ast::ValueType)
 codegen_typed_eval = cg, te =>
+   cg.opts.debug_info && te.line > 0
+      |
+         saved = debug::current_location(cg)
+         debug::position(cg, tast::SourceLoc(saved.file, te.line, te.col))
+         value = codegen_typed_eval_at(cg, te)
+         debug::position(cg, saved)
+         value
+      | codegen_typed_eval_at(cg, te)
+
+codegen_typed_eval_at: types::Cg, tast::TypedExpr => (Addr, ast::ValueType)
+codegen_typed_eval_at = cg, te =>
    tail_k = types::g.unboxed_ret_tail
    types::g.unboxed_ret_tail = 0
    can_tail = (tail_k != 0) && cg.in_fn && (cg.in_restore_scope == 0)
@@ -3512,8 +3526,14 @@ codegen_typed_eval = cg, te =>
 
 codegen_typed_emit_stmts: types::Cg, tast::TypedStmts => ()
 codegen_typed_emit_stmts = cg, stmts =>
-   stmts @ st =>
-      !cg.error | stmt::codegen_typed_emit_stmt(cg, st)
+   stmts @ st, i =>
+      !cg.error
+         |
+            cg.opts.debug_info
+               |
+                  loc = cg.opts.source_locs(i) | _ | tast::SourceLoc(cg.source_file, 1, 0)
+                  debug::position(cg, loc)
+            stmt::codegen_typed_emit_stmt(cg, st)
 
 codegen_typed_program_opts: tast::TypedProgram, ast::Expr, String,
   ast::Names, String, types::CodegenOpts => Int
@@ -3558,7 +3578,15 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
                | types::g.marked_globals += amg.0
    t_cg_start = time::mono_ns!
    !cg.opts.no_runtime | runtime::codegen_emit_runtime(cg)
-   types::codegen_build_main(cg)
+   main_fn = types::codegen_build_main(cg)
+   debug::init(cg, optimized)
+   main_name = cg.opts.no_main
+      |
+         cg.opts.is_module && cg.opts.module_name != ""
+            | "__dva_global_init_${cg.opts.module_name}"
+            | "__dva_global_init"
+      | "main"
+   debug::function(cg, main_fn, "", main_name, 1, 0)
    stmt::codegen_collect_fns(cg, raw_exprs)
    runtime::codegen_register_types(cg, raw_exprs)
    runtime::codegen_register_forwards(cg, raw_exprs)

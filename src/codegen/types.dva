@@ -151,12 +151,28 @@ empty_fndef = FnDef("", ast::Names(), ast::Expr(Var, ""))
    fuzz_cov: <> = <->,
    no_typed_opt: <> = <->,
    optimize_closures: <> = <->,
-   check_arena_escapes: <> = <->
+   check_arena_escapes: <> = <->,
+   debug_info: <> = <->,
+   source_locs: tast::SourceLocs = tast::SourceLocs()
 )
 
 default_codegen_opts: () => CodegenOpts
 default_codegen_opts = !=> CodegenOpts("", <->, <->, ast::Names(),
   ast::Names(), <->, "", <->, "", <->)
+
+#type DebugFiles String ^ Addr
+#type DebugSources String ^ tast::SourceLoc
+#type DebugScope (subprogram: Addr, file: String, name: String)
+#type DebugScopes Int ^ DebugScope
+#type DebugState (
+   builder: Addr,
+   files: DebugFiles,
+   functions: DebugSources,
+   loc: tast::SourceLoc,
+   cwd: String,
+   scopes: DebugFiles,
+   scope_info: DebugScopes
+)
 
 #type Cg (
    module: Addr,
@@ -229,7 +245,8 @@ param_clo_tys: Addrs,
    has_string_params: <> = <->,
    string_views: Addrs = Addrs(),
    record_string_fields: RecordStringFields = RecordStringFields(),
-   constant_record_copies: ConstantRecordCopies = ConstantRecordCopies()
+   constant_record_copies: ConstantRecordCopies = ConstantRecordCopies(),
+   debug: <DebugState|> = <-->
 )
 
 #type RecordStringField (allocation: Addr, stores: Addrs)
@@ -1082,10 +1099,7 @@ codegen_init = opts =>
    st = struct_type2(i64t, i8p)
    ut = struct_type2(i64t, i8p)
    st2 = struct_type2(i8p, i64t)
-   eff_opts = CodegenOpts(triple, opts.no_runtime, opts.no_main,
-     opts.dynamic_modules, opts.dynamic_paths, opts.is_shared,
-     opts.compiler_exe, opts.is_module, opts.module_name, opts.fuzz_cov,
-     opts.no_typed_opt, opts.optimize_closures, opts.check_arena_escapes)
+   eff_opts = opts(target_triple = triple)
    Cg(module, builder, tm, <-->, CgVars(), <->, st, ut, st2,
      <-->, <-->, <-->, <-->, <-->, <-->, <-->, <-->,
      0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", <-->,
