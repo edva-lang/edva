@@ -315,6 +315,7 @@
       out += +cur
       out
 
+#public
    // Single-quote a string for /bin/sh.
    sq: String => String
    sq = s =>
@@ -333,6 +334,7 @@
       st < 0 | --| -1
       (st .>. 8) .&. 255
 
+#private
    // The path of `to` relative to directory `from` (both absolute).
    relpath: String, String => String
    relpath = from, to => path::rel(from, to)

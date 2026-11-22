@@ -103,3 +103,5 @@ make bench
 # Regression check against saved baseline (uses max of flag and per-workload variance threshold)
 nu tools/bench.nu --runs 3 --check-regression 25
 ```
+
+For native profiling and cross-object optimization, see the [PGO and ThinLTO workflow](../doc/compiler/native-optimization.qmd).

@@ -144,9 +144,10 @@ term::print("ok")
 
 ## Build reproducibility, cache invalidation, and parallel isolation
 
-Edva caches generated LLVM IR under `~/.cache/edva/ir/entries/<sha256>` (`key_version = 2`) and atomically renames completed temporary files into place so concurrent readers never observe partial `.ll` or cache metadata:
+Edva caches generated LLVM IR under `~/.cache/edva/ir/entries/<sha256>` (`key_version = 4`) and atomically renames completed temporary files into place so concurrent readers never observe partial `.ll` or cache metadata:
 
 - **Invalidation inputs**: Every key hashes the canonical target path, sorted canonical source paths and file content digests across `#use` dependencies, target triple, optimization level (`-O0`..`-Oz`), compiler executable fingerprint, LLVM major version, module/runtime codegen flags (`is_module`, `is_shared`, `no_runtime`, `no_main`, `module_name`), native `libs`/`pkg-config`, `--fuzz-cov`, `--cflag` values, `#export` symbols, and `#use(dynamic)` modules.
+- **Native optimization**: Profile-use builds hash a private snapshot of the indexed profile. Native PGO and LTO builds also fingerprint Clang, its linker, and explicit object inputs. See the [native optimization workflow](../compiler/native-optimization.qmd).
 - **Parallel isolation**: Without `--ir`, `-c --module <name> -o dir/mod.o` writes its transient IR at `<outpath>.ll` rather than `<module>.ll` in the current working directory, allowing parallel `make -j` and concurrent package builds to share a cache directory without colliding on CWD files.
 - **Offline & locked builds**: `edva vendor` copies all resolved Git, archive, and path dependencies into `vendor/` alongside `vendor/vendor.ccl`; subsequent `edva fetch --offline --locked`, `edva build --offline --locked`, and `edva test --offline --locked` verify recorded tree hashes with zero network access. Generator tools invoked via `@<alias>` automatically rebuild when dependency sources or the active `edva` compiler binary become newer than the cached tool binary.
 

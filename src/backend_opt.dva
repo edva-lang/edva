@@ -1,0 +1,155 @@
+// Native backend inputs that affect the provenance of a cached artifact.
+#use ./ast
+#use ./pkg
+#use fs
+#use libc
+#use str
+#use sys
+
+#foreign("c")
+   mkstemp: (template: Addr) => i32
+
+#public
+#type Options (
+   flags: ast::Names,
+   identity: String,
+   snapshot: String,
+   uses_profile: <>,
+   cacheable: <>
+)
+
+#private
+temp_file: () => String
+temp_file = !=>
+   template = {32}
+   template += "/tmp/edva-backend.XXXXXX"
+   template += 0
+   fd = mkstemp(&template)
+   fd < 0i32 | --| ""
+   libc::close(Int(fd))
+   sys::c_str(&template)
+
+capture: String => String
+capture = cmd =>
+   out = temp_file!
+   out == "" | --| ""
+   rc = pkg::sh("( ${cmd} ) > ${pkg::sq(out)} 2>/dev/null")
+   result = rc == 0 | str::trim(fs::read_to_string(out) |_| "") | ""
+   libc::unlink(out)
+   result
+
+digest: String => String
+digest = name =>
+   output = capture("sha256sum < ${pkg::sq(name)}")
+   ?output !< 64 | output(..64) | ""
+
+toolchain: String, String, <> => String
+toolchain = triple, linker, generate =>
+   target_arg = pkg::sq("--target=${triple}")
+   tool_arg = pkg::sq("-print-prog-name=${linker}")
+   driver_id = capture("""
+      set -e
+      cc=$(command -v clang)
+      link=$(clang ${target_arg} ${tool_arg})
+      link=$(command -v "$link")
+      sha256sum -- "$cc" "$link"
+      clang --version
+      clang ${target_arg} -print-resource-dir
+      """)
+   driver_id == "" || !generate | --| driver_id
+   runtime_id = capture("""
+      set -e
+      resource=$(clang ${target_arg} -print-resource-dir)
+      find -L "$resource/lib" -name 'libclang_rt.profile*.a' -type f | sort |
+        while IFS= read -r archive; do sha256sum -- "$archive" || exit 1; done
+      """)
+   "${driver_id}\n${runtime_id}"
+
+profile_flag: String => <>
+profile_flag = flag =>
+   str::starts_with(flag, "-fprofile-use=") || str::starts_with(flag, "-fprofile-instr-use=")
+
+flag_value: String => String
+flag_value = flag =>
+   idx = str::find(flag, "=") |_| -1
+   idx < 0 | "" | flag(idx + 1..)
+
+#public
+prepare: ast::Names, String, <>, <> => < Options | String >
+prepare = flags, target, ir_only, cache =>
+   ir_only || ?flags == 0 | --| <+ Options(flags, "", "", <->, <+>) ->
+   mode' = ++""
+   profile' = ++""
+   generate' = <->
+   lto' = <->
+   cacheable' = <+>
+   linker' = ++"ld"
+   ld_path' = ++""
+   flags @ flag =>
+      profile_flag(flag)
+         |
+            mode' != "" | --| <- "Specify exactly one profile input." +>
+            mode' = flag
+            profile' = flag_value(flag)
+            --^
+      flag ["-fprofile-use", "-fprofile-instr-use"]
+         | --| <- "Specify the profile path as -fprofile-use=FILE." +>
+      flag == "-fprofile-generate" || str::starts_with(flag, "-fprofile-generate=")
+         |
+            generate' = <+>
+            --^
+      flag ["-flto", "-flto=full", "-flto=thin"] | lto' = <+>
+      str::starts_with(flag, "-fuse-ld=")
+         |
+            name = flag_value(flag)
+            linker' = str::contains(name, "/") | name | "ld.${name}"
+      str::starts_with(flag, "--ld-path=") | ld_path' = flag_value(flag)
+      str::starts_with(flag, "-fprofile") || str::starts_with(flag, "-fcs-profile") ||
+         str::starts_with(flag, "-fauto-profile") || str::starts_with(flag, "-fmemory-profile")
+         | cacheable' = <->
+      // These flags can introduce a toolchain or file outside the captured inputs.
+      str::starts_with(flag, "@") || str::starts_with(flag, "-B") ||
+         str::starts_with(flag, "--sysroot") || str::starts_with(flag, "-isysroot") ||
+         str::starts_with(flag, "-resource-dir") || str::starts_with(flag, "--gcc-toolchain")
+         | cacheable' = <->
+   uses_profile = mode' != ""
+   uses_profile && generate'
+      | --| <- "Profile generation and profile use require separate builds." +>
+   !uses_profile && !generate' && !lto'
+      | --| <+ Options(flags, "", "", <->, cacheable') ->
+   ast::triple_arch(target) ["wasm32", "wasm64", "wasm"]
+      | --| <- "PGO and LTO flags are supported by the native backend." +>
+   identity = {512}
+   cache && cacheable'
+      |
+         tool = ld_path' != "" | ld_path' | linker'
+         backend_id = toolchain(target, tool, generate')
+         backend_id == ""
+            | --| <- "Could not identify Clang and its linker. Check the toolchain or use --no-cache." +>
+         identity += "native-toolchain=${pkg::hash_string(backend_id)}\n"
+         flags @ flag =>
+            !str::starts_with(flag, "-") && fs::is_file(flag)
+               |
+                  input_id = digest(flag)
+                  input_id == "" | --| <- "Could not hash backend input '${flag}'." +>
+                  identity += "backend-input=${input_id}\n"
+   !uses_profile | --| <+ Options(flags, +identity, "", <->, cacheable') ->
+   profile = mode' == "-fprofile-use=${profile'}" && fs::is_dir(profile')
+      | "${profile'}/default.profdata"
+      | profile'
+   !fs::is_file(profile)
+      | --| <- "Profile '${profile}' is missing or is not a file. Merge the training runs with llvm-profdata." +>
+   snapshot = temp_file!
+   snapshot == "" | --| <- "Could not create a temporary profile snapshot." +>
+   copied = pkg::sh("cp -- ${pkg::sq(profile)} ${pkg::sq(snapshot)}") == 0
+   profile_id = copied | digest(snapshot) | ""
+   profile_id == ""
+      |
+         libc::unlink(snapshot)
+         --| <- "Could not read profile '${profile}'." +>
+   identity += "profile=${profile_id}\n"
+   backend_flags = flags @> flag => flag == mode' | "-fprofile-use=${snapshot}" | flag
+   backend_flags += "-Werror=backend-plugin"
+   backend_flags += "-Werror=profile-instr-out-of-date"
+   backend_flags += "-Werror=profile-instr-unprofiled"
+   <+ Options(backend_flags, +identity, snapshot, <+>, cacheable') ->

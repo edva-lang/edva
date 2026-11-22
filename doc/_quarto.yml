@@ -30,6 +30,7 @@ book:
     - reference/edva-cli.qmd
     - reference/diagnostics.qmd
     - compiler/architecture.qmd
+    - compiler/native-optimization.qmd
     - part: reference/stdlib/index.qmd
       chapters:
         - reference/stdlib/ascii.qmd

@@ -1,0 +1,117 @@
+---
+meta:
+  status: "current reference"
+  evidence: "`src/backend_opt.dva`, `src/edva.dva`, `test_driver.sh`, `benchmarks/native_opt.py`"
+---
+
+# Native PGO and ThinLTO
+
+Edva passes each `--cflag` argument to Clang. The LLVM IR backend
+supports instrumentation PGO through `-fprofile-generate` and
+`-fprofile-use=FILE`. For cross-object optimization, compile and link
+with `-flto=thin` and a compatible linker. Use the Clang profile runtime,
+`llvm-profdata`, and LLD from the same LLVM release. The examples below
+use Linux with Clang and LLD on `PATH`. [Clang PGO](https://clang.llvm.org/docs/UsersManual.html#profile-guided-optimization) · [ThinLTO](https://clang.llvm.org/docs/ThinLTO.html)
+
+## Instrument, train, and build
+
+Run these commands from the compiler checkout. Use representative
+training inputs and measure on separate inputs.
+
+```bash
+work=$(mktemp -d)
+./edva benchmarks/server_http_router/edva.dva -O2 \
+  --cflag=-fprofile-generate -o "$work/train"
+
+LLVM_PROFILE_FILE="$work/train-%p.profraw" "$work/train" 1300000
+llvm-profdata merge -o "$work/router.profdata" "$work"/train-*.profraw
+
+./edva benchmarks/server_http_router/edva.dva -O2 \
+  "--cflag=-fprofile-use=$work/router.profdata" \
+  --cflag=-flto=thin --cflag=-fuse-ld=lld -o "$work/router"
+"$work/router" 2850000
+```
+
+Keep the source, target, and base optimization level consistent between
+training and use. Rebuild the instrumented executable and train again
+when Clang reports a profile hash mismatch. A raw profile version error
+during merging indicates an incompatible `llvm-profdata`. Missing
+indexed profiles are diagnosed before cache lookup. Profile data can
+be used without ThinLTO by omitting the last two flags.
+
+For package builds, set these flags on the native target in
+`edva.ccl` or supply them with `edva build --cflag=...` when all
+selected targets are native. Edva diagnoses these native modes on
+WebAssembly targets. Use an absolute profile path when building from
+multiple directories.
+
+## Separately compiled modules
+
+Use the same Clang release for the objects and the final link.
+
+```bash
+edva worker.dva -O2 -c --module worker --cflag=-flto=thin -o worker.o
+edva main.dva -O2 -c --entry --cflag=-flto=thin -o main.o
+clang -O2 -flto=thin -fuse-ld=lld main.o worker.o std-objects/*.o -lm -pthread -o app
+```
+
+The last command assumes the imported standard library modules have
+already been compiled to the objects in `std-objects/`.
+`benchmarks/native_opt.py` runs this workflow with all the object inputs
+listed explicitly. To train a modular build, use `-fprofile-generate`
+on the corresponding object builds and the link, then use the merged
+profile for the use builds.
+
+The native flags keep Edva's usual foreign declarations, exported
+symbols, and dynamic loader link flags. Normal linker visibility rules
+still apply. Edva passes through existing debug flags. Inlining can
+change which frames and variables are visible in a debugger.
+
+## Cache behavior
+
+Edva uses a private snapshot of the indexed profile for the build.
+The cache key covers the profile bytes, ordered Clang flags, target,
+Clang and linker identities, and directly named object inputs. For
+instrumentation builds it also fingerprints Clang's profile runtime
+archives. A replacement profile at the same path invalidates the
+cached artifact. The driver keeps the usual Clang diagnostics and
+treats profile mismatch warnings as errors for profile-use builds.
+Advanced profile modes and backend overrides that may read files outside
+these inputs bypass the cache.
+
+## Measurements
+
+Run `python3 benchmarks/native_opt.py --profdata /path/to/llvm-profdata`
+from the checkout. The harness checks that the optimized binaries produce
+the same output as the baseline on both held-out inputs. It interleaves
+variants, reports the median of three uncached builds and ten measured
+runs per input, and records the final executable size. Build times for
+PGO use exclude the separately reported profile collection cost.
+
+Measured on Linux x86-64 with Clang, LLD, and `llvm-profdata` 21.1.8.
+The HTTP router trained on 1,300,000 requests. The separately compiled
+application trained on 480,000 events.
+
+| Workload and mode | Build ms | Bytes | First held-out ms | Second held-out ms |
+|---|---:|---:|---:|---:|
+| Router baseline | 510 | 36,352 | 274.3 | 318.1 |
+| Router PGO | 474 | 32,248 | 209.8 | 243.9 |
+| Router ThinLTO | 538 | 27,208 | 272.8 | 316.1 |
+| Router PGO + ThinLTO | 506 | 25,760 | 204.4 | 236.2 |
+| Modular baseline | 1,568 | 180,312 | 26.0 | 30.5 |
+| Modular PGO | 1,649 | 172,280 | 25.7 | 30.1 |
+| Modular ThinLTO | 1,169 | 96,776 | 23.3 | 27.2 |
+| Modular PGO + ThinLTO | 1,288 | 95,512 | 20.7 | 24.0 |
+
+Held-out inputs were 2,850,000 and 3,300,001 requests for the router, and
+1,200,000 and 1,410,060 events for the modular application.
+Instrumenting and performing the training run plus profile merge took
+562 ms and 192 ms for the router, and 1,760 ms and 22 ms for the
+modular application.
+
+PGO reduced router runtime by about 23%. ThinLTO reduced modular
+runtime by about 10% and nearly halved executable size. The combined
+mode reduced runtime and size on both workloads. PGO alone added
+training and build cost for little modular runtime gain, and ThinLTO
+alone increased router build time with little router runtime gain.
+The default build remains the baseline.

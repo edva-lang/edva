@@ -13,7 +13,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.pkg::hex_digits" = global ptr null
 @"var.version::VERSION" = external global ptr
 @"var.version::COMMIT_HASH" = external global ptr
-@str.0 = internal unnamed_addr constant [20 x i8] c"1.6.3+9200f34-dirty\00"
+@str.0 = internal unnamed_addr constant [20 x i8] c"1.6.3+40ae953-dirty\00"
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 19, ptr @str.0 }
 @"var.pkg::lang_version" = global ptr null
 @b_byte_msg = internal unnamed_addr constant [58 x i8] c"E4007: Builder append byte out of range (must be 0..255)\0A\00"
@@ -76,10 +76,10 @@ target triple = "x86_64-unknown-linux-gnu"
 @clo.const.22 = internal constant { ptr, ptr } { ptr @"pkg::#split_char", ptr null }
 @"var.pkg::#split_char" = global ptr null
 @str.9 = internal unnamed_addr constant [5 x i8] c"'\\''\00"
-@clo.const.23 = internal constant { ptr, ptr } { ptr @"pkg::#sq", ptr null }
-@"var.pkg::#sq" = global ptr null
-@clo.const.24 = internal constant { ptr, ptr } { ptr @"pkg::#sh", ptr null }
-@"var.pkg::#sh" = global ptr null
+@clo.const.23 = internal constant { ptr, ptr } { ptr @"pkg::sq", ptr null }
+@"var.pkg::sq" = global ptr null
+@clo.const.24 = internal constant { ptr, ptr } { ptr @"pkg::sh", ptr null }
+@"var.pkg::sh" = global ptr null
 @clo.const.25 = internal constant { ptr, ptr } { ptr @"pkg::#relpath", ptr null }
 @"var.pkg::#relpath" = global ptr null
 @clo.const.26 = internal constant { ptr, ptr } { ptr @"pkg::#fnv_hex", ptr null }
@@ -983,8 +983,8 @@ entry:
   store ptr @clo.const.20, ptr @"var.pkg::#is_sha_commit", align 8
   store ptr @clo.const.21, ptr @"var.pkg::#pkg_base_name", align 8
   store ptr @clo.const.22, ptr @"var.pkg::#split_char", align 8
-  store ptr @clo.const.23, ptr @"var.pkg::#sq", align 8
-  store ptr @clo.const.24, ptr @"var.pkg::#sh", align 8
+  store ptr @clo.const.23, ptr @"var.pkg::sq", align 8
+  store ptr @clo.const.24, ptr @"var.pkg::sh", align 8
   store ptr @clo.const.25, ptr @"var.pkg::#relpath", align 8
   store ptr @clo.const.26, ptr @"var.pkg::#fnv_hex", align 8
   store ptr @clo.const.27, ptr @"var.pkg::#names_has", align 8
@@ -2809,7 +2809,7 @@ entry:
   unreachable
 }
 
-define internal { i64, ptr } @"pkg::#sq"(ptr %0) #3 {
+define { i64, ptr } @"pkg::sq"(ptr %0) #3 {
 entry:
   %str.len.query1 = load i64, ptr %0, align 8
   %str.len.query2 = and i64 %str.len.query1, 281474976710655
@@ -2976,7 +2976,7 @@ str_overflow_abort103:                            ; preds = %b.grow93
   unreachable
 }
 
-define internal i64 @"pkg::#sh"(ptr %0) #3 {
+define i64 @"pkg::sh"(ptr %0) #3 {
 entry:
   %arg.str.ptr = getelementptr inbounds { i64, ptr }, ptr %0, i32 0, i32 1
   %arg.str.ptr1 = load ptr, ptr %arg.str.ptr, align 8
@@ -3287,7 +3287,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep13 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc10, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep13, align 8
   %err.line.gep14 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc10, i32 0, i32 3
-  store i64 370, ptr %err.line.gep14, align 8
+  store i64 372, ptr %err.line.gep14, align 8
   %err.col.gep15 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc10, i32 0, i32 4
   store i64 27, ptr %err.col.gep15, align 8
   %err.ctx.gep16 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc10, i32 0, i32 5
@@ -3340,7 +3340,7 @@ a.rd.err.oob43:                                   ; preds = %a.rd.check40
   %err.file.gep68 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc65, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep68, align 8
   %err.line.gep69 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc65, i32 0, i32 3
-  store i64 371, ptr %err.line.gep69, align 8
+  store i64 373, ptr %err.line.gep69, align 8
   %err.col.gep70 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc65, i32 0, i32 4
   store i64 27, ptr %err.col.gep70, align 8
   %err.ctx.gep71 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc65, i32 0, i32 5
@@ -3461,7 +3461,7 @@ a.rd.err.oob178:                                  ; preds = %a.rd.check175
   %err.file.gep203 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc200, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep203, align 8
   %err.line.gep204 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc200, i32 0, i32 3
-  store i64 377, ptr %err.line.gep204, align 8
+  store i64 379, ptr %err.line.gep204, align 8
   %err.col.gep205 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc200, i32 0, i32 4
   store i64 21, ptr %err.col.gep205, align 8
   %err.ctx.gep206 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc200, i32 0, i32 5
@@ -3517,7 +3517,7 @@ a.rd.err.oob243:                                  ; preds = %a.rd.check240
   %err.file.gep269 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc266, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep269, align 8
   %err.line.gep270 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc266, i32 0, i32 3
-  store i64 378, ptr %err.line.gep270, align 8
+  store i64 380, ptr %err.line.gep270, align 8
   %err.col.gep271 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc266, i32 0, i32 4
   store i64 21, ptr %err.col.gep271, align 8
   %err.ctx.gep272 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc266, i32 0, i32 5
@@ -3906,7 +3906,7 @@ a.rd.err.null:                                    ; preds = %a.after60
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
-  store i64 443, ptr %err.line.gep, align 8
+  store i64 445, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
   store i64 26, ptr %err.col.gep, align 8
   %err.ctx.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 5
@@ -3925,7 +3925,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep77 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep77, align 8
   %err.line.gep78 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 3
-  store i64 443, ptr %err.line.gep78, align 8
+  store i64 445, ptr %err.line.gep78, align 8
   %err.col.gep79 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 4
   store i64 26, ptr %err.col.gep79, align 8
   %err.ctx.gep80 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 5
@@ -4033,7 +4033,7 @@ a.rd.err.null128:                                 ; preds = %a.after115
   %err.file.gep144 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc141, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep144, align 8
   %err.line.gep145 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc141, i32 0, i32 3
-  store i64 447, ptr %err.line.gep145, align 8
+  store i64 449, ptr %err.line.gep145, align 8
   %err.col.gep146 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc141, i32 0, i32 4
   store i64 35, ptr %err.col.gep146, align 8
   %err.ctx.gep147 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc141, i32 0, i32 5
@@ -4052,7 +4052,7 @@ a.rd.err.oob129:                                  ; preds = %a.rd.check126
   %err.file.gep155 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc152, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep155, align 8
   %err.line.gep156 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc152, i32 0, i32 3
-  store i64 447, ptr %err.line.gep156, align 8
+  store i64 449, ptr %err.line.gep156, align 8
   %err.col.gep157 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc152, i32 0, i32 4
   store i64 35, ptr %err.col.gep157, align 8
   %err.ctx.gep158 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc152, i32 0, i32 5
@@ -12316,7 +12316,7 @@ a.rd.err.null:                                    ; preds = %a.after60
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
-  store i64 887, ptr %err.line.gep, align 8
+  store i64 889, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
   store i64 26, ptr %err.col.gep, align 8
   %err.ctx.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 5
@@ -12335,7 +12335,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep77 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep77, align 8
   %err.line.gep78 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 3
-  store i64 887, ptr %err.line.gep78, align 8
+  store i64 889, ptr %err.line.gep78, align 8
   %err.col.gep79 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 4
   store i64 26, ptr %err.col.gep79, align 8
   %err.ctx.gep80 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 5
@@ -12467,7 +12467,7 @@ a.rd.err.null143:                                 ; preds = %a.after130
   %err.file.gep159 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc156, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep159, align 8
   %err.line.gep160 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc156, i32 0, i32 3
-  store i64 892, ptr %err.line.gep160, align 8
+  store i64 894, ptr %err.line.gep160, align 8
   %err.col.gep161 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc156, i32 0, i32 4
   store i64 35, ptr %err.col.gep161, align 8
   %err.ctx.gep162 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc156, i32 0, i32 5
@@ -12486,7 +12486,7 @@ a.rd.err.oob144:                                  ; preds = %a.rd.check141
   %err.file.gep170 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc167, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep170, align 8
   %err.line.gep171 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc167, i32 0, i32 3
-  store i64 892, ptr %err.line.gep171, align 8
+  store i64 894, ptr %err.line.gep171, align 8
   %err.col.gep172 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc167, i32 0, i32 4
   store i64 35, ptr %err.col.gep172, align 8
   %err.ctx.gep173 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc167, i32 0, i32 5
@@ -12954,7 +12954,7 @@ a.rd.err.null:                                    ; preds = %a.after60
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
-  store i64 909, ptr %err.line.gep, align 8
+  store i64 911, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
   store i64 26, ptr %err.col.gep, align 8
   %err.ctx.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 5
@@ -12973,7 +12973,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep77 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep77, align 8
   %err.line.gep78 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 3
-  store i64 909, ptr %err.line.gep78, align 8
+  store i64 911, ptr %err.line.gep78, align 8
   %err.col.gep79 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 4
   store i64 26, ptr %err.col.gep79, align 8
   %err.ctx.gep80 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 5
@@ -13064,7 +13064,7 @@ a.rd.err.null121:                                 ; preds = %a.after108
   %err.file.gep137 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc134, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep137, align 8
   %err.line.gep138 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc134, i32 0, i32 3
-  store i64 913, ptr %err.line.gep138, align 8
+  store i64 915, ptr %err.line.gep138, align 8
   %err.col.gep139 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc134, i32 0, i32 4
   store i64 35, ptr %err.col.gep139, align 8
   %err.ctx.gep140 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc134, i32 0, i32 5
@@ -13083,7 +13083,7 @@ a.rd.err.oob122:                                  ; preds = %a.rd.check119
   %err.file.gep148 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc145, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep148, align 8
   %err.line.gep149 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc145, i32 0, i32 3
-  store i64 913, ptr %err.line.gep149, align 8
+  store i64 915, ptr %err.line.gep149, align 8
   %err.col.gep150 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc145, i32 0, i32 4
   store i64 35, ptr %err.col.gep150, align 8
   %err.ctx.gep151 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc145, i32 0, i32 5
@@ -16222,7 +16222,7 @@ entry:
 str_ok:                                           ; preds = %tag.slow_check, %entry
   %cat.seg4 = getelementptr inbounds { i64, ptr }, ptr %1, i32 0, i32 1
   %cat.seg5 = load ptr, ptr %cat.seg4, align 8
-  %call.res7 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc)
+  %call.res7 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc)
   %arena.cur8 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc9 = call ptr @dva_arena_alloc(ptr %arena.cur8, i64 16)
   store { i64, ptr } %call.res7, ptr %ret.ub.alloc9, align 8
@@ -16303,7 +16303,7 @@ concat.tot.len38:                                 ; preds = %cat.sum.len33
   store i64 %str.tagged.len, ptr %concat.str, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   store ptr %concat.buf, ptr %str.build.data.gep, align 8
-  %call.res48 = call i64 @"pkg::#sh"(ptr %concat.str)
+  %call.res48 = call i64 @"pkg::sh"(ptr %concat.str)
   %call.res50 = call { i64, ptr } @"pkg::#read_text"(ptr %ret.ub.alloc)
   %ret.niche.data = extractvalue { i64, ptr } %call.res50, 1
   %ret.niche.ok = icmp ne ptr %ret.niche.data, null
@@ -16393,11 +16393,11 @@ define internal { i64, ptr } @"pkg::#git_cmd"(ptr %0, ptr %1) #3 {
 entry:
   %fld.gep1 = getelementptr inbounds { ptr, i1, i1, ptr, ptr, ptr, i1, i1, ptr, ptr, i1 }, ptr %0, i32 0, i32 4
   %fld.load = load ptr, ptr %fld.gep1, align 8
-  %call.res = call { i64, ptr } @"pkg::#sq"(ptr %fld.load)
+  %call.res = call { i64, ptr } @"pkg::sq"(ptr %fld.load)
   %call.res.fca.0.extract = extractvalue { i64, ptr } %call.res, 0
   %call.res.fca.1.extract = extractvalue { i64, ptr } %call.res, 1
   %cat.seg3 = and i64 %call.res.fca.0.extract, 281474976710655
-  %call.res8 = call { i64, ptr } @"pkg::#sq"(ptr %1)
+  %call.res8 = call { i64, ptr } @"pkg::sq"(ptr %1)
   %call.res8.fca.0.extract = extractvalue { i64, ptr } %call.res8, 0
   %call.res8.fca.1.extract = extractvalue { i64, ptr } %call.res8, 1
   %cat.seg12 = and i64 %call.res8.fca.0.extract, 281474976710655
@@ -16657,7 +16657,7 @@ choice.else7:                                     ; preds = %choice.else
   store { i64, ptr } %call.res68, ptr %ret.ub.alloc70, align 8
   %fld.gep74 = getelementptr inbounds { ptr, i1, i1, ptr, ptr, ptr, i1, i1, ptr, ptr, i1 }, ptr %0, i32 0, i32 4
   %fld.load75 = load ptr, ptr %fld.gep74, align 8
-  %call.res76 = call { i64, ptr } @"pkg::#sq"(ptr %fld.load75)
+  %call.res76 = call { i64, ptr } @"pkg::sq"(ptr %fld.load75)
   %arena.cur77 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc78 = call ptr @dva_arena_alloc(ptr %arena.cur77, i64 16)
   store { i64, ptr } %call.res76, ptr %ret.ub.alloc78, align 8
@@ -16773,7 +16773,7 @@ str_overflow_abort51:                             ; preds = %cat.sum.len45
 str_ok83:                                         ; preds = %tag.slow_check88, %choice.else7
   %cat.seg89 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc78, i32 0, i32 1
   %cat.seg90 = load ptr, ptr %cat.seg89, align 8
-  %call.res93 = call { i64, ptr } @"pkg::#sq"(ptr %2)
+  %call.res93 = call { i64, ptr } @"pkg::sq"(ptr %2)
   %arena.cur94 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc95 = call ptr @dva_arena_alloc(ptr %arena.cur94, i64 16)
   store { i64, ptr } %call.res93, ptr %ret.ub.alloc95, align 8
@@ -16793,7 +16793,7 @@ tag.slow_check88:                                 ; preds = %choice.else7
 str_ok100:                                        ; preds = %tag.slow_check105, %str_ok83
   %cat.seg106 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc95, i32 0, i32 1
   %cat.seg107 = load ptr, ptr %cat.seg106, align 8
-  %call.res110 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc70)
+  %call.res110 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc70)
   %arena.cur111 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc112 = call ptr @dva_arena_alloc(ptr %arena.cur111, i64 16)
   store { i64, ptr } %call.res110, ptr %ret.ub.alloc112, align 8
@@ -16913,7 +16913,7 @@ concat.tot.len165:                                ; preds = %cat.sum.len159
   store i64 %str.tagged.len188, ptr %concat.str184, align 8
   %str.build.data.gep189 = getelementptr inbounds { i64, ptr }, ptr %concat.str184, i32 0, i32 1
   store ptr %concat.buf169, ptr %str.build.data.gep189, align 8
-  %call.res190 = call i64 @"pkg::#sh"(ptr %concat.str184)
+  %call.res190 = call i64 @"pkg::sh"(ptr %concat.str184)
   %cmptmp = icmp ne i64 %call.res190, 0
   br i1 %cmptmp, label %choice.then192, label %choice.else193
 
@@ -16922,7 +16922,7 @@ str_overflow_abort166:                            ; preds = %cat.sum.len159
   unreachable
 
 choice.then192:                                   ; preds = %concat.tot.len165
-  %call.res196 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc70)
+  %call.res196 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc70)
   %arena.cur197 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc198 = call ptr @dva_arena_alloc(ptr %arena.cur197, i64 16)
   store { i64, ptr } %call.res196, ptr %ret.ub.alloc198, align 8
@@ -16995,7 +16995,7 @@ concat.tot.len220:                                ; preds = %concat.sum.len214
   store i64 %str.tagged.len231, ptr %concat.str227, align 8
   %str.build.data.gep232 = getelementptr inbounds { i64, ptr }, ptr %concat.str227, i32 0, i32 1
   store ptr %concat.buf224, ptr %str.build.data.gep232, align 8
-  %call.res233 = call i64 @"pkg::#sh"(ptr %concat.str227)
+  %call.res233 = call i64 @"pkg::sh"(ptr %concat.str227)
   %cat.seg237 = load i64, ptr %1, align 8
   %cat.seg238 = and i64 %cat.seg237, 281474976710655
   %str.tag239 = lshr i64 %cat.seg237, 48
@@ -17688,7 +17688,7 @@ m.done:                                           ; preds = %m.overwrite148, %m.
   %call.res217.fca.0.extract = extractvalue { i64, ptr } %call.res217, 0
   %call.res217.fca.1.extract = extractvalue { i64, ptr } %call.res217, 1
   %cat.seg219 = and i64 %call.res217.fca.0.extract, 281474976710655
-  %call.res223 = call { i64, ptr } @"pkg::#sq"(ptr %1)
+  %call.res223 = call { i64, ptr } @"pkg::sq"(ptr %1)
   %call.res223.fca.0.extract = extractvalue { i64, ptr } %call.res223, 0
   %call.res223.fca.1.extract = extractvalue { i64, ptr } %call.res223, 1
   %cat.seg227 = and i64 %call.res223.fca.0.extract, 281474976710655
@@ -17979,7 +17979,7 @@ concat.tot.len246:                                ; preds = %cat.sum.len241
   store i64 %sum239, ptr %concat.str, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   store ptr %concat.buf, ptr %str.build.data.gep, align 8
-  %call.res256 = call i64 @"pkg::#sh"(ptr %concat.str)
+  %call.res256 = call i64 @"pkg::sh"(ptr %concat.str)
   br label %choice.exit
 
 str_overflow_abort247:                            ; preds = %cat.sum.len241
@@ -18029,7 +18029,7 @@ concat.tot.len18:                                 ; preds = %concat.sum.len15
   store i64 %sum, ptr %concat.str, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   store ptr %concat.buf, ptr %str.build.data.gep, align 8
-  %call.res23 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str)
+  %call.res23 = call { i64, ptr } @"pkg::sq"(ptr %concat.str)
   %call.res23.fca.0.extract = extractvalue { i64, ptr } %call.res23, 0
   %call.res23.fca.1.extract = extractvalue { i64, ptr } %call.res23, 1
   %cat.seg27 = and i64 %call.res23.fca.0.extract, 281474976710655
@@ -18091,7 +18091,7 @@ concat.tot.len51:                                 ; preds = %cat.sum.len45
   store i64 %sum43, ptr %concat.str63, align 8
   %str.build.data.gep65 = getelementptr inbounds { i64, ptr }, ptr %concat.str63, i32 0, i32 1
   store ptr %concat.buf55, ptr %str.build.data.gep65, align 8
-  %call.res66 = call i64 @"pkg::#sh"(ptr %concat.str63)
+  %call.res66 = call i64 @"pkg::sh"(ptr %concat.str63)
   %cmptmp = icmp eq i64 %call.res66, 0
   ret i1 %cmptmp
 
@@ -18173,7 +18173,7 @@ concat.tot.len28:                                 ; preds = %concat.sum.len25
   store i64 %str.tagged.len, ptr %concat.str, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   store ptr %concat.buf, ptr %str.build.data.gep, align 8
-  %call.res33 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str)
+  %call.res33 = call { i64, ptr } @"pkg::sq"(ptr %concat.str)
   %arena.cur34 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc35 = call ptr @dva_arena_alloc(ptr %arena.cur34, i64 16)
   store { i64, ptr } %call.res33, ptr %ret.ub.alloc35, align 8
@@ -18311,7 +18311,7 @@ choice.then93:                                    ; preds = %str.eq.then
 str_ok110:                                        ; preds = %tag.slow_check115, %choice.then93
   %cat.seg116 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc105, i32 0, i32 1
   %cat.seg117 = load ptr, ptr %cat.seg116, align 8
-  %call.res119 = call { i64, ptr } @"pkg::#sq"(ptr @str.135.struct)
+  %call.res119 = call { i64, ptr } @"pkg::sq"(ptr @str.135.struct)
   %arena.cur120 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc121 = call ptr @dva_arena_alloc(ptr %arena.cur120, i64 16)
   store { i64, ptr } %call.res119, ptr %ret.ub.alloc121, align 8
@@ -18420,7 +18420,7 @@ choice.else177:                                   ; preds = %ret.niche.done171
 str_ok195:                                        ; preds = %tag.slow_check200, %choice.else177
   %cat.seg201 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc190, i32 0, i32 1
   %cat.seg202 = load ptr, ptr %cat.seg201, align 8
-  %call.res204 = call { i64, ptr } @"pkg::#sq"(ptr @str.136.struct)
+  %call.res204 = call { i64, ptr } @"pkg::sq"(ptr @str.136.struct)
   %arena.cur205 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc206 = call ptr @dva_arena_alloc(ptr %arena.cur205, i64 16)
   store { i64, ptr } %call.res204, ptr %ret.ub.alloc206, align 8
@@ -20339,7 +20339,7 @@ declare { i64, ptr } @"diag::locked_manifest_stale_prefix"() #3
 
 define internal i1 @"pkg::#check_tree_security"(ptr %0, ptr %1) #3 {
 entry:
-  %call.res = call { i64, ptr } @"pkg::#sq"(ptr %1)
+  %call.res = call { i64, ptr } @"pkg::sq"(ptr %1)
   %call.res.fca.0.extract = extractvalue { i64, ptr } %call.res, 0
   %call.res.fca.1.extract = extractvalue { i64, ptr } %call.res, 1
   %cat.seg2 = and i64 %call.res.fca.0.extract, 281474976710655
@@ -20462,7 +20462,7 @@ concat.tot.len57:                                 ; preds = %cat.sum.len52
   store i64 %sum50, ptr %concat.str, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   store ptr %concat.buf, ptr %str.build.data.gep, align 8
-  %call.res76 = call i64 @"pkg::#sh"(ptr %concat.str)
+  %call.res76 = call i64 @"pkg::sh"(ptr %concat.str)
   %cmptmp = icmp eq i64 %call.res76, 0
   ret i1 %cmptmp
 
@@ -20579,7 +20579,7 @@ concat.tot.len43:                                 ; preds = %concat.sum.len37
   store i64 %str.tagged.len55, ptr %concat.str51, align 8
   %str.build.data.gep56 = getelementptr inbounds { i64, ptr }, ptr %concat.str51, i32 0, i32 1
   store ptr %concat.buf47, ptr %str.build.data.gep56, align 8
-  %call.res58 = call { i64, ptr } @"pkg::#sq"(ptr %1)
+  %call.res58 = call { i64, ptr } @"pkg::sq"(ptr %1)
   %arena.cur59 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc60 = call ptr @dva_arena_alloc(ptr %arena.cur59, i64 16)
   store { i64, ptr } %call.res58, ptr %ret.ub.alloc60, align 8
@@ -20599,7 +20599,7 @@ str_overflow_abort44:                             ; preds = %concat.sum.len37
 str_ok64:                                         ; preds = %tag.slow_check69, %concat.tot.len43
   %cat.seg70 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc60, i32 0, i32 1
   %cat.seg71 = load ptr, ptr %cat.seg70, align 8
-  %call.res74 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str)
+  %call.res74 = call { i64, ptr } @"pkg::sq"(ptr %concat.str)
   %arena.cur75 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc76 = call ptr @dva_arena_alloc(ptr %arena.cur75, i64 16)
   store { i64, ptr } %call.res74, ptr %ret.ub.alloc76, align 8
@@ -20619,7 +20619,7 @@ tag.slow_check69:                                 ; preds = %concat.tot.len43
 str_ok81:                                         ; preds = %tag.slow_check86, %str_ok64
   %cat.seg87 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc76, i32 0, i32 1
   %cat.seg88 = load ptr, ptr %cat.seg87, align 8
-  %call.res101 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str)
+  %call.res101 = call { i64, ptr } @"pkg::sq"(ptr %concat.str)
   %arena.cur102 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc103 = call ptr @dva_arena_alloc(ptr %arena.cur102, i64 16)
   store { i64, ptr } %call.res101, ptr %ret.ub.alloc103, align 8
@@ -20639,7 +20639,7 @@ tag.slow_check86:                                 ; preds = %str_ok64
 str_ok108:                                        ; preds = %tag.slow_check113, %str_ok81
   %cat.seg114 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc103, i32 0, i32 1
   %cat.seg115 = load ptr, ptr %cat.seg114, align 8
-  %call.res118 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str51)
+  %call.res118 = call { i64, ptr } @"pkg::sq"(ptr %concat.str51)
   %arena.cur119 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc120 = call ptr @dva_arena_alloc(ptr %arena.cur119, i64 16)
   store { i64, ptr } %call.res118, ptr %ret.ub.alloc120, align 8
@@ -20659,7 +20659,7 @@ tag.slow_check113:                                ; preds = %str_ok81
 str_ok125:                                        ; preds = %tag.slow_check130, %str_ok108
   %cat.seg131 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc120, i32 0, i32 1
   %cat.seg132 = load ptr, ptr %cat.seg131, align 8
-  %call.res135 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str51)
+  %call.res135 = call { i64, ptr } @"pkg::sq"(ptr %concat.str51)
   %arena.cur136 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc137 = call ptr @dva_arena_alloc(ptr %arena.cur136, i64 16)
   store { i64, ptr } %call.res135, ptr %ret.ub.alloc137, align 8
@@ -21995,7 +21995,7 @@ str_overflow_abort515:                            ; preds = %cat.sum.len508
 str_ok555:                                        ; preds = %tag.slow_check560, %choice.else456
   %cat.seg561 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc550, i32 0, i32 1
   %cat.seg562 = load ptr, ptr %cat.seg561, align 8
-  %call.res565 = call { i64, ptr } @"pkg::#sq"(ptr %3)
+  %call.res565 = call { i64, ptr } @"pkg::sq"(ptr %3)
   %arena.cur566 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc567 = call ptr @dva_arena_alloc(ptr %arena.cur566, i64 16)
   store { i64, ptr } %call.res565, ptr %ret.ub.alloc567, align 8
@@ -22015,7 +22015,7 @@ tag.slow_check560:                                ; preds = %choice.else456
 str_ok572:                                        ; preds = %tag.slow_check577, %str_ok555
   %cat.seg578 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc567, i32 0, i32 1
   %cat.seg579 = load ptr, ptr %cat.seg578, align 8
-  %call.res582 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc539)
+  %call.res582 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc539)
   %arena.cur583 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc584 = call ptr @dva_arena_alloc(ptr %arena.cur583, i64 16)
   store { i64, ptr } %call.res582, ptr %ret.ub.alloc584, align 8
@@ -22122,7 +22122,7 @@ concat.tot.len631:                                ; preds = %cat.sum.len625
   store i64 %str.tagged.len653, ptr %concat.str649, align 8
   %str.build.data.gep654 = getelementptr inbounds { i64, ptr }, ptr %concat.str649, i32 0, i32 1
   store ptr %concat.buf635, ptr %str.build.data.gep654, align 8
-  %call.res655 = call i64 @"pkg::#sh"(ptr %concat.str649)
+  %call.res655 = call i64 @"pkg::sh"(ptr %concat.str649)
   %cmptmp = icmp ne i64 %call.res655, 0
   br i1 %cmptmp, label %choice.then657, label %choice.else658
 
@@ -22131,7 +22131,7 @@ str_overflow_abort632:                            ; preds = %cat.sum.len625
   unreachable
 
 choice.then657:                                   ; preds = %concat.tot.len631
-  %call.res661 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc539)
+  %call.res661 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc539)
   %arena.cur662 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc663 = call ptr @dva_arena_alloc(ptr %arena.cur662, i64 16)
   store { i64, ptr } %call.res661, ptr %ret.ub.alloc663, align 8
@@ -22187,7 +22187,7 @@ concat.tot.len685:                                ; preds = %concat.sum.len679
   store i64 %str.tagged.len696, ptr %concat.str692, align 8
   %str.build.data.gep697 = getelementptr inbounds { i64, ptr }, ptr %concat.str692, i32 0, i32 1
   store ptr %concat.buf689, ptr %str.build.data.gep697, align 8
-  %call.res698 = call i64 @"pkg::#sh"(ptr %concat.str692)
+  %call.res698 = call i64 @"pkg::sh"(ptr %concat.str692)
   %cat.seg702 = load i64, ptr %1, align 8
   %cat.seg703 = and i64 %cat.seg702, 281474976710655
   %str.tag704 = lshr i64 %cat.seg702, 48
@@ -22329,7 +22329,7 @@ str_overflow_abort775:                            ; preds = %cat.sum.len768
   unreachable
 
 choice.then802:                                   ; preds = %choice.else658
-  %call.res806 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc539)
+  %call.res806 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc539)
   %arena.cur807 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc808 = call ptr @dva_arena_alloc(ptr %arena.cur807, i64 16)
   store { i64, ptr } %call.res806, ptr %ret.ub.alloc808, align 8
@@ -22386,7 +22386,7 @@ concat.tot.len833:                                ; preds = %concat.sum.len827
   store i64 %str.tagged.len845, ptr %concat.str841, align 8
   %str.build.data.gep846 = getelementptr inbounds { i64, ptr }, ptr %concat.str841, i32 0, i32 1
   store ptr %concat.buf837, ptr %str.build.data.gep846, align 8
-  %call.res847 = call i64 @"pkg::#sh"(ptr %concat.str841)
+  %call.res847 = call i64 @"pkg::sh"(ptr %concat.str841)
   %cat.seg851 = load i64, ptr %1, align 8
   %cat.seg852 = and i64 %cat.seg851, 281474976710655
   %str.tag853 = lshr i64 %cat.seg851, 48
@@ -22500,7 +22500,7 @@ choice.then921:                                   ; preds = %ret.niche.done916
   br i1 %tag.fast.ok935, label %str_ok931, label %tag.slow_check936
 
 choice.else922:                                   ; preds = %ret.niche.done916
-  %call.res1363 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc539)
+  %call.res1363 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc539)
   %arena.cur1364 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1365 = call ptr @dva_arena_alloc(ptr %arena.cur1364, i64 16)
   store { i64, ptr } %call.res1363, ptr %ret.ub.alloc1365, align 8
@@ -22580,7 +22580,7 @@ str.eq.merge975:                                  ; preds = %str_ok966, %str.eq.
   br i1 %str.neq983, label %choice.then984, label %choice.else985
 
 choice.then984:                                   ; preds = %str.eq.merge975
-  %call.res988 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc539)
+  %call.res988 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc539)
   %arena.cur989 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc990 = call ptr @dva_arena_alloc(ptr %arena.cur989, i64 16)
   store { i64, ptr } %call.res988, ptr %ret.ub.alloc990, align 8
@@ -22643,7 +22643,7 @@ concat.tot.len1015:                               ; preds = %concat.sum.len1009
   store i64 %str.tagged.len1027, ptr %concat.str1023, align 8
   %str.build.data.gep1028 = getelementptr inbounds { i64, ptr }, ptr %concat.str1023, i32 0, i32 1
   store ptr %concat.buf1019, ptr %str.build.data.gep1028, align 8
-  %call.res1029 = call i64 @"pkg::#sh"(ptr %concat.str1023)
+  %call.res1029 = call i64 @"pkg::sh"(ptr %concat.str1023)
   %cat.seg1033 = load i64, ptr %1, align 8
   %cat.seg1034 = and i64 %cat.seg1033, 281474976710655
   %str.tag1035 = lshr i64 %cat.seg1033, 48
@@ -22800,7 +22800,7 @@ str_overflow_abort1113:                           ; preds = %cat.sum.len1106
   unreachable
 
 choice.then1153:                                  ; preds = %choice.else985
-  %call.res1157 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc539)
+  %call.res1157 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc539)
   %arena.cur1158 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1159 = call ptr @dva_arena_alloc(ptr %arena.cur1158, i64 16)
   store { i64, ptr } %call.res1157, ptr %ret.ub.alloc1159, align 8
@@ -22863,7 +22863,7 @@ concat.tot.len1184:                               ; preds = %concat.sum.len1178
   store i64 %str.tagged.len1196, ptr %concat.str1192, align 8
   %str.build.data.gep1197 = getelementptr inbounds { i64, ptr }, ptr %concat.str1192, i32 0, i32 1
   store ptr %concat.buf1188, ptr %str.build.data.gep1197, align 8
-  %call.res1198 = call i64 @"pkg::#sh"(ptr %concat.str1192)
+  %call.res1198 = call i64 @"pkg::sh"(ptr %concat.str1192)
   %arena.cur1201 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc1202 = call ptr @dva_arena_alloc(ptr %arena.cur1201, i64 ptrtoint (ptr getelementptr ({ ptr, ptr }, ptr null, i32 1) to i64))
   store ptr %ret.ub.alloc1145, ptr %rec.alloc1202, align 8
@@ -22963,7 +22963,7 @@ choice.then1259:                                  ; preds = %nulmerge1243, %or.3
   br label %choice.exit84
 
 choice.else1260:                                  ; preds = %or.398.else
-  %call.res1269 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc539)
+  %call.res1269 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc539)
   %arena.cur1270 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1271 = call ptr @dva_arena_alloc(ptr %arena.cur1270, i64 16)
   store { i64, ptr } %call.res1269, ptr %ret.ub.alloc1271, align 8
@@ -23014,7 +23014,7 @@ concat.tot.len1296:                               ; preds = %concat.sum.len1290
   store i64 %str.tagged.len1308, ptr %concat.str1304, align 8
   %str.build.data.gep1309 = getelementptr inbounds { i64, ptr }, ptr %concat.str1304, i32 0, i32 1
   store ptr %concat.buf1300, ptr %str.build.data.gep1309, align 8
-  %call.res1310 = call i64 @"pkg::#sh"(ptr %concat.str1304)
+  %call.res1310 = call i64 @"pkg::sh"(ptr %concat.str1304)
   %cat.seg1314 = load i64, ptr %1, align 8
   %cat.seg1315 = and i64 %cat.seg1314, 281474976710655
   %str.tag1316 = lshr i64 %cat.seg1314, 48
@@ -23124,7 +23124,7 @@ concat.tot.len1390:                               ; preds = %concat.sum.len1384
   store i64 %str.tagged.len1402, ptr %concat.str1398, align 8
   %str.build.data.gep1403 = getelementptr inbounds { i64, ptr }, ptr %concat.str1398, i32 0, i32 1
   store ptr %concat.buf1394, ptr %str.build.data.gep1403, align 8
-  %call.res1404 = call i64 @"pkg::#sh"(ptr %concat.str1398)
+  %call.res1404 = call i64 @"pkg::sh"(ptr %concat.str1398)
   %cat.seg1408 = load i64, ptr %1, align 8
   %cat.seg1409 = and i64 %cat.seg1408, 281474976710655
   %str.tag1410 = lshr i64 %cat.seg1408, 48
@@ -23239,7 +23239,7 @@ entry:
   br i1 %call.res1, label %choice.exit, label %choice.else
 
 choice.else:                                      ; preds = %entry
-  %call.res5 = call { i64, ptr } @"pkg::#sq"(ptr %1)
+  %call.res5 = call { i64, ptr } @"pkg::sq"(ptr %1)
   %arena.cur6 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc7 = call ptr @dva_arena_alloc(ptr %arena.cur6, i64 16)
   store { i64, ptr } %call.res5, ptr %ret.ub.alloc7, align 8
@@ -23353,7 +23353,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep40 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc37, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep40, align 8
   %err.line.gep41 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc37, i32 0, i32 3
-  store i64 1304, ptr %err.line.gep41, align 8
+  store i64 1306, ptr %err.line.gep41, align 8
   %err.col.gep42 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc37, i32 0, i32 4
   store i64 34, ptr %err.col.gep42, align 8
   %err.ctx.gep43 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc37, i32 0, i32 5
@@ -24355,7 +24355,7 @@ and.403.exit:                                     ; preds = %and.402.exit, %and.
   br i1 %and.403.phi, label %choice.then, label %choice.else
 
 choice.then:                                      ; preds = %and.403.exit
-  %call.res25 = call { i64, ptr } @"pkg::#sq"(ptr %2)
+  %call.res25 = call { i64, ptr } @"pkg::sq"(ptr %2)
   %arena.cur26 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc27 = call ptr @dva_arena_alloc(ptr %arena.cur26, i64 16)
   store { i64, ptr } %call.res25, ptr %ret.ub.alloc27, align 8
@@ -24369,7 +24369,7 @@ choice.then:                                      ; preds = %and.403.exit
   br i1 %tag.fast.ok35, label %str_ok31, label %tag.slow_check36
 
 choice.else:                                      ; preds = %and.403.exit
-  %call.res105 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str)
+  %call.res105 = call { i64, ptr } @"pkg::sq"(ptr %concat.str)
   %arena.cur106 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc107 = call ptr @dva_arena_alloc(ptr %arena.cur106, i64 16)
   store { i64, ptr } %call.res105, ptr %ret.ub.alloc107, align 8
@@ -24390,7 +24390,7 @@ choice.exit:                                      ; preds = %concat.tot.len165, 
 str_ok31:                                         ; preds = %tag.slow_check36, %choice.then
   %cat.seg37 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc27, i32 0, i32 1
   %cat.seg38 = load ptr, ptr %cat.seg37, align 8
-  %call.res41 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str)
+  %call.res41 = call { i64, ptr } @"pkg::sq"(ptr %concat.str)
   %arena.cur42 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc43 = call ptr @dva_arena_alloc(ptr %arena.cur42, i64 16)
   store { i64, ptr } %call.res41, ptr %ret.ub.alloc43, align 8
@@ -24484,7 +24484,7 @@ concat.tot.len83:                                 ; preds = %cat.sum.len77
   store i64 %str.tagged.len100, ptr %concat.str96, align 8
   %str.build.data.gep101 = getelementptr inbounds { i64, ptr }, ptr %concat.str96, i32 0, i32 1
   store ptr %concat.buf87, ptr %str.build.data.gep101, align 8
-  %call.res102 = call i64 @"pkg::#sh"(ptr %concat.str96)
+  %call.res102 = call i64 @"pkg::sh"(ptr %concat.str96)
   br label %choice.exit
 
 str_overflow_abort84:                             ; preds = %cat.sum.len77
@@ -24494,7 +24494,7 @@ str_overflow_abort84:                             ; preds = %cat.sum.len77
 str_ok112:                                        ; preds = %tag.slow_check117, %choice.else
   %cat.seg118 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc107, i32 0, i32 1
   %cat.seg119 = load ptr, ptr %cat.seg118, align 8
-  %call.res122 = call { i64, ptr } @"pkg::#sq"(ptr %2)
+  %call.res122 = call { i64, ptr } @"pkg::sq"(ptr %2)
   %arena.cur123 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc124 = call ptr @dva_arena_alloc(ptr %arena.cur123, i64 16)
   store { i64, ptr } %call.res122, ptr %ret.ub.alloc124, align 8
@@ -24588,7 +24588,7 @@ concat.tot.len165:                                ; preds = %cat.sum.len159
   store i64 %str.tagged.len184, ptr %concat.str180, align 8
   %str.build.data.gep185 = getelementptr inbounds { i64, ptr }, ptr %concat.str180, i32 0, i32 1
   store ptr %concat.buf169, ptr %str.build.data.gep185, align 8
-  %call.res186 = call i64 @"pkg::#sh"(ptr %concat.str180)
+  %call.res186 = call i64 @"pkg::sh"(ptr %concat.str180)
   br label %choice.exit
 
 str_overflow_abort166:                            ; preds = %cat.sum.len159
@@ -24607,7 +24607,7 @@ choice.then188:                                   ; preds = %choice.exit
   br i1 %tag.fast.ok201, label %str_ok197, label %tag.slow_check202
 
 choice.else189:                                   ; preds = %choice.exit
-  %call.res284 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str)
+  %call.res284 = call { i64, ptr } @"pkg::sq"(ptr %concat.str)
   %arena.cur285 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc286 = call ptr @dva_arena_alloc(ptr %arena.cur285, i64 16)
   store { i64, ptr } %call.res284, ptr %ret.ub.alloc286, align 8
@@ -24947,7 +24947,7 @@ choice.then411:                                   ; preds = %str_ok382, %str.eq.
   br i1 %tag.fast.ok425, label %str_ok421, label %tag.slow_check426
 
 choice.else412:                                   ; preds = %str.eq.merge
-  %call.res554 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str)
+  %call.res554 = call { i64, ptr } @"pkg::sq"(ptr %concat.str)
   %arena.cur555 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc556 = call ptr @dva_arena_alloc(ptr %arena.cur555, i64 16)
   store { i64, ptr } %call.res554, ptr %ret.ub.alloc556, align 8
@@ -25192,7 +25192,7 @@ concat.tot.len585:                                ; preds = %cat.sum.len579
   store i64 %str.tagged.len600, ptr %concat.str596, align 8
   %str.build.data.gep601 = getelementptr inbounds { i64, ptr }, ptr %concat.str596, i32 0, i32 1
   store ptr %concat.buf589, ptr %str.build.data.gep601, align 8
-  %call.res602 = call i64 @"pkg::#sh"(ptr %concat.str596)
+  %call.res602 = call i64 @"pkg::sh"(ptr %concat.str596)
   %cmptmp603 = icmp eq i64 %call.res602, 0
   br i1 %cmptmp603, label %choice.then605, label %choice.else606
 
@@ -25217,7 +25217,7 @@ choice.else606:                                   ; preds = %concat.tot.len585
   %ret.ub.alloc703 = call ptr @dva_arena_alloc(ptr %arena.cur702, i64 16)
   store { i64, ptr } %call.res701, ptr %ret.ub.alloc703, align 8
   %call.res705 = call i1 @"pkg::#mkdir_p"(ptr %ret.ub.alloc703)
-  %call.res708 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str)
+  %call.res708 = call { i64, ptr } @"pkg::sq"(ptr %concat.str)
   %arena.cur709 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc710 = call ptr @dva_arena_alloc(ptr %arena.cur709, i64 16)
   store { i64, ptr } %call.res708, ptr %ret.ub.alloc710, align 8
@@ -25351,7 +25351,7 @@ str_overflow_abort683:                            ; preds = %cat.sum.len676
 str_ok715:                                        ; preds = %tag.slow_check720, %choice.else606
   %cat.seg721 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc710, i32 0, i32 1
   %cat.seg722 = load ptr, ptr %cat.seg721, align 8
-  %call.res725 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc703)
+  %call.res725 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc703)
   %arena.cur726 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc727 = call ptr @dva_arena_alloc(ptr %arena.cur726, i64 16)
   store { i64, ptr } %call.res725, ptr %ret.ub.alloc727, align 8
@@ -25445,7 +25445,7 @@ concat.tot.len768:                                ; preds = %cat.sum.len762
   store i64 %str.tagged.len787, ptr %concat.str783, align 8
   %str.build.data.gep788 = getelementptr inbounds { i64, ptr }, ptr %concat.str783, i32 0, i32 1
   store ptr %concat.buf772, ptr %str.build.data.gep788, align 8
-  %call.res789 = call i64 @"pkg::#sh"(ptr %concat.str783)
+  %call.res789 = call i64 @"pkg::sh"(ptr %concat.str783)
   %arg.str.ptr792 = load ptr, ptr %str.build.data.gep, align 8
   %arg.str.ptr794 = load i64, ptr %concat.str, align 8
   %arg.str.ptr795 = and i64 %arg.str.ptr794, 281474976710655
@@ -25495,7 +25495,7 @@ str_overflow_abort813:                            ; preds = %nulcopy807
   unreachable
 
 choice.then822:                                   ; preds = %nulmerge808
-  %call.res826 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc703)
+  %call.res826 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc703)
   %arena.cur827 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc828 = call ptr @dva_arena_alloc(ptr %arena.cur827, i64 16)
   store { i64, ptr } %call.res826, ptr %ret.ub.alloc828, align 8
@@ -25555,7 +25555,7 @@ concat.tot.len853:                                ; preds = %concat.sum.len847
   store i64 %str.tagged.len865, ptr %concat.str861, align 8
   %str.build.data.gep866 = getelementptr inbounds { i64, ptr }, ptr %concat.str861, i32 0, i32 1
   store ptr %concat.buf857, ptr %str.build.data.gep866, align 8
-  %call.res867 = call i64 @"pkg::#sh"(ptr %concat.str861)
+  %call.res867 = call i64 @"pkg::sh"(ptr %concat.str861)
   %cat.seg871 = load i64, ptr %1, align 8
   %cat.seg872 = and i64 %cat.seg871, 281474976710655
   %str.tag873 = lshr i64 %cat.seg871, 48
@@ -25657,7 +25657,7 @@ str_overflow_abort918:                            ; preds = %cat.sum.len911
   unreachable
 
 choice.then946:                                   ; preds = %choice.else823
-  %call.res950 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc703)
+  %call.res950 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc703)
   %arena.cur951 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc952 = call ptr @dva_arena_alloc(ptr %arena.cur951, i64 16)
   store { i64, ptr } %call.res950, ptr %ret.ub.alloc952, align 8
@@ -25715,7 +25715,7 @@ concat.tot.len977:                                ; preds = %concat.sum.len971
   store i64 %str.tagged.len989, ptr %concat.str985, align 8
   %str.build.data.gep990 = getelementptr inbounds { i64, ptr }, ptr %concat.str985, i32 0, i32 1
   store ptr %concat.buf981, ptr %str.build.data.gep990, align 8
-  %call.res991 = call i64 @"pkg::#sh"(ptr %concat.str985)
+  %call.res991 = call i64 @"pkg::sh"(ptr %concat.str985)
   %cat.seg995 = load i64, ptr %1, align 8
   %cat.seg996 = and i64 %cat.seg995, 281474976710655
   %str.tag997 = lshr i64 %cat.seg995, 48
@@ -25788,7 +25788,7 @@ str_overflow_abort1023:                           ; preds = %cat.sum.len1016
   unreachable
 
 choice.then1045:                                  ; preds = %choice.else947
-  %call.res1049 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc703)
+  %call.res1049 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc703)
   %arena.cur1050 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1051 = call ptr @dva_arena_alloc(ptr %arena.cur1050, i64 16)
   store { i64, ptr } %call.res1049, ptr %ret.ub.alloc1051, align 8
@@ -25849,7 +25849,7 @@ concat.tot.len1076:                               ; preds = %concat.sum.len1070
   store i64 %str.tagged.len1088, ptr %concat.str1084, align 8
   %str.build.data.gep1089 = getelementptr inbounds { i64, ptr }, ptr %concat.str1084, i32 0, i32 1
   store ptr %concat.buf1080, ptr %str.build.data.gep1089, align 8
-  %call.res1090 = call i64 @"pkg::#sh"(ptr %concat.str1084)
+  %call.res1090 = call i64 @"pkg::sh"(ptr %concat.str1084)
   br label %choice.exit190
 
 str_overflow_abort1077:                           ; preds = %concat.sum.len1070
@@ -26050,7 +26050,7 @@ nulcopy1233:                                      ; preds = %str_ok1223
 nulmerge1234:                                     ; preds = %str_ok1223, %nulcopy.len1238
   %arg.str.ptr1244 = phi ptr [ %nulcopy.buf1242, %nulcopy.len1238 ], [ %arg.str.ptr1218, %str_ok1223 ]
   %call.res1245 = call i64 @rename(ptr %arg.str.ptr1215, ptr %arg.str.ptr1244)
-  %call.res1247 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc703)
+  %call.res1247 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc703)
   %arena.cur1248 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1249 = call ptr @dva_arena_alloc(ptr %arena.cur1248, i64 16)
   store { i64, ptr } %call.res1247, ptr %ret.ub.alloc1249, align 8
@@ -26113,7 +26113,7 @@ concat.tot.len1274:                               ; preds = %concat.sum.len1268
   store i64 %str.tagged.len1286, ptr %concat.str1282, align 8
   %str.build.data.gep1287 = getelementptr inbounds { i64, ptr }, ptr %concat.str1282, i32 0, i32 1
   store ptr %concat.buf1278, ptr %str.build.data.gep1287, align 8
-  %call.res1288 = call i64 @"pkg::#sh"(ptr %concat.str1282)
+  %call.res1288 = call i64 @"pkg::sh"(ptr %concat.str1282)
   br label %choice.exit1127
 
 str_overflow_abort1275:                           ; preds = %concat.sum.len1268
@@ -26125,7 +26125,7 @@ or.405.else:                                      ; preds = %choice.exit1127
   br i1 %call.res1294, label %choice.exit190, label %choice.else1296
 
 choice.else1296:                                  ; preds = %or.405.else
-  %call.res1300 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc703)
+  %call.res1300 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc703)
   %arena.cur1301 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1302 = call ptr @dva_arena_alloc(ptr %arena.cur1301, i64 16)
   store { i64, ptr } %call.res1300, ptr %ret.ub.alloc1302, align 8
@@ -26176,7 +26176,7 @@ concat.tot.len1327:                               ; preds = %concat.sum.len1321
   store i64 %str.tagged.len1339, ptr %concat.str1335, align 8
   %str.build.data.gep1340 = getelementptr inbounds { i64, ptr }, ptr %concat.str1335, i32 0, i32 1
   store ptr %concat.buf1331, ptr %str.build.data.gep1340, align 8
-  %call.res1341 = call i64 @"pkg::#sh"(ptr %concat.str1335)
+  %call.res1341 = call i64 @"pkg::sh"(ptr %concat.str1335)
   %cat.seg1345 = load i64, ptr %1, align 8
   %cat.seg1346 = and i64 %cat.seg1345, 281474976710655
   %str.tag1347 = lshr i64 %cat.seg1345, 48
@@ -32388,7 +32388,7 @@ choice.exit347:                                   ; preds = %str.eq.merge368, %c
   %arena.cur381 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc382 = call ptr @dva_arena_alloc(ptr %arena.cur381, i64 16)
   store { i64, ptr } %call.res380, ptr %ret.ub.alloc382, align 8
-  %call.res385 = call { i64, ptr } @"pkg::#sq"(ptr %0)
+  %call.res385 = call { i64, ptr } @"pkg::sq"(ptr %0)
   %arena.cur386 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc387 = call ptr @dva_arena_alloc(ptr %arena.cur386, i64 16)
   store { i64, ptr } %call.res385, ptr %ret.ub.alloc387, align 8
@@ -32428,7 +32428,7 @@ choice.then376:                                   ; preds = %str.eq.merge368
 str_ok392:                                        ; preds = %tag.slow_check397, %choice.exit347
   %cat.seg398 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc387, i32 0, i32 1
   %cat.seg399 = load ptr, ptr %cat.seg398, align 8
-  %call.res402 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc382)
+  %call.res402 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc382)
   %arena.cur403 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc404 = call ptr @dva_arena_alloc(ptr %arena.cur403, i64 16)
   store { i64, ptr } %call.res402, ptr %ret.ub.alloc404, align 8
@@ -32553,7 +32553,7 @@ concat.tot.len466:                                ; preds = %cat.sum.len460
   store i64 %str.tagged.len487, ptr %concat.str483, align 8
   %str.build.data.gep488 = getelementptr inbounds { i64, ptr }, ptr %concat.str483, i32 0, i32 1
   store ptr %concat.buf470, ptr %str.build.data.gep488, align 8
-  %call.res490 = call i64 @"pkg::#sh"(ptr %concat.str483)
+  %call.res490 = call i64 @"pkg::sh"(ptr %concat.str483)
   %cmptmp492 = icmp ne i64 %call.res490, 0
   br i1 %cmptmp492, label %choice.then493, label %choice.else494
 
@@ -33110,7 +33110,7 @@ choice.exit181:                                   ; preds = %idx_ok172
 
 choice.then224:                                   ; preds = %choice.exit153
   %fld.load = load ptr, ptr %call.res223, align 8
-  %call.res229 = call { i64, ptr } @"pkg::#sq"(ptr %fld.load)
+  %call.res229 = call { i64, ptr } @"pkg::sq"(ptr %fld.load)
   %arena.cur230 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc = call ptr @dva_arena_alloc(ptr %arena.cur230, i64 16)
   store { i64, ptr } %call.res229, ptr %ret.ub.alloc, align 8
@@ -33266,7 +33266,7 @@ idx_oob349:                                       ; preds = %or.525.else
   unreachable
 
 choice.then357:                                   ; preds = %and.524.exit
-  %call.res362 = call { i64, ptr } @"pkg::#sq"(ptr %3)
+  %call.res362 = call { i64, ptr } @"pkg::sq"(ptr %3)
   %arena.cur363 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc364 = call ptr @dva_arena_alloc(ptr %arena.cur363, i64 16)
   store { i64, ptr } %call.res362, ptr %ret.ub.alloc364, align 8
@@ -33336,7 +33336,7 @@ str_overflow_abort404:                            ; preds = %b.grow2388
   unreachable
 
 choice.then419:                                   ; preds = %choice.else358
-  %call.res424 = call { i64, ptr } @"pkg::#sq"(ptr %4)
+  %call.res424 = call { i64, ptr } @"pkg::sq"(ptr %4)
   %arena.cur425 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc426 = call ptr @dva_arena_alloc(ptr %arena.cur425, i64 16)
   store { i64, ptr } %call.res424, ptr %ret.ub.alloc426, align 8
@@ -33406,7 +33406,7 @@ str_overflow_abort466:                            ; preds = %b.grow2450
   unreachable
 
 choice.then481:                                   ; preds = %choice.else420
-  %call.res486 = call { i64, ptr } @"pkg::#sq"(ptr %3)
+  %call.res486 = call { i64, ptr } @"pkg::sq"(ptr %3)
   %arena.cur487 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc488 = call ptr @dva_arena_alloc(ptr %arena.cur487, i64 16)
   store { i64, ptr } %call.res486, ptr %ret.ub.alloc488, align 8
@@ -33476,7 +33476,7 @@ str_overflow_abort528:                            ; preds = %b.grow2512
   unreachable
 
 choice.then543:                                   ; preds = %choice.else482
-  %call.res548 = call { i64, ptr } @"pkg::#sq"(ptr %4)
+  %call.res548 = call { i64, ptr } @"pkg::sq"(ptr %4)
   %arena.cur549 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc550 = call ptr @dva_arena_alloc(ptr %arena.cur549, i64 16)
   store { i64, ptr } %call.res548, ptr %ret.ub.alloc550, align 8
@@ -47015,7 +47015,7 @@ str.eq.merge:                                     ; preds = %str_ok130, %str.eq.
   %arena.cur145 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc146 = call ptr @dva_arena_alloc(ptr %arena.cur145, i64 16)
   store { i64, ptr } %call.res144, ptr %ret.ub.alloc146, align 8
-  %call.res148 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc146)
+  %call.res148 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc146)
   %arena.cur149 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc150 = call ptr @dva_arena_alloc(ptr %arena.cur149, i64 16)
   store { i64, ptr } %call.res148, ptr %ret.ub.alloc150, align 8
@@ -47031,7 +47031,7 @@ str.eq.merge:                                     ; preds = %str_ok130, %str.eq.
 str_ok155:                                        ; preds = %tag.slow_check160, %str.eq.merge
   %cat.seg161 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc150, i32 0, i32 1
   %cat.seg162 = load ptr, ptr %cat.seg161, align 8
-  %call.res165 = call { i64, ptr } @"pkg::#sq"(ptr %fld.load3)
+  %call.res165 = call { i64, ptr } @"pkg::sq"(ptr %fld.load3)
   %arena.cur166 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc167 = call ptr @dva_arena_alloc(ptr %arena.cur166, i64 16)
   store { i64, ptr } %call.res165, ptr %ret.ub.alloc167, align 8
@@ -47051,7 +47051,7 @@ tag.slow_check160:                                ; preds = %str.eq.merge
 str_ok172:                                        ; preds = %tag.slow_check177, %str_ok155
   %cat.seg178 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc167, i32 0, i32 1
   %cat.seg179 = load ptr, ptr %cat.seg178, align 8
-  %call.res182 = call { i64, ptr } @"pkg::#sq"(ptr %.choice.res)
+  %call.res182 = call { i64, ptr } @"pkg::sq"(ptr %.choice.res)
   %arena.cur183 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc184 = call ptr @dva_arena_alloc(ptr %arena.cur183, i64 16)
   store { i64, ptr } %call.res182, ptr %ret.ub.alloc184, align 8
@@ -47170,7 +47170,7 @@ a.after:                                          ; preds = %a.create, %concat.t
   %arena.cur255 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc256 = call ptr @dva_arena_alloc(ptr %arena.cur255, i64 16)
   store { i64, ptr } %call.res254, ptr %ret.ub.alloc256, align 8
-  %call.res258 = call i64 @"pkg::#sh"(ptr %ret.ub.alloc256)
+  %call.res258 = call i64 @"pkg::sh"(ptr %ret.ub.alloc256)
   %concat.lhs261 = load i64, ptr %.choice.res, align 8
   %concat.lhs262 = and i64 %concat.lhs261, 281474976710655
   %str.tag263 = lshr i64 %concat.lhs261, 48
@@ -47885,7 +47885,7 @@ loop.body.519:                                    ; preds = %loop.header.519
   br i1 %a.null841, label %a.create842, label %a.check852
 
 loop.exit.519:                                    ; preds = %loop.header.519
-  %call.res871 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc458)
+  %call.res871 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc458)
   %arena.cur872 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc873 = call ptr @dva_arena_alloc(ptr %arena.cur872, i64 16)
   store { i64, ptr } %call.res871, ptr %ret.ub.alloc873, align 8
@@ -47936,7 +47936,7 @@ a.store854:                                       ; preds = %a.grow853, %a.check
 str_ok878:                                        ; preds = %tag.slow_check883, %loop.exit.519
   %cat.seg884 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc873, i32 0, i32 1
   %cat.seg885 = load ptr, ptr %cat.seg884, align 8
-  %call.res888 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc580)
+  %call.res888 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc580)
   %arena.cur889 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc890 = call ptr @dva_arena_alloc(ptr %arena.cur889, i64 16)
   store { i64, ptr } %call.res888, ptr %ret.ub.alloc890, align 8
@@ -47956,7 +47956,7 @@ tag.slow_check883:                                ; preds = %loop.exit.519
 str_ok895:                                        ; preds = %tag.slow_check900, %str_ok878
   %cat.seg901 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc890, i32 0, i32 1
   %cat.seg902 = load ptr, ptr %cat.seg901, align 8
-  %call.res905 = call { i64, ptr } @"pkg::#sq"(ptr %choice.res594)
+  %call.res905 = call { i64, ptr } @"pkg::sq"(ptr %choice.res594)
   %arena.cur906 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc907 = call ptr @dva_arena_alloc(ptr %arena.cur906, i64 16)
   store { i64, ptr } %call.res905, ptr %ret.ub.alloc907, align 8
@@ -48181,7 +48181,7 @@ choice.exit1053:                                  ; preds = %concat.tot.len1099,
 
 str_ok1059:                                       ; preds = %tag.slow_check1064, %choice.then1052
   %cat.seg1066 = load ptr, ptr %str.build.data.gep968, align 8
-  %call.res1069 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc1026)
+  %call.res1069 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc1026)
   %arena.cur1070 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1071 = call ptr @dva_arena_alloc(ptr %arena.cur1070, i64 16)
   store { i64, ptr } %call.res1069, ptr %ret.ub.alloc1071, align 8
@@ -48273,7 +48273,7 @@ a.after1124:                                      ; preds = %a.create1123, %choi
   %arena.cur1135 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1136 = call ptr @dva_arena_alloc(ptr %arena.cur1135, i64 16)
   store { i64, ptr } %call.res1134, ptr %ret.ub.alloc1136, align 8
-  %call.res1138 = call i64 @"pkg::#sh"(ptr %ret.ub.alloc1136)
+  %call.res1138 = call i64 @"pkg::sh"(ptr %ret.ub.alloc1136)
   %concat.lhs1141 = load i64, ptr %choice.res594, align 8
   %concat.lhs1142 = and i64 %concat.lhs1141, 281474976710655
   %str.tag1143 = lshr i64 %concat.lhs1141, 48
@@ -48422,7 +48422,7 @@ choice.exit1255:                                  ; preds = %choice.else1259, %c
   %arena.cur1281 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1282 = call ptr @dva_arena_alloc(ptr %arena.cur1281, i64 16)
   store { i64, ptr } %call.res1280, ptr %ret.ub.alloc1282, align 8
-  %call.res1285 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc1282)
+  %call.res1285 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc1282)
   %arena.cur1286 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1287 = call ptr @dva_arena_alloc(ptr %arena.cur1286, i64 16)
   store { i64, ptr } %call.res1285, ptr %ret.ub.alloc1287, align 8
@@ -48446,7 +48446,7 @@ choice.else1259:                                  ; preds = %choice.then1253
 str_ok1292:                                       ; preds = %tag.slow_check1297, %choice.exit1255
   %cat.seg1298 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc1287, i32 0, i32 1
   %cat.seg1299 = load ptr, ptr %cat.seg1298, align 8
-  %call.res1302 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc1222)
+  %call.res1302 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc1222)
   %arena.cur1303 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1304 = call ptr @dva_arena_alloc(ptr %arena.cur1303, i64 16)
   store { i64, ptr } %call.res1302, ptr %ret.ub.alloc1304, align 8
@@ -48466,7 +48466,7 @@ tag.slow_check1297:                               ; preds = %choice.exit1255
 str_ok1309:                                       ; preds = %tag.slow_check1314, %str_ok1292
   %cat.seg1315 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc1304, i32 0, i32 1
   %cat.seg1316 = load ptr, ptr %cat.seg1315, align 8
-  %call.res1319 = call { i64, ptr } @"pkg::#sq"(ptr %choice.res1279)
+  %call.res1319 = call { i64, ptr } @"pkg::sq"(ptr %choice.res1279)
   %arena.cur1320 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1321 = call ptr @dva_arena_alloc(ptr %arena.cur1320, i64 16)
   store { i64, ptr } %call.res1319, ptr %ret.ub.alloc1321, align 8
@@ -48585,7 +48585,7 @@ a.after1391:                                      ; preds = %a.create1390, %conc
   %arena.cur1402 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1403 = call ptr @dva_arena_alloc(ptr %arena.cur1402, i64 16)
   store { i64, ptr } %call.res1401, ptr %ret.ub.alloc1403, align 8
-  %call.res1406 = call i64 @"pkg::#sh"(ptr %ret.ub.alloc1403)
+  %call.res1406 = call i64 @"pkg::sh"(ptr %ret.ub.alloc1403)
   %concat.lhs1410 = load i64, ptr %choice.res1279, align 8
   %concat.lhs1411 = and i64 %concat.lhs1410, 281474976710655
   %str.tag1412 = lshr i64 %concat.lhs1410, 48
@@ -48938,7 +48938,7 @@ choice.then:                                      ; preds = %str.eq.merge
   %cat.seg8 = and i64 %cat.seg7, 281474976710655
   %cat.seg9 = getelementptr inbounds { i64, ptr }, ptr %0, i32 0, i32 1
   %cat.seg10 = load ptr, ptr %cat.seg9, align 8
-  %call.res = call { i64, ptr } @"pkg::#sq"(ptr %1)
+  %call.res = call { i64, ptr } @"pkg::sq"(ptr %1)
   %call.res.fca.0.extract = extractvalue { i64, ptr } %call.res, 0
   %call.res.fca.1.extract = extractvalue { i64, ptr } %call.res, 1
   %cat.seg14 = and i64 %call.res.fca.0.extract, 281474976710655
@@ -49046,7 +49046,7 @@ choice.exit58:                                    ; preds = %idx_ok, %concat.tot
   %cat.seg88 = and i64 %cat.seg87, 281474976710655
   %cat.seg89 = getelementptr inbounds { i64, ptr }, ptr %"var.cmd'.0", i32 0, i32 1
   %cat.seg90 = load ptr, ptr %cat.seg89, align 8
-  %call.res93 = call { i64, ptr } @"pkg::#sq"(ptr %choice.res)
+  %call.res93 = call { i64, ptr } @"pkg::sq"(ptr %choice.res)
   %call.res93.fca.0.extract = extractvalue { i64, ptr } %call.res93, 0
   %call.res93.fca.1.extract = extractvalue { i64, ptr } %call.res93, 1
   %cat.seg97 = and i64 %call.res93.fca.0.extract, 281474976710655
@@ -49159,7 +49159,7 @@ loop.body.514:                                    ; preds = %loop.header.514
   %cat.seg139 = and i64 %cat.seg138, 281474976710655
   %cat.seg140 = getelementptr inbounds { i64, ptr }, ptr %"var.cmd'.2", i32 0, i32 1
   %cat.seg141 = load ptr, ptr %cat.seg140, align 8
-  %call.res144 = call { i64, ptr } @"pkg::#sq"(ptr %slot.i2p)
+  %call.res144 = call { i64, ptr } @"pkg::sq"(ptr %slot.i2p)
   %call.res144.fca.0.extract = extractvalue { i64, ptr } %call.res144, 0
   %call.res144.fca.1.extract = extractvalue { i64, ptr } %call.res144, 1
   %cat.seg148 = and i64 %call.res144.fca.0.extract, 281474976710655
@@ -49237,7 +49237,7 @@ choice.then198:                                   ; preds = %str.eq.merge190
   %cat.seg204 = getelementptr inbounds { i64, ptr }, ptr %"var.cmd'.2", i32 0, i32 1
   %cat.seg205 = load ptr, ptr %cat.seg204, align 8
   %fld.load209 = load ptr, ptr %fld.gep, align 8
-  %call.res210 = call { i64, ptr } @"pkg::#sq"(ptr %fld.load209)
+  %call.res210 = call { i64, ptr } @"pkg::sq"(ptr %fld.load209)
   %call.res210.fca.0.extract = extractvalue { i64, ptr } %call.res210, 0
   %call.res210.fca.1.extract = extractvalue { i64, ptr } %call.res210, 1
   %cat.seg214 = and i64 %call.res210.fca.0.extract, 281474976710655
@@ -50084,7 +50084,7 @@ concat.tot.len32:                                 ; preds = %cat.sum.len27
   %var.load42 = load i64, ptr @"var.pkg::#tmp_seq", align 8
   %addtmp = add i64 %var.load42, 1
   store i64 %addtmp, ptr @"var.pkg::#tmp_seq", align 8
-  %call.res45 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str)
+  %call.res45 = call { i64, ptr } @"pkg::sq"(ptr %concat.str)
   %arena.cur46 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc = call ptr @dva_arena_alloc(ptr %arena.cur46, i64 16)
   store { i64, ptr } %call.res45, ptr %ret.ub.alloc, align 8
@@ -50152,7 +50152,7 @@ concat.tot.len74:                                 ; preds = %cat.sum.len68
   store i64 %str.tagged.len89, ptr %concat.str85, align 8
   %str.build.data.gep90 = getelementptr inbounds { i64, ptr }, ptr %concat.str85, i32 0, i32 1
   store ptr %concat.buf78, ptr %str.build.data.gep90, align 8
-  %call.res91 = call i64 @"pkg::#sh"(ptr %concat.str85)
+  %call.res91 = call i64 @"pkg::sh"(ptr %concat.str85)
   %call.res93 = call { i64, ptr } @"pkg::#read_text"(ptr %concat.str)
   %ret.niche.data = extractvalue { i64, ptr } %call.res93, 1
   %ret.niche.ok = icmp ne ptr %ret.niche.data, null
@@ -54556,7 +54556,7 @@ choice.then45:                                    ; preds = %choice.exit40
 
 choice.else:                                      ; preds = %choice.exit40
   %ram.pay63 = extractvalue { i1, i64 } %call.res43, 1
-  %call.res67 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc25)
+  %call.res67 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc25)
   %call.res67.fca.0.extract = extractvalue { i64, ptr } %call.res67, 0
   %call.res67.fca.1.extract = extractvalue { i64, ptr } %call.res67, 1
   %concat.rhs71 = and i64 %call.res67.fca.0.extract, 281474976710655
@@ -54611,7 +54611,7 @@ concat.tot.len77:                                 ; preds = %concat.sum.len74
   store i64 %sum, ptr %concat.str, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   store ptr %concat.buf, ptr %str.build.data.gep, align 8
-  %call.res82 = call i64 @"pkg::#sh"(ptr %concat.str)
+  %call.res82 = call i64 @"pkg::sh"(ptr %concat.str)
   br label %choice.exit46
 
 str_overflow_abort78:                             ; preds = %concat.sum.len74
@@ -54820,7 +54820,7 @@ and.555.exit:                                     ; preds = %ret.niche.done, %an
   br i1 %nottmp102, label %choice.then103, label %choice.exit104
 
 choice.then103:                                   ; preds = %and.555.exit
-  %call.res106 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc73)
+  %call.res106 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc73)
   %arena.cur107 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc108 = call ptr @dva_arena_alloc(ptr %arena.cur107, i64 16)
   store { i64, ptr } %call.res106, ptr %ret.ub.alloc108, align 8
@@ -54887,7 +54887,7 @@ concat.tot.len130:                                ; preds = %concat.sum.len124
   store i64 %str.tagged.len141, ptr %concat.str137, align 8
   %str.build.data.gep142 = getelementptr inbounds { i64, ptr }, ptr %concat.str137, i32 0, i32 1
   store ptr %concat.buf134, ptr %str.build.data.gep142, align 8
-  %call.res143 = call i64 @"pkg::#sh"(ptr %concat.str137)
+  %call.res143 = call i64 @"pkg::sh"(ptr %concat.str137)
   br label %common.ret
 
 str_overflow_abort131:                            ; preds = %concat.sum.len124
@@ -54970,7 +54970,7 @@ str_overflow_abort193:                            ; preds = %nulcopy187
   unreachable
 
 choice.then201:                                   ; preds = %nulmerge188
-  %call.res204 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc73)
+  %call.res204 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc73)
   %arena.cur205 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc206 = call ptr @dva_arena_alloc(ptr %arena.cur205, i64 16)
   store { i64, ptr } %call.res204, ptr %ret.ub.alloc206, align 8
@@ -55021,7 +55021,7 @@ concat.tot.len231:                                ; preds = %concat.sum.len225
   store i64 %str.tagged.len243, ptr %concat.str239, align 8
   %str.build.data.gep244 = getelementptr inbounds { i64, ptr }, ptr %concat.str239, i32 0, i32 1
   store ptr %concat.buf235, ptr %str.build.data.gep244, align 8
-  %call.res245 = call i64 @"pkg::#sh"(ptr %concat.str239)
+  %call.res245 = call i64 @"pkg::sh"(ptr %concat.str239)
   br label %common.ret
 
 str_overflow_abort232:                            ; preds = %concat.sum.len225
@@ -55124,7 +55124,7 @@ choice.then62:                                    ; preds = %choice.exit57
 
 choice.else:                                      ; preds = %choice.exit57
   %ram.pay80 = extractvalue { i1, i64 } %call.res60, 1
-  %call.res84 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc41)
+  %call.res84 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc41)
   %call.res84.fca.0.extract = extractvalue { i64, ptr } %call.res84, 0
   %call.res84.fca.1.extract = extractvalue { i64, ptr } %call.res84, 1
   %concat.rhs88 = and i64 %call.res84.fca.0.extract, 281474976710655
@@ -55194,7 +55194,7 @@ concat.tot.len98:                                 ; preds = %concat.sum.len93
   store i64 %sum91, ptr %concat.str, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   store ptr %concat.buf, ptr %str.build.data.gep, align 8
-  %call.res103 = call i64 @"pkg::#sh"(ptr %concat.str)
+  %call.res103 = call i64 @"pkg::sh"(ptr %concat.str)
   br label %choice.exit63
 
 str_overflow_abort99:                             ; preds = %concat.sum.len93
@@ -57807,7 +57807,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep226 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc223, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep226, align 8
   %err.line.gep227 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc223, i32 0, i32 3
-  store i64 2163, ptr %err.line.gep227, align 8
+  store i64 2165, ptr %err.line.gep227, align 8
   %err.col.gep228 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc223, i32 0, i32 4
   store i64 40, ptr %err.col.gep228, align 8
   %err.ctx.gep229 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc223, i32 0, i32 5
@@ -57854,7 +57854,7 @@ a.rd.err.oob278:                                  ; preds = %a.rd.check275
   %err.file.gep303 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc300, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep303, align 8
   %err.line.gep304 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc300, i32 0, i32 3
-  store i64 2165, ptr %err.line.gep304, align 8
+  store i64 2167, ptr %err.line.gep304, align 8
   %err.col.gep305 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc300, i32 0, i32 4
   store i64 43, ptr %err.col.gep305, align 8
   %err.ctx.gep306 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc300, i32 0, i32 5
@@ -57917,7 +57917,7 @@ a.rd.err.oob382:                                  ; preds = %a.rd.check379
   %err.file.gep407 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc404, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep407, align 8
   %err.line.gep408 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc404, i32 0, i32 3
-  store i64 2172, ptr %err.line.gep408, align 8
+  store i64 2174, ptr %err.line.gep408, align 8
   %err.col.gep409 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc404, i32 0, i32 4
   store i64 44, ptr %err.col.gep409, align 8
   %err.ctx.gep410 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc404, i32 0, i32 5
@@ -58025,7 +58025,7 @@ a.rd.err.oob515:                                  ; preds = %a.rd.check512
   %err.file.gep540 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc537, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep540, align 8
   %err.line.gep541 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc537, i32 0, i32 3
-  store i64 2180, ptr %err.line.gep541, align 8
+  store i64 2182, ptr %err.line.gep541, align 8
   %err.col.gep542 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc537, i32 0, i32 4
   store i64 49, ptr %err.col.gep542, align 8
   %err.ctx.gep543 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc537, i32 0, i32 5
@@ -58062,7 +58062,7 @@ a.rd.err.oob581:                                  ; preds = %a.rd.done516
   %err.file.gep606 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc603, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep606, align 8
   %err.line.gep607 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc603, i32 0, i32 3
-  store i64 2181, ptr %err.line.gep607, align 8
+  store i64 2183, ptr %err.line.gep607, align 8
   %err.col.gep608 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc603, i32 0, i32 4
   store i64 50, ptr %err.col.gep608, align 8
   %err.ctx.gep609 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc603, i32 0, i32 5
@@ -58200,7 +58200,7 @@ a.rd.err.oob761:                                  ; preds = %a.rd.check758
   %err.file.gep786 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc783, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep786, align 8
   %err.line.gep787 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc783, i32 0, i32 3
-  store i64 2189, ptr %err.line.gep787, align 8
+  store i64 2191, ptr %err.line.gep787, align 8
   %err.col.gep788 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc783, i32 0, i32 4
   store i64 55, ptr %err.col.gep788, align 8
   %err.ctx.gep789 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc783, i32 0, i32 5
@@ -60517,7 +60517,7 @@ concat.tot.len58:                                 ; preds = %cat.sum.len52
   store i64 %str.tagged.len73, ptr %concat.str69, align 8
   %str.build.data.gep74 = getelementptr inbounds { i64, ptr }, ptr %concat.str69, i32 0, i32 1
   store ptr %concat.buf62, ptr %str.build.data.gep74, align 8
-  %call.res76 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc)
+  %call.res76 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc)
   %arena.cur77 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc78 = call ptr @dva_arena_alloc(ptr %arena.cur77, i64 16)
   store { i64, ptr } %call.res76, ptr %ret.ub.alloc78, align 8
@@ -60537,7 +60537,7 @@ str_overflow_abort59:                             ; preds = %cat.sum.len52
 str_ok83:                                         ; preds = %tag.slow_check88, %concat.tot.len58
   %cat.seg89 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc78, i32 0, i32 1
   %cat.seg90 = load ptr, ptr %cat.seg89, align 8
-  %call.res93 = call { i64, ptr } @"pkg::#sq"(ptr %fld.load3)
+  %call.res93 = call { i64, ptr } @"pkg::sq"(ptr %fld.load3)
   %arena.cur94 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc95 = call ptr @dva_arena_alloc(ptr %arena.cur94, i64 16)
   store { i64, ptr } %call.res93, ptr %ret.ub.alloc95, align 8
@@ -60557,7 +60557,7 @@ tag.slow_check88:                                 ; preds = %concat.tot.len58
 str_ok100:                                        ; preds = %tag.slow_check105, %str_ok83
   %cat.seg106 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc95, i32 0, i32 1
   %cat.seg107 = load ptr, ptr %cat.seg106, align 8
-  %call.res110 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str69)
+  %call.res110 = call { i64, ptr } @"pkg::sq"(ptr %concat.str69)
   %arena.cur111 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc112 = call ptr @dva_arena_alloc(ptr %arena.cur111, i64 16)
   store { i64, ptr } %call.res110, ptr %ret.ub.alloc112, align 8
@@ -60664,7 +60664,7 @@ concat.tot.len152:                                ; preds = %cat.sum.len146
   %arena.cur180 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc181 = call ptr @dva_arena_alloc(ptr %arena.cur180, i64 16)
   store { i64, ptr } %call.res179, ptr %ret.ub.alloc181, align 8
-  %call.res183 = call i64 @"pkg::#sh"(ptr %ret.ub.alloc181)
+  %call.res183 = call i64 @"pkg::sh"(ptr %ret.ub.alloc181)
   %arg.str.ptr185 = load ptr, ptr %str.build.data.gep74, align 8
   %arg.str.ptr187 = load i64, ptr %concat.str69, align 8
   %arg.str.ptr188 = and i64 %arg.str.ptr187, 281474976710655
@@ -61173,7 +61173,7 @@ concat.tot.len553:                                ; preds = %cat.sum.len547
   store i64 %str.tagged.len572, ptr %concat.str568, align 8
   %str.build.data.gep573 = getelementptr inbounds { i64, ptr }, ptr %concat.str568, i32 0, i32 1
   store ptr %concat.buf557, ptr %str.build.data.gep573, align 8
-  %call.res576 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc325)
+  %call.res576 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc325)
   %arena.cur577 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc578 = call ptr @dva_arena_alloc(ptr %arena.cur577, i64 16)
   store { i64, ptr } %call.res576, ptr %ret.ub.alloc578, align 8
@@ -61193,7 +61193,7 @@ str_overflow_abort554:                            ; preds = %cat.sum.len547
 str_ok583:                                        ; preds = %tag.slow_check588, %concat.tot.len553
   %cat.seg589 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc578, i32 0, i32 1
   %cat.seg590 = load ptr, ptr %cat.seg589, align 8
-  %call.res593 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc383)
+  %call.res593 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc383)
   %arena.cur594 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc595 = call ptr @dva_arena_alloc(ptr %arena.cur594, i64 16)
   store { i64, ptr } %call.res593, ptr %ret.ub.alloc595, align 8
@@ -61213,7 +61213,7 @@ tag.slow_check588:                                ; preds = %concat.tot.len553
 str_ok600:                                        ; preds = %tag.slow_check605, %str_ok583
   %cat.seg606 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc595, i32 0, i32 1
   %cat.seg607 = load ptr, ptr %cat.seg606, align 8
-  %call.res610 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str568)
+  %call.res610 = call { i64, ptr } @"pkg::sq"(ptr %concat.str568)
   %arena.cur611 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc612 = call ptr @dva_arena_alloc(ptr %arena.cur611, i64 16)
   store { i64, ptr } %call.res610, ptr %ret.ub.alloc612, align 8
@@ -61446,7 +61446,7 @@ choice.exit758:                                   ; preds = %concat.tot.len804, 
   %arena.cur833 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc834 = call ptr @dva_arena_alloc(ptr %arena.cur833, i64 16)
   store { i64, ptr } %call.res832, ptr %ret.ub.alloc834, align 8
-  %call.res836 = call i64 @"pkg::#sh"(ptr %ret.ub.alloc834)
+  %call.res836 = call i64 @"pkg::sh"(ptr %ret.ub.alloc834)
   %arg.str.ptr839 = load ptr, ptr %str.build.data.gep573, align 8
   %arg.str.ptr841 = load i64, ptr %concat.str568, align 8
   %arg.str.ptr842 = and i64 %arg.str.ptr841, 281474976710655
@@ -61459,7 +61459,7 @@ choice.exit758:                                   ; preds = %concat.tot.len804, 
 
 str_ok764:                                        ; preds = %tag.slow_check769, %choice.then757
   %cat.seg771 = load ptr, ptr %str.build.data.gep673, align 8
-  %call.res774 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc731)
+  %call.res774 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc731)
   %arena.cur775 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc776 = call ptr @dva_arena_alloc(ptr %arena.cur775, i64 16)
   store { i64, ptr } %call.res774, ptr %ret.ub.alloc776, align 8
@@ -61941,7 +61941,7 @@ str_overflow_abort1163:                           ; preds = %cat.sum.len1156
 
 choice.else1186:                                  ; preds = %concat.tot.len1162
   %fld.load1190 = load ptr, ptr %call.res304, align 8
-  %call.res1191 = call { i64, ptr } @"pkg::#sq"(ptr %fld.load1190)
+  %call.res1191 = call { i64, ptr } @"pkg::sq"(ptr %fld.load1190)
   %arena.cur1192 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1193 = call ptr @dva_arena_alloc(ptr %arena.cur1192, i64 16)
   store { i64, ptr } %call.res1191, ptr %ret.ub.alloc1193, align 8
@@ -61956,7 +61956,7 @@ choice.else1186:                                  ; preds = %concat.tot.len1162
 
 choice.exit1187:                                  ; preds = %concat.tot.len1162, %concat.tot.len1218
   %choice.res1232 = phi ptr [ %concat.str1226, %concat.tot.len1218 ], [ @str.372.struct, %concat.tot.len1162 ]
-  %call.res1234 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc325)
+  %call.res1234 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc325)
   %arena.cur1235 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1236 = call ptr @dva_arena_alloc(ptr %arena.cur1235, i64 16)
   store { i64, ptr } %call.res1234, ptr %ret.ub.alloc1236, align 8
@@ -62016,7 +62016,7 @@ str_overflow_abort1219:                           ; preds = %concat.sum.len1212
 str_ok1241:                                       ; preds = %tag.slow_check1246, %choice.exit1187
   %cat.seg1247 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc1236, i32 0, i32 1
   %cat.seg1248 = load ptr, ptr %cat.seg1247, align 8
-  %call.res1251 = call { i64, ptr } @"pkg::#sq"(ptr %choice.res1087)
+  %call.res1251 = call { i64, ptr } @"pkg::sq"(ptr %choice.res1087)
   %arena.cur1252 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1253 = call ptr @dva_arena_alloc(ptr %arena.cur1252, i64 16)
   store { i64, ptr } %call.res1251, ptr %ret.ub.alloc1253, align 8
@@ -62052,7 +62052,7 @@ tag.slow_check1263:                               ; preds = %str_ok1241
 str_ok1272:                                       ; preds = %tag.slow_check1277, %str_ok1258
   %cat.seg1278 = getelementptr inbounds { i64, ptr }, ptr %choice.res1232, i32 0, i32 1
   %cat.seg1279 = load ptr, ptr %cat.seg1278, align 8
-  %call.res1282 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str1177)
+  %call.res1282 = call { i64, ptr } @"pkg::sq"(ptr %concat.str1177)
   %arena.cur1283 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1284 = call ptr @dva_arena_alloc(ptr %arena.cur1283, i64 16)
   store { i64, ptr } %call.res1282, ptr %ret.ub.alloc1284, align 8
@@ -62185,7 +62185,7 @@ concat.tot.len1336:                               ; preds = %cat.sum.len1330
   %arena.cur1374 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1375 = call ptr @dva_arena_alloc(ptr %arena.cur1374, i64 16)
   store { i64, ptr } %call.res1373, ptr %ret.ub.alloc1375, align 8
-  %call.res1378 = call i64 @"pkg::#sh"(ptr %ret.ub.alloc1375)
+  %call.res1378 = call i64 @"pkg::sh"(ptr %ret.ub.alloc1375)
   %arg.str.ptr1382 = load ptr, ptr %str.build.data.gep1182, align 8
   %arg.str.ptr1384 = load i64, ptr %concat.str1177, align 8
   %arg.str.ptr1385 = and i64 %arg.str.ptr1384, 281474976710655
@@ -62551,7 +62551,7 @@ choice.exit106:                                   ; preds = %str.eq.merge, %conc
   %arena.cur166 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc167 = call ptr @dva_arena_alloc(ptr %arena.cur166, i64 16)
   store { i64, ptr } %call.res165, ptr %ret.ub.alloc167, align 8
-  %call.res169 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc167)
+  %call.res169 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc167)
   %arena.cur170 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc171 = call ptr @dva_arena_alloc(ptr %arena.cur170, i64 16)
   store { i64, ptr } %call.res169, ptr %ret.ub.alloc171, align 8
@@ -62637,7 +62637,7 @@ str_overflow_abort146:                            ; preds = %cat.sum.len139
 str_ok176:                                        ; preds = %tag.slow_check181, %choice.exit106
   %cat.seg182 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc171, i32 0, i32 1
   %cat.seg183 = load ptr, ptr %cat.seg182, align 8
-  %call.res186 = call { i64, ptr } @"pkg::#sq"(ptr %fld.load3)
+  %call.res186 = call { i64, ptr } @"pkg::sq"(ptr %fld.load3)
   %arena.cur187 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc188 = call ptr @dva_arena_alloc(ptr %arena.cur187, i64 16)
   store { i64, ptr } %call.res186, ptr %ret.ub.alloc188, align 8
@@ -62657,7 +62657,7 @@ tag.slow_check181:                                ; preds = %choice.exit106
 str_ok193:                                        ; preds = %tag.slow_check198, %str_ok176
   %cat.seg199 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc188, i32 0, i32 1
   %cat.seg200 = load ptr, ptr %cat.seg199, align 8
-  %call.res203 = call { i64, ptr } @"pkg::#sq"(ptr %choice.res164)
+  %call.res203 = call { i64, ptr } @"pkg::sq"(ptr %choice.res164)
   %arena.cur204 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc205 = call ptr @dva_arena_alloc(ptr %arena.cur204, i64 16)
   store { i64, ptr } %call.res203, ptr %ret.ub.alloc205, align 8
@@ -62776,7 +62776,7 @@ a.after:                                          ; preds = %a.create, %concat.t
   %arena.cur276 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc277 = call ptr @dva_arena_alloc(ptr %arena.cur276, i64 16)
   store { i64, ptr } %call.res275, ptr %ret.ub.alloc277, align 8
-  %call.res279 = call i64 @"pkg::#sh"(ptr %ret.ub.alloc277)
+  %call.res279 = call i64 @"pkg::sh"(ptr %ret.ub.alloc277)
   %concat.lhs281 = load i64, ptr %choice.res164, align 8
   %concat.lhs282 = and i64 %concat.lhs281, 281474976710655
   %str.tag283 = lshr i64 %concat.lhs281, 48
@@ -62882,7 +62882,7 @@ choice.then337:                                   ; preds = %nulmerge
   br i1 %tag.fast.ok349, label %str_ok345, label %tag.slow_check350
 
 choice.else338:                                   ; preds = %nulmerge
-  %call.res396 = call { i64, ptr } @"pkg::#sq"(ptr %choice.res164)
+  %call.res396 = call { i64, ptr } @"pkg::sq"(ptr %choice.res164)
   %arena.cur397 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc398 = call ptr @dva_arena_alloc(ptr %arena.cur397, i64 16)
   store { i64, ptr } %call.res396, ptr %ret.ub.alloc398, align 8
@@ -62987,7 +62987,7 @@ loop.body.610:                                    ; preds = %loop.header.610
   br i1 %tag.fast.ok423, label %str_ok419, label %tag.slow_check424
 
 loop.exit.610:                                    ; preds = %loop.header.610
-  %call.res478 = call i64 @"pkg::#sh"(ptr %"var.exec_cmd'.0")
+  %call.res478 = call i64 @"pkg::sh"(ptr %"var.exec_cmd'.0")
   %eq.lhs.len481 = load i64, ptr %1, align 8
   %eq.lhs.len482 = and i64 %eq.lhs.len481, 281474976710655
   %str.tag483 = lshr i64 %eq.lhs.len481, 48
@@ -63000,7 +63000,7 @@ loop.exit.610:                                    ; preds = %loop.header.610
 str_ok419:                                        ; preds = %tag.slow_check424, %loop.body.610
   %cat.seg425 = getelementptr inbounds { i64, ptr }, ptr %"var.exec_cmd'.0", i32 0, i32 1
   %cat.seg426 = load ptr, ptr %cat.seg425, align 8
-  %call.res429 = call { i64, ptr } @"pkg::#sq"(ptr %slot.i2p)
+  %call.res429 = call { i64, ptr } @"pkg::sq"(ptr %slot.i2p)
   %arena.cur430 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc431 = call ptr @dva_arena_alloc(ptr %arena.cur430, i64 16)
   store { i64, ptr } %call.res429, ptr %ret.ub.alloc431, align 8
@@ -63387,7 +63387,7 @@ choice.then806:                                   ; preds = %choice.exit694
   br i1 %tag.fast.ok821, label %str_ok817, label %tag.slow_check822
 
 choice.else807:                                   ; preds = %choice.exit694
-  %call.res860 = call { i64, ptr } @"pkg::#sq"(ptr %"var.bin_path'.0")
+  %call.res860 = call { i64, ptr } @"pkg::sq"(ptr %"var.bin_path'.0")
   %arena.cur861 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc862 = call ptr @dva_arena_alloc(ptr %arena.cur861, i64 16)
   store { i64, ptr } %call.res860, ptr %ret.ub.alloc862, align 8
@@ -63491,7 +63491,7 @@ loop.body.611:                                    ; preds = %loop.header.611
   br i1 %tag.fast.ok899, label %str_ok895, label %tag.slow_check900
 
 loop.exit.611:                                    ; preds = %loop.header.611
-  %call.res956 = call i64 @"pkg::#sh"(ptr %"var.exec_cmd'863.0")
+  %call.res956 = call i64 @"pkg::sh"(ptr %"var.exec_cmd'863.0")
   %cmptmp959 = icmp eq i64 %call.res956, 0
   %.967 = select i1 %cmptmp959, i64 0, i64 1
   br label %common.ret
@@ -63499,7 +63499,7 @@ loop.exit.611:                                    ; preds = %loop.header.611
 str_ok895:                                        ; preds = %tag.slow_check900, %loop.body.611
   %cat.seg901 = getelementptr inbounds { i64, ptr }, ptr %"var.exec_cmd'863.0", i32 0, i32 1
   %cat.seg902 = load ptr, ptr %cat.seg901, align 8
-  %call.res905 = call { i64, ptr } @"pkg::#sq"(ptr %slot.i2p886)
+  %call.res905 = call { i64, ptr } @"pkg::sq"(ptr %slot.i2p886)
   %arena.cur906 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc907 = call ptr @dva_arena_alloc(ptr %arena.cur906, i64 16)
   store { i64, ptr } %call.res905, ptr %ret.ub.alloc907, align 8
@@ -63965,7 +63965,7 @@ concat.tot.len108:                                ; preds = %cat.sum.len102
   store i64 %str.tagged.len125, ptr %concat.str121, align 8
   %str.build.data.gep126 = getelementptr inbounds { i64, ptr }, ptr %concat.str121, i32 0, i32 1
   store ptr %concat.buf112, ptr %str.build.data.gep126, align 8
-  %call.res128 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc70)
+  %call.res128 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc70)
   %arena.cur129 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc130 = call ptr @dva_arena_alloc(ptr %arena.cur129, i64 16)
   store { i64, ptr } %call.res128, ptr %ret.ub.alloc130, align 8
@@ -63985,7 +63985,7 @@ str_overflow_abort109:                            ; preds = %cat.sum.len102
 str_ok135:                                        ; preds = %tag.slow_check140, %concat.tot.len108
   %cat.seg141 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc130, i32 0, i32 1
   %cat.seg142 = load ptr, ptr %cat.seg141, align 8
-  %call.res145 = call { i64, ptr } @"pkg::#sq"(ptr %fld.load3)
+  %call.res145 = call { i64, ptr } @"pkg::sq"(ptr %fld.load3)
   %arena.cur146 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc147 = call ptr @dva_arena_alloc(ptr %arena.cur146, i64 16)
   store { i64, ptr } %call.res145, ptr %ret.ub.alloc147, align 8
@@ -64005,7 +64005,7 @@ tag.slow_check140:                                ; preds = %concat.tot.len108
 str_ok152:                                        ; preds = %tag.slow_check157, %str_ok135
   %cat.seg158 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc147, i32 0, i32 1
   %cat.seg159 = load ptr, ptr %cat.seg158, align 8
-  %call.res162 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str121)
+  %call.res162 = call { i64, ptr } @"pkg::sq"(ptr %concat.str121)
   %arena.cur163 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc164 = call ptr @dva_arena_alloc(ptr %arena.cur163, i64 16)
   store { i64, ptr } %call.res162, ptr %ret.ub.alloc164, align 8
@@ -64213,7 +64213,7 @@ str_ok287:                                        ; preds = %tag.slow_check292, 
   %cat.seg293 = getelementptr inbounds { i64, ptr }, ptr %"var.cmd'.0", i32 0, i32 1
   %cat.seg294 = load ptr, ptr %cat.seg293, align 8
   %fld.load298 = load ptr, ptr %fld.gep267, align 8
-  %call.res299 = call { i64, ptr } @"pkg::#sq"(ptr %fld.load298)
+  %call.res299 = call { i64, ptr } @"pkg::sq"(ptr %fld.load298)
   %arena.cur300 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc301 = call ptr @dva_arena_alloc(ptr %arena.cur300, i64 16)
   store { i64, ptr } %call.res299, ptr %ret.ub.alloc301, align 8
@@ -64366,7 +64366,7 @@ str_overflow_abort382:                            ; preds = %concat.sum.len375
 str_ok408:                                        ; preds = %tag.slow_check413, %choice.exit355
   %cat.seg414 = getelementptr inbounds { i64, ptr }, ptr %"var.cmd'.2", i32 0, i32 1
   %cat.seg415 = load ptr, ptr %cat.seg414, align 8
-  %call.res418 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str121)
+  %call.res418 = call { i64, ptr } @"pkg::sq"(ptr %concat.str121)
   %arena.cur419 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc420 = call ptr @dva_arena_alloc(ptr %arena.cur419, i64 16)
   store { i64, ptr } %call.res418, ptr %ret.ub.alloc420, align 8
@@ -64489,7 +64489,7 @@ concat.tot.len480:                                ; preds = %cat.sum.len474
   store i64 %str.tagged.len501, ptr %concat.str497, align 8
   %str.build.data.gep502 = getelementptr inbounds { i64, ptr }, ptr %concat.str497, i32 0, i32 1
   store ptr %concat.buf484, ptr %str.build.data.gep502, align 8
-  %call.res503 = call i64 @"pkg::#sh"(ptr %concat.str497)
+  %call.res503 = call i64 @"pkg::sh"(ptr %concat.str497)
   %arg.str.ptr505 = load ptr, ptr %str.build.data.gep126, align 8
   %arg.str.ptr507 = load i64, ptr %concat.str121, align 8
   %arg.str.ptr508 = and i64 %arg.str.ptr507, 281474976710655
@@ -65025,7 +65025,7 @@ concat.tot.len916:                                ; preds = %cat.sum.len910
   store i64 %str.tagged.len933, ptr %concat.str929, align 8
   %str.build.data.gep934 = getelementptr inbounds { i64, ptr }, ptr %concat.str929, i32 0, i32 1
   store ptr %concat.buf920, ptr %str.build.data.gep934, align 8
-  %call.res937 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc843)
+  %call.res937 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc843)
   %arena.cur938 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc939 = call ptr @dva_arena_alloc(ptr %arena.cur938, i64 16)
   store { i64, ptr } %call.res937, ptr %ret.ub.alloc939, align 8
@@ -65045,7 +65045,7 @@ str_overflow_abort917:                            ; preds = %cat.sum.len910
 str_ok944:                                        ; preds = %tag.slow_check949, %concat.tot.len916
   %cat.seg950 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc939, i32 0, i32 1
   %cat.seg951 = load ptr, ptr %cat.seg950, align 8
-  %call.res954 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc866)
+  %call.res954 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc866)
   %arena.cur955 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc956 = call ptr @dva_arena_alloc(ptr %arena.cur955, i64 16)
   store { i64, ptr } %call.res954, ptr %ret.ub.alloc956, align 8
@@ -65065,7 +65065,7 @@ tag.slow_check949:                                ; preds = %concat.tot.len916
 str_ok961:                                        ; preds = %tag.slow_check966, %str_ok944
   %cat.seg967 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc956, i32 0, i32 1
   %cat.seg968 = load ptr, ptr %cat.seg967, align 8
-  %call.res971 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str929)
+  %call.res971 = call { i64, ptr } @"pkg::sq"(ptr %concat.str929)
   %arena.cur972 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc973 = call ptr @dva_arena_alloc(ptr %arena.cur972, i64 16)
   store { i64, ptr } %call.res971, ptr %ret.ub.alloc973, align 8
@@ -65273,7 +65273,7 @@ str_ok1113:                                       ; preds = %tag.slow_check1118,
   %cat.seg1119 = getelementptr inbounds { i64, ptr }, ptr %"var.cmd'1035.0", i32 0, i32 1
   %cat.seg1120 = load ptr, ptr %cat.seg1119, align 8
   %fld.load1124 = load ptr, ptr %fld.gep1081, align 8
-  %call.res1125 = call { i64, ptr } @"pkg::#sq"(ptr %fld.load1124)
+  %call.res1125 = call { i64, ptr } @"pkg::sq"(ptr %fld.load1124)
   %arena.cur1126 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1127 = call ptr @dva_arena_alloc(ptr %arena.cur1126, i64 16)
   store { i64, ptr } %call.res1125, ptr %ret.ub.alloc1127, align 8
@@ -65426,7 +65426,7 @@ str_overflow_abort1208:                           ; preds = %concat.sum.len1201
 str_ok1235:                                       ; preds = %tag.slow_check1240, %choice.exit1181
   %cat.seg1241 = getelementptr inbounds { i64, ptr }, ptr %"var.cmd'1035.2", i32 0, i32 1
   %cat.seg1242 = load ptr, ptr %cat.seg1241, align 8
-  %call.res1245 = call { i64, ptr } @"pkg::#sq"(ptr %concat.str929)
+  %call.res1245 = call { i64, ptr } @"pkg::sq"(ptr %concat.str929)
   %arena.cur1246 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc1247 = call ptr @dva_arena_alloc(ptr %arena.cur1246, i64 16)
   store { i64, ptr } %call.res1245, ptr %ret.ub.alloc1247, align 8
@@ -65549,7 +65549,7 @@ concat.tot.len1307:                               ; preds = %cat.sum.len1301
   store i64 %str.tagged.len1328, ptr %concat.str1324, align 8
   %str.build.data.gep1329 = getelementptr inbounds { i64, ptr }, ptr %concat.str1324, i32 0, i32 1
   store ptr %concat.buf1311, ptr %str.build.data.gep1329, align 8
-  %call.res1330 = call i64 @"pkg::#sh"(ptr %concat.str1324)
+  %call.res1330 = call i64 @"pkg::sh"(ptr %concat.str1324)
   %arg.str.ptr1334 = load ptr, ptr %str.build.data.gep934, align 8
   %arg.str.ptr1336 = load i64, ptr %concat.str929, align 8
   %arg.str.ptr1337 = and i64 %arg.str.ptr1336, 281474976710655
@@ -66043,7 +66043,7 @@ choice.case:                                      ; preds = %str.eq.then49
   %arena.cur64 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc65 = call ptr @dva_arena_alloc(ptr %arena.cur64, i64 16)
   store { i64, ptr } %call.res63, ptr %ret.ub.alloc65, align 8
-  %call.res67 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc61)
+  %call.res67 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc61)
   %arena.cur68 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc69 = call ptr @dva_arena_alloc(ptr %arena.cur68, i64 16)
   store { i64, ptr } %call.res67, ptr %ret.ub.alloc69, align 8
@@ -66080,7 +66080,7 @@ str.eq.then49:                                    ; preds = %str_ok40
 str_ok73:                                         ; preds = %tag.slow_check78, %choice.case
   %cat.seg79 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc69, i32 0, i32 1
   %cat.seg80 = load ptr, ptr %cat.seg79, align 8
-  %call.res83 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc65)
+  %call.res83 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc65)
   %arena.cur84 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc85 = call ptr @dva_arena_alloc(ptr %arena.cur84, i64 16)
   store { i64, ptr } %call.res83, ptr %ret.ub.alloc85, align 8
@@ -66161,7 +66161,7 @@ concat.tot.len113:                                ; preds = %cat.sum.len108
   store i64 %str.tagged.len, ptr %concat.str, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   store ptr %concat.buf, ptr %str.build.data.gep, align 8
-  %call.res122 = call i64 @"pkg::#sh"(ptr %concat.str)
+  %call.res122 = call i64 @"pkg::sh"(ptr %concat.str)
   %cat.seg126 = load i64, ptr %choice.res33, align 8
   %cat.seg127 = and i64 %cat.seg126, 281474976710655
   %str.tag128 = lshr i64 %cat.seg126, 48
@@ -67419,7 +67419,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep26 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc23, i32 0, i32 2
   store ptr @str.11.struct, ptr %err.file.gep26, align 8
   %err.line.gep27 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc23, i32 0, i32 3
-  store i64 3306, ptr %err.line.gep27, align 8
+  store i64 3308, ptr %err.line.gep27, align 8
   %err.col.gep28 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc23, i32 0, i32 4
   store i64 24, ptr %err.col.gep28, align 8
   %err.ctx.gep29 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc23, i32 0, i32 5
@@ -70874,7 +70874,7 @@ choice.then323:                                   ; preds = %choice.exit279
   br i1 %tag.fast.ok338, label %str_ok334, label %tag.slow_check339
 
 choice.else324:                                   ; preds = %choice.exit279
-  %call.res408 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc271)
+  %call.res408 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc271)
   %arena.cur409 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc410 = call ptr @dva_arena_alloc(ptr %arena.cur409, i64 16)
   store { i64, ptr } %call.res408, ptr %ret.ub.alloc410, align 8
@@ -70990,7 +70990,7 @@ str_overflow_abort385:                            ; preds = %cat.sum.len378
 str_ok415:                                        ; preds = %tag.slow_check420, %choice.else324
   %cat.seg421 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc410, i32 0, i32 1
   %cat.seg422 = load ptr, ptr %cat.seg421, align 8
-  %call.res425 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc271)
+  %call.res425 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc271)
   %arena.cur426 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc427 = call ptr @dva_arena_alloc(ptr %arena.cur426, i64 16)
   store { i64, ptr } %call.res425, ptr %ret.ub.alloc427, align 8
@@ -71010,7 +71010,7 @@ tag.slow_check420:                                ; preds = %choice.else324
 str_ok432:                                        ; preds = %tag.slow_check437, %str_ok415
   %cat.seg438 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc427, i32 0, i32 1
   %cat.seg439 = load ptr, ptr %cat.seg438, align 8
-  %call.res442 = call { i64, ptr } @"pkg::#sq"(ptr %"var.src_dir'.0")
+  %call.res442 = call { i64, ptr } @"pkg::sq"(ptr %"var.src_dir'.0")
   %arena.cur443 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc444 = call ptr @dva_arena_alloc(ptr %arena.cur443, i64 16)
   store { i64, ptr } %call.res442, ptr %ret.ub.alloc444, align 8
@@ -71030,7 +71030,7 @@ tag.slow_check437:                                ; preds = %str_ok415
 str_ok449:                                        ; preds = %tag.slow_check454, %str_ok432
   %cat.seg455 = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc444, i32 0, i32 1
   %cat.seg456 = load ptr, ptr %cat.seg455, align 8
-  %call.res459 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc271)
+  %call.res459 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc271)
   %arena.cur460 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc461 = call ptr @dva_arena_alloc(ptr %arena.cur460, i64 16)
   store { i64, ptr } %call.res459, ptr %ret.ub.alloc461, align 8
@@ -71054,7 +71054,7 @@ str_ok466:                                        ; preds = %tag.slow_check471, 
   %arena.cur477 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc478 = call ptr @dva_arena_alloc(ptr %arena.cur477, i64 16)
   store { i64, ptr } %call.res476, ptr %ret.ub.alloc478, align 8
-  %call.res479 = call { i64, ptr } @"pkg::#sq"(ptr %ret.ub.alloc478)
+  %call.res479 = call { i64, ptr } @"pkg::sq"(ptr %ret.ub.alloc478)
   %arena.cur480 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc481 = call ptr @dva_arena_alloc(ptr %arena.cur480, i64 16)
   store { i64, ptr } %call.res479, ptr %ret.ub.alloc481, align 8
@@ -71213,7 +71213,7 @@ concat.tot.len551:                                ; preds = %cat.sum.len545
   store i64 %str.tagged.len580, ptr %concat.str576, align 8
   %str.build.data.gep581 = getelementptr inbounds { i64, ptr }, ptr %concat.str576, i32 0, i32 1
   store ptr %concat.buf555, ptr %str.build.data.gep581, align 8
-  %call.res583 = call i64 @"pkg::#sh"(ptr %concat.str576)
+  %call.res583 = call i64 @"pkg::sh"(ptr %concat.str576)
   %cmptmp = icmp ne i64 %call.res583, 0
   br i1 %cmptmp, label %choice.then584, label %choice.else585
 

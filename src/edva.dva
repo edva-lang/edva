@@ -22,6 +22,7 @@
 #use mem
 #use ccl
 #use ./pkg
+#use ./backend_opt
 #use ./formatter
 #use ./lsp
 #use ./version
@@ -2870,7 +2871,7 @@ build_cache_summary = opts, exports, dyn_mods =>
    opts.fuzz_cov | b += "fuzz_cov=1\n"
    opts.no_typed_opt | b += "typed_opt=off\n"
    opts.check_arena_escapes | b += "check_arena_escapes=1\n"
-   opts.cflags @ cf => b += "cflag=${cf}\n"
+   opts.cflags @ cf => b += "cflag=${pkg::hash_string(cf)}\n"
    exports @ ex => b += "export=${ex}\n"
    dyn_mods @ dm => b += "dyn=${dm}\n"
    +b
@@ -2951,6 +2952,21 @@ emit_phase_timings_json = target, key, cache_en, ir_hit, art_hit, load_ns, type_
 compile_ast_to_binary: ast::Expr, ast::Names, CliOpts, String,
   String, ast::Names, ast::Names, ast::Names, ast::Names, ast::Names => < | Int >
 compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlibs, npkg, lfiles =>
+   target = opts.triple != "" | opts.triple | get_default_target_triple(0)
+   backend_opt::prepare(opts.cflags, target, opts.ir_only, !opts.no_cache)
+      | backend =>
+         result = compile_with_backend(raw, exports, opts, out_ll, out_bin,
+           dmods, dpaths, nlibs, npkg, lfiles, backend)
+         backend.snapshot != "" | unlink(backend.snapshot)
+         result
+      | message =>
+         log::error $ "E5053: ${message}"
+         <- 1 ->
+
+compile_with_backend: ast::Expr, ast::Names, CliOpts, String,
+  String, ast::Names, ast::Names, ast::Names, ast::Names, ast::Names,
+  backend_opt::Options => < | Int >
+compile_with_backend = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlibs, npkg, lfiles, backend =>
    t_type_start = time::mono_ns!
    prog = overloads::resolve(raw)
    dom_source = canonical_path(compiler_std_dir + "/dom.dva")
@@ -3002,7 +3018,7 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
    cg_ok' = 0
    is_cached' = <->
    is_art_cached' = <->
-   use_cache = !opts.no_cache
+   use_cache = !opts.no_cache && backend.cacheable
    eff_cache_dir = opts.cache_dir != "" | opts.cache_dir | pkg::default_cache!
    cache_key' = ++""
    el_res
@@ -3016,7 +3032,7 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
             |
                cache_flags = pkg::CacheCodegenFlags(opts.is_module, opts.is_shared,
                  opts.no_runtime, opts.no_main, opts.module_name)
-               ast_summary = build_cache_summary(opts, actual_exports, dynamic_mods)
+               ast_summary = "${build_cache_summary(opts, actual_exports, dynamic_mods)}${backend.identity}"
                opt_str = opts.opt != "" | opts.opt | "-O2"
                target_triple = opts.triple != "" | opts.triple | get_default_target_triple(0)
                bkr = pkg::compute_ir_cache_key(opts.target, lfiles, all_nat_libs, nat_pkg,
@@ -3175,11 +3191,11 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                            clang_base += "clang"
                            clang_base += "-Qunused-arguments"
                            clang_base += "-Wno-unused-command-line-argument"
-                           clang_base += "-w"
+                           !backend.uses_profile | clang_base += "-w"
                            clang_base += (opts.opt != "" | opts.opt | "-O2")
                            clang_base += "--target=" + target_triple
-                           opts.cflags @ cf =>
-                              clang_base += cf
+                           backend.flags @ cf =>
+                              !(backend.uses_profile && cf == "-w") | clang_base += cf
                            is_darwin = is_darwin_triple(target_triple)
                            opts.is_shared
                               |

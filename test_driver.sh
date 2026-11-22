@@ -4121,5 +4121,106 @@ timeout 30 ./edva "$T72_DIR/zero_offset_wasm.dva" --no-cache --no-runtime --ir \
 grep -Fq 'load volatile i8, ptr null' "$T72_DIR/zero_offset_wasm.ll"
 echo "PASS"
 
-echo "=== All driver tests PASSED ==="
 
+# --- Test 73: native profile and link-time optimization ---
+echo -n "Testing native optimization and cache provenance... "
+t73="$TMPDIR/t73_native_opt"
+mkdir -p "$t73"
+cat > "$t73/main.dva" <<'DVA'
+#use io
+#use sys
+
+n = sys::argc
+n > 1 | io::out $ n * 3 | io::out $ n + 7
+DVA
+
+if timeout 30 ./edva "$t73/main.dva" --cflag="-fprofile-use=$t73/missing.profdata" \
+    -o "$t73/missing" </dev/null >"$t73/missing.log" 2>&1; then
+    echo "FAIL (accepted a missing profile)"
+    exit 1
+fi
+grep -q 'E5053:.*missing or is not a file' "$t73/missing.log"
+if timeout 30 ./edva "$t73/main.dva" -target wasm32-unknown-unknown \
+    --cflag=-flto=thin -o "$t73/unsupported" </dev/null >"$t73/unsupported.log" 2>&1; then
+    echo "FAIL (accepted native optimization on Wasm)"
+    exit 1
+fi
+grep -q 'E5053:.*native backend' "$t73/unsupported.log"
+
+# Probe the installed Clang runtime and profile reader independently of Edva.
+printf '%s\n' 'int main(void) { return 0; }' >"$t73/probe.c"
+if command -v llvm-profdata >/dev/null &&
+   timeout 20 clang "$t73/probe.c" -fprofile-generate -o "$t73/probe" </dev/null >"$t73/probe.log" 2>&1 &&
+   LLVM_PROFILE_FILE="$t73/probe.profraw" timeout 10 "$t73/probe" </dev/null &&
+   timeout 10 llvm-profdata merge -o "$t73/probe.profdata" "$t73/probe.profraw" </dev/null >>"$t73/probe.log" 2>&1; then
+    timeout 30 ./edva "$t73/main.dva" --no-cache --cflag=-fprofile-generate \
+        -o "$t73/train" </dev/null >"$t73/train.log" 2>&1
+    LLVM_PROFILE_FILE="$t73/a.profraw" timeout 10 "$t73/train" a </dev/null >"$t73/a.out"
+    LLVM_PROFILE_FILE="$t73/b.profraw" timeout 10 "$t73/train" </dev/null >"$t73/b.out"
+    profile="$t73/current profile.profdata"
+    for variant in a warm b; do
+        case "$variant" in
+            a|b) timeout 10 llvm-profdata merge -o "$profile" "$t73/$variant.profraw" </dev/null ;;
+        esac
+        timeout 30 ./edva "$t73/main.dva" --cache "$t73/cache" --timings \
+            "--cflag=-fprofile-use=$profile" -o "$t73/app" </dev/null >"$t73/$variant.log" 2>&1
+        timeout 10 "$t73/app" a </dev/null >"$t73/out"
+        diff -u "$t73/a.out" "$t73/out"
+    done
+    grep -q '"artifact_cache_hit":true' "$t73/warm.log"
+    grep -q '"artifact_cache_hit":false' "$t73/b.log"
+    printf '%s\n' '#use io' 'io::out $ 42' >"$t73/stale.dva"
+    if timeout 30 ./edva "$t73/stale.dva" --no-cache "--cflag=-fprofile-use=$profile" \
+        -o "$t73/stale" </dev/null >"$t73/stale.log" 2>&1; then
+        echo "FAIL (accepted stale profile)"
+        exit 1
+    fi
+    grep -q 'hash mismatch\|out of date\|profile data available' "$t73/stale.log"
+else
+    printf '%s' '(PGO integration skipped without a matching Clang profile runtime and reader) '
+fi
+
+if timeout 20 clang -flto=thin -fuse-ld=lld "$t73/probe.c" -o "$t73/lto-probe" </dev/null >"$t73/lto-probe.log" 2>&1; then
+    cat >"$t73/cross.dva" <<'DVA'
+#use io
+
+#foreign("c")
+   helper: (value: Int) => Int
+
+#export
+   exported: Int => Int
+   exported = value => helper(value)
+
+io::out $ exported(11)
+DVA
+    for expected in 12 13; do
+        printf 'long long helper(long long value) { return value + %d; }\n' "$((expected - 11))" >"$t73/helper.c"
+        timeout 20 clang -O2 -flto=thin -c "$t73/helper.c" -o "$t73/helper.o" </dev/null
+        timeout 30 ./edva "$t73/cross.dva" --cache "$t73/cache" --timings \
+            --cflag=-flto=thin --cflag=-fuse-ld=lld --cflag="$t73/helper.o" \
+            -o "$t73/cross" </dev/null >"$t73/cross.log" 2>&1
+        grep -q '"artifact_cache_hit":false' "$t73/cross.log"
+        test "$(timeout 10 "$t73/cross" </dev/null)" = "$expected"
+    done
+    real_clang=$(command -v clang)
+    mkdir -p "$t73/toolchain"
+    wrapper="$t73/toolchain/clang"
+    printf '#!/usr/bin/env bash\nexec "%s" "$@"\n' "$real_clang" >"$wrapper"
+    chmod +x "$wrapper"
+    for variant in first warm changed; do
+        expected_hit=false
+        case "$variant" in
+            warm) expected_hit=true ;;
+            changed) printf '%s\n' '# changed wrapper implementation' >>"$wrapper" ;;
+        esac
+        PATH="$t73/toolchain:$PATH" timeout 30 ./edva "$t73/cross.dva" \
+            --cache "$t73/cache" --timings --cflag=-flto=thin --cflag=-fuse-ld=lld \
+            --cflag="$t73/helper.o" -o "$t73/cross" </dev/null >"$t73/toolchain-$variant.log" 2>&1
+        grep -q "\"artifact_cache_hit\":$expected_hit" "$t73/toolchain-$variant.log"
+    done
+else
+    printf '%s' '(ThinLTO integration skipped without Clang and LLD support) '
+fi
+echo "PASS"
+
+echo "=== All driver tests PASSED ==="
