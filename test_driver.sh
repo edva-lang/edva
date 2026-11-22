@@ -3763,5 +3763,70 @@ JS
 fi
 echo "PASS"
 
+# --- Test 70: unused module constant tables ---
+echo -n "Testing dead constant table stripping and live module state... "
+T70_DIR="$TMPDIR/t70_constant_tables"
+mkdir -p "$T70_DIR"
+cat >"$T70_DIR/ascii_only.dva" <<'DVA'
+#use str
+
+#export format_number: Int => String
+format_number = n => str::from_int(n)
+DVA
+for opt in -O0 -O2; do
+    for target in native wasm; do
+        args=()
+        if [ "$target" = wasm ]; then args+=(-target wasm32-unknown-unknown); fi
+        output="$T70_DIR/$target${opt}.ll"
+        timeout 30 ./edva "$T70_DIR/ascii_only.dva" "$opt" --ir --no-cache "${args[@]}" \
+            -o "${output%.ll}" < /dev/null >"$T70_DIR/ir.log" 2>&1
+        if grep -Eq '\$const_arr|var\.unicode::#(cat_s[12]|case_(up|lo)_runs)' "$output"; then
+            echo "FAILED: unused Unicode tables survived on $target at $opt"
+            exit 1
+        fi
+    done
+done
+
+cat >"$T70_DIR/tables.dva" <<'DVA'
+#private
+   dead = (9001 {64})
+   live = (7 {64})
+   read_dead: Int => Int
+   read_dead = i => dead(i)
+
+#public
+   public_table = (21 {64})
+
+   update: Int, Int => Int
+   update = i, value =>
+      live(i) = value
+      live(i)
+DVA
+cat >"$T70_DIR/caller.dva" <<'DVA'
+#use ./tables
+
+#foreign("c")
+   exit: (code: i32) => ()
+
+tables::update(63, 42) != 42 | exit(i32(1))
+tables::public_table(1) != 21 | exit(i32(2))
+DVA
+timeout 30 ./edva "$T70_DIR/caller.dva" -O2 --no-cache \
+    -o "$T70_DIR/combined" < /dev/null >"$T70_DIR/combined.log" 2>&1
+if grep -Eq 'i64 9001|define .*@.*read_dead' "$T70_DIR/combined.ll" ||
+   ! grep -q 'var.tables::#live' "$T70_DIR/combined.ll"; then
+    echo "FAILED: the dead and live tables were not distinguished"
+    exit 1
+fi
+timeout 10 "$T70_DIR/combined"
+timeout 30 ./edva "$T70_DIR/tables.dva" -O2 -c --module tables --no-cache \
+    -o "$T70_DIR/tables.o" < /dev/null >"$T70_DIR/module.log" 2>&1
+timeout 30 ./edva "$T70_DIR/caller.dva" -O2 -c --entry --no-cache \
+    -o "$T70_DIR/caller.o" < /dev/null >>"$T70_DIR/module.log" 2>&1
+timeout 30 clang -Qunused-arguments -Wno-unused-command-line-argument \
+    "$T70_DIR/tables.o" "$T70_DIR/caller.o" -o "$T70_DIR/modular"
+timeout 10 "$T70_DIR/modular"
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

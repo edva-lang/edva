@@ -2831,6 +2831,26 @@ prune_write_only_globals = cg =>
             use == sys::addr_null | -->
             LLVMInstructionEraseFromParent(LLVMGetUser(use))
 
+// The compiler emitted this allocation solely to hold a constant aggregate.
+// Discard its initialization only when no use observes the allocated storage.
+prune_constant_record_copy: types::ConstantRecordCopy => ()
+prune_constant_record_copy = copy =>
+   store' = sys::addr_null
+   use' = LLVMGetFirstUse(copy.allocation)
+   0.. @
+      use' == sys::addr_null | -->
+      user = LLVMGetUser(use')
+      use' = LLVMGetNextUse(use')
+      user == copy.init | --^
+      store' != sys::addr_null || LLVMIsAStoreInst(user) == sys::addr_null ||
+        LLVMGetOperand(user, 0) != copy.allocation | --|
+      slot = LLVMGetOperand(user, 1)
+      LLVMIsAGlobalVariable(slot) == sys::addr_null || !write_only_global(slot) | --|
+      store' = user
+   store' != sys::addr_null | LLVMInstructionEraseFromParent(store')
+   LLVMInstructionEraseFromParent(copy.init)
+   LLVMInstructionEraseFromParent(copy.allocation)
+
 // Keep the pointer-shaped record boundary on every target. A restore-free
 // internal function can move an unobserved view header into the record's tail.
 can_embed_string_view: types::Cg => <>
@@ -3013,6 +3033,16 @@ optimize_emitted_ir: types::Cg => ()
 optimize_emitted_ir = cg =>
    prune_write_only_globals(cg)
    optimize_string_fields(cg)
+   cg.error | --|
+   ?cg.constant_record_copies > 0
+      |
+         // Find dead readers first. The copies are in the entry function or
+         // registered module constructor, both still reachable after globaldce.
+         run_ir_passes(cg, "globaldce")
+         cg.error | --|
+         copies: types::ConstantRecordCopies
+         copies = cg.constant_record_copies
+         copies @ entry => prune_constant_record_copy(entry)
    cg.error | --|
    // Scalarize local closures, then expose the fields of read-only closure
    // parameters of internal functions to interprocedural constant propagation.

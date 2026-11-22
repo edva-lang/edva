@@ -3291,7 +3291,9 @@ codegen_typed_eval = cg, te =>
                         | expr::codegen_call_arena_alloc(cg, sz_c', "rec.alloc")
                      gv_ptr = LLVMBuildPointerCast(cg.builder, gv, LLVMPointerType(LLVMInt8Type!, 0), "rec.const.src")
                      rec_i8 = LLVMBuildPointerCast(cg.builder, rec_ptr, LLVMPointerType(LLVMInt8Type!, 0), "rec.const.dst")
-                     LLVMBuildMemCpy(cg.builder, rec_i8, 1, gv_ptr, 1, sz_c', 0)
+                     init = LLVMBuildMemCpy(cg.builder, rec_i8, 1, gv_ptr, 1, sz_c', 0)
+                     !cg.in_fn && cg.in_restore_scope == 0 && !cg.opts.no_runtime
+                        | cg.constant_record_copies += types::ConstantRecordCopy(rec_ptr, init)
                      (rec_ptr, ast::ValueType(Record))
                   |
                      sz_c' = LLVMSizeOf(st')

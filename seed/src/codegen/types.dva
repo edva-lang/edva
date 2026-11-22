@@ -228,11 +228,15 @@ param_clo_tys: Addrs,
    has_closure_dispatch: <> = <->,
    has_string_params: <> = <->,
    string_views: Addrs = Addrs(),
-   record_string_fields: RecordStringFields = RecordStringFields()
+   record_string_fields: RecordStringFields = RecordStringFields(),
+   constant_record_copies: ConstantRecordCopies = ConstantRecordCopies()
 )
 
 #type RecordStringField (allocation: Addr, stores: Addrs)
 #type RecordStringFields RecordStringField{}
+
+#type ConstantRecordCopy (allocation: Addr, init: Addr)
+#type ConstantRecordCopies ConstantRecordCopy{}
 
 #type Flags <>{}
 #type FnValueMeta (found: <>, declared: <>, generic: <>, value_safe: <>)

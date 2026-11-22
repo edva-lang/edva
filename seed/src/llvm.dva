@@ -22,6 +22,7 @@
    LLVMGetFirstUse: (Val: Addr) => Addr
    LLVMGetNextUse: (Use: Addr) => Addr
    LLVMGetUser: (Use: Addr) => Addr
+   LLVMIsAGlobalVariable: (Val: Addr) => Addr
    LLVMIsAStoreInst: (Val: Addr) => Addr
    LLVMIsACallInst: (Val: Addr) => Addr
    LLVMIsAGetElementPtrInst: (Val: Addr) => Addr
