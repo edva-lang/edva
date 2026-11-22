@@ -3961,6 +3961,7 @@ result = n => n > 0 | <+ n -> | <- "not positive" +>
 mode = sys::argv(1) |_| ""
 mode ["some"] | io::out $ expect::some(maybe(0), "required optional value")
 mode ["ok"] | io::out $ expect::ok(result(0), "required result value")
+mode ["postfix"] | io::out $ maybe(0).expect("required postfix value")
 io::out $ expect::some(maybe(42), "expected positive number")
 io::out $ expect::ok(result(7), "expected successful operation")
 io::out $ maybe(9).expect("positive fixture value")
@@ -3980,12 +3981,15 @@ grep -Fq "E3177: The '!!' operator was removed" "$T72_DIR/retired.log"
 timeout 10 "$T72_DIR/expect_check" < /dev/null >"$T72_DIR/out"
 printf '42\n7\n9\n' >"$T72_DIR/expected"
 diff -u "$T72_DIR/expected" "$T72_DIR/out"
-for mode in some ok; do
+for mode in some ok postfix; do
     status=0
     timeout 10 "$T72_DIR/expect_check" "$mode" < /dev/null >"$T72_DIR/out" 2>&1 || status=$?
     [ "$status" -eq 1 ]
-    reason="required optional value"
-    if [ "$mode" = ok ]; then reason="required result value"; fi
+    case "$mode" in
+        some) reason="required optional value" ;;
+        ok) reason="required result value" ;;
+        postfix) reason="required postfix value" ;;
+    esac
     grep -Fxq "expect: $reason" "$T72_DIR/out"
 done
 
