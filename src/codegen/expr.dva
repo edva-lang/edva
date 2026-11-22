@@ -4654,7 +4654,7 @@ compile_mono_fn = cg, orig, mono, ct_names, b_vts, b_tis, b_dts, b_ct_vals =>
                   | stmt::fn_ret_rec_add(cg, mono, rm_rt_opt, ret_rm_1,
                     ret_fvts, ret_dtype)
                stmt::compile_typed_mono_fn(cg, mono_fd, ptypes', ptis', ret_ti')
-               cg.vars = stmt::truncate_vars(cg.vars, saved_cg_vars)
+               stmt::truncate_vars(cg.vars, saved_cg_vars)
                types::ct_bind_pop_to(saved_ct_n)
                types::ct_val_bind_pop_to(saved_ct_v_n)
                cg.current_module = saved_module
@@ -7333,14 +7333,14 @@ try_inline_rec_factory_call = cg, rname, fname, args, ti, is_generic, want_stack
          types::vra.len_vars = saved_vra_lvs
          cg.current_module = saved_mod
          cg.fn_var_start = saved_fn_var_start
-         cg.vars = stmt::truncate_vars(cg.vars, saved_nvars)
+         stmt::truncate_vars(cg.vars, saved_nvars)
          <+ (out_val, ret_vt) +>
       |
          types::g.stack_alloc_next = <+>
          res = main::codegen_typed_eval(cg, rec_body)
          types::g.stack_alloc_next = <->
          cg.current_module = saved_mod
-         cg.vars = stmt::truncate_vars(cg.vars, saved_nvars)
+         stmt::truncate_vars(cg.vars, saved_nvars)
          <+ res +>
 
 codegen_typed_eval_fn_call: types::Cg, String, tast::TypedExprs,

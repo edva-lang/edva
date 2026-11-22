@@ -192,14 +192,12 @@ sync_impl = list, items =>
          |
             retained = Key [String] <+ ++item_key +> | <-->
             fresh = Entry(<-->, 0, retained)
-            owned_key = Key [String] retained.expect("missing retained") | item_key
-            put_entry(list.index, owned_key, fresh)
             fresh
       entry.seen == epoch
          | --| <- Error(dom::DUPLICATE_KEY, "Duplicate DOM list item_key",
             "std/dom/list", 0, 0, (i, 0)) ->
-      entry.seen = epoch
       owned_key = Key [String] entry.key.expect("missing key") | item_key
+      put_entry(list.index, owned_key, entry(seen = epoch))
       i == ?list.plan
          | list.plan += owned_key
          |
@@ -292,7 +290,7 @@ sync_impl = list, items =>
                   revision_callback = list.revision_fn.expect("missing revision fn")
                   revision = revision_callback(item)
                   set_int(list.revisions, slot', revision)
-            apply_entry.slot = <+ slot' +>
+            put_entry(list.index, plan_key, apply_entry(slot = <+ slot' +>))
             list.node_index ^ id(row.element) = slot'
             slot'
       set_int(list.wanted, i, slot)

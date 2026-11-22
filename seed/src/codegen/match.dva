@@ -2032,7 +2032,7 @@ codegen_eval_predicate = cg, pred, cond_val, cond_type =>
                cg.vars += types::CgVar("_", ptype, <->, "", <-->, ast::Names(),
                  <-->, <+>, <->, ast::VTypes(), <+ cond_val +>)
          bv = expr::codegen_eval(cg, f.body)
-         cg.vars = stmt::truncate_vars(cg.vars, saved_nvars)
+         stmt::truncate_vars(cg.vars, saved_nvars)
          stmt::coerce_int(cg, bv.0, LLVMInt1Type!)
       | LLVMConstInt(LLVMInt1Type!, 0, 0)
 
@@ -4358,7 +4358,7 @@ codegen_typed_eval_cond_choice_tail = cg, cond, branches, ti, tail_k =>
                res_b0 = main::codegen_typed_eval(cg, b0.body)
                types::g.unboxed_ret_tail = 0
                res_b0
-         cg.vars = stmt::truncate_vars(cg.vars, saved_vars_1)
+         stmt::truncate_vars(cg.vars, saved_vars_1)
          stmt::branch_to(cg, exit_bb')
          LLVMPositionBuilderAtEnd(cg.builder, exit_bb')
          next_v1 = stmt::fn_body_has_arena_restore(cg, b0.body) | types::Addrs() | saved_val_strs_1
@@ -4439,7 +4439,7 @@ codegen_typed_eval_cond_choice_tail = cg, cond, branches, ti, tail_k =>
                            res_tb = main::codegen_typed_eval(cg, b0.body)
                            types::g.unboxed_ret_tail = 0
                            res_tb
-         cg.vars = stmt::truncate_vars(cg.vars, saved_vars_then)
+         stmt::truncate_vars(cg.vars, saved_vars_then)
          tv_opt = types::llvm_val_opt(tv.0)
          tv_val_opt = phi_ty_opt
             | pty =>
@@ -4511,7 +4511,7 @@ codegen_typed_eval_cond_choice_tail = cg, cond, branches, ti, tail_k =>
                            res_eb = main::codegen_typed_eval(cg, b1.body)
                            types::g.unboxed_ret_tail = 0
                            res_eb
-         cg.vars = stmt::truncate_vars(cg.vars, saved_vars_else)
+         stmt::truncate_vars(cg.vars, saved_vars_else)
          ev_opt = types::llvm_val_opt(ev.0)
          ev_val_opt = phi_ty_opt
             | pty =>
@@ -4618,7 +4618,7 @@ codegen_typed_eval_predicate = cg, pred_opt, cond_val, cond_vt =>
                      cg.vars += types::CgVar("_", ptype, <->, "", <-->, ast::Names(),
                        <-->, <+>, <->, ast::VTypes(), <+ cond_val +>)
                pv = main::codegen_typed_eval(cg, lam.1)
-               cg.vars = stmt::truncate_vars(cg.vars, saved_nvars)
+               stmt::truncate_vars(cg.vars, saved_nvars)
                stmt::coerce_int(cg, pv.0, LLVMInt1Type!)
             | LLVMConstInt(LLVMInt1Type!, 0, 0)
       | LLVMConstInt(LLVMInt1Type!, 0, 0)
@@ -4867,7 +4867,7 @@ codegen_typed_eval_guarded_choice_slow_tail = cg, cond, branches, ti, tail_k =>
             types::g.unboxed_ret_tail = tail_k
             bv' = main::codegen_typed_eval(cg, br.body)
             types::g.unboxed_ret_tail = 0
-            cg.vars = stmt::truncate_vars(cg.vars, saved_nvars)
+            stmt::truncate_vars(cg.vars, saved_nvars)
             c_term = stmt::block_is_terminated(cg)
             !is_void && !c_term
                |

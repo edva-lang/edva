@@ -710,7 +710,7 @@ compile_lambda = cg, f =>
    is_fn_ret && (cg.last_closure_fn != "")
       | fn_ret_fn_add(fnname, cg.last_closure_fn)
    types::g.view_var_names = types::truncate_names(types::g.view_var_names, saved_nviews)
-   cg.vars = truncate_vars(cg.vars, saved_nvars)
+   truncate_vars(cg.vars, saved_nvars)
    cg.bindings = runtime::binding_truncate(cg.bindings, saved_nbindings)
    cg.fn_var_start = saved_var_start
    cg.fn_binding_start = saved_binding_start
@@ -1751,7 +1751,7 @@ codegen_eval_cycle_unrolled_step = cg, body, idx_name, idx2_name, k, n, has_type
          v = expr::codegen_eval(cg, body)
          cg.discard_result = saved_discard
          types::ct_cursor_pop_to(saved_cur_n)
-         cg.vars = truncate_vars(cg.vars, saved_nvars)
+         truncate_vars(cg.vars, saved_nvars)
          cg.bindings = runtime::binding_truncate(cg.bindings, saved_nbindings)
          cg.error
             | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
@@ -2170,7 +2170,7 @@ codegen_eval_map_cycle = cg, c, m =>
    cg.discard_result = <+>
    bv = codegen_eval_cycle_body(cg, c.body_fn)
    cg.discard_result = saved_discard
-   cg.vars = truncate_vars(cg.vars, saved_cycle_vars)
+   truncate_vars(cg.vars, saved_cycle_vars)
    cg.bindings = runtime::binding_truncate(cg.bindings, saved_cycle_bindings)
    branch_to(cg, latch)
    LLVMPositionBuilderAtEnd(cg.builder, latch)
@@ -2239,7 +2239,7 @@ codegen_eval_condition_cycle = cg, c =>
    cg.discard_result = <+>
    bv = codegen_eval_cycle_body_cond(cg, c.body_fn)
    cg.discard_result = saved_discard
-   cg.vars = truncate_vars(cg.vars, saved_cycle_vars)
+   truncate_vars(cg.vars, saved_cycle_vars)
    cg.bindings = runtime::binding_truncate(cg.bindings, saved_cycle_bindings)
    branch_to(cg, latch)
    LLVMPositionBuilderAtEnd(cg.builder, latch)
@@ -2419,7 +2419,7 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv_opt =>
    cg.discard_result = <+>
    bv = codegen_eval_cycle_body(cg, c.body_fn)
    cg.discard_result = saved_discard
-   cg.vars = truncate_vars(cg.vars, saved_cycle_vars)
+   truncate_vars(cg.vars, saved_cycle_vars)
    cg.bindings = runtime::binding_truncate(cg.bindings, saved_cycle_bindings)
    branch_to(cg, latch)
    LLVMPositionBuilderAtEnd(cg.builder, latch)
@@ -4303,7 +4303,7 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
    // Drop the function's params + body locals from the var table (they live
    // inside the fn's own allocas) so a same-named top-level var does not
    // resolve to a stale function-local slot.
-   cg.vars = truncate_vars(cg.vars, saved_nvars)
+   truncate_vars(cg.vars, saved_nvars)
    cg.bindings = saved_bindings
    cg.fn_var_start = saved_var_start
    cg.fn_binding_start = saved_binding_start
@@ -4324,12 +4324,10 @@ truncate_vtypes = vts, n =>
       res += (vts(i) | _ | ast::ValueType(Unknown))
    res
 
-truncate_vars: types::CgVars, Int => types::CgVars
+// The compiler owns this growable array. Its first header word is the length.
+truncate_vars: types::CgVars, Int => ()
 truncate_vars = vars, n =>
-   res = types::CgVars()
-   n @ i =>
-      res += vars(i).expect("missing vars")
-   res
+   n < ?vars | @[&vars] = n
 
 is_foreign_fn_step: String, Int => <>
 is_foreign_fn_step = fname, i =>
@@ -6485,7 +6483,7 @@ codegen_typed_eval_block_tail = cg, exprs, tail_k =>
    expr::codegen_restore_scope_leave(cg, mark)
    escapes_addr = types::is_ptr_vt(last.1) ||
      (?exprs > 0 && tast_expr_has_scoped_addr(cg, exprs(?exprs - 1).expect("missing exprs"), var_threshold))
-   binding != "" | cg.vars = truncate_vars(cg.vars, var_threshold)
+   binding != "" | truncate_vars(cg.vars, var_threshold)
    saved_ranges | scope => types::vra_leave_scope(scope)
    has_alloc && escapes_addr
       |
@@ -8788,7 +8786,7 @@ codegen_typed_eval_condition_cycle = cg, iterable, body_fn, esc_opt, ti =>
          saved_esc_vars = ?cg.vars
          u_some = codegen_typed_cycle_escape_construct(cg, <+>,
            <+ esc_e +>, ti)
-         cg.vars = truncate_vars(cg.vars, saved_esc_vars)
+         truncate_vars(cg.vars, saved_esc_vars)
          LLVMBuildStore(cg.builder, u_some, eb.2)
          branch_to(cg, eb.1)
          LLVMPositionBuilderAtEnd(cg.builder, eb.1)
@@ -9067,7 +9065,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
       |
          main::codegen_typed_eval(cg, bfn)
    types::vra_leave_scope(saved_ranges)
-   cg.vars = truncate_vars(cg.vars, saved_cycle_vars)
+   truncate_vars(cg.vars, saved_cycle_vars)
    branch_to(cg, latch)
    LLVMPositionBuilderAtEnd(cg.builder, latch)
    step_val = LLVMBuildLoad2(cg.builder, i64t, step_alloca, "step.val")
@@ -9094,7 +9092,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
            "escape.res")
          (res_val, b_vt)
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
-   cg.vars = truncate_vars(cg.vars, saved_body_vars)
+   truncate_vars(cg.vars, saved_body_vars)
    result
 
 codegen_typed_eval_map_cycle: types::Cg, tast::TypedExpr, tast::TypedExpr,
@@ -9213,7 +9211,7 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
       |
          main::codegen_typed_eval(cg, body_fn)
    types::vra_leave_scope(saved_ranges)
-   cg.vars = truncate_vars(cg.vars, saved_cycle_vars)
+   truncate_vars(cg.vars, saved_cycle_vars)
    branch_to(cg, latch)
    LLVMPositionBuilderAtEnd(cg.builder, latch)
    loaded_i = LLVMBuildLoad2(cg.builder, i64t, counter_alloca, "m.it.c")
@@ -9241,7 +9239,7 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
            "escape.res")
          (res_val, b_vt)
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
-   cg.vars = truncate_vars(cg.vars, saved_body_vars)
+   truncate_vars(cg.vars, saved_body_vars)
    result
 
 codegen_typed_eval_cycle_jump: types::Cg, <>, Int => (Addr, ast::ValueType)
@@ -9625,7 +9623,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    types::vra.cur_muts = saved_vra_muts
    types::vra.bounded_idxs = saved_vra_bnds
    types::vra.len_vars = saved_vra_lvs
-   cg.vars = truncate_vars(cg.vars, saved_nvars)
+   truncate_vars(cg.vars, saved_nvars)
    cg.bindings = saved_bindings
    cg.fn_var_start = saved_var_start
    cg.fn_binding_start = saved_binding_start
