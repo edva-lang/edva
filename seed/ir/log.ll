@@ -1476,8 +1476,8 @@ choice.case:                                      ; preds = %str.eq.then
   store i64 0, ptr %enum.alloc, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
-  %p.to.i64 = ptrtoint ptr %enum.alloc to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %enum.alloc to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit
 
 choice.next:                                      ; preds = %entry, %str.eq.then
@@ -1499,8 +1499,8 @@ choice.case9:                                     ; preds = %str.eq.then17
   store i64 1, ptr %enum.alloc27, align 8
   %pay.gep29 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc27, i32 0, i32 1
   store ptr null, ptr %pay.gep29, align 8
-  %p.to.i6430 = ptrtoint ptr %enum.alloc27 to i64
-  %ram.pay31 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i6430, 1
+  %ptr.to.i6430 = ptrtoint ptr %enum.alloc27 to i64
+  %ram.pay31 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i6430, 1
   br label %choice.exit
 
 choice.next10:                                    ; preds = %choice.next, %str.eq.then17
@@ -1522,8 +1522,8 @@ choice.case32:                                    ; preds = %str.eq.merge57
   store i64 2, ptr %enum.alloc65, align 8
   %pay.gep67 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc65, i32 0, i32 1
   store ptr null, ptr %pay.gep67, align 8
-  %p.to.i6468 = ptrtoint ptr %enum.alloc65 to i64
-  %ram.pay69 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i6468, 1
+  %ptr.to.i6468 = ptrtoint ptr %enum.alloc65 to i64
+  %ram.pay69 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i6468, 1
   br label %choice.exit
 
 choice.next33:                                    ; preds = %str.eq.merge57
@@ -1564,8 +1564,8 @@ choice.case70:                                    ; preds = %str.eq.merge95
   store i64 3, ptr %enum.alloc104, align 8
   %pay.gep106 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc104, i32 0, i32 1
   store ptr null, ptr %pay.gep106, align 8
-  %p.to.i64107 = ptrtoint ptr %enum.alloc104 to i64
-  %ram.pay108 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64107, 1
+  %ptr.to.i64107 = ptrtoint ptr %enum.alloc104 to i64
+  %ram.pay108 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64107, 1
   br label %choice.exit
 
 choice.next71:                                    ; preds = %str.eq.merge95
@@ -1606,8 +1606,8 @@ choice.case109:                                   ; preds = %str.eq.merge150
   store i64 4, ptr %enum.alloc159, align 8
   %pay.gep161 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc159, i32 0, i32 1
   store ptr null, ptr %pay.gep161, align 8
-  %p.to.i64162 = ptrtoint ptr %enum.alloc159 to i64
-  %ram.pay163 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64162, 1
+  %ptr.to.i64162 = ptrtoint ptr %enum.alloc159 to i64
+  %ram.pay163 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64162, 1
   br label %choice.exit
 
 str.eq.then117:                                   ; preds = %choice.next71

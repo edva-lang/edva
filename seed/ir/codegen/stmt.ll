@@ -2733,8 +2733,8 @@ a.store30:                                        ; preds = %a.grow29, %a.store
   %a.next.len42 = add i64 %a.cur.len39, 1
   store i64 %a.next.len42, ptr %a.new, align 8
   %call.res58 = call ptr @"types::struct_type_n"(ptr %0, ptr %a.new, i64 2)
-  %p.to.i64 = ptrtoint ptr %call.res58 to i64
-  %ram.pay61 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res58 to i64
+  %ram.pay61 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   store { i1, i64 } %ram.pay61, ptr %fld.gep, align 8
   br label %choice.exit
 }
@@ -4536,8 +4536,8 @@ choice.exit126:                                   ; preds = %choice.exit85, %cho
   %ret.ub.alloc = call ptr @dva_arena_alloc(ptr %arena.cur212, i64 16)
   store { i64, ptr } %call.res211, ptr %ret.ub.alloc, align 8
   %call.res216 = call ptr @"types::var_fnames"(ptr %0, ptr %choice.res)
-  %p.to.i64 = ptrtoint ptr %choice.res202 to i64
-  %ram.pay218 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %choice.res202 to i64
+  %ram.pay218 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   %call.res221 = call ptr @"match::var_fvts"(ptr %0, ptr %choice.res)
   %arena.cur222 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur222, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1, ptr, { i1, i64 }, ptr, { i1, i64 }, i1, i1, ptr, { i1, i64 } }, ptr null, i32 1) to i64))
@@ -4853,8 +4853,8 @@ choice.exit140:                                   ; preds = %choice.else139, %ch
   store ptr %a.buf161, ptr %a.data.gep163, align 8
   %a.cap.gep164 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new159, i32 0, i32 2
   store i64 16, ptr %a.cap.gep164, align 8
-  %p.to.i64 = ptrtoint ptr %call.res81 to i64
-  %ram.pay166 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res81 to i64
+  %ram.pay166 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   %arena.cur167 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur167, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1, ptr, { i1, i64 }, ptr, { i1, i64 }, i1, i1, ptr, { i1, i64 } }, ptr null, i32 1) to i64))
   store ptr %choice.res, ptr %rec.alloc, align 8
@@ -8167,8 +8167,8 @@ choice.exit:                                      ; preds = %a.after, %choice.ca
 choice.case:                                      ; preds = %a.after
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %var.load7, i32 0, i32 1
   %call.res11 = call ptr @"annotate::utype_from_ti_env"(ptr %call.res5, ptr %var.load7)
-  %p.to.i64 = ptrtoint ptr %call.res11 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res11 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit
 
 choice.then:                                      ; preds = %choice.exit
@@ -8924,8 +8924,8 @@ choice.exit475:                                   ; preds = %str.eq.merge637, %a
 
 choice.then481:                                   ; preds = %choice.then474
   %fld.load487 = load ptr, ptr %call.res478, align 8
-  %p.to.i64 = ptrtoint ptr %fld.load487 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %fld.load487 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit483
 
 choice.exit483:                                   ; preds = %choice.then474, %choice.then481
@@ -9229,8 +9229,8 @@ a.create726:                                      ; preds = %choice.then719
 a.after727:                                       ; preds = %a.create726, %choice.then719
   %var.cap_tys.0 = phi ptr [ %a.create729, %a.create726 ], [ %choice.res717, %choice.then719 ]
   %call.res737 = call ptr @"types::struct_type_n"(ptr %0, ptr %var.cap_tys.0, i64 %a.len.query40)
-  %p.to.i64738 = ptrtoint ptr %call.res737 to i64
-  %ram.pay739 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64738, 1
+  %ptr.to.i64738 = ptrtoint ptr %call.res737 to i64
+  %ram.pay739 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64738, 1
   br label %choice.exit721
 
 choice.exit765:                                   ; preds = %a.store781, %choice.exit721
@@ -9274,8 +9274,8 @@ loop.body.1561:                                   ; preds = %loop.header.1561
 loop.exit.1561:                                   ; preds = %loop.header.1561
   %call.res945 = call ptr @"types::llvm_abi_ret_type_of_ti_for_fn"(ptr %0, ptr %1, ptr %choice.res462)
   %var.load946 = load ptr, ptr @"var.types::g", align 8
-  %p.to.i64948 = ptrtoint ptr %call.res945 to i64
-  %ram.pay949 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64948, 1
+  %ptr.to.i64948 = ptrtoint ptr %call.res945 to i64
+  %ram.pay949 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64948, 1
   %fld.gep950 = getelementptr inbounds { i64, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, i1, i1, ptr, ptr, ptr, i64, i1, ptr, ptr, ptr, i64, i1 }, ptr %var.load946, i32 0, i32 14
   store { i1, i64 } %ram.pay949, ptr %fld.gep950, align 8
   %addtmp = add i64 %a.len.query755, 1
@@ -10074,8 +10074,8 @@ choice.exit1544:                                  ; preds = %choice.else1543, %c
 
 choice.then1609:                                  ; preds = %choice.exit1544
   %fld.load1615 = load ptr, ptr %call.res1603, align 8
-  %p.to.i641616 = ptrtoint ptr %fld.load1615 to i64
-  %ram.pay1617 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641616, 1
+  %ptr.to.i641616 = ptrtoint ptr %fld.load1615 to i64
+  %ram.pay1617 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641616, 1
   br label %choice.exit1611
 
 choice.else1610:                                  ; preds = %choice.exit1544
@@ -10090,8 +10090,8 @@ choice.exit1611:                                  ; preds = %choice.then1620, %c
 
 choice.then1620:                                  ; preds = %choice.else1610
   %fld.load1627 = load ptr, ptr %call.res1606, align 8
-  %p.to.i641628 = ptrtoint ptr %fld.load1627 to i64
-  %ram.pay1629 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641628, 1
+  %ptr.to.i641628 = ptrtoint ptr %fld.load1627 to i64
+  %ram.pay1629 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641628, 1
   br label %choice.exit1611
 
 choice.then1634:                                  ; preds = %choice.exit1611
@@ -10403,7 +10403,7 @@ choice.then1909:                                  ; preds = %choice.else1890
   br label %choice.exit1911
 
 choice.else1910:                                  ; preds = %choice.else1890
-  %addr.ffi.masked1918 = and i64 %p.to.i64948, 281474976710655
+  %addr.ffi.masked1918 = and i64 %ptr.to.i64948, 281474976710655
   %addr.ffi.clean1919 = inttoptr i64 %addr.ffi.masked1918 to ptr
   %call.res1920 = call ptr @LLVMConstNull(ptr %addr.ffi.clean1919)
   br label %choice.exit1911
@@ -10456,7 +10456,7 @@ choice.case1944:                                  ; preds = %choice.else1930
 
 choice.case1959:                                  ; preds = %choice.exit1943
   %pay.gep1964 = getelementptr inbounds { i64, ptr }, ptr %choice.res1956, i32 0, i32 1
-  %addr.ffi.masked1974 = and i64 %p.to.i64948, 281474976710655
+  %addr.ffi.masked1974 = and i64 %ptr.to.i64948, 281474976710655
   %addr.ffi.clean1975 = inttoptr i64 %addr.ffi.masked1974 to ptr
   %call.res1976 = call i64 @LLVMGetTypeKind(ptr %addr.ffi.clean1975)
   %addr.ffi.int1978 = ptrtoint ptr %choice.res1921 to i64
@@ -22693,8 +22693,8 @@ choice.case654:                                   ; preds = %choice.then646
 
 choice.exit670:                                   ; preds = %choice.case671, %choice.exit648
   %choice.res687 = phi i1 [ false, %choice.exit648 ], [ %.1235, %choice.case671 ]
-  %p.to.i64 = ptrtoint ptr %choice.res665 to i64
-  %ram.pay690 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %choice.res665 to i64
+  %ram.pay690 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   %fld.gep691 = getelementptr inbounds { ptr, i64, i64, ptr, { ptr, ptr, ptr }, ptr, ptr, ptr, ptr, i1, i1, i1, i1, ptr, ptr, { i1, i64 }, ptr }, ptr %call.res22, i32 0, i32 15
   store { i1, i64 } %ram.pay690, ptr %fld.gep691, align 8
   %fld.gep694 = getelementptr inbounds { ptr, i64, i64, ptr, { ptr, ptr, ptr }, ptr, ptr, ptr, ptr, i1, i1, i1, i1, ptr, ptr, { i1, i64 }, ptr }, ptr %call.res22, i32 0, i32 9
@@ -36682,8 +36682,8 @@ a.create689:                                      ; preds = %choice.then682
 a.after690:                                       ; preds = %a.create689, %choice.then682
   %var.cap_tys.0 = phi ptr [ %a.create692, %a.create689 ], [ %call.res680, %choice.then682 ]
   %call.res700 = call ptr @"types::struct_type_n"(ptr %0, ptr %var.cap_tys.0, i64 %a.len.query33)
-  %p.to.i64 = ptrtoint ptr %call.res700 to i64
-  %ram.pay701 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res700 to i64
+  %ram.pay701 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit684
 
 choice.exit712:                                   ; preds = %a.store728, %choice.exit684
@@ -36930,8 +36930,8 @@ choice.exit964:                                   ; preds = %a.after1028, %choic
   %fld.load1082.fca.1.extract = extractvalue { i1, i64 } %fld.load1082, 1
   store ptr %choice.res214, ptr %fld.gep1078, align 8
   %var.load1086 = load ptr, ptr @"var.types::g", align 8
-  %p.to.i641088 = ptrtoint ptr %choice.res655 to i64
-  %ram.pay1089 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641088, 1
+  %ptr.to.i641088 = ptrtoint ptr %choice.res655 to i64
+  %ram.pay1089 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641088, 1
   %fld.gep1090 = getelementptr inbounds { i64, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, i1, i1, ptr, ptr, ptr, i64, i1, ptr, ptr, ptr, i64, i1 }, ptr %var.load1086, i32 0, i32 14
   store { i1, i64 } %ram.pay1089, ptr %fld.gep1090, align 8
   %fld.load1094 = load ptr, ptr %fld.gep641, align 8
@@ -45195,8 +45195,8 @@ choice.then14:                                    ; preds = %choice.then
   %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
   %call.res21 = call ptr @LLVMStructGetTypeAtIndex(ptr %addr.ffi.clean, i64 %call.res12)
-  %p.to.i64 = ptrtoint ptr %call.res21 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res21 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit
 
 choice.else15:                                    ; preds = %choice.then
@@ -45352,8 +45352,8 @@ choice.exit18:                                    ; preds = %choice.then28, %cho
 
 choice.then28:                                    ; preds = %choice.then16
   %fld.load35 = load ptr, ptr %call.res25, align 8
-  %p.to.i64 = ptrtoint ptr %fld.load35 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %fld.load35 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit18
 }
 
@@ -63949,8 +63949,8 @@ str.eq.then:                                      ; preds = %str_ok
 
 choice.then:                                      ; preds = %str.eq.then
   %fld.load14 = load ptr, ptr %payload.ptr, align 8
-  %p.to.i64 = ptrtoint ptr %fld.load14 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %fld.load14 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit
 
 choice.then17:                                    ; preds = %choice.exit
@@ -64423,8 +64423,8 @@ choice.then23:                                    ; preds = %str.eq.merge
   store ptr %a.buf32, ptr %a.data.gep34, align 8
   %a.cap.gep35 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new30, i32 0, i32 2
   store i64 16, ptr %a.cap.gep35, align 8
-  %p.to.i64 = ptrtoint ptr %call.res17 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res17 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   %arena.cur37 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur37, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1, ptr, { i1, i64 }, ptr, { i1, i64 }, i1, i1, ptr, { i1, i64 } }, ptr null, i32 1) to i64))
   store ptr %2, ptr %rec.alloc, align 8
@@ -64528,8 +64528,8 @@ choice.then83:                                    ; preds = %str.eq.merge75
   store ptr %a.buf101, ptr %a.data.gep103, align 8
   %a.cap.gep104 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new99, i32 0, i32 2
   store i64 16, ptr %a.cap.gep104, align 8
-  %p.to.i64106 = ptrtoint ptr %call.res17 to i64
-  %ram.pay107 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64106, 1
+  %ptr.to.i64106 = ptrtoint ptr %call.res17 to i64
+  %ram.pay107 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64106, 1
   %arena.cur108 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc109 = call ptr @dva_arena_alloc(ptr %arena.cur108, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1, ptr, { i1, i64 }, ptr, { i1, i64 }, i1, i1, ptr, { i1, i64 } }, ptr null, i32 1) to i64))
   store ptr %3, ptr %rec.alloc109, align 8
@@ -67494,8 +67494,8 @@ choice.exit424:                                   ; preds = %and.2154.exit, %cho
 
 choice.then431:                                   ; preds = %choice.exit424
   %fld.load437 = load ptr, ptr %choice.res428, align 8
-  %p.to.i64 = ptrtoint ptr %fld.load437 to i64
-  %ram.pay438 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %fld.load437 to i64
+  %ram.pay438 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit433
 
 choice.exit433:                                   ; preds = %choice.exit424, %choice.then431
@@ -67563,8 +67563,8 @@ choice.then482:                                   ; preds = %str.eq.merge474
 
 choice.exit484:                                   ; preds = %str.eq.merge474, %choice.then482
   %choice.res489 = phi ptr [ %call.res487, %choice.then482 ], [ %choice.res153, %str.eq.merge474 ]
-  %p.to.i64490 = ptrtoint ptr %choice.res489 to i64
-  %ram.pay491 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64490, 1
+  %ptr.to.i64490 = ptrtoint ptr %choice.res489 to i64
+  %ram.pay491 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64490, 1
   br label %choice.exit457
 
 choice.then494:                                   ; preds = %choice.exit457
@@ -68333,8 +68333,8 @@ choice.exit1179:                                  ; preds = %choice.exit1125, %c
 choice.then1182:                                  ; preds = %choice.exit1125
   %fld.gep1186 = getelementptr inbounds { i64, ptr, ptr }, ptr %choice.res173, i32 0, i32 2
   %fld.load1187 = load ptr, ptr %fld.gep1186, align 8
-  %p.to.i641188 = ptrtoint ptr %fld.load1187 to i64
-  %ram.pay1189 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641188, 1
+  %ptr.to.i641188 = ptrtoint ptr %fld.load1187 to i64
+  %ram.pay1189 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641188, 1
   br label %choice.exit1179
 
 choice.then1193:                                  ; preds = %choice.exit1179
@@ -68352,8 +68352,8 @@ choice.exit1195:                                  ; preds = %choice.exit1343, %c
 unwrap.pos.2161:                                  ; preds = %choice.then1193
   %pay.ptr1201 = inttoptr i64 %choice.res492.fca.1.extract to ptr
   %call.res1206 = call ptr @"stmt::cycle_array_elem_val"(ptr %0, ptr %pay.ptr1201, ptr %call.res996, i1 %call.res441, ptr %choice.res386, ptr %choice.res453)
-  %p.to.i641207 = ptrtoint ptr %call.res1206 to i64
-  %ram.pay1208 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641207, 1
+  %ptr.to.i641207 = ptrtoint ptr %call.res1206 to i64
+  %ram.pay1208 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641207, 1
   br label %choice.exit1195
 
 unwrap.abort.2161:                                ; preds = %choice.then1193
@@ -68374,8 +68374,8 @@ choice.then1210:                                  ; preds = %choice.else1194
   %addr.ffi.masked1234 = and i64 %addr.ffi.int1233, 281474976710655
   %addr.ffi.clean1235 = inttoptr i64 %addr.ffi.masked1234 to ptr
   %call.res1255 = call ptr @LLVMBuildLoad2(ptr %addr.ffi.clean1227, ptr %addr.ffi.clean1231, ptr %addr.ffi.clean1235, ptr @str.459)
-  %p.to.i641256 = ptrtoint ptr %call.res1255 to i64
-  %ram.pay1257 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641256, 1
+  %ptr.to.i641256 = ptrtoint ptr %call.res1255 to i64
+  %ram.pay1257 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641256, 1
   br label %choice.exit1195
 
 choice.else1211:                                  ; preds = %choice.else1194
@@ -68389,8 +68389,8 @@ choice.else1260:                                  ; preds = %choice.else1211
 
 unwrap.pos.2162:                                  ; preds = %choice.then1259
   %fld.load1266 = load ptr, ptr %choice.res1087, align 8
-  %p.to.i641267 = ptrtoint ptr %fld.load1266 to i64
-  %ram.pay1268 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641267, 1
+  %ptr.to.i641267 = ptrtoint ptr %fld.load1266 to i64
+  %ram.pay1268 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641267, 1
   br label %choice.exit1195
 
 unwrap.abort.2162:                                ; preds = %choice.then1259
@@ -68399,8 +68399,8 @@ unwrap.abort.2162:                                ; preds = %choice.then1259
 
 choice.then1270:                                  ; preds = %choice.else1260
   %call.res1276 = call ptr @"stmt::cycle_str_elem"(ptr %0, ptr %choice.res153, ptr %call.res996)
-  %p.to.i641277 = ptrtoint ptr %call.res1276 to i64
-  %ram.pay1278 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641277, 1
+  %ptr.to.i641277 = ptrtoint ptr %call.res1276 to i64
+  %ram.pay1278 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641277, 1
   br label %choice.exit1195
 
 choice.else1271:                                  ; preds = %choice.else1260
@@ -68450,8 +68450,8 @@ choice.else1342:                                  ; preds = %choice.then1280
 
 choice.exit1343:                                  ; preds = %choice.then1280, %choice.else1342
   %choice.res1381 = phi ptr [ %call.res1380, %choice.else1342 ], [ %call.res1329, %choice.then1280 ]
-  %p.to.i641383 = ptrtoint ptr %choice.res1381 to i64
-  %ram.pay1384 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641383, 1
+  %ptr.to.i641383 = ptrtoint ptr %choice.res1381 to i64
+  %ram.pay1384 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641383, 1
   br label %choice.exit1195
 
 choice.then1391:                                  ; preds = %choice.exit1195
@@ -69608,8 +69608,8 @@ choice.exit46:                                    ; preds = %choice.exit38, %cho
 
 choice.then59:                                    ; preds = %choice.exit46
   %fld.load66 = load ptr, ptr %choice.res42, align 8
-  %p.to.i64 = ptrtoint ptr %fld.load66 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %fld.load66 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit61
 
 choice.exit61:                                    ; preds = %choice.exit46, %choice.then59
@@ -70100,8 +70100,8 @@ a.create508:                                      ; preds = %a.store488
 
 a.after509:                                       ; preds = %a.create508, %a.store488
   %var.empty_names.2 = phi ptr [ %a.create511, %a.create508 ], [ %a.new, %a.store488 ]
-  %p.to.i64519 = ptrtoint ptr %7 to i64
-  %ram.pay520 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64519, 1
+  %ptr.to.i64519 = ptrtoint ptr %7 to i64
+  %ram.pay520 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64519, 1
   %a.null523 = icmp eq ptr %a.new4, null
   br i1 %a.null523, label %a.create524, label %a.after525
 
@@ -70119,8 +70119,8 @@ a.create524:                                      ; preds = %a.after509
 
 a.after525:                                       ; preds = %a.create524, %a.after509
   %var.vts.4 = phi ptr [ %a.create527, %a.create524 ], [ %a.new4, %a.after509 ]
-  %p.to.i64535 = ptrtoint ptr %6 to i64
-  %ram.pay536 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64535, 1
+  %ptr.to.i64535 = ptrtoint ptr %6 to i64
+  %ram.pay536 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64535, 1
   %arena.cur537 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc538 = call ptr @dva_arena_alloc(ptr %arena.cur537, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1, ptr, { i1, i64 }, ptr, { i1, i64 }, i1, i1, ptr, { i1, i64 } }, ptr null, i32 1) to i64))
   store ptr %choice.res374, ptr %rec.alloc538, align 8
@@ -70197,8 +70197,8 @@ a.create589:                                      ; preds = %a.after577
 
 a.after590:                                       ; preds = %a.create589, %a.after577
   %var.e_vts.2 = phi ptr [ %a.create592, %a.create589 ], [ %choice.res120, %a.after577 ]
-  %p.to.i64600 = ptrtoint ptr %3 to i64
-  %ram.pay601 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64600, 1
+  %ptr.to.i64600 = ptrtoint ptr %3 to i64
+  %ram.pay601 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64600, 1
   %arena.cur602 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc603 = call ptr @dva_arena_alloc(ptr %arena.cur602, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1, ptr, { i1, i64 }, ptr, { i1, i64 }, i1, i1, ptr, { i1, i64 } }, ptr null, i32 1) to i64))
   store ptr @str.11.struct, ptr %rec.alloc603, align 8
@@ -70260,8 +70260,8 @@ a.create638:                                      ; preds = %a.store619
 
 a.after639:                                       ; preds = %a.create638, %a.store619
   %var.empty_names.3 = phi ptr [ %a.create641, %a.create638 ], [ %a.new, %a.store619 ]
-  %p.to.i64649 = ptrtoint ptr %7 to i64
-  %ram.pay650 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64649, 1
+  %ptr.to.i64649 = ptrtoint ptr %7 to i64
+  %ram.pay650 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64649, 1
   %a.null653 = icmp eq ptr %a.new4, null
   br i1 %a.null653, label %a.create654, label %a.after655
 
@@ -70279,8 +70279,8 @@ a.create654:                                      ; preds = %a.after639
 
 a.after655:                                       ; preds = %a.create654, %a.after639
   %var.vts.5 = phi ptr [ %a.create657, %a.create654 ], [ %a.new4, %a.after639 ]
-  %p.to.i64665 = ptrtoint ptr %6 to i64
-  %ram.pay666 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64665, 1
+  %ptr.to.i64665 = ptrtoint ptr %6 to i64
+  %ram.pay666 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64665, 1
   %arena.cur667 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc668 = call ptr @dva_arena_alloc(ptr %arena.cur667, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1, ptr, { i1, i64 }, ptr, { i1, i64 }, i1, i1, ptr, { i1, i64 } }, ptr null, i32 1) to i64))
   store ptr @str.432.struct, ptr %rec.alloc668, align 8
@@ -70424,8 +70424,8 @@ a.create782:                                      ; preds = %a.rd.done730
 
 a.after783:                                       ; preds = %a.create782, %a.rd.done730
   %var.empty_names.4 = phi ptr [ %a.create785, %a.create782 ], [ %a.new, %a.rd.done730 ]
-  %p.to.i64793 = ptrtoint ptr %7 to i64
-  %ram.pay794 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64793, 1
+  %ptr.to.i64793 = ptrtoint ptr %7 to i64
+  %ram.pay794 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64793, 1
   %a.null797 = icmp eq ptr %a.new4, null
   br i1 %a.null797, label %a.create798, label %a.after799
 
@@ -70443,8 +70443,8 @@ a.create798:                                      ; preds = %a.after783
 
 a.after799:                                       ; preds = %a.create798, %a.after783
   %var.vts.6 = phi ptr [ %a.create801, %a.create798 ], [ %a.new4, %a.after783 ]
-  %p.to.i64809 = ptrtoint ptr %6 to i64
-  %ram.pay810 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64809, 1
+  %ptr.to.i64809 = ptrtoint ptr %6 to i64
+  %ram.pay810 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64809, 1
   %arena.cur811 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc812 = call ptr @dva_arena_alloc(ptr %arena.cur811, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1, ptr, { i1, i64 }, ptr, { i1, i64 }, i1, i1, ptr, { i1, i64 } }, ptr null, i32 1) to i64))
   store ptr %choice.res775, ptr %rec.alloc812, align 8
@@ -70502,8 +70502,8 @@ a.rd.ok855:                                       ; preds = %a.store828
   %ram.tag891 = insertvalue { i1, i64 } zeroinitializer, i1 true, 0
   %ram.pay892 = insertvalue { i1, i64 } %ram.tag891, i64 %a.rd.elem866, 1
   %pay.ptr898 = inttoptr i64 %a.rd.elem866 to ptr
-  %p.to.i64935 = ptrtoint ptr %3 to i64
-  %ram.pay936 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64935, 1
+  %ptr.to.i64935 = ptrtoint ptr %3 to i64
+  %ram.pay936 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64935, 1
   %arena.cur937 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc938 = call ptr @dva_arena_alloc(ptr %arena.cur937, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1, ptr, { i1, i64 }, ptr, { i1, i64 }, i1, i1, ptr, { i1, i64 } }, ptr null, i32 1) to i64))
   store ptr %pay.ptr898, ptr %rec.alloc938, align 8
@@ -70563,8 +70563,8 @@ a.create973:                                      ; preds = %choice.next714
 
 a.after974:                                       ; preds = %a.create973, %choice.next714
   %var.empty_names.6 = phi ptr [ %a.create976, %a.create973 ], [ %a.new, %choice.next714 ]
-  %p.to.i64984 = ptrtoint ptr %7 to i64
-  %ram.pay985 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64984, 1
+  %ptr.to.i64984 = ptrtoint ptr %7 to i64
+  %ram.pay985 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64984, 1
   %a.null988 = icmp eq ptr %a.new4, null
   br i1 %a.null988, label %a.create989, label %a.after990
 
@@ -70582,8 +70582,8 @@ a.create989:                                      ; preds = %a.after974
 
 a.after990:                                       ; preds = %a.create989, %a.after974
   %var.vts.8 = phi ptr [ %a.create992, %a.create989 ], [ %a.new4, %a.after974 ]
-  %p.to.i641000 = ptrtoint ptr %6 to i64
-  %ram.pay1001 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641000, 1
+  %ptr.to.i641000 = ptrtoint ptr %6 to i64
+  %ram.pay1001 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641000, 1
   %arena.cur1002 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc1003 = call ptr @dva_arena_alloc(ptr %arena.cur1002, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1, ptr, { i1, i64 }, ptr, { i1, i64 }, i1, i1, ptr, { i1, i64 } }, ptr null, i32 1) to i64))
   store ptr @str.11.struct, ptr %rec.alloc1003, align 8
@@ -70628,8 +70628,8 @@ a.store1019:                                      ; preds = %a.grow1018, %a.afte
   store i64 %slot.p2i1030, ptr %a.elem.gep1029, align 8
   %a.next.len1031 = add i64 %a.cur.len1028, 1
   store i64 %a.next.len1031, ptr %a.fld.load1016, align 8
-  %p.to.i641062 = ptrtoint ptr %3 to i64
-  %ram.pay1063 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641062, 1
+  %ptr.to.i641062 = ptrtoint ptr %3 to i64
+  %ram.pay1063 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641062, 1
   %arena.cur1064 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc1065 = call ptr @dva_arena_alloc(ptr %arena.cur1064, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1, ptr, { i1, i64 }, ptr, { i1, i64 }, i1, i1, ptr, { i1, i64 } }, ptr null, i32 1) to i64))
   store ptr @str.432.struct, ptr %rec.alloc1065, align 8
@@ -74064,8 +74064,8 @@ concat.tot.len194:                                ; preds = %concat.sum.len188
   %addr.ffi.masked221 = and i64 %addr.ffi.int220, 281474976710655
   %addr.ffi.clean222 = inttoptr i64 %addr.ffi.masked221 to ptr
   %call.res223 = call ptr @LLVMBuildStore(ptr %addr.ffi.clean214, ptr %addr.ffi.clean218, ptr %addr.ffi.clean222)
-  %p.to.i64 = ptrtoint ptr %call.res49 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res49 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   %fld.gep226 = getelementptr inbounds { ptr, ptr, ptr, { i1, i64 }, ptr, i1, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, { i1, i64 }, { i1, i64 }, { ptr, ptr }, ptr, ptr, i1, { i1, i64 }, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr, i1, i1, i1, i1 }, i1, i1, ptr, ptr, ptr }, ptr %0, i32 0, i32 58
   store { i1, i64 } %ram.pay, ptr %fld.gep226, align 8
   %fld.load230 = load ptr, ptr %1, align 8
@@ -74075,7 +74075,7 @@ concat.tot.len194:                                ; preds = %concat.sum.len188
   %addr.ffi.int237 = ptrtoint ptr %fld.load236 to i64
   %addr.ffi.masked238 = and i64 %addr.ffi.int237, 281474976710655
   %addr.ffi.clean239 = inttoptr i64 %addr.ffi.masked238 to ptr
-  %addr.ffi.masked242 = and i64 %p.to.i64, 281474976710655
+  %addr.ffi.masked242 = and i64 %ptr.to.i64, 281474976710655
   %addr.ffi.clean243 = inttoptr i64 %addr.ffi.masked242 to ptr
   call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean239, ptr %addr.ffi.clean243)
   %fld.gep246 = getelementptr inbounds { ptr, ptr }, ptr %1, i32 0, i32 1
@@ -76997,8 +76997,8 @@ choice.then648:                                   ; preds = %concat.tot.len625
 
 choice.then652:                                   ; preds = %choice.then648
   %fld.load659 = load ptr, ptr %call.res330, align 8
-  %p.to.i64 = ptrtoint ptr %fld.load659 to i64
-  %ram.pay660 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %fld.load659 to i64
+  %ram.pay660 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit654
 
 choice.exit654:                                   ; preds = %choice.then648, %choice.then652
@@ -77575,8 +77575,8 @@ choice.exit1144:                                  ; preds = %choice.then1147, %c
 
 choice.then1147:                                  ; preds = %choice.exit1126
   %fld.load1154 = load ptr, ptr %call.res330, align 8
-  %p.to.i641155 = ptrtoint ptr %fld.load1154 to i64
-  %ram.pay1156 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641155, 1
+  %ptr.to.i641155 = ptrtoint ptr %fld.load1154 to i64
+  %ram.pay1156 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641155, 1
   br label %choice.exit1144
 
 choice.then1161:                                  ; preds = %choice.exit1144
@@ -77632,8 +77632,8 @@ a.create1200:                                     ; preds = %a.after1188
 
 a.after1201:                                      ; preds = %a.create1200, %a.after1188
   %var.pr2.0 = phi ptr [ %a.create1203, %a.create1200 ], [ %choice.res562, %a.after1188 ]
-  %p.to.i641211 = ptrtoint ptr %choice.res778 to i64
-  %ram.pay1212 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641211, 1
+  %ptr.to.i641211 = ptrtoint ptr %choice.res778 to i64
+  %ram.pay1212 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641211, 1
   %arena.cur1213 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc1214 = call ptr @dva_arena_alloc(ptr %arena.cur1213, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1, ptr, { i1, i64 }, ptr, { i1, i64 }, i1, i1, ptr, { i1, i64 } }, ptr null, i32 1) to i64))
   store ptr %choice.res, ptr %rec.alloc1214, align 8
@@ -78597,8 +78597,8 @@ a.store:                                          ; preds = %a.grow, %a.after814
   %fld.load866.fca.1.extract = extractvalue { i1, i64 } %fld.load866, 1
   store ptr %choice.res456, ptr %fld.gep862, align 8
   %var.load870 = load ptr, ptr @"var.types::g", align 8
-  %p.to.i64872 = ptrtoint ptr %choice.res565 to i64
-  %ram.pay873 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64872, 1
+  %ptr.to.i64872 = ptrtoint ptr %choice.res565 to i64
+  %ram.pay873 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64872, 1
   %fld.gep874 = getelementptr inbounds { i64, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, i1, i1, ptr, ptr, ptr, i64, i1, ptr, ptr, ptr, i64, i1 }, ptr %var.load870, i32 0, i32 14
   store { i1, i64 } %ram.pay873, ptr %fld.gep874, align 8
   %var.load875 = load ptr, ptr @"var.stmt::lambda_expected_ti", align 8
@@ -78690,7 +78690,7 @@ choice.then948:                                   ; preds = %choice.then929
 
 choice.exit949:                                   ; preds = %choice.then963, %choice.case979, %choice.then948, %choice.then929
   %"var.rt_opt'.sroa.0.0" = phi i1 [ %fld.load934.fca.0.extract, %choice.then929 ], [ %fld.load934.fca.0.extract, %choice.then948 ], [ %ram.pay970.fca.0.extract, %choice.case979 ], [ %ram.pay970.fca.0.extract, %choice.then963 ]
-  %"var.rt_opt'.sroa.4.0" = phi i64 [ %fld.load934.fca.1.extract, %choice.then929 ], [ %fld.load934.fca.1.extract, %choice.then948 ], [ %p.to.i64969, %choice.case979 ], [ %p.to.i64969, %choice.then963 ]
+  %"var.rt_opt'.sroa.4.0" = phi i64 [ %fld.load934.fca.1.extract, %choice.then929 ], [ %fld.load934.fca.1.extract, %choice.then948 ], [ %ptr.to.i64969, %choice.case979 ], [ %ptr.to.i64969, %choice.then963 ]
   %"var.fnms'.0" = phi ptr [ %fld.load937, %choice.then929 ], [ %fld.load937, %choice.then948 ], [ %fld.load973, %choice.case979 ], [ %fld.load973, %choice.then963 ]
   %"var.fvts'.0" = phi ptr [ %fld.load940, %choice.then929 ], [ %fld.load940, %choice.then948 ], [ %call.res976, %choice.case979 ], [ %call.res976, %choice.then963 ]
   %"var.dt'.0" = phi ptr [ %fld.load943, %choice.then929 ], [ %fld.load943, %choice.then948 ], [ %payload.ptr985, %choice.case979 ], [ %fld.load943, %choice.then963 ]
@@ -78702,8 +78702,8 @@ choice.exit949:                                   ; preds = %choice.then963, %ch
 
 choice.then963:                                   ; preds = %choice.then948
   %fld.load968 = load ptr, ptr %call.res960, align 8
-  %p.to.i64969 = ptrtoint ptr %fld.load968 to i64
-  %ram.pay970 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64969, 1
+  %ptr.to.i64969 = ptrtoint ptr %fld.load968 to i64
+  %ram.pay970 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64969, 1
   %ram.pay970.fca.0.extract = extractvalue { i1, i64 } %ram.pay970, 0
   %fld.gep972 = getelementptr inbounds { ptr, ptr }, ptr %call.res960, i32 0, i32 1
   %fld.load973 = load ptr, ptr %fld.gep972, align 8
@@ -78900,7 +78900,7 @@ choice.exit1124:                                  ; preds = %choice.exit1109, %c
   %choice.res1136 = phi i1 [ %cmptmp, %choice.then1122 ], [ false, %choice.exit1109 ]
   %call.res1138 = call ptr @LLVMInt64Type()
   %ptr.int.r = ptrtoint ptr %call.res1138 to i64
-  %cmptmp1139 = icmp eq i64 %p.to.i64872, %ptr.int.r
+  %cmptmp1139 = icmp eq i64 %ptr.to.i64872, %ptr.int.r
   %choice.res1136. = select i1 %cmptmp1139, i1 %choice.res1136, i1 false
   br i1 %.2064, label %choice.then1142, label %choice.else1143
 
@@ -78938,7 +78938,7 @@ choice.then1163:                                  ; preds = %choice.else1143
   br i1 %choice.res1136.and.2216.phi, label %choice.then1172, label %choice.else1173
 
 choice.else1164:                                  ; preds = %choice.else1143
-  %addr.ffi.masked1561 = and i64 %p.to.i64872, 281474976710655
+  %addr.ffi.masked1561 = and i64 %ptr.to.i64872, 281474976710655
   %addr.ffi.clean1562 = inttoptr i64 %addr.ffi.masked1561 to ptr
   %call.res1563 = call ptr @LLVMConstNull(ptr %addr.ffi.clean1562)
   br label %choice.exit1165
@@ -80970,8 +80970,8 @@ choice.exit13:                                    ; preds = %nulmerge, %choice.t
   store ptr %a.buf, ptr %a.data.gep, align 8
   %a.cap.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new, i32 0, i32 2
   store i64 16, ptr %a.cap.gep, align 8
-  %p.to.i64 = ptrtoint ptr %choice.res to i64
-  %ram.pay46 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %choice.res to i64
+  %ram.pay46 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   %arena.cur47 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.new48 = call ptr @dva_arena_alloc(ptr %arena.cur47, i64 24)
   %arena.cur49 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -81481,10 +81481,10 @@ choice.then263:                                   ; preds = %str.eq.merge254
 
 choice.exit264:                                   ; preds = %str.eq.merge254, %choice.then263
   %fld.load270 = load ptr, ptr %fld.gep5, align 8
-  %p.to.i64 = ptrtoint ptr %choice.res206 to i64
-  %ram.pay272 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
-  %p.to.i64274 = ptrtoint ptr %call.res172 to i64
-  %ram.pay275 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64274, 1
+  %ptr.to.i64 = ptrtoint ptr %choice.res206 to i64
+  %ram.pay272 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
+  %ptr.to.i64274 = ptrtoint ptr %call.res172 to i64
+  %ram.pay275 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64274, 1
   %fld.gep277 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, i1 }, ptr %1, i32 0, i32 3
   %fld.load278 = load ptr, ptr %fld.gep277, align 8
   %a.len.query280 = load i64, ptr %fld.load278, align 8
@@ -82100,8 +82100,8 @@ choice.else85:                                    ; preds = %a.after
 
 choice.then143:                                   ; preds = %choice.exit70
   %fld.load148 = load ptr, ptr %call.res141, align 8
-  %p.to.i64 = ptrtoint ptr %fld.load148 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %fld.load148 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit145
 
 choice.exit145:                                   ; preds = %choice.exit70, %choice.then143
@@ -118921,8 +118921,8 @@ choice.case:                                      ; preds = %choice.then40
 
 choice.then55:                                    ; preds = %choice.case
   %fld.load61 = load ptr, ptr %call.res53, align 8
-  %p.to.i64 = ptrtoint ptr %fld.load61 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %fld.load61 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   %fld.gep62 = getelementptr inbounds { ptr, ptr, ptr, { i1, i64 }, ptr, i1, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, { i1, i64 }, { i1, i64 }, { ptr, ptr }, ptr, ptr, i1, { i1, i64 }, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr, i1, i1, i1, i1 }, i1, i1, ptr, ptr, ptr }, ptr %0, i32 0, i32 23
   store { i1, i64 } %ram.pay, ptr %fld.gep62, align 8
   %fld.gep65 = getelementptr inbounds { ptr, ptr }, ptr %call.res53, i32 0, i32 1
@@ -119081,8 +119081,8 @@ choice.exit178:                                   ; preds = %choice.exit186, %co
 
 choice.then185:                                   ; preds = %choice.then177
   %fld.load192 = load ptr, ptr %call.res175, align 8
-  %p.to.i64193 = ptrtoint ptr %fld.load192 to i64
-  %ram.pay194 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64193, 1
+  %ptr.to.i64193 = ptrtoint ptr %fld.load192 to i64
+  %ram.pay194 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64193, 1
   %fld.gep196 = getelementptr inbounds { ptr, ptr }, ptr %call.res175, i32 0, i32 1
   %fld.load197 = load ptr, ptr %fld.gep196, align 8
   call void @"runtime::add_type_rec"(ptr %0, ptr %concat.str166, ptr %call.res47, { i1, i64 } %ram.pay194, ptr %fld.load197)
@@ -119090,8 +119090,8 @@ choice.then185:                                   ; preds = %choice.then177
 
 choice.exit186:                                   ; preds = %choice.then185, %choice.then177
   %fld.load201 = load ptr, ptr %call.res175, align 8
-  %p.to.i64202 = ptrtoint ptr %fld.load201 to i64
-  %ram.pay203 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64202, 1
+  %ptr.to.i64202 = ptrtoint ptr %fld.load201 to i64
+  %ram.pay203 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64202, 1
   %fld.gep204 = getelementptr inbounds { ptr, ptr, ptr, { i1, i64 }, ptr, i1, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, { i1, i64 }, { i1, i64 }, { ptr, ptr }, ptr, ptr, i1, { i1, i64 }, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr, i1, i1, i1, i1 }, i1, i1, ptr, ptr, ptr }, ptr %0, i32 0, i32 23
   store { i1, i64 } %ram.pay203, ptr %fld.gep204, align 8
   %fld.gep207 = getelementptr inbounds { ptr, ptr }, ptr %call.res175, i32 0, i32 1
@@ -124356,8 +124356,8 @@ choice.then173:                                   ; preds = %concat.tot.len164
 
 choice.then181:                                   ; preds = %choice.exit153
   %fld.load187 = load ptr, ptr %call.res18, align 8
-  %p.to.i64 = ptrtoint ptr %fld.load187 to i64
-  %ram.pay188 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %fld.load187 to i64
+  %ram.pay188 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit183
 
 choice.exit183:                                   ; preds = %choice.exit153, %choice.then181
@@ -124405,8 +124405,8 @@ a.create:                                         ; preds = %choice.exit194
 
 a.after:                                          ; preds = %a.create, %choice.exit194
   %var.rec_m1.0 = phi ptr [ %a.create214, %a.create ], [ %choice.res202, %choice.exit194 ]
-  %p.to.i64221 = ptrtoint ptr %choice.res58 to i64
-  %ram.pay222 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64221, 1
+  %ptr.to.i64221 = ptrtoint ptr %choice.res58 to i64
+  %ram.pay222 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64221, 1
   %call.res226 = call ptr @"types::field_vts"(ptr %0, ptr %2)
   %arena.cur227 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur227, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1, ptr, { i1, i64 }, ptr, { i1, i64 }, i1, i1, ptr, { i1, i64 } }, ptr null, i32 1) to i64))
@@ -133934,8 +133934,8 @@ choice.exit1836:                                  ; preds = %str.eq.merge1826, %
 
 choice.then1851:                                  ; preds = %choice.exit1836
   %fld.load1857 = load ptr, ptr %choice.res1809.choice.res1840, align 8
-  %p.to.i641858 = ptrtoint ptr %fld.load1857 to i64
-  %ram.pay1859 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641858, 1
+  %ptr.to.i641858 = ptrtoint ptr %fld.load1857 to i64
+  %ram.pay1859 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641858, 1
   br label %choice.exit1853
 
 choice.else1852:                                  ; preds = %choice.exit1836
@@ -135196,10 +135196,10 @@ choice.else253:                                   ; preds = %loop.exit.2636
 
 choice.exit254:                                   ; preds = %nulmerge, %choice.then252
   %choice.res290 = phi ptr [ %pay.ptr256, %choice.then252 ], [ %call.res282, %nulmerge ]
-  %p.to.i64 = ptrtoint ptr %choice.res290 to i64
-  %ram.pay294 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
-  %p.to.i64296 = ptrtoint ptr %call.res245 to i64
-  %ram.pay297 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64296, 1
+  %ptr.to.i64 = ptrtoint ptr %choice.res290 to i64
+  %ram.pay294 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
+  %ptr.to.i64296 = ptrtoint ptr %call.res245 to i64
+  %ram.pay297 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64296, 1
   %arena.cur313 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur313, i64 ptrtoint (ptr getelementptr ({ ptr, { i1, i64 }, { i1, i64 }, i64, ptr, ptr, i1, i1, i1, i1 }, ptr null, i32 1) to i64))
   store ptr %1, ptr %rec.alloc, align 8
@@ -137953,8 +137953,8 @@ choice.exit1:                                     ; preds = %entry, %choice.then
 
 choice.then6:                                     ; preds = %choice.exit1
   %fld.load = load ptr, ptr %choice.res4, align 8
-  %p.to.i64 = ptrtoint ptr %fld.load to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %fld.load to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit8
 
 choice.exit8:                                     ; preds = %choice.exit1, %choice.then6
@@ -138416,8 +138416,8 @@ choice.else:                                      ; preds = %choice.case
   %addr.ffi.clean111 = inttoptr i64 %addr.ffi.masked110 to ptr
   %call.res112 = call ptr @LLVMConstInt(ptr %addr.ffi.clean111, i64 0, i64 0)
   %fld.load115 = load ptr, ptr %call.res107, align 8
-  %p.to.i64116 = ptrtoint ptr %fld.load115 to i64
-  %ram.pay117 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64116, 1
+  %ptr.to.i64116 = ptrtoint ptr %fld.load115 to i64
+  %ram.pay117 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64116, 1
   %arena.cur118 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc119 = call ptr @dva_arena_alloc(ptr %arena.cur118, i64 16)
   store i64 1, ptr %enum.alloc119, align 8
@@ -138440,8 +138440,8 @@ choice.else50:                                    ; preds = %choice.then
   %call.res55 = call ptr @"main::codegen_typed_eval"(ptr %0, ptr %fld.gep38)
   %fld.load59 = load ptr, ptr %call.res55, align 8
   %call.res61 = call ptr @"stmt::coerce_int"(ptr %0, ptr %fld.load59, ptr %call.res6)
-  %p.to.i64 = ptrtoint ptr %call.res61 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res61 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit51
 
 choice.exit51:                                    ; preds = %choice.then, %choice.else50
@@ -138552,10 +138552,10 @@ choice.exit227:                                   ; preds = %choice.else226, %ch
   %addr.ffi.masked239 = and i64 %addr.ffi.int238, 281474976710655
   %addr.ffi.clean240 = inttoptr i64 %addr.ffi.masked239 to ptr
   %call.res241 = call ptr @LLVMConstInt(ptr %addr.ffi.clean240, i64 0, i64 0)
-  %p.to.i64243 = ptrtoint ptr %choice.res203 to i64
-  %ram.pay244 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64243, 1
-  %p.to.i64246 = ptrtoint ptr %choice.res218 to i64
-  %ram.pay247 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64246, 1
+  %ptr.to.i64243 = ptrtoint ptr %choice.res203 to i64
+  %ram.pay244 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64243, 1
+  %ptr.to.i64246 = ptrtoint ptr %choice.res218 to i64
+  %ram.pay247 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64246, 1
   %arena.cur250 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc251 = call ptr @dva_arena_alloc(ptr %arena.cur250, i64 ptrtoint (ptr getelementptr ({ ptr, { i1, i64 }, { i1, i64 }, i64, ptr }, ptr null, i32 1) to i64))
   store ptr %call.res241, ptr %rec.alloc251, align 8
@@ -138589,10 +138589,10 @@ choice.exit274:                                   ; preds = %choice.next276, %ch
   %addr.ffi.masked293 = and i64 %addr.ffi.int292, 281474976710655
   %addr.ffi.clean294 = inttoptr i64 %addr.ffi.masked293 to ptr
   %call.res295 = call ptr @LLVMConstInt(ptr %addr.ffi.clean294, i64 0, i64 0)
-  %p.to.i64297 = ptrtoint ptr %call.res265 to i64
-  %ram.pay298 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64297, 1
-  %p.to.i64300 = ptrtoint ptr %call.res270 to i64
-  %ram.pay301 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64300, 1
+  %ptr.to.i64297 = ptrtoint ptr %call.res265 to i64
+  %ram.pay298 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64297, 1
+  %ptr.to.i64300 = ptrtoint ptr %call.res270 to i64
+  %ram.pay301 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64300, 1
   %arena.cur303 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc304 = call ptr @dva_arena_alloc(ptr %arena.cur303, i64 ptrtoint (ptr getelementptr ({ ptr, { i1, i64 }, { i1, i64 }, i64, ptr }, ptr null, i32 1) to i64))
   store ptr %call.res295, ptr %rec.alloc304, align 8
@@ -138640,10 +138640,10 @@ choice.exit330:                                   ; preds = %choice.next332, %ch
   %addr.ffi.masked349 = and i64 %addr.ffi.int348, 281474976710655
   %addr.ffi.clean350 = inttoptr i64 %addr.ffi.masked349 to ptr
   %call.res351 = call ptr @LLVMConstInt(ptr %addr.ffi.clean350, i64 0, i64 0)
-  %p.to.i64353 = ptrtoint ptr %call.res321 to i64
-  %ram.pay354 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64353, 1
-  %p.to.i64356 = ptrtoint ptr %call.res326 to i64
-  %ram.pay357 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64356, 1
+  %ptr.to.i64353 = ptrtoint ptr %call.res321 to i64
+  %ram.pay354 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64353, 1
+  %ptr.to.i64356 = ptrtoint ptr %call.res326 to i64
+  %ram.pay357 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64356, 1
   %arena.cur359 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc360 = call ptr @dva_arena_alloc(ptr %arena.cur359, i64 ptrtoint (ptr getelementptr ({ ptr, { i1, i64 }, { i1, i64 }, i64, ptr }, ptr null, i32 1) to i64))
   store ptr %call.res351, ptr %rec.alloc360, align 8
@@ -138684,8 +138684,8 @@ choice.else368:                                   ; preds = %choice.else312
   %addr.ffi.clean700 = inttoptr i64 %addr.ffi.masked699 to ptr
   %call.res701 = call ptr @LLVMConstInt(ptr %addr.ffi.clean700, i64 0, i64 0)
   %fld.load704 = load ptr, ptr %call.res132, align 8
-  %p.to.i64705 = ptrtoint ptr %fld.load704 to i64
-  %ram.pay706 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64705, 1
+  %ptr.to.i64705 = ptrtoint ptr %fld.load704 to i64
+  %ram.pay706 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64705, 1
   %arena.cur707 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc708 = call ptr @dva_arena_alloc(ptr %arena.cur707, i64 16)
   store i64 1, ptr %enum.alloc708, align 8
@@ -138977,11 +138977,11 @@ a.after555:                                       ; preds = %unwrap.pos.2653, %a
 choice.exit569:                                   ; preds = %a.after555, %unwrap.pos.2654
   %choice.res675 = phi ptr [ %call.res673, %unwrap.pos.2654 ], [ %choice.res550, %a.after555 ]
   %call.res680 = call ptr @LLVMConstInt(ptr %addr.ffi.clean470, i64 0, i64 0)
-  %p.to.i64682 = ptrtoint ptr %call.res472 to i64
-  %ram.pay683 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64682, 1
+  %ptr.to.i64682 = ptrtoint ptr %call.res472 to i64
+  %ram.pay683 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64682, 1
   %fld.load686 = load ptr, ptr %call.res132, align 8
-  %p.to.i64687 = ptrtoint ptr %fld.load686 to i64
-  %ram.pay688 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64687, 1
+  %ptr.to.i64687 = ptrtoint ptr %fld.load686 to i64
+  %ram.pay688 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64687, 1
   %arena.cur690 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc691 = call ptr @dva_arena_alloc(ptr %arena.cur690, i64 ptrtoint (ptr getelementptr ({ ptr, { i1, i64 }, { i1, i64 }, i64, ptr }, ptr null, i32 1) to i64))
   store ptr %call.res680, ptr %rec.alloc691, align 8
@@ -141834,8 +141834,8 @@ choice.exit10:                                    ; preds = %choice.else, %choic
   store ptr %a.buf, ptr %a.data.gep, align 8
   %a.cap.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new, i32 0, i32 2
   store i64 16, ptr %a.cap.gep, align 8
-  %p.to.i64 = ptrtoint ptr %call.res17 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res17 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   %arena.cur25 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.new26 = call ptr @dva_arena_alloc(ptr %arena.cur25, i64 24)
   %arena.cur27 = load ptr, ptr @dva_active_arena_tls, align 8

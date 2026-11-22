@@ -12154,8 +12154,8 @@ choice.else14:                                    ; preds = %a.after
   %arena.cur219 = load ptr, ptr @dva_active_arena_tls, align 8
   %ret.ub.alloc = call ptr @dva_arena_alloc(ptr %arena.cur219, i64 16)
   store { i64, ptr } %call.res218, ptr %ret.ub.alloc, align 8
-  %p.to.i64220 = ptrtoint ptr %ret.ub.alloc to i64
-  %ram.pay221 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64220, 1
+  %ptr.to.i64220 = ptrtoint ptr %ret.ub.alloc to i64
+  %ram.pay221 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64220, 1
   br label %choice.exit15
 
 choice.exit15:                                    ; preds = %choice.else14, %concat.tot.len190
@@ -12614,8 +12614,8 @@ concat.tot.len190:                                ; preds = %abort.dead192, %cat
   store i64 %str.tagged.len214, ptr %str.build.len.gep211, align 8
   %str.build.data.gep215 = getelementptr inbounds { i64, ptr }, ptr %concat.str210, i32 0, i32 1
   store ptr %concat.buf194, ptr %str.build.data.gep215, align 8
-  %p.to.i64 = ptrtoint ptr %concat.str210 to i64
-  %ram.pay216 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %concat.str210 to i64
+  %ram.pay216 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64, 1
   br label %choice.exit15
 
 str_overflow_abort191:                            ; preds = %cat.sum.len184
@@ -13120,8 +13120,8 @@ concat.tot.len507:                                ; preds = %abort.dead509, %cat
   store i64 %str.tagged.len533, ptr %str.build.len.gep530, align 8
   %str.build.data.gep534 = getelementptr inbounds { i64, ptr }, ptr %concat.str529, i32 0, i32 1
   store ptr %concat.buf511, ptr %str.build.data.gep534, align 8
-  %p.to.i64535 = ptrtoint ptr %concat.str529 to i64
-  %ram.pay536 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64535, 1
+  %ptr.to.i64535 = ptrtoint ptr %concat.str529 to i64
+  %ram.pay536 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64535, 1
   br label %choice.exit241
 
 str_overflow_abort508:                            ; preds = %cat.sum.len501
@@ -13176,8 +13176,8 @@ concat.tot.len562:                                ; preds = %abort.dead564, %con
   store i64 %str.tagged.len574, ptr %str.build.len.gep571, align 8
   %str.build.data.gep575 = getelementptr inbounds { i64, ptr }, ptr %concat.str570, i32 0, i32 1
   store ptr %concat.buf566, ptr %str.build.data.gep575, align 8
-  %p.to.i64576 = ptrtoint ptr %concat.str570 to i64
-  %ram.pay577 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64576, 1
+  %ptr.to.i64576 = ptrtoint ptr %concat.str570 to i64
+  %ram.pay577 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64576, 1
   br label %choice.exit241
 
 str_overflow_abort563:                            ; preds = %concat.sum.len556
@@ -13377,8 +13377,8 @@ choice.else:                                      ; preds = %choice.exit
   store ptr %pay.ptr215, ptr %var._216, align 8
   store ptr %pay.ptr215, ptr %var.err, align 8
   %var.load217 = load ptr, ptr %var.err, align 8
-  %p.to.i64218 = ptrtoint ptr %var.load217 to i64
-  %ram.pay219 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64218, 1
+  %ptr.to.i64218 = ptrtoint ptr %var.load217 to i64
+  %ram.pay219 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64218, 1
   br label %choice.exit7
 
 choice.exit7:                                     ; preds = %choice.else, %choice.exit22
@@ -13485,8 +13485,8 @@ str.eq.merge:                                     ; preds = %str.eq.else, %str.e
 
 choice.then48:                                    ; preds = %str.eq.merge
   %var.load51 = load ptr, ptr %var.candidate, align 8
-  %p.to.i64 = ptrtoint ptr %var.load51 to i64
-  %ram.pay52 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %var.load51 to i64
+  %ram.pay52 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit50
 
 choice.else49:                                    ; preds = %str.eq.merge
@@ -13550,8 +13550,8 @@ choice.else75:                                    ; preds = %a.after57
   %pay.ptr123 = inttoptr i64 %ram.pay122 to ptr
   store ptr %pay.ptr123, ptr %var._124, align 8
   %var.load125 = load ptr, ptr %var.src, align 8
-  %p.to.i64126 = ptrtoint ptr %var.load125 to i64
-  %ram.pay127 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64126, 1
+  %ptr.to.i64126 = ptrtoint ptr %var.load125 to i64
+  %ram.pay127 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64126, 1
   br label %choice.exit76
 
 choice.exit76:                                    ; preds = %choice.else75, %choice.exit115
@@ -13599,14 +13599,14 @@ str.eq.merge105:                                  ; preds = %str.eq.else104, %st
 
 choice.then113:                                   ; preds = %str.eq.merge105
   %var.load116 = load ptr, ptr %var.fb, align 8
-  %p.to.i64117 = ptrtoint ptr %var.load116 to i64
-  %ram.pay118 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64117, 1
+  %ptr.to.i64117 = ptrtoint ptr %var.load116 to i64
+  %ram.pay118 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64117, 1
   br label %choice.exit115
 
 choice.else114:                                   ; preds = %str.eq.merge105
   %var.load119 = load ptr, ptr %var.src, align 8
-  %p.to.i64120 = ptrtoint ptr %var.load119 to i64
-  %ram.pay121 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64120, 1
+  %ptr.to.i64120 = ptrtoint ptr %var.load119 to i64
+  %ram.pay121 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64120, 1
   br label %choice.exit115
 
 choice.exit115:                                   ; preds = %choice.else114, %choice.then113
@@ -13664,8 +13664,8 @@ choice.else157:                                   ; preds = %a.after137
   %pay.ptr207 = inttoptr i64 %ram.pay206 to ptr
   store ptr %pay.ptr207, ptr %var._208, align 8
   %var.load209 = load ptr, ptr %var.src, align 8
-  %p.to.i64210 = ptrtoint ptr %var.load209 to i64
-  %ram.pay211 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64210, 1
+  %ptr.to.i64210 = ptrtoint ptr %var.load209 to i64
+  %ram.pay211 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64210, 1
   br label %choice.exit158
 
 choice.exit158:                                   ; preds = %choice.else157, %choice.exit198
@@ -13713,14 +13713,14 @@ str.eq.merge188:                                  ; preds = %str.eq.else187, %st
 
 choice.then196:                                   ; preds = %str.eq.merge188
   %var.load199 = load ptr, ptr %var.fb149, align 8
-  %p.to.i64200 = ptrtoint ptr %var.load199 to i64
-  %ram.pay201 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64200, 1
+  %ptr.to.i64200 = ptrtoint ptr %var.load199 to i64
+  %ram.pay201 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64200, 1
   br label %choice.exit198
 
 choice.else197:                                   ; preds = %str.eq.merge188
   %var.load202 = load ptr, ptr %var.src, align 8
-  %p.to.i64203 = ptrtoint ptr %var.load202 to i64
-  %ram.pay204 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64203, 1
+  %ptr.to.i64203 = ptrtoint ptr %var.load202 to i64
+  %ram.pay204 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64203, 1
   br label %choice.exit198
 
 choice.exit198:                                   ; preds = %choice.else197, %choice.then196

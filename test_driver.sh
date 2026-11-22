@@ -3828,5 +3828,120 @@ timeout 30 clang -Qunused-arguments -Wno-unused-command-line-argument \
 timeout 10 "$T70_DIR/modular"
 echo "PASS"
 
+# --- Test 71: nested ramification payloads across calls, choices and unwraps ---
+echo -n "Testing nested ramification payloads... "
+T71_DIR="$TMPDIR/t71_nested_ram"
+mkdir -p "$T71_DIR"
+cat >"$T71_DIR/nested.dva" <<'DVA'
+#use io
+
+#type Inner < Int | Int >
+#type Outer < Inner | Int >
+#type Inverted < Int | Inner >
+#type Optional < Outer | >
+
+inner: Int => Inner
+inner = n =>
+   n > 0 | <+ n -> | <- n +>
+
+outer: Int => Outer
+outer = n =>
+   value = inner(n)
+   n == 0 | <- 77 +> | <+ value ->
+
+invert: Int => Inverted
+invert = n =>
+   value = inner(n)
+   n == 0 | <+ 88 -> | <- value +>
+
+wrap: Int => Optional
+wrap = n => <+ outer(n) +>
+
+relay: Outer => Outer
+relay = value =>
+   payload = value--!
+   <+ payload ->
+
+read_inner: Inner => Int
+read_inner = value =>
+   value | n => n | n => n
+
+tag: Inner => Int
+tag = value =>
+   value | 1 | 2
+
+read_outer: Outer => Int
+read_outer = value =>
+   value | payload => read_inner(payload) | err => err
+
+read_inverted: Inverted => Int
+read_inverted = value =>
+   value | n => n | payload => read_inner(payload)
+
+#export check_outer: Int => Int
+check_outer = n => read_outer(relay(wrap(n)!!))
+
+#export check_tag: Int => Int
+check_tag = n =>
+   value = outer(n)
+   value | payload => tag(payload) | err => err
+
+#export check_inverted: Int => Int
+check_inverted = n => read_inverted(invert(n))
+
+io::out $ check_outer(9223372036854775807)
+io::out $ check_outer(0 - 9223372036854775807 - 1)
+io::out $ check_outer(0)
+io::out $ check_tag(13)
+io::out $ check_tag(0 - 13)
+io::out $ check_inverted(9223372036854775807)
+io::out $ check_inverted(0 - 9223372036854775807 - 1)
+io::out $ check_inverted(0)
+DVA
+printf '%s\n' 9223372036854775807 -9223372036854775808 77 1 2 \
+    9223372036854775807 -9223372036854775808 88 >"$T71_DIR/expected"
+for opt in -O0 -O2; do
+    timeout 30 ./edva "$T71_DIR/nested.dva" "$opt" --no-cache \
+        -o "$T71_DIR/native" < /dev/null >"$T71_DIR/build.log" 2>&1
+    timeout 10 "$T71_DIR/native" < /dev/null >"$T71_DIR/out"
+    diff -u "$T71_DIR/expected" "$T71_DIR/out"
+done
+timeout 30 ./edva "$T71_DIR/nested.dva" -O2 --no-cache --ir -target wasm32-unknown-unknown \
+    -o "$T71_DIR/wasm" < /dev/null >"$T71_DIR/wasm.log" 2>&1
+if command -v wasm-ld >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then
+    timeout 30 ./edva "$T71_DIR/nested.dva" -O2 --no-cache -target wasm32-unknown-unknown \
+        -o "$T71_DIR/nested.wasm" < /dev/null >>"$T71_DIR/wasm.log" 2>&1
+    timeout 10 node --disable-wasm-trap-handler - "$T71_DIR/nested.wasm" <<'JS'
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const wasm = new WebAssembly.Module(fs.readFileSync(process.argv[2]));
+let heap;
+const env = {};
+for (const {name} of WebAssembly.Module.imports(wasm)) {
+    env[name] = () => { throw Error("unexpected import " + name); };
+}
+env.malloc = size => {
+    const ptr = heap;
+    heap = Math.ceil((heap + Number(size)) / 16) * 16;
+    const bytes = memory.buffer.byteLength;
+    if (heap > bytes) memory.grow(Math.ceil((heap - bytes) / 65536));
+    return ptr;
+};
+const {memory, __heap_base, check_outer, check_inverted, check_tag} =
+    new WebAssembly.Instance(wasm, {env}).exports;
+heap = __heap_base.value;
+const max = (1n << 63n) - 1n;
+const min = -(1n << 63n);
+for (const [check, zero] of [[check_outer, 77n], [check_inverted, 88n]]) {
+    assert.equal(check(max), max);
+    assert.equal(check(min), min);
+    assert.equal(check(0n), zero);
+}
+assert.equal(check_tag(13n), 1n);
+assert.equal(check_tag(-13n), 2n);
+JS
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

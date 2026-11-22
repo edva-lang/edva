@@ -4596,21 +4596,21 @@ a.store:                                          ; preds = %a.grow, %entry
   %call.res261 = call ptr @LLVMAddFunction(ptr %addr.ffi.clean237, ptr @str.80, ptr %addr.ffi.clean260)
   call void @"runtime::mark_nounwind"(ptr %0, ptr %call.res261)
   %call.res266 = call ptr @"types::fn_type1"(ptr %call.res3, ptr %call.res)
-  %p.to.i64 = ptrtoint ptr %call.res266 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res266 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   %fld.gep269 = getelementptr inbounds { ptr, ptr, ptr, { i1, i64 }, ptr, i1, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, { i1, i64 }, { i1, i64 }, { ptr, ptr }, ptr, ptr, i1, { i1, i64 }, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr, i1, i1, i1, i1 }, i1, i1, ptr, ptr, ptr }, ptr %0, i32 0, i32 9
   store { i1, i64 } %ram.pay, ptr %fld.gep269, align 8
   %fld.load272 = load ptr, ptr %0, align 8
   %addr.ffi.int273 = ptrtoint ptr %fld.load272 to i64
   %addr.ffi.masked274 = and i64 %addr.ffi.int273, 281474976710655
   %addr.ffi.clean275 = inttoptr i64 %addr.ffi.masked274 to ptr
-  %addr.ffi.masked297 = and i64 %p.to.i64, 281474976710655
+  %addr.ffi.masked297 = and i64 %ptr.to.i64, 281474976710655
   %addr.ffi.clean298 = inttoptr i64 %addr.ffi.masked297 to ptr
   %call.res299 = call ptr @LLVMAddFunction(ptr %addr.ffi.clean275, ptr @str.81, ptr %addr.ffi.clean298)
   call void @"runtime::mark_nounwind"(ptr %0, ptr %call.res299)
   call void @"runtime::mark_return_noalias"(ptr %0, ptr %call.res299)
-  %p.to.i64306 = ptrtoint ptr %call.res299 to i64
-  %ram.pay307 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64306, 1
+  %ptr.to.i64306 = ptrtoint ptr %call.res299 to i64
+  %ram.pay307 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64306, 1
   %fld.gep308 = getelementptr inbounds { ptr, ptr, ptr, { i1, i64 }, ptr, i1, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, { i1, i64 }, { i1, i64 }, { ptr, ptr }, ptr, ptr, i1, { i1, i64 }, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr, i1, i1, i1, i1 }, i1, i1, ptr, ptr, ptr }, ptr %0, i32 0, i32 10
   store { i1, i64 } %ram.pay307, ptr %fld.gep308, align 8
   %call.res309 = call ptr @LLVMVoidType()
@@ -5580,8 +5580,8 @@ choice.exit:                                      ; preds = %entry, %choice.then
 choice.then257:                                   ; preds = %choice.exit
   %fld.gep261 = getelementptr inbounds { ptr, ptr, ptr }, ptr %choice.res, i32 0, i32 2
   %fld.load262 = load ptr, ptr %fld.gep261, align 8
-  %p.to.i64 = ptrtoint ptr %fld.load262 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %fld.load262 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit259
 
 choice.exit259:                                   ; preds = %choice.exit, %choice.then257
@@ -5745,19 +5745,19 @@ a.store:                                          ; preds = %a.grow, %choice.exi
   %addr.ffi.clean711 = inttoptr i64 %addr.ffi.masked710 to ptr
   %call.res712 = call ptr @LLVMBuildRet(ptr %addr.ffi.clean707, ptr %addr.ffi.clean711)
   %call.res715 = call ptr @"types::fn_type1"(ptr %call.res3, ptr %call.res)
-  %p.to.i64718 = ptrtoint ptr %call.res715 to i64
-  %ram.pay719 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64718, 1
+  %ptr.to.i64718 = ptrtoint ptr %call.res715 to i64
+  %ram.pay719 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64718, 1
   %fld.gep720 = getelementptr inbounds { ptr, ptr, ptr, { i1, i64 }, ptr, i1, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, { i1, i64 }, { i1, i64 }, { ptr, ptr }, ptr, ptr, i1, { i1, i64 }, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr, i1, i1, i1, i1 }, i1, i1, ptr, ptr, ptr }, ptr %0, i32 0, i32 9
   store { i1, i64 } %ram.pay719, ptr %fld.gep720, align 8
   %fld.load724 = load ptr, ptr %0, align 8
   %addr.ffi.int725 = ptrtoint ptr %fld.load724 to i64
   %addr.ffi.masked726 = and i64 %addr.ffi.int725, 281474976710655
   %addr.ffi.clean727 = inttoptr i64 %addr.ffi.masked726 to ptr
-  %addr.ffi.masked749 = and i64 %p.to.i64718, 281474976710655
+  %addr.ffi.masked749 = and i64 %ptr.to.i64718, 281474976710655
   %addr.ffi.clean750 = inttoptr i64 %addr.ffi.masked749 to ptr
   %call.res751 = call ptr @LLVMAddFunction(ptr %addr.ffi.clean727, ptr @str.81, ptr %addr.ffi.clean750)
-  %p.to.i64752 = ptrtoint ptr %call.res751 to i64
-  %ram.pay753 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64752, 1
+  %ptr.to.i64752 = ptrtoint ptr %call.res751 to i64
+  %ram.pay753 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64752, 1
   %fld.gep754 = getelementptr inbounds { ptr, ptr, ptr, { i1, i64 }, ptr, i1, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, { i1, i64 }, { i1, i64 }, { ptr, ptr }, ptr, ptr, i1, { i1, i64 }, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr, i1, i1, i1, i1 }, i1, i1, ptr, ptr, ptr }, ptr %0, i32 0, i32 10
   store { i1, i64 } %ram.pay753, ptr %fld.gep754, align 8
   %call.res755 = call ptr @LLVMVoidType()
@@ -11547,8 +11547,8 @@ choice.then363:                                   ; preds = %choice.else356
   %fld.gep372 = getelementptr inbounds { ptr, ptr, ptr, { i1, i64 }, ptr, i1, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, { i1, i64 }, i64, { i1, i64 }, { i1, i64 }, { ptr, ptr }, ptr, ptr, i1, { i1, i64 }, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr, i1, i1, i1, i1 }, i1, i1, ptr, ptr, ptr }, ptr %0, i32 0, i32 29
   %fld.load373 = load i1, ptr %fld.gep372, align 1
   %call.res374 = call ptr @"types::create_slot"(ptr %0, ptr %fld.load369, ptr %choice.res130, i1 %fld.load373)
-  %p.to.i64375 = ptrtoint ptr %call.res374 to i64
-  %ram.pay376 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64375, 1
+  %ptr.to.i64375 = ptrtoint ptr %call.res374 to i64
+  %ram.pay376 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64375, 1
   br label %choice.exit357
 
 and.1521.then:                                    ; preds = %choice.exit357
@@ -11565,8 +11565,8 @@ and.1521.exit:                                    ; preds = %choice.exit357, %an
 
 choice.then394:                                   ; preds = %and.1521.exit
   %fld.load400 = load ptr, ptr %call.res10, align 8
-  %p.to.i64401 = ptrtoint ptr %fld.load400 to i64
-  %ram.pay402 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64401, 1
+  %ptr.to.i64401 = ptrtoint ptr %fld.load400 to i64
+  %ram.pay402 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64401, 1
   br label %choice.exit396
 
 choice.exit396:                                   ; preds = %and.1521.exit, %choice.then394
@@ -13662,8 +13662,8 @@ choice.exit426:                                   ; preds = %choice.exit405, %ch
 
 choice.then435:                                   ; preds = %choice.exit426
   %fld.load442 = load ptr, ptr %call.res165, align 8
-  %p.to.i64 = ptrtoint ptr %fld.load442 to i64
-  %ram.pay443 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %fld.load442 to i64
+  %ram.pay443 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit437
 
 choice.exit437:                                   ; preds = %choice.exit426, %choice.then435

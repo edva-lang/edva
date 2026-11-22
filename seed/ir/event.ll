@@ -178,8 +178,8 @@ choice.exit:                                      ; preds = %choice.else, %choic
   store i64 %var.load2, ptr %rec.fld6, align 8
   %rec.fld7 = getelementptr inbounds { i64, i1, i64, ptr }, ptr %rec.alloc, i32 0, i32 3
   store ptr %a.new, ptr %rec.fld7, align 8
-  %p.to.i64 = ptrtoint ptr %rec.alloc to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %rec.alloc to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   ret { i1, i64 } %ram.pay
 }
 

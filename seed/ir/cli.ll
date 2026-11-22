@@ -11446,8 +11446,8 @@ a.after6250:                                      ; preds = %a.create6249, %a.af
   store i1 %"var.help_req'.0", ptr %rec.fld6274, align 1
   %rec.fld6275 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i1 }, ptr %rec.alloc, i32 0, i32 12
   store i1 %"var.ver_req'.0", ptr %rec.fld6275, align 1
-  %p.to.i64 = ptrtoint ptr %rec.alloc to i64
-  %ram.pay6276 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %rec.alloc to i64
+  %ram.pay6276 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %common.ret
 
 str_ok6282:                                       ; preds = %tag.slow_check6287, %choice.else6140
@@ -11471,8 +11471,8 @@ str.eq.merge6293:                                 ; preds = %str_ok6282, %str.eq
   br i1 %str.neq6300, label %choice.then6301, label %choice.else6302
 
 choice.then6301:                                  ; preds = %str.eq.merge6293
-  %p.to.i646305 = ptrtoint ptr %"var.err'.0" to i64
-  %ram.pay6306 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i646305, 1
+  %ptr.to.i646305 = ptrtoint ptr %"var.err'.0" to i64
+  %ram.pay6306 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i646305, 1
   br label %common.ret
 
 choice.else6302:                                  ; preds = %str.eq.merge6293
@@ -11690,8 +11690,8 @@ a.after6442:                                      ; preds = %a.create6441, %a.af
   store i1 %"var.help_req'.0", ptr %rec.fld6468, align 1
   %rec.fld6469 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i1 }, ptr %rec.alloc6456, i32 0, i32 12
   store i1 %"var.ver_req'.0", ptr %rec.fld6469, align 1
-  %p.to.i646470 = ptrtoint ptr %rec.alloc6456 to i64
-  %ram.pay6471 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i646470, 1
+  %ptr.to.i646470 = ptrtoint ptr %rec.alloc6456 to i64
+  %ram.pay6471 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i646470, 1
   br label %common.ret
 
 a.create6475:                                     ; preds = %choice.else6332
@@ -11891,8 +11891,8 @@ choice.else6612:                                  ; preds = %choice.then6599
 
 choice.exit6613:                                  ; preds = %str_ok6668, %str_ok6620
   %choice.res6699 = phi ptr [ %concat.str6652, %str_ok6620 ], [ %concat.str6693, %str_ok6668 ]
-  %p.to.i646700 = ptrtoint ptr %choice.res6699 to i64
-  %ram.pay6701 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i646700, 1
+  %ptr.to.i646700 = ptrtoint ptr %choice.res6699 to i64
+  %ram.pay6701 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i646700, 1
   br label %common.ret
 
 str_ok6620:                                       ; preds = %tag.slow_check6625, %choice.then6611
@@ -12120,8 +12120,8 @@ a.after6812:                                      ; preds = %a.create6811, %a.af
   store i1 %"var.help_req'.0", ptr %rec.fld6838, align 1
   %rec.fld6839 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i1 }, ptr %rec.alloc6826, i32 0, i32 12
   store i1 %"var.ver_req'.0", ptr %rec.fld6839, align 1
-  %p.to.i646840 = ptrtoint ptr %rec.alloc6826 to i64
-  %ram.pay6841 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i646840, 1
+  %ptr.to.i646840 = ptrtoint ptr %rec.alloc6826 to i64
+  %ram.pay6841 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i646840, 1
   br label %common.ret
 }
 

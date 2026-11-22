@@ -13,7 +13,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.pkg::hex_digits" = global ptr null
 @"var.version::VERSION" = external global ptr
 @"var.version::COMMIT_HASH" = external global ptr
-@str.0 = internal unnamed_addr constant [20 x i8] c"1.6.3+ade0ce7-dirty\00"
+@str.0 = internal unnamed_addr constant [20 x i8] c"1.6.3+3237d0a-dirty\00"
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 19, ptr @str.0 }
 @"var.pkg::lang_version" = global ptr null
 @b_byte_msg = internal unnamed_addr constant [58 x i8] c"E4007: Builder append byte out of range (must be 0..255)\0A\00"
@@ -4441,8 +4441,8 @@ concat.tot.len18:                                 ; preds = %cat.sum.len13
   %fld.gep28 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load29 = load i64, ptr %fld.gep28, align 8
   %call.res30 = call ptr @"ccl::ccl_error"(ptr %1, ptr %concat.str, i64 %fld.load26, i64 %fld.load29)
-  %p.to.i64 = ptrtoint ptr %call.res30 to i64
-  %ram.pay = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res30 to i64
+  %ram.pay = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64, 1
   br label %choice.exit
 
 str_overflow_abort19:                             ; preds = %cat.sum.len13
@@ -4864,8 +4864,8 @@ str_overflow_abort348:                            ; preds = %cat.sum.len341
   unreachable
 
 choice.then373:                                   ; preds = %loop.exit.335
-  %p.to.i64377 = ptrtoint ptr %"var.err_val'.0" to i64
-  %ram.pay378 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64377, 1
+  %ptr.to.i64377 = ptrtoint ptr %"var.err_val'.0" to i64
+  %ram.pay378 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64377, 1
   br label %choice.exit
 
 a.after383:                                       ; preds = %loop.exit.335
@@ -4949,8 +4949,8 @@ concat.tot.len484:                                ; preds = %cat.sum.len478
   %fld.gep502 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load503 = load i64, ptr %fld.gep502, align 8
   %call.res504 = call ptr @"ccl::ccl_error"(ptr %1, ptr %concat.str495, i64 %fld.load500, i64 %fld.load503)
-  %p.to.i64505 = ptrtoint ptr %call.res504 to i64
-  %ram.pay506 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64505, 1
+  %ptr.to.i64505 = ptrtoint ptr %call.res504 to i64
+  %ram.pay506 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64505, 1
   br label %choice.exit
 
 str_overflow_abort485:                            ; preds = %cat.sum.len478
@@ -5032,8 +5032,8 @@ choice.then562:                                   ; preds = %ret.niche.done556
   store ptr @str.4.struct, ptr %rec.fld579, align 8
   %rec.fld580 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 7
   store ptr %ret.niche.ptr.str.4.struct, ptr %rec.fld580, align 8
-  %p.to.i64581 = ptrtoint ptr %rec.alloc to i64
-  %ram.pay582 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64581, 1
+  %ptr.to.i64581 = ptrtoint ptr %rec.alloc to i64
+  %ram.pay582 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64581, 1
   br label %choice.exit
 
 choice.else563:                                   ; preds = %ret.niche.done556
@@ -5087,8 +5087,8 @@ concat.tot.len607:                                ; preds = %cat.sum.len601
   %fld.gep625 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load626 = load i64, ptr %fld.gep625, align 8
   %call.res627 = call ptr @"ccl::ccl_error"(ptr %1, ptr %concat.str618, i64 %fld.load623, i64 %fld.load626)
-  %p.to.i64628 = ptrtoint ptr %call.res627 to i64
-  %ram.pay629 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64628, 1
+  %ptr.to.i64628 = ptrtoint ptr %call.res627 to i64
+  %ram.pay629 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64628, 1
   br label %choice.exit
 
 str_overflow_abort608:                            ; preds = %cat.sum.len601
@@ -5133,8 +5133,8 @@ ret.niche.done652:                                ; preds = %ret.niche.alloc651,
   store ptr @str.4.struct, ptr %rec.fld678, align 8
   %rec.fld679 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc671, i32 0, i32 7
   store ptr %ret.niche.ptr.str.4.struct, ptr %rec.fld679, align 8
-  %p.to.i64680 = ptrtoint ptr %rec.alloc671 to i64
-  %ram.pay681 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64680, 1
+  %ptr.to.i64680 = ptrtoint ptr %rec.alloc671 to i64
+  %ram.pay681 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64680, 1
   br label %choice.exit
 
 a.after686:                                       ; preds = %choice.else509
@@ -5209,8 +5209,8 @@ choice.then733:                                   ; preds = %ret.niche.done727
   store ptr %ret.niche.ptr730, ptr %rec.fld753, align 8
   %rec.fld754 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc746, i32 0, i32 7
   store ptr %ret.niche.ptr.str.4.struct, ptr %rec.fld754, align 8
-  %p.to.i64755 = ptrtoint ptr %rec.alloc746 to i64
-  %ram.pay756 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64755, 1
+  %ptr.to.i64755 = ptrtoint ptr %rec.alloc746 to i64
+  %ram.pay756 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64755, 1
   br label %choice.exit
 
 choice.else734:                                   ; preds = %ret.niche.done727
@@ -5264,8 +5264,8 @@ concat.tot.len781:                                ; preds = %cat.sum.len775
   %fld.gep799 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load800 = load i64, ptr %fld.gep799, align 8
   %call.res801 = call ptr @"ccl::ccl_error"(ptr %1, ptr %concat.str792, i64 %fld.load797, i64 %fld.load800)
-  %p.to.i64802 = ptrtoint ptr %call.res801 to i64
-  %ram.pay803 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64802, 1
+  %ptr.to.i64802 = ptrtoint ptr %call.res801 to i64
+  %ram.pay803 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64802, 1
   br label %choice.exit
 
 str_overflow_abort782:                            ; preds = %cat.sum.len775
@@ -5324,8 +5324,8 @@ concat.tot.len841:                                ; preds = %cat.sum.len835
   %fld.gep859 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load860 = load i64, ptr %fld.gep859, align 8
   %call.res861 = call ptr @"ccl::ccl_error"(ptr %1, ptr %concat.str852, i64 %fld.load857, i64 %fld.load860)
-  %p.to.i64862 = ptrtoint ptr %call.res861 to i64
-  %ram.pay863 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64862, 1
+  %ptr.to.i64862 = ptrtoint ptr %call.res861 to i64
+  %ram.pay863 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64862, 1
   br label %choice.exit
 
 str_overflow_abort842:                            ; preds = %cat.sum.len835
@@ -5546,8 +5546,8 @@ concat.tot.len18:                                 ; preds = %cat.sum.len13
   %fld.gep28 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load29 = load i64, ptr %fld.gep28, align 8
   %call.res30 = call ptr @"ccl::ccl_error"(ptr %1, ptr %concat.str, i64 %fld.load26, i64 %fld.load29)
-  %p.to.i64 = ptrtoint ptr %call.res30 to i64
-  %ram.pay = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res30 to i64
+  %ram.pay = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64, 1
   br label %choice.exit
 
 str_overflow_abort19:                             ; preds = %cat.sum.len13
@@ -5795,8 +5795,8 @@ str_overflow_abort190:                            ; preds = %cat.sum.len183
   unreachable
 
 choice.then215:                                   ; preds = %loop.exit.340
-  %p.to.i64219 = ptrtoint ptr %"var.err_val'.0" to i64
-  %ram.pay220 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64219, 1
+  %ptr.to.i64219 = ptrtoint ptr %"var.err_val'.0" to i64
+  %ram.pay220 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64219, 1
   br label %choice.exit
 
 a.after225:                                       ; preds = %loop.exit.340
@@ -5939,8 +5939,8 @@ a.after385:                                       ; preds = %a.create384, %choic
   store ptr %ret.niche.ptr320.str.4.struct, ptr %rec.fld398, align 8
   %rec.fld399 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 5
   store ptr %var.cflags.2, ptr %rec.fld399, align 8
-  %p.to.i64400 = ptrtoint ptr %rec.alloc to i64
-  %ram.pay401 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64400, 1
+  %ptr.to.i64400 = ptrtoint ptr %rec.alloc to i64
+  %ram.pay401 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64400, 1
   br label %choice.exit
 
 choice.case403:                                   ; preds = %choice.else
@@ -5995,8 +5995,8 @@ concat.tot.len435:                                ; preds = %cat.sum.len429
   %fld.gep453 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load454 = load i64, ptr %fld.gep453, align 8
   %call.res455 = call ptr @"ccl::ccl_error"(ptr %1, ptr %concat.str446, i64 %fld.load451, i64 %fld.load454)
-  %p.to.i64456 = ptrtoint ptr %call.res455 to i64
-  %ram.pay457 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64456, 1
+  %ptr.to.i64456 = ptrtoint ptr %call.res455 to i64
+  %ram.pay457 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64456, 1
   br label %choice.exit
 
 str_overflow_abort436:                            ; preds = %cat.sum.len429
@@ -6077,8 +6077,8 @@ concat.tot.len18:                                 ; preds = %cat.sum.len13
   %fld.gep28 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load29 = load i64, ptr %fld.gep28, align 8
   %call.res30 = call ptr @"ccl::ccl_error"(ptr %1, ptr %concat.str, i64 %fld.load26, i64 %fld.load29)
-  %p.to.i64 = ptrtoint ptr %call.res30 to i64
-  %ram.pay = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res30 to i64
+  %ram.pay = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64, 1
   br label %choice.exit
 
 str_overflow_abort19:                             ; preds = %cat.sum.len13
@@ -6296,8 +6296,8 @@ str_overflow_abort158:                            ; preds = %cat.sum.len151
   unreachable
 
 choice.then183:                                   ; preds = %loop.exit.342
-  %p.to.i64187 = ptrtoint ptr %"var.err_val'.0" to i64
-  %ram.pay188 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64187, 1
+  %ptr.to.i64187 = ptrtoint ptr %"var.err_val'.0" to i64
+  %ram.pay188 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64187, 1
   br label %choice.exit
 
 a.after193:                                       ; preds = %loop.exit.342
@@ -6378,8 +6378,8 @@ choice.else285:                                   ; preds = %ret.niche.done256, 
   store ptr %ret.niche.ptr230.str.4.struct, ptr %rec.fld340, align 8
   %rec.fld341 = getelementptr inbounds { ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 3
   store ptr %ret.niche.ptr259.str.4.struct, ptr %rec.fld341, align 8
-  %p.to.i64342 = ptrtoint ptr %rec.alloc to i64
-  %ram.pay343 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64342, 1
+  %ptr.to.i64342 = ptrtoint ptr %rec.alloc to i64
+  %ram.pay343 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64342, 1
   br label %choice.exit
 
 cat.sum.len299:                                   ; preds = %choice.then284
@@ -6423,8 +6423,8 @@ concat.tot.len311:                                ; preds = %cat.sum.len305
   %fld.gep329 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load330 = load i64, ptr %fld.gep329, align 8
   %call.res331 = call ptr @"ccl::ccl_error"(ptr %1, ptr %concat.str322, i64 %fld.load327, i64 %fld.load330)
-  %p.to.i64332 = ptrtoint ptr %call.res331 to i64
-  %ram.pay333 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64332, 1
+  %ptr.to.i64332 = ptrtoint ptr %call.res331 to i64
+  %ram.pay333 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64332, 1
   br label %choice.exit
 
 str_overflow_abort312:                            ; preds = %cat.sum.len305
@@ -6483,8 +6483,8 @@ concat.tot.len378:                                ; preds = %cat.sum.len372
   %fld.gep396 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %0, i32 0, i32 3
   %fld.load397 = load i64, ptr %fld.gep396, align 8
   %call.res398 = call ptr @"ccl::ccl_error"(ptr %1, ptr %concat.str389, i64 %fld.load394, i64 %fld.load397)
-  %p.to.i64399 = ptrtoint ptr %call.res398 to i64
-  %ram.pay400 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64399, 1
+  %ptr.to.i64399 = ptrtoint ptr %call.res398 to i64
+  %ram.pay400 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64399, 1
   br label %choice.exit
 
 str_overflow_abort379:                            ; preds = %cat.sum.len372
@@ -7938,8 +7938,8 @@ a.store1166:                                      ; preds = %a.grow1165, %a.chec
   br label %choice.exit1139
 
 choice.then1188:                                  ; preds = %choice.exit1082
-  %p.to.i64 = ptrtoint ptr %"var.err_val'.31" to i64
-  %ram.pay1192 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %"var.err_val'.31" to i64
+  %ram.pay1192 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64, 1
   br label %choice.exit1190
 
 choice.else1189:                                  ; preds = %choice.exit1082
@@ -8072,8 +8072,8 @@ a.after1269:                                      ; preds = %a.create1268, %a.af
   store ptr %var.generate.6, ptr %rec.fld1287, align 8
   %rec.fld1288 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1279, i32 0, i32 8
   store ptr %var.targets.6, ptr %rec.fld1288, align 8
-  %p.to.i641289 = ptrtoint ptr %rec.alloc1279 to i64
-  %ram.pay1290 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641289, 1
+  %ptr.to.i641289 = ptrtoint ptr %rec.alloc1279 to i64
+  %ram.pay1290 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i641289, 1
   br label %choice.exit1190
 }
 
@@ -14047,8 +14047,8 @@ a.store596:                                       ; preds = %a.grow595, %a.check
   br label %choice.exit560
 
 choice.then613:                                   ; preds = %choice.exit505
-  %p.to.i64 = ptrtoint ptr %"var.err_val'.2" to i64
-  %ram.pay617 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %"var.err_val'.2" to i64
+  %ram.pay617 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64, 1
   br label %choice.exit615
 
 choice.else614:                                   ; preds = %choice.exit505
@@ -14099,8 +14099,8 @@ a.after637:                                       ; preds = %a.create636, %a.aft
   store ptr %call.res632, ptr %rec.fld650, align 8
   %rec.fld651 = getelementptr inbounds { i64, ptr, ptr }, ptr %rec.alloc648, i32 0, i32 2
   store ptr %call.res646, ptr %rec.fld651, align 8
-  %p.to.i64652 = ptrtoint ptr %rec.alloc648 to i64
-  %ram.pay653 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64652, 1
+  %ptr.to.i64652 = ptrtoint ptr %rec.alloc648 to i64
+  %ram.pay653 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64652, 1
   br label %choice.exit615
 }
 
@@ -34833,8 +34833,8 @@ choice.else10:                                    ; preds = %choice.else
   store ptr %a.new, ptr %rec.fld24, align 8
   %rec.fld25 = getelementptr inbounds { i64, ptr, ptr }, ptr %rec.alloc, i32 0, i32 2
   store ptr %a.new17, ptr %rec.fld25, align 8
-  %p.to.i64 = ptrtoint ptr %rec.alloc to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %rec.alloc to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit11
 
 choice.exit11:                                    ; preds = %choice.else10, %choice.then9

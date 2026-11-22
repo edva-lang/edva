@@ -2150,8 +2150,8 @@ a.create21:                                       ; preds = %choice.case
 
 a.after22:                                        ; preds = %a.create21, %choice.case
   %a.load230 = load ptr, ptr %var.b, align 8
-  %p.to.i64 = ptrtoint ptr %a.load230 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %a.load230 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   ret { i1, i64 } %ram.pay
 
 ret.dead:                                         ; No predecessors!
@@ -2404,8 +2404,8 @@ a.create60:                                       ; preds = %loop.exit.133
 
 a.after61:                                        ; preds = %a.create60, %loop.exit.133
   %a.load269 = load ptr, ptr %var._map_out_126, align 8
-  %p.to.i64 = ptrtoint ptr %a.load269 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %a.load269 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   ret { i1, i64 } %ram.pay
 }
 
@@ -3682,8 +3682,8 @@ concat.tot.len171:                                ; preds = %abort.dead173, %con
   %fld.load183 = load i64, ptr %fld.gep182, align 8
   %addtmp184 = add i64 %fld.load183, 1
   %call.res185 = call ptr @"ccl::ccl_error"(ptr %var.load158, ptr %concat.str, i64 %fld.load180, i64 %addtmp184)
-  %p.to.i64 = ptrtoint ptr %call.res185 to i64
-  %ram.pay186 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res185 to i64
+  %ram.pay186 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64, 1
   ret { i1, i64 } %ram.pay186
 
 str_overflow_abort172:                            ; preds = %concat.sum.len168
@@ -4822,8 +4822,8 @@ a.after863:                                       ; preds = %a.create862, %loop.
   store ptr %a.load2871, ptr %rec.fld874, align 8
   %rec.fld875 = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 1
   store i64 %var.load872, ptr %rec.fld875, align 8
-  %p.to.i64876 = ptrtoint ptr %rec.alloc to i64
-  %ram.pay877 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64876, 1
+  %ptr.to.i64876 = ptrtoint ptr %rec.alloc to i64
+  %ram.pay877 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64876, 1
   ret { i1, i64 } %ram.pay877
 }
 
@@ -4939,8 +4939,8 @@ choice.exit:                                      ; preds = %ret.dead, %a.after1
   %var.load70 = load ptr, ptr %var.pair, align 8
   %fld.gep71 = getelementptr inbounds { ptr, i64 }, ptr %var.load70, i32 0, i32 0
   %fld.load72 = load ptr, ptr %fld.gep71, align 8
-  %p.to.i6473 = ptrtoint ptr %fld.load72 to i64
-  %ram.pay74 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i6473, 1
+  %ptr.to.i6473 = ptrtoint ptr %fld.load72 to i64
+  %ram.pay74 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i6473, 1
   ret { i1, i64 } %ram.pay74
 
 a.create24:                                       ; preds = %choice.then
@@ -5060,8 +5060,8 @@ choice.exit53:                                    ; preds = %choice.else, %choic
   %fld.load67 = load i64, ptr %fld.gep66, align 8
   %addtmp = add i64 %fld.load67, 1
   %call.res68 = call ptr @"ccl::ccl_error"(ptr %var.load61, ptr @str.7.struct, i64 %fld.load64, i64 %addtmp)
-  %p.to.i64 = ptrtoint ptr %call.res68 to i64
-  %ram.pay69 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res68 to i64
+  %ram.pay69 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64, 1
   ret { i1, i64 } %ram.pay69
 
 ret.dead:                                         ; No predecessors!
@@ -5175,8 +5175,8 @@ concat.tot.len24:                                 ; preds = %abort.dead26, %conc
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   store ptr %concat.buf, ptr %str.build.data.gep, align 8
   %call.res29 = call ptr @"ccl::ccl_error"(ptr %var.load9, ptr %concat.str, i64 1, i64 1)
-  %p.to.i64 = ptrtoint ptr %call.res29 to i64
-  %ram.pay = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %call.res29 to i64
+  %ram.pay = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i64, 1
   ret { i1, i64 } %ram.pay
 
 str_overflow_abort25:                             ; preds = %concat.sum.len19
@@ -5261,8 +5261,8 @@ concat.tot.len62:                                 ; preds = %abort.dead64, %conc
   %str.build.data.gep72 = getelementptr inbounds { i64, ptr }, ptr %concat.str70, i32 0, i32 1
   store ptr %concat.buf66, ptr %str.build.data.gep72, align 8
   %call.res73 = call ptr @"ccl::ccl_error"(ptr %var.load43, ptr %concat.str70, i64 1, i64 1)
-  %p.to.i6474 = ptrtoint ptr %call.res73 to i64
-  %ram.pay75 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i6474, 1
+  %ptr.to.i6474 = ptrtoint ptr %call.res73 to i64
+  %ram.pay75 = insertvalue { i1, i64 } zeroinitializer, i64 %ptr.to.i6474, 1
   br label %choice.exit39
 
 str_overflow_abort63:                             ; preds = %concat.sum.len56

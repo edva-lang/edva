@@ -428,8 +428,8 @@ entry:
 
 choice.then:                                      ; preds = %entry
   %var.load2 = load ptr, ptr %var.a, align 8
-  %p.to.i64 = ptrtoint ptr %var.load2 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %var.load2 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit
 
 choice.else:                                      ; preds = %entry

@@ -6604,9 +6604,13 @@ codegen_typed_unary_ready = cg, op, operand, ut, ti, ev, heap_only =>
                   | ev.0
                   |
                      is_unboxed'
-                        | match::convert_unboxed_pay(cg, LLVMBuildExtractValue(
-                           cg.builder, ev.0, 1, "unwrap.pay.pos"), ret_vt')
-                        | unwrap_pay_value(cg, match::union_pay_ptr(cg, ev.0), ret_vt')
+                        | match::convert_typed_unboxed_pay(cg, LLVMBuildExtractValue(
+                           cg.builder, ev.0, 1, "unwrap.pay.pos"), ret_vt', ti)
+                        |
+                           pay_ptr = match::union_pay_ptr(cg, ev.0)
+                           types::is_unboxed_ram_ti(cg, ti)
+                              | match::load_ram_payload(cg, pay_ptr)
+                              | unwrap_pay_value(cg, pay_ptr, ret_vt')
                (res_val', ret_vt')
             [Propagate]
                ret_vt' = types::vt_from_ti_cg(cg, ti)
@@ -6710,9 +6714,13 @@ codegen_typed_unary_ready = cg, op, operand, ut, ti, ev, heap_only =>
                         | ev.0
                         |
                            is_unboxed'
-                              | match::convert_unboxed_pay(cg, LLVMBuildExtractValue(
-                                 cg.builder, ev.0, 1, "prop.pay.pos"), ret_vt')
-                              | unwrap_pay_value(cg, match::union_pay_ptr(cg, ev.0), ret_vt')
+                              | match::convert_typed_unboxed_pay(cg, LLVMBuildExtractValue(
+                                 cg.builder, ev.0, 1, "prop.pay.pos"), ret_vt', ti)
+                              |
+                                 pay_ptr = match::union_pay_ptr(cg, ev.0)
+                                 types::is_unboxed_ram_ti(cg, ti)
+                                    | match::load_ram_payload(cg, pay_ptr)
+                                    | unwrap_pay_value(cg, pay_ptr, ret_vt')
                (res_val', ret_vt')
             | (ev.0, ev.1)
 

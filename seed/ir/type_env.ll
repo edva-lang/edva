@@ -9378,8 +9378,8 @@ choice.then:                                      ; preds = %str.eq.merge
   %var.load48 = load ptr, ptr %var.g, align 8
   %fld.gep49 = getelementptr inbounds { ptr, ptr }, ptr %var.load48, i32 0, i32 1
   %fld.load50 = load ptr, ptr %fld.gep49, align 8
-  %p.to.i64 = ptrtoint ptr %fld.load50 to i64
-  %ram.pay51 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %fld.load50 to i64
+  %ram.pay51 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   store { i1, i64 } %ram.pay51, ptr %"var.res'", align 8
   br label %loop.exit.216
 
@@ -9528,8 +9528,8 @@ choice.then37:                                    ; preds = %concat.tot.len29
   store ptr %pay.ptr, ptr %var._, align 8
   store ptr %pay.ptr, ptr %var.p, align 8
   %var.load39 = load ptr, ptr %var.p, align 8
-  %p.to.i64 = ptrtoint ptr %var.load39 to i64
-  %ram.pay40 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %var.load39 to i64
+  %ram.pay40 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   ret { i1, i64 } %ram.pay40
 
 choice.exit38:                                    ; preds = %ret.dead, %concat.tot.len29

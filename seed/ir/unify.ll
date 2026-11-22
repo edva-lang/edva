@@ -11093,8 +11093,8 @@ a.create164:                                      ; preds = %choice.then158
 
 a.after165:                                       ; preds = %a.create164, %choice.then158
   %a.load2173 = load ptr, ptr %"var.merged'", align 8
-  %p.to.i64 = ptrtoint ptr %a.load2173 to i64
-  %ram.pay174 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %a.load2173 to i64
+  %ram.pay174 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit160
 }
 

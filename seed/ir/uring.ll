@@ -567,8 +567,8 @@ choice.exit129:                                   ; preds = %ret.dead145, %choic
   store i64 %var.load185, ptr %rec.fld204, align 8
   %rec.fld205 = getelementptr inbounds { i64, ptr, i64, ptr, i64, ptr, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc188, i32 0, i32 16
   store i64 %var.load186, ptr %rec.fld205, align 8
-  %p.to.i64 = ptrtoint ptr %rec.alloc188 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %rec.alloc188 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   ret { i1, i64 } %ram.pay
 
 ret.dead145:                                      ; No predecessors!
@@ -1542,8 +1542,8 @@ choice.then:                                      ; preds = %entry
   store ptr %var.load1, ptr %var._, align 8
   store ptr %var.load1, ptr %var.cqe, align 8
   %var.load2 = load ptr, ptr %var.cqe, align 8
-  %p.to.i64 = ptrtoint ptr %var.load2 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %var.load2 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   br label %choice.exit
 
 choice.else:                                      ; preds = %entry
@@ -1577,8 +1577,8 @@ choice.then13:                                    ; preds = %choice.else7
   store ptr %var.load11, ptr %var._16, align 8
   store ptr %var.load11, ptr %var.cqe2, align 8
   %var.load17 = load ptr, ptr %var.cqe2, align 8
-  %p.to.i6418 = ptrtoint ptr %var.load17 to i64
-  %ram.pay19 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i6418, 1
+  %ptr.to.i6418 = ptrtoint ptr %var.load17 to i64
+  %ram.pay19 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i6418, 1
   br label %choice.exit15
 
 choice.else14:                                    ; preds = %choice.else7
@@ -1888,8 +1888,8 @@ a.create14:                                       ; preds = %choice.then
 
 a.after15:                                        ; preds = %a.create14, %choice.then
   %a.load223 = load ptr, ptr %"var.outs'", align 8
-  %p.to.i64 = ptrtoint ptr %a.load223 to i64
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
+  %ptr.to.i64 = ptrtoint ptr %a.load223 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64, 1
   ret { i1, i64 } %ram.pay
 
 ret.dead:                                         ; No predecessors!
@@ -2901,8 +2901,8 @@ a.create474:                                      ; preds = %loop.exit.68
 
 a.after475:                                       ; preds = %a.create474, %loop.exit.68
   %a.load2483 = load ptr, ptr %"var.outs'", align 8
-  %p.to.i64484 = ptrtoint ptr %a.load2483 to i64
-  %ram.pay485 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64484, 1
+  %ptr.to.i64484 = ptrtoint ptr %a.load2483 to i64
+  %ram.pay485 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %ptr.to.i64484, 1
   ret { i1, i64 } %ram.pay485
 }
 
