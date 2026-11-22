@@ -2839,7 +2839,7 @@ entry:
 
 loop.header.1979:                                 ; preds = %choice.exit13, %entry
   %loop.idx.1979.0 = phi i64 [ 0, %entry ], [ %loop.next, %choice.exit13 ]
-  %var._map_out_581.0 = phi ptr [ %a.new, %entry ], [ %var._map_out_581.1, %choice.exit13 ]
+  %var._map_out_587.0 = phi ptr [ %a.new, %entry ], [ %var._map_out_587.1, %choice.exit13 ]
   %loop.cond = icmp slt i64 %loop.idx.1979.0, %arr.cycle.len2
   br i1 %loop.cond, label %loop.body.1979, label %loop.exit.1979
 
@@ -2853,7 +2853,7 @@ loop.body.1979:                                   ; preds = %loop.header.1979
   br i1 %nottmp, label %and.1980.then, label %choice.exit
 
 loop.exit.1979:                                   ; preds = %loop.header.1979
-  %a.null29 = icmp eq ptr %var._map_out_581.0, null
+  %a.null29 = icmp eq ptr %var._map_out_587.0, null
   br i1 %a.null29, label %a.create30, label %a.after44
 
 and.1980.then:                                    ; preds = %loop.body.1979
@@ -2871,11 +2871,11 @@ choice.exit:                                      ; preds = %and.1980.then, %loo
   br i1 %niche.ne.null, label %choice.then12, label %choice.exit13
 
 choice.then12:                                    ; preds = %choice.exit
-  %a.null = icmp eq ptr %var._map_out_581.0, null
+  %a.null = icmp eq ptr %var._map_out_587.0, null
   br i1 %a.null, label %a.create, label %a.check
 
 choice.exit13:                                    ; preds = %a.store, %choice.exit
-  %var._map_out_581.1 = phi ptr [ %var._map_out_581.2, %a.store ], [ %var._map_out_581.0, %choice.exit ]
+  %var._map_out_587.1 = phi ptr [ %var._map_out_587.2, %a.store ], [ %var._map_out_587.0, %choice.exit ]
   %loop.next = add i64 %loop.idx.1979.0, 1
   br label %loop.header.1979
 
@@ -2892,26 +2892,26 @@ a.create:                                         ; preds = %choice.then12
   br label %a.check
 
 a.check:                                          ; preds = %choice.then12, %a.create
-  %var._map_out_581.2 = phi ptr [ %a.create17, %a.create ], [ %var._map_out_581.0, %choice.then12 ]
-  %a.len23 = load i64, ptr %var._map_out_581.2, align 8
-  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_581.2, i32 0, i32 2
+  %var._map_out_587.2 = phi ptr [ %a.create17, %a.create ], [ %var._map_out_587.0, %choice.then12 ]
+  %a.len23 = load i64, ptr %var._map_out_587.2, align 8
+  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_587.2, i32 0, i32 2
   %a.cap24 = load i64, ptr %a.cap, align 8
   %a.needs.grow = icmp eq i64 %a.len23, %a.cap24
   br i1 %a.needs.grow, label %a.grow, label %a.store
 
 a.grow:                                           ; preds = %a.check
-  call void @dva_array_grow(ptr %var._map_out_581.2)
+  call void @dva_array_grow(ptr %var._map_out_587.2)
   br label %a.store
 
 a.store:                                          ; preds = %a.grow, %a.check
-  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_581.2, i32 0, i32 1
+  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_587.2, i32 0, i32 1
   %a.cur.data25 = load ptr, ptr %a.cur.data, align 8
-  %a.cur.len26 = load i64, ptr %var._map_out_581.2, align 8
+  %a.cur.len26 = load i64, ptr %var._map_out_587.2, align 8
   %a.elem.gep = getelementptr i64, ptr %a.cur.data25, i64 %a.cur.len26
   %slot.p2i = ptrtoint ptr %choice.res to i64
   store i64 %slot.p2i, ptr %a.elem.gep, align 8
   %a.next.len = add i64 %a.cur.len26, 1
-  store i64 %a.next.len, ptr %var._map_out_581.2, align 8
+  store i64 %a.next.len, ptr %var._map_out_587.2, align 8
   br label %choice.exit13
 
 a.create30:                                       ; preds = %loop.exit.1979
@@ -2927,9 +2927,9 @@ a.create30:                                       ; preds = %loop.exit.1979
   br label %a.after44
 
 a.after44:                                        ; preds = %loop.exit.1979, %a.create30
-  %var._map_out_581.3 = phi ptr [ %a.create33, %a.create30 ], [ %var._map_out_581.0, %loop.exit.1979 ]
-  call void @sort_names(ptr %var._map_out_581.3)
-  ret ptr %var._map_out_581.3
+  %var._map_out_587.3 = phi ptr [ %a.create33, %a.create30 ], [ %var._map_out_587.0, %loop.exit.1979 ]
+  call void @sort_names(ptr %var._map_out_587.3)
+  ret ptr %var._map_out_587.3
 }
 
 declare ptr @"fs::read_dir"(ptr) #0
@@ -3456,7 +3456,7 @@ a.after:                                          ; preds = %a.create, %entry
 
 loop.header.1984:                                 ; preds = %a.store, %a.after
   %loop.idx.1984.0 = phi i64 [ 0, %a.after ], [ %loop.next, %a.store ]
-  %var._map_out_602.0 = phi ptr [ %a.new, %a.after ], [ %var._map_out_602.1, %a.store ]
+  %var._map_out_608.0 = phi ptr [ %a.new, %a.after ], [ %var._map_out_608.1, %a.store ]
   %loop.cond = icmp slt i64 %loop.idx.1984.0, %arr.cycle.len9
   br i1 %loop.cond, label %loop.body.1984, label %a.after32
 
@@ -3465,7 +3465,7 @@ loop.body.1984:                                   ; preds = %loop.header.1984
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
   %call.res = call ptr @unmark_private(ptr %slot.i2p)
-  %a.null13 = icmp eq ptr %var._map_out_602.0, null
+  %a.null13 = icmp eq ptr %var._map_out_608.0, null
   br i1 %a.null13, label %a.create14, label %a.check
 
 a.create14:                                       ; preds = %loop.body.1984
@@ -3481,31 +3481,31 @@ a.create14:                                       ; preds = %loop.body.1984
   br label %a.check
 
 a.check:                                          ; preds = %loop.body.1984, %a.create14
-  %var._map_out_602.1 = phi ptr [ %a.create17, %a.create14 ], [ %var._map_out_602.0, %loop.body.1984 ]
-  %a.len24 = load i64, ptr %var._map_out_602.1, align 8
-  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_602.1, i32 0, i32 2
+  %var._map_out_608.1 = phi ptr [ %a.create17, %a.create14 ], [ %var._map_out_608.0, %loop.body.1984 ]
+  %a.len24 = load i64, ptr %var._map_out_608.1, align 8
+  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_608.1, i32 0, i32 2
   %a.cap25 = load i64, ptr %a.cap, align 8
   %a.needs.grow = icmp eq i64 %a.len24, %a.cap25
   br i1 %a.needs.grow, label %a.grow, label %a.store
 
 a.grow:                                           ; preds = %a.check
-  call void @dva_array_grow(ptr %var._map_out_602.1)
+  call void @dva_array_grow(ptr %var._map_out_608.1)
   br label %a.store
 
 a.store:                                          ; preds = %a.grow, %a.check
-  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_602.1, i32 0, i32 1
+  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_608.1, i32 0, i32 1
   %a.cur.data26 = load ptr, ptr %a.cur.data, align 8
-  %a.cur.len27 = load i64, ptr %var._map_out_602.1, align 8
+  %a.cur.len27 = load i64, ptr %var._map_out_608.1, align 8
   %a.elem.gep = getelementptr i64, ptr %a.cur.data26, i64 %a.cur.len27
   %slot.p2i = ptrtoint ptr %call.res to i64
   store i64 %slot.p2i, ptr %a.elem.gep, align 8
   %a.next.len = add i64 %a.cur.len27, 1
-  store i64 %a.next.len, ptr %var._map_out_602.1, align 8
+  store i64 %a.next.len, ptr %var._map_out_608.1, align 8
   %loop.next = add i64 %loop.idx.1984.0, 1
   br label %loop.header.1984
 
 a.after32:                                        ; preds = %loop.header.1984
-  ret ptr %var._map_out_602.0
+  ret ptr %var._map_out_608.0
 }
 
 define i1 @has_dcolon_step(ptr %0, i64 %1) #0 {
@@ -27205,7 +27205,7 @@ a.after:                                          ; preds = %a.create, %entry
   br label %loop.header.2088
 
 loop.header.2088:                                 ; preds = %a.store, %a.after
-  %var._map_out_2274.0 = phi ptr [ %a.new, %a.after ], [ %var._map_out_2274.1, %a.store ]
+  %var._map_out_2280.0 = phi ptr [ %a.new, %a.after ], [ %var._map_out_2280.1, %a.store ]
   %var.locals.0 = phi ptr [ %2, %a.after ], [ %var.locals.1, %a.store ]
   %loop.idx.2088.0 = phi i64 [ 0, %a.after ], [ %loop.next, %a.store ]
   %loop.cond = icmp slt i64 %loop.idx.2088.0, %arr.cycle.len9
@@ -27233,7 +27233,7 @@ a.create16:                                       ; preds = %loop.body.2088
 a.after17:                                        ; preds = %a.create16, %loop.body.2088
   %var.locals.1 = phi ptr [ %a.create19, %a.create16 ], [ %var.locals.0, %loop.body.2088 ]
   %call.res = call ptr @rewrite_import_expr(ptr %slot.i2p, ptr %1, ptr %var.locals.1)
-  %a.null27 = icmp eq ptr %var._map_out_2274.0, null
+  %a.null27 = icmp eq ptr %var._map_out_2280.0, null
   br i1 %a.null27, label %a.create28, label %a.check
 
 a.create28:                                       ; preds = %a.after17
@@ -27249,31 +27249,31 @@ a.create28:                                       ; preds = %a.after17
   br label %a.check
 
 a.check:                                          ; preds = %a.after17, %a.create28
-  %var._map_out_2274.1 = phi ptr [ %a.create31, %a.create28 ], [ %var._map_out_2274.0, %a.after17 ]
-  %a.len38 = load i64, ptr %var._map_out_2274.1, align 8
-  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2274.1, i32 0, i32 2
+  %var._map_out_2280.1 = phi ptr [ %a.create31, %a.create28 ], [ %var._map_out_2280.0, %a.after17 ]
+  %a.len38 = load i64, ptr %var._map_out_2280.1, align 8
+  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2280.1, i32 0, i32 2
   %a.cap39 = load i64, ptr %a.cap, align 8
   %a.needs.grow = icmp eq i64 %a.len38, %a.cap39
   br i1 %a.needs.grow, label %a.grow, label %a.store
 
 a.grow:                                           ; preds = %a.check
-  call void @dva_array_grow(ptr %var._map_out_2274.1)
+  call void @dva_array_grow(ptr %var._map_out_2280.1)
   br label %a.store
 
 a.store:                                          ; preds = %a.grow, %a.check
-  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2274.1, i32 0, i32 1
+  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2280.1, i32 0, i32 1
   %a.cur.data40 = load ptr, ptr %a.cur.data, align 8
-  %a.cur.len41 = load i64, ptr %var._map_out_2274.1, align 8
+  %a.cur.len41 = load i64, ptr %var._map_out_2280.1, align 8
   %a.elem.gep = getelementptr i64, ptr %a.cur.data40, i64 %a.cur.len41
   %slot.p2i = ptrtoint ptr %call.res to i64
   store i64 %slot.p2i, ptr %a.elem.gep, align 8
   %a.next.len = add i64 %a.cur.len41, 1
-  store i64 %a.next.len, ptr %var._map_out_2274.1, align 8
+  store i64 %a.next.len, ptr %var._map_out_2280.1, align 8
   %loop.next = add i64 %loop.idx.2088.0, 1
   br label %loop.header.2088
 
 a.after46:                                        ; preds = %loop.header.2088
-  ret ptr %var._map_out_2274.0
+  ret ptr %var._map_out_2280.0
 }
 
 define ptr @rewrite_import_expr(ptr %0, ptr %1, ptr %2) #0 {
@@ -31329,7 +31329,7 @@ choice.case3713:                                  ; preds = %entry
   br label %loop.header.2131
 
 loop.header.2131:                                 ; preds = %a.store3786, %choice.case3713
-  %var._map_out_2164.0 = phi ptr [ %a.new3722, %choice.case3713 ], [ %var._map_out_2164.1, %a.store3786 ]
+  %var._map_out_2170.0 = phi ptr [ %a.new3722, %choice.case3713 ], [ %var._map_out_2170.1, %a.store3786 ]
   %loop.idx.2131.0 = phi i64 [ 0, %choice.case3713 ], [ %loop.next3801, %a.store3786 ]
   %var.locals.27 = phi ptr [ %2, %choice.case3713 ], [ %var.locals.28, %a.store3786 ]
   %loop.cond3736 = icmp slt i64 %loop.idx.2131.0, %arr.cycle.len3732
@@ -31369,7 +31369,7 @@ a.after3757:                                      ; preds = %a.create3756, %loop
   store ptr %fld.load3748, ptr %rec.fld3770, align 8
   %rec.fld3771 = getelementptr inbounds { i1, ptr, ptr }, ptr %rec.alloc3768, i32 0, i32 2
   store ptr %call.res3766, ptr %rec.fld3771, align 8
-  %a.null3773 = icmp eq ptr %var._map_out_2164.0, null
+  %a.null3773 = icmp eq ptr %var._map_out_2170.0, null
   br i1 %a.null3773, label %a.create3774, label %a.check3784
 
 a.create3774:                                     ; preds = %a.after3757
@@ -31385,26 +31385,26 @@ a.create3774:                                     ; preds = %a.after3757
   br label %a.check3784
 
 a.check3784:                                      ; preds = %a.after3757, %a.create3774
-  %var._map_out_2164.1 = phi ptr [ %a.create3777, %a.create3774 ], [ %var._map_out_2164.0, %a.after3757 ]
-  %a.len3788 = load i64, ptr %var._map_out_2164.1, align 8
-  %a.cap3789 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2164.1, i32 0, i32 2
+  %var._map_out_2170.1 = phi ptr [ %a.create3777, %a.create3774 ], [ %var._map_out_2170.0, %a.after3757 ]
+  %a.len3788 = load i64, ptr %var._map_out_2170.1, align 8
+  %a.cap3789 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2170.1, i32 0, i32 2
   %a.cap3790 = load i64, ptr %a.cap3789, align 8
   %a.needs.grow3791 = icmp eq i64 %a.len3788, %a.cap3790
   br i1 %a.needs.grow3791, label %a.grow3785, label %a.store3786
 
 a.grow3785:                                       ; preds = %a.check3784
-  call void @dva_array_grow(ptr %var._map_out_2164.1)
+  call void @dva_array_grow(ptr %var._map_out_2170.1)
   br label %a.store3786
 
 a.store3786:                                      ; preds = %a.grow3785, %a.check3784
-  %a.cur.data3792 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2164.1, i32 0, i32 1
+  %a.cur.data3792 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2170.1, i32 0, i32 1
   %a.cur.data3793 = load ptr, ptr %a.cur.data3792, align 8
-  %a.cur.len3795 = load i64, ptr %var._map_out_2164.1, align 8
+  %a.cur.len3795 = load i64, ptr %var._map_out_2170.1, align 8
   %a.elem.gep3796 = getelementptr i64, ptr %a.cur.data3793, i64 %a.cur.len3795
   %slot.p2i3797 = ptrtoint ptr %rec.alloc3768 to i64
   store i64 %slot.p2i3797, ptr %a.elem.gep3796, align 8
   %a.next.len3798 = add i64 %a.cur.len3795, 1
-  store i64 %a.next.len3798, ptr %var._map_out_2164.1, align 8
+  store i64 %a.next.len3798, ptr %var._map_out_2170.1, align 8
   %loop.next3801 = add i64 %loop.idx.2131.0, 1
   br label %loop.header.2131
 
@@ -31417,7 +31417,7 @@ a.after3806:                                      ; preds = %loop.header.2131
   %fld.load3834 = load i1, ptr %fld.gep3833, align 1
   %arena.cur3835 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc3836 = call ptr @dva_arena_alloc(ptr %arena.cur3835, i64 ptrtoint (ptr getelementptr ({ ptr, i1 }, ptr null, i32 1) to i64))
-  store ptr %var._map_out_2164.0, ptr %rec.alloc3836, align 8
+  store ptr %var._map_out_2170.0, ptr %rec.alloc3836, align 8
   %rec.fld3838 = getelementptr inbounds { ptr, i1 }, ptr %rec.alloc3836, i32 0, i32 1
   store i1 %fld.load3834, ptr %rec.fld3838, align 1
   store ptr %rec.alloc3836, ptr %pay.gep3818, align 8
@@ -32093,7 +32093,7 @@ a.after4567:                                      ; preds = %a.create4566, %choi
   br label %loop.header.2132
 
 loop.header.2132:                                 ; preds = %a.store4643, %a.after4567
-  %var._map_out_2262.0 = phi ptr [ %a.new4557, %a.after4567 ], [ %var._map_out_2262.1, %a.store4643 ]
+  %var._map_out_2268.0 = phi ptr [ %a.new4557, %a.after4567 ], [ %var._map_out_2268.1, %a.store4643 ]
   %var.locals.47 = phi ptr [ %2, %a.after4567 ], [ %var.locals.48, %a.store4643 ]
   %loop.idx.2132.0 = phi i64 [ 0, %a.after4567 ], [ %loop.next4658, %a.store4643 ]
   %loop.cond4581 = icmp slt i64 %loop.idx.2132.0, %arr.cycle.len4577
@@ -32130,7 +32130,7 @@ a.after4597:                                      ; preds = %a.create4596, %loop
   store ptr %call.res4606, ptr %rec.alloc4626, align 8
   %rec.fld4628 = getelementptr inbounds { ptr, ptr }, ptr %rec.alloc4626, i32 0, i32 1
   store ptr %call.res4624, ptr %rec.fld4628, align 8
-  %a.null4630 = icmp eq ptr %var._map_out_2262.0, null
+  %a.null4630 = icmp eq ptr %var._map_out_2268.0, null
   br i1 %a.null4630, label %a.create4631, label %a.check4641
 
 a.create4631:                                     ; preds = %a.after4597
@@ -32146,26 +32146,26 @@ a.create4631:                                     ; preds = %a.after4597
   br label %a.check4641
 
 a.check4641:                                      ; preds = %a.after4597, %a.create4631
-  %var._map_out_2262.1 = phi ptr [ %a.create4634, %a.create4631 ], [ %var._map_out_2262.0, %a.after4597 ]
-  %a.len4645 = load i64, ptr %var._map_out_2262.1, align 8
-  %a.cap4646 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2262.1, i32 0, i32 2
+  %var._map_out_2268.1 = phi ptr [ %a.create4634, %a.create4631 ], [ %var._map_out_2268.0, %a.after4597 ]
+  %a.len4645 = load i64, ptr %var._map_out_2268.1, align 8
+  %a.cap4646 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2268.1, i32 0, i32 2
   %a.cap4647 = load i64, ptr %a.cap4646, align 8
   %a.needs.grow4648 = icmp eq i64 %a.len4645, %a.cap4647
   br i1 %a.needs.grow4648, label %a.grow4642, label %a.store4643
 
 a.grow4642:                                       ; preds = %a.check4641
-  call void @dva_array_grow(ptr %var._map_out_2262.1)
+  call void @dva_array_grow(ptr %var._map_out_2268.1)
   br label %a.store4643
 
 a.store4643:                                      ; preds = %a.grow4642, %a.check4641
-  %a.cur.data4649 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2262.1, i32 0, i32 1
+  %a.cur.data4649 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2268.1, i32 0, i32 1
   %a.cur.data4650 = load ptr, ptr %a.cur.data4649, align 8
-  %a.cur.len4652 = load i64, ptr %var._map_out_2262.1, align 8
+  %a.cur.len4652 = load i64, ptr %var._map_out_2268.1, align 8
   %a.elem.gep4653 = getelementptr i64, ptr %a.cur.data4650, i64 %a.cur.len4652
   %slot.p2i4654 = ptrtoint ptr %rec.alloc4626 to i64
   store i64 %slot.p2i4654, ptr %a.elem.gep4653, align 8
   %a.next.len4655 = add i64 %a.cur.len4652, 1
-  store i64 %a.next.len4655, ptr %var._map_out_2262.1, align 8
+  store i64 %a.next.len4655, ptr %var._map_out_2268.1, align 8
   %loop.next4658 = add i64 %loop.idx.2132.0, 1
   br label %loop.header.2132
 
@@ -32174,7 +32174,7 @@ a.after4663:                                      ; preds = %loop.header.2132
   %enum.alloc4673 = call ptr @dva_arena_alloc(ptr %arena.cur4672, i64 16)
   store i64 29, ptr %enum.alloc4673, align 8
   %pay.gep4675 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc4673, i32 0, i32 1
-  store ptr %var._map_out_2262.0, ptr %pay.gep4675, align 8
+  store ptr %var._map_out_2268.0, ptr %pay.gep4675, align 8
   br label %common.ret
 
 choice.case4689:                                  ; preds = %entry
@@ -34925,7 +34925,7 @@ choice.case109:                                   ; preds = %entry
   br label %loop.header.2126
 
 loop.header.2126:                                 ; preds = %a.store, %choice.case109
-  %var._map_out_1857.0 = phi ptr [ %a.new, %choice.case109 ], [ %var._map_out_1857.1, %a.store ]
+  %var._map_out_1863.0 = phi ptr [ %a.new, %choice.case109 ], [ %var._map_out_1863.1, %a.store ]
   %loop.idx.2126.0 = phi i64 [ 0, %choice.case109 ], [ %loop.next, %a.store ]
   %loop.cond = icmp slt i64 %loop.idx.2126.0, %arr.cycle.len122
   br i1 %loop.cond, label %loop.body.2126, label %a.after175
@@ -34965,7 +34965,7 @@ loop.body.2126:                                   ; preds = %loop.header.2126
   store i1 %fld.load151, ptr %rec.fld158, align 1
   %rec.fld159 = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %rec.alloc154, i32 0, i32 4
   store ptr %call.res141, ptr %rec.fld159, align 8
-  %a.null = icmp eq ptr %var._map_out_1857.0, null
+  %a.null = icmp eq ptr %var._map_out_1863.0, null
   br i1 %a.null, label %a.create, label %a.check
 
 a.create:                                         ; preds = %loop.body.2126
@@ -34981,26 +34981,26 @@ a.create:                                         ; preds = %loop.body.2126
   br label %a.check
 
 a.check:                                          ; preds = %loop.body.2126, %a.create
-  %var._map_out_1857.1 = phi ptr [ %a.create161, %a.create ], [ %var._map_out_1857.0, %loop.body.2126 ]
-  %a.len167 = load i64, ptr %var._map_out_1857.1, align 8
-  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1857.1, i32 0, i32 2
+  %var._map_out_1863.1 = phi ptr [ %a.create161, %a.create ], [ %var._map_out_1863.0, %loop.body.2126 ]
+  %a.len167 = load i64, ptr %var._map_out_1863.1, align 8
+  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1863.1, i32 0, i32 2
   %a.cap168 = load i64, ptr %a.cap, align 8
   %a.needs.grow = icmp eq i64 %a.len167, %a.cap168
   br i1 %a.needs.grow, label %a.grow, label %a.store
 
 a.grow:                                           ; preds = %a.check
-  call void @dva_array_grow(ptr %var._map_out_1857.1)
+  call void @dva_array_grow(ptr %var._map_out_1863.1)
   br label %a.store
 
 a.store:                                          ; preds = %a.grow, %a.check
-  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1857.1, i32 0, i32 1
+  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1863.1, i32 0, i32 1
   %a.cur.data169 = load ptr, ptr %a.cur.data, align 8
-  %a.cur.len170 = load i64, ptr %var._map_out_1857.1, align 8
+  %a.cur.len170 = load i64, ptr %var._map_out_1863.1, align 8
   %a.elem.gep = getelementptr i64, ptr %a.cur.data169, i64 %a.cur.len170
   %slot.p2i = ptrtoint ptr %rec.alloc154 to i64
   store i64 %slot.p2i, ptr %a.elem.gep, align 8
   %a.next.len = add i64 %a.cur.len170, 1
-  store i64 %a.next.len, ptr %var._map_out_1857.1, align 8
+  store i64 %a.next.len, ptr %var._map_out_1863.1, align 8
   %loop.next = add i64 %loop.idx.2126.0, 1
   br label %loop.header.2126
 
@@ -35021,7 +35021,7 @@ a.after175:                                       ; preds = %loop.header.2126
   %fld.load215 = load i1, ptr %fld.gep214, align 1
   %arena.cur216 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc217 = call ptr @dva_arena_alloc(ptr %arena.cur216, i64 ptrtoint (ptr getelementptr ({ ptr, i1, i1, ptr, i64, i1 }, ptr null, i32 1) to i64))
-  store ptr %var._map_out_1857.0, ptr %rec.alloc217, align 8
+  store ptr %var._map_out_1863.0, ptr %rec.alloc217, align 8
   %rec.fld219 = getelementptr inbounds { ptr, i1, i1, ptr, i64, i1 }, ptr %rec.alloc217, i32 0, i32 1
   store i1 %fld.load203, ptr %rec.fld219, align 1
   %rec.fld220 = getelementptr inbounds { ptr, i1, i1, ptr, i64, i1 }, ptr %rec.alloc217, i32 0, i32 2
@@ -35055,7 +35055,7 @@ choice.case224:                                   ; preds = %entry
   br label %loop.header.2127
 
 loop.header.2127:                                 ; preds = %a.store272, %choice.case224
-  %var._map_out_1872.0 = phi ptr [ %a.new234, %choice.case224 ], [ %var._map_out_1872.1, %a.store272 ]
+  %var._map_out_1878.0 = phi ptr [ %a.new234, %choice.case224 ], [ %var._map_out_1878.1, %a.store272 ]
   %loop.idx.2127.0 = phi i64 [ 0, %choice.case224 ], [ %loop.next287, %a.store272 ]
   %loop.cond248 = icmp slt i64 %loop.idx.2127.0, %arr.cycle.len244
   br i1 %loop.cond248, label %loop.body.2127, label %a.after292
@@ -35065,7 +35065,7 @@ loop.body.2127:                                   ; preds = %loop.header.2127
   %arr.elem.raw251 = load i64, ptr %arr.elem.gep250, align 8
   %slot.i2p252 = inttoptr i64 %arr.elem.raw251 to ptr
   %call.res257 = call ptr @rewrite_import_type_info(ptr %slot.i2p252, ptr %1)
-  %a.null259 = icmp eq ptr %var._map_out_1872.0, null
+  %a.null259 = icmp eq ptr %var._map_out_1878.0, null
   br i1 %a.null259, label %a.create260, label %a.check270
 
 a.create260:                                      ; preds = %loop.body.2127
@@ -35081,26 +35081,26 @@ a.create260:                                      ; preds = %loop.body.2127
   br label %a.check270
 
 a.check270:                                       ; preds = %loop.body.2127, %a.create260
-  %var._map_out_1872.1 = phi ptr [ %a.create263, %a.create260 ], [ %var._map_out_1872.0, %loop.body.2127 ]
-  %a.len274 = load i64, ptr %var._map_out_1872.1, align 8
-  %a.cap275 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1872.1, i32 0, i32 2
+  %var._map_out_1878.1 = phi ptr [ %a.create263, %a.create260 ], [ %var._map_out_1878.0, %loop.body.2127 ]
+  %a.len274 = load i64, ptr %var._map_out_1878.1, align 8
+  %a.cap275 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1878.1, i32 0, i32 2
   %a.cap276 = load i64, ptr %a.cap275, align 8
   %a.needs.grow277 = icmp eq i64 %a.len274, %a.cap276
   br i1 %a.needs.grow277, label %a.grow271, label %a.store272
 
 a.grow271:                                        ; preds = %a.check270
-  call void @dva_array_grow(ptr %var._map_out_1872.1)
+  call void @dva_array_grow(ptr %var._map_out_1878.1)
   br label %a.store272
 
 a.store272:                                       ; preds = %a.grow271, %a.check270
-  %a.cur.data278 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1872.1, i32 0, i32 1
+  %a.cur.data278 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1878.1, i32 0, i32 1
   %a.cur.data279 = load ptr, ptr %a.cur.data278, align 8
-  %a.cur.len281 = load i64, ptr %var._map_out_1872.1, align 8
+  %a.cur.len281 = load i64, ptr %var._map_out_1878.1, align 8
   %a.elem.gep282 = getelementptr i64, ptr %a.cur.data279, i64 %a.cur.len281
   %slot.p2i283 = ptrtoint ptr %call.res257 to i64
   store i64 %slot.p2i283, ptr %a.elem.gep282, align 8
   %a.next.len284 = add i64 %a.cur.len281, 1
-  store i64 %a.next.len284, ptr %var._map_out_1872.1, align 8
+  store i64 %a.next.len284, ptr %var._map_out_1878.1, align 8
   %loop.next287 = add i64 %loop.idx.2127.0, 1
   br label %loop.header.2127
 
@@ -35121,7 +35121,7 @@ a.after292:                                       ; preds = %loop.header.2127
   %rec.alloc334 = call ptr @dva_arena_alloc(ptr %arena.cur333, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, ptr, ptr }, ptr null, i32 1) to i64))
   store ptr %fld.load312, ptr %rec.alloc334, align 8
   %rec.fld336 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc334, i32 0, i32 1
-  store ptr %var._map_out_1872.0, ptr %rec.fld336, align 8
+  store ptr %var._map_out_1878.0, ptr %rec.fld336, align 8
   %rec.fld337 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc334, i32 0, i32 2
   store ptr %fld.load328, ptr %rec.fld337, align 8
   %rec.fld338 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc334, i32 0, i32 3
@@ -35204,7 +35204,7 @@ a.after411:                                       ; preds = %a.create410, %choic
   br label %loop.header.2128
 
 loop.header.2128:                                 ; preds = %a.store467, %a.after411
-  %var._map_out_1891.0 = phi ptr [ %a.new401, %a.after411 ], [ %var._map_out_1891.1, %a.store467 ]
+  %var._map_out_1897.0 = phi ptr [ %a.new401, %a.after411 ], [ %var._map_out_1897.1, %a.store467 ]
   %loop.idx.2128.0 = phi i64 [ 0, %a.after411 ], [ %loop.next482, %a.store467 ]
   %loop.cond425 = icmp slt i64 %loop.idx.2128.0, %arr.cycle.len421
   br i1 %loop.cond425, label %loop.body.2128, label %a.after487
@@ -35230,7 +35230,7 @@ loop.body.2128:                                   ; preds = %loop.header.2128
   store ptr %fld.load445, ptr %rec.fld451, align 8
   %rec.fld452 = getelementptr inbounds { ptr, i1, ptr, ptr }, ptr %rec.alloc448, i32 0, i32 3
   store ptr %call.res436, ptr %rec.fld452, align 8
-  %a.null454 = icmp eq ptr %var._map_out_1891.0, null
+  %a.null454 = icmp eq ptr %var._map_out_1897.0, null
   br i1 %a.null454, label %a.create455, label %a.check465
 
 a.create455:                                      ; preds = %loop.body.2128
@@ -35246,26 +35246,26 @@ a.create455:                                      ; preds = %loop.body.2128
   br label %a.check465
 
 a.check465:                                       ; preds = %loop.body.2128, %a.create455
-  %var._map_out_1891.1 = phi ptr [ %a.create458, %a.create455 ], [ %var._map_out_1891.0, %loop.body.2128 ]
-  %a.len469 = load i64, ptr %var._map_out_1891.1, align 8
-  %a.cap470 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1891.1, i32 0, i32 2
+  %var._map_out_1897.1 = phi ptr [ %a.create458, %a.create455 ], [ %var._map_out_1897.0, %loop.body.2128 ]
+  %a.len469 = load i64, ptr %var._map_out_1897.1, align 8
+  %a.cap470 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1897.1, i32 0, i32 2
   %a.cap471 = load i64, ptr %a.cap470, align 8
   %a.needs.grow472 = icmp eq i64 %a.len469, %a.cap471
   br i1 %a.needs.grow472, label %a.grow466, label %a.store467
 
 a.grow466:                                        ; preds = %a.check465
-  call void @dva_array_grow(ptr %var._map_out_1891.1)
+  call void @dva_array_grow(ptr %var._map_out_1897.1)
   br label %a.store467
 
 a.store467:                                       ; preds = %a.grow466, %a.check465
-  %a.cur.data473 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1891.1, i32 0, i32 1
+  %a.cur.data473 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1897.1, i32 0, i32 1
   %a.cur.data474 = load ptr, ptr %a.cur.data473, align 8
-  %a.cur.len476 = load i64, ptr %var._map_out_1891.1, align 8
+  %a.cur.len476 = load i64, ptr %var._map_out_1897.1, align 8
   %a.elem.gep477 = getelementptr i64, ptr %a.cur.data474, i64 %a.cur.len476
   %slot.p2i478 = ptrtoint ptr %rec.alloc448 to i64
   store i64 %slot.p2i478, ptr %a.elem.gep477, align 8
   %a.next.len479 = add i64 %a.cur.len476, 1
-  store i64 %a.next.len479, ptr %var._map_out_1891.1, align 8
+  store i64 %a.next.len479, ptr %var._map_out_1897.1, align 8
   %loop.next482 = add i64 %loop.idx.2128.0, 1
   br label %loop.header.2128
 
@@ -35274,7 +35274,7 @@ a.after487:                                       ; preds = %loop.header.2128
   %enum.alloc497 = call ptr @dva_arena_alloc(ptr %arena.cur496, i64 16)
   store i64 5, ptr %enum.alloc497, align 8
   %pay.gep499 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc497, i32 0, i32 1
-  store ptr %var._map_out_1891.0, ptr %pay.gep499, align 8
+  store ptr %var._map_out_1897.0, ptr %pay.gep499, align 8
   br label %choice.exit
 
 choice.case513:                                   ; preds = %entry
@@ -35377,7 +35377,7 @@ a.after:                                          ; preds = %a.create, %entry
   br label %loop.header.2130
 
 loop.header.2130:                                 ; preds = %a.store, %a.after
-  %var._map_out_1837.0 = phi ptr [ %a.new, %a.after ], [ %var._map_out_1837.1, %a.store ]
+  %var._map_out_1843.0 = phi ptr [ %a.new, %a.after ], [ %var._map_out_1843.1, %a.store ]
   %loop.idx.2130.0 = phi i64 [ 0, %a.after ], [ %loop.next, %a.store ]
   %loop.cond = icmp slt i64 %loop.idx.2130.0, %arr.cycle.len9
   br i1 %loop.cond, label %loop.body.2130, label %a.after42
@@ -35399,7 +35399,7 @@ loop.body.2130:                                   ; preds = %loop.header.2130
   store ptr %fld.load14, ptr %rec.fld20, align 8
   %rec.fld21 = getelementptr inbounds { ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 2
   store ptr %call.res, ptr %rec.fld21, align 8
-  %a.null23 = icmp eq ptr %var._map_out_1837.0, null
+  %a.null23 = icmp eq ptr %var._map_out_1843.0, null
   br i1 %a.null23, label %a.create24, label %a.check
 
 a.create24:                                       ; preds = %loop.body.2130
@@ -35415,31 +35415,31 @@ a.create24:                                       ; preds = %loop.body.2130
   br label %a.check
 
 a.check:                                          ; preds = %loop.body.2130, %a.create24
-  %var._map_out_1837.1 = phi ptr [ %a.create27, %a.create24 ], [ %var._map_out_1837.0, %loop.body.2130 ]
-  %a.len34 = load i64, ptr %var._map_out_1837.1, align 8
-  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1837.1, i32 0, i32 2
+  %var._map_out_1843.1 = phi ptr [ %a.create27, %a.create24 ], [ %var._map_out_1843.0, %loop.body.2130 ]
+  %a.len34 = load i64, ptr %var._map_out_1843.1, align 8
+  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1843.1, i32 0, i32 2
   %a.cap35 = load i64, ptr %a.cap, align 8
   %a.needs.grow = icmp eq i64 %a.len34, %a.cap35
   br i1 %a.needs.grow, label %a.grow, label %a.store
 
 a.grow:                                           ; preds = %a.check
-  call void @dva_array_grow(ptr %var._map_out_1837.1)
+  call void @dva_array_grow(ptr %var._map_out_1843.1)
   br label %a.store
 
 a.store:                                          ; preds = %a.grow, %a.check
-  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1837.1, i32 0, i32 1
+  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_1843.1, i32 0, i32 1
   %a.cur.data36 = load ptr, ptr %a.cur.data, align 8
-  %a.cur.len37 = load i64, ptr %var._map_out_1837.1, align 8
+  %a.cur.len37 = load i64, ptr %var._map_out_1843.1, align 8
   %a.elem.gep = getelementptr i64, ptr %a.cur.data36, i64 %a.cur.len37
   %slot.p2i = ptrtoint ptr %rec.alloc to i64
   store i64 %slot.p2i, ptr %a.elem.gep, align 8
   %a.next.len = add i64 %a.cur.len37, 1
-  store i64 %a.next.len, ptr %var._map_out_1837.1, align 8
+  store i64 %a.next.len, ptr %var._map_out_1843.1, align 8
   %loop.next = add i64 %loop.idx.2130.0, 1
   br label %loop.header.2130
 
 a.after42:                                        ; preds = %loop.header.2130
-  ret ptr %var._map_out_1837.0
+  ret ptr %var._map_out_1843.0
 }
 
 define { i64, ptr } @functor_instance_cid(ptr %0, ptr %1) #0 {
@@ -46697,7 +46697,7 @@ a.after:                                          ; preds = %a.create, %choice.c
 
 loop.header.2171:                                 ; preds = %a.store, %a.after
   %loop.idx.2171.0 = phi i64 [ 0, %a.after ], [ %loop.next, %a.store ]
-  %var._map_out_2454.0 = phi ptr [ %a.new, %a.after ], [ %var._map_out_2454.1, %a.store ]
+  %var._map_out_2460.0 = phi ptr [ %a.new, %a.after ], [ %var._map_out_2460.1, %a.store ]
   %loop.cond = icmp slt i64 %loop.idx.2171.0, %arr.cycle.len10
   br i1 %loop.cond, label %loop.body.2171, label %a.after35
 
@@ -46706,7 +46706,7 @@ loop.body.2171:                                   ; preds = %loop.header.2171
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
   %call.res = call ptr @qualify_decl_type_infos(ptr %slot.i2p, ptr %1)
-  %a.null16 = icmp eq ptr %var._map_out_2454.0, null
+  %a.null16 = icmp eq ptr %var._map_out_2460.0, null
   br i1 %a.null16, label %a.create17, label %a.check
 
 a.create17:                                       ; preds = %loop.body.2171
@@ -46722,26 +46722,26 @@ a.create17:                                       ; preds = %loop.body.2171
   br label %a.check
 
 a.check:                                          ; preds = %loop.body.2171, %a.create17
-  %var._map_out_2454.1 = phi ptr [ %a.create20, %a.create17 ], [ %var._map_out_2454.0, %loop.body.2171 ]
-  %a.len27 = load i64, ptr %var._map_out_2454.1, align 8
-  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2454.1, i32 0, i32 2
+  %var._map_out_2460.1 = phi ptr [ %a.create20, %a.create17 ], [ %var._map_out_2460.0, %loop.body.2171 ]
+  %a.len27 = load i64, ptr %var._map_out_2460.1, align 8
+  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2460.1, i32 0, i32 2
   %a.cap28 = load i64, ptr %a.cap, align 8
   %a.needs.grow = icmp eq i64 %a.len27, %a.cap28
   br i1 %a.needs.grow, label %a.grow, label %a.store
 
 a.grow:                                           ; preds = %a.check
-  call void @dva_array_grow(ptr %var._map_out_2454.1)
+  call void @dva_array_grow(ptr %var._map_out_2460.1)
   br label %a.store
 
 a.store:                                          ; preds = %a.grow, %a.check
-  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2454.1, i32 0, i32 1
+  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2460.1, i32 0, i32 1
   %a.cur.data29 = load ptr, ptr %a.cur.data, align 8
-  %a.cur.len30 = load i64, ptr %var._map_out_2454.1, align 8
+  %a.cur.len30 = load i64, ptr %var._map_out_2460.1, align 8
   %a.elem.gep = getelementptr i64, ptr %a.cur.data29, i64 %a.cur.len30
   %slot.p2i = ptrtoint ptr %call.res to i64
   store i64 %slot.p2i, ptr %a.elem.gep, align 8
   %a.next.len = add i64 %a.cur.len30, 1
-  store i64 %a.next.len, ptr %var._map_out_2454.1, align 8
+  store i64 %a.next.len, ptr %var._map_out_2460.1, align 8
   %loop.next = add i64 %loop.idx.2171.0, 1
   br label %loop.header.2171
 
@@ -46750,7 +46750,7 @@ a.after35:                                        ; preds = %loop.header.2171
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur44, i64 16)
   store i64 8, ptr %enum.alloc, align 8
   %pay.gep46 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
-  store ptr %var._map_out_2454.0, ptr %pay.gep46, align 8
+  store ptr %var._map_out_2460.0, ptr %pay.gep46, align 8
   br label %choice.exit
 
 choice.case60:                                    ; preds = %entry
@@ -46912,7 +46912,7 @@ choice.case218:                                   ; preds = %entry
   br label %loop.header.2176
 
 loop.header.2176:                                 ; preds = %a.store374, %choice.case218
-  %var._map_out_2492.0 = phi ptr [ %a.new227, %choice.case218 ], [ %var._map_out_2492.1, %a.store374 ]
+  %var._map_out_2498.0 = phi ptr [ %a.new227, %choice.case218 ], [ %var._map_out_2498.1, %a.store374 ]
   %loop.idx.2176.0 = phi i64 [ 0, %choice.case218 ], [ %loop.next389, %a.store374 ]
   %loop.cond241 = icmp slt i64 %loop.idx.2176.0, %arr.cycle.len237
   br i1 %loop.cond241, label %loop.body.2176, label %a.after394
@@ -46938,7 +46938,7 @@ loop.body.2176:                                   ; preds = %loop.header.2176
   br label %loop.header.2177
 
 loop.header.2177:                                 ; preds = %a.store287, %loop.body.2176
-  %var._map_out_2494.0 = phi ptr [ %a.new249, %loop.body.2176 ], [ %var._map_out_2494.1, %a.store287 ]
+  %var._map_out_2500.0 = phi ptr [ %a.new249, %loop.body.2176 ], [ %var._map_out_2500.1, %a.store287 ]
   %loop.idx.2177.0 = phi i64 [ 0, %loop.body.2176 ], [ %loop.next302, %a.store287 ]
   %loop.cond263 = icmp slt i64 %loop.idx.2177.0, %arr.cycle.len259
   br i1 %loop.cond263, label %loop.body.2177, label %a.after307
@@ -46948,7 +46948,7 @@ loop.body.2177:                                   ; preds = %loop.header.2177
   %arr.elem.raw266 = load i64, ptr %arr.elem.gep265, align 8
   %slot.i2p267 = inttoptr i64 %arr.elem.raw266 to ptr
   %call.res272 = call ptr @qualify_decl_type_infos(ptr %slot.i2p267, ptr %1)
-  %a.null274 = icmp eq ptr %var._map_out_2494.0, null
+  %a.null274 = icmp eq ptr %var._map_out_2500.0, null
   br i1 %a.null274, label %a.create275, label %a.check285
 
 a.create275:                                      ; preds = %loop.body.2177
@@ -46964,26 +46964,26 @@ a.create275:                                      ; preds = %loop.body.2177
   br label %a.check285
 
 a.check285:                                       ; preds = %loop.body.2177, %a.create275
-  %var._map_out_2494.1 = phi ptr [ %a.create278, %a.create275 ], [ %var._map_out_2494.0, %loop.body.2177 ]
-  %a.len289 = load i64, ptr %var._map_out_2494.1, align 8
-  %a.cap290 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2494.1, i32 0, i32 2
+  %var._map_out_2500.1 = phi ptr [ %a.create278, %a.create275 ], [ %var._map_out_2500.0, %loop.body.2177 ]
+  %a.len289 = load i64, ptr %var._map_out_2500.1, align 8
+  %a.cap290 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2500.1, i32 0, i32 2
   %a.cap291 = load i64, ptr %a.cap290, align 8
   %a.needs.grow292 = icmp eq i64 %a.len289, %a.cap291
   br i1 %a.needs.grow292, label %a.grow286, label %a.store287
 
 a.grow286:                                        ; preds = %a.check285
-  call void @dva_array_grow(ptr %var._map_out_2494.1)
+  call void @dva_array_grow(ptr %var._map_out_2500.1)
   br label %a.store287
 
 a.store287:                                       ; preds = %a.grow286, %a.check285
-  %a.cur.data293 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2494.1, i32 0, i32 1
+  %a.cur.data293 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2500.1, i32 0, i32 1
   %a.cur.data294 = load ptr, ptr %a.cur.data293, align 8
-  %a.cur.len296 = load i64, ptr %var._map_out_2494.1, align 8
+  %a.cur.len296 = load i64, ptr %var._map_out_2500.1, align 8
   %a.elem.gep297 = getelementptr i64, ptr %a.cur.data294, i64 %a.cur.len296
   %slot.p2i298 = ptrtoint ptr %call.res272 to i64
   store i64 %slot.p2i298, ptr %a.elem.gep297, align 8
   %a.next.len299 = add i64 %a.cur.len296, 1
-  store i64 %a.next.len299, ptr %var._map_out_2494.1, align 8
+  store i64 %a.next.len299, ptr %var._map_out_2500.1, align 8
   %loop.next302 = add i64 %loop.idx.2177.0, 1
   br label %loop.header.2177
 
@@ -47005,7 +47005,7 @@ a.after307:                                       ; preds = %loop.header.2177
   %rec.alloc352 = call ptr @dva_arena_alloc(ptr %arena.cur351, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, ptr, ptr, i1, ptr }, ptr null, i32 1) to i64))
   store ptr %fld.load318, ptr %rec.alloc352, align 8
   %rec.fld354 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, i1, ptr }, ptr %rec.alloc352, i32 0, i32 1
-  store ptr %var._map_out_2494.0, ptr %rec.fld354, align 8
+  store ptr %var._map_out_2500.0, ptr %rec.fld354, align 8
   %rec.fld355 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, i1, ptr }, ptr %rec.alloc352, i32 0, i32 2
   store ptr %call.res336, ptr %rec.fld355, align 8
   %rec.fld356 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, i1, ptr }, ptr %rec.alloc352, i32 0, i32 3
@@ -47016,7 +47016,7 @@ a.after307:                                       ; preds = %loop.header.2177
   store i1 %fld.load345, ptr %rec.fld358, align 1
   %rec.fld359 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, i1, ptr }, ptr %rec.alloc352, i32 0, i32 6
   store ptr %call.res350, ptr %rec.fld359, align 8
-  %a.null361 = icmp eq ptr %var._map_out_2492.0, null
+  %a.null361 = icmp eq ptr %var._map_out_2498.0, null
   br i1 %a.null361, label %a.create362, label %a.check372
 
 a.create362:                                      ; preds = %a.after307
@@ -47032,26 +47032,26 @@ a.create362:                                      ; preds = %a.after307
   br label %a.check372
 
 a.check372:                                       ; preds = %a.after307, %a.create362
-  %var._map_out_2492.1 = phi ptr [ %a.create365, %a.create362 ], [ %var._map_out_2492.0, %a.after307 ]
-  %a.len376 = load i64, ptr %var._map_out_2492.1, align 8
-  %a.cap377 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2492.1, i32 0, i32 2
+  %var._map_out_2498.1 = phi ptr [ %a.create365, %a.create362 ], [ %var._map_out_2498.0, %a.after307 ]
+  %a.len376 = load i64, ptr %var._map_out_2498.1, align 8
+  %a.cap377 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2498.1, i32 0, i32 2
   %a.cap378 = load i64, ptr %a.cap377, align 8
   %a.needs.grow379 = icmp eq i64 %a.len376, %a.cap378
   br i1 %a.needs.grow379, label %a.grow373, label %a.store374
 
 a.grow373:                                        ; preds = %a.check372
-  call void @dva_array_grow(ptr %var._map_out_2492.1)
+  call void @dva_array_grow(ptr %var._map_out_2498.1)
   br label %a.store374
 
 a.store374:                                       ; preds = %a.grow373, %a.check372
-  %a.cur.data380 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2492.1, i32 0, i32 1
+  %a.cur.data380 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2498.1, i32 0, i32 1
   %a.cur.data381 = load ptr, ptr %a.cur.data380, align 8
-  %a.cur.len383 = load i64, ptr %var._map_out_2492.1, align 8
+  %a.cur.len383 = load i64, ptr %var._map_out_2498.1, align 8
   %a.elem.gep384 = getelementptr i64, ptr %a.cur.data381, i64 %a.cur.len383
   %slot.p2i385 = ptrtoint ptr %rec.alloc352 to i64
   store i64 %slot.p2i385, ptr %a.elem.gep384, align 8
   %a.next.len386 = add i64 %a.cur.len383, 1
-  store i64 %a.next.len386, ptr %var._map_out_2492.1, align 8
+  store i64 %a.next.len386, ptr %var._map_out_2498.1, align 8
   %loop.next389 = add i64 %loop.idx.2176.0, 1
   br label %loop.header.2176
 
@@ -47070,7 +47070,7 @@ a.after394:                                       ; preds = %loop.header.2176
   %rec.fld431 = getelementptr inbounds { ptr, i1, ptr }, ptr %rec.alloc429, i32 0, i32 1
   store i1 %fld.load414, ptr %rec.fld431, align 1
   %rec.fld432 = getelementptr inbounds { ptr, i1, ptr }, ptr %rec.alloc429, i32 0, i32 2
-  store ptr %var._map_out_2492.0, ptr %rec.fld432, align 8
+  store ptr %var._map_out_2498.0, ptr %rec.fld432, align 8
   store ptr %rec.alloc429, ptr %pay.gep406, align 8
   br label %choice.exit
 
@@ -47094,7 +47094,7 @@ choice.case433:                                   ; preds = %entry
   br label %loop.header.2178
 
 loop.header.2178:                                 ; preds = %a.store480, %choice.case433
-  %var._map_out_2509.0 = phi ptr [ %a.new442, %choice.case433 ], [ %var._map_out_2509.1, %a.store480 ]
+  %var._map_out_2515.0 = phi ptr [ %a.new442, %choice.case433 ], [ %var._map_out_2515.1, %a.store480 ]
   %loop.idx.2178.0 = phi i64 [ 0, %choice.case433 ], [ %loop.next495, %a.store480 ]
   %loop.cond456 = icmp slt i64 %loop.idx.2178.0, %arr.cycle.len452
   br i1 %loop.cond456, label %loop.body.2178, label %a.after500
@@ -47104,7 +47104,7 @@ loop.body.2178:                                   ; preds = %loop.header.2178
   %arr.elem.raw459 = load i64, ptr %arr.elem.gep458, align 8
   %slot.i2p460 = inttoptr i64 %arr.elem.raw459 to ptr
   %call.res465 = call ptr @qualify_decl_type_infos(ptr %slot.i2p460, ptr %1)
-  %a.null467 = icmp eq ptr %var._map_out_2509.0, null
+  %a.null467 = icmp eq ptr %var._map_out_2515.0, null
   br i1 %a.null467, label %a.create468, label %a.check478
 
 a.create468:                                      ; preds = %loop.body.2178
@@ -47120,26 +47120,26 @@ a.create468:                                      ; preds = %loop.body.2178
   br label %a.check478
 
 a.check478:                                       ; preds = %loop.body.2178, %a.create468
-  %var._map_out_2509.1 = phi ptr [ %a.create471, %a.create468 ], [ %var._map_out_2509.0, %loop.body.2178 ]
-  %a.len482 = load i64, ptr %var._map_out_2509.1, align 8
-  %a.cap483 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2509.1, i32 0, i32 2
+  %var._map_out_2515.1 = phi ptr [ %a.create471, %a.create468 ], [ %var._map_out_2515.0, %loop.body.2178 ]
+  %a.len482 = load i64, ptr %var._map_out_2515.1, align 8
+  %a.cap483 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2515.1, i32 0, i32 2
   %a.cap484 = load i64, ptr %a.cap483, align 8
   %a.needs.grow485 = icmp eq i64 %a.len482, %a.cap484
   br i1 %a.needs.grow485, label %a.grow479, label %a.store480
 
 a.grow479:                                        ; preds = %a.check478
-  call void @dva_array_grow(ptr %var._map_out_2509.1)
+  call void @dva_array_grow(ptr %var._map_out_2515.1)
   br label %a.store480
 
 a.store480:                                       ; preds = %a.grow479, %a.check478
-  %a.cur.data486 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2509.1, i32 0, i32 1
+  %a.cur.data486 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2515.1, i32 0, i32 1
   %a.cur.data487 = load ptr, ptr %a.cur.data486, align 8
-  %a.cur.len489 = load i64, ptr %var._map_out_2509.1, align 8
+  %a.cur.len489 = load i64, ptr %var._map_out_2515.1, align 8
   %a.elem.gep490 = getelementptr i64, ptr %a.cur.data487, i64 %a.cur.len489
   %slot.p2i491 = ptrtoint ptr %call.res465 to i64
   store i64 %slot.p2i491, ptr %a.elem.gep490, align 8
   %a.next.len492 = add i64 %a.cur.len489, 1
-  store i64 %a.next.len492, ptr %var._map_out_2509.1, align 8
+  store i64 %a.next.len492, ptr %var._map_out_2515.1, align 8
   %loop.next495 = add i64 %loop.idx.2178.0, 1
   br label %loop.header.2178
 
@@ -47162,7 +47162,7 @@ a.after500:                                       ; preds = %loop.header.2178
   %rec.fld543 = getelementptr inbounds { ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc541, i32 0, i32 1
   store ptr %call.res520, ptr %rec.fld543, align 8
   %rec.fld544 = getelementptr inbounds { ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc541, i32 0, i32 2
-  store ptr %var._map_out_2509.0, ptr %rec.fld544, align 8
+  store ptr %var._map_out_2515.0, ptr %rec.fld544, align 8
   %rec.fld545 = getelementptr inbounds { ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc541, i32 0, i32 3
   store i64 %fld.load536, ptr %rec.fld545, align 8
   %rec.fld546 = getelementptr inbounds { ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc541, i32 0, i32 4
@@ -47653,7 +47653,7 @@ choice.case87:                                    ; preds = %entry
   br label %loop.header.2172
 
 loop.header.2172:                                 ; preds = %a.store, %choice.case87
-  %var._map_out_2393.0 = phi ptr [ %a.new, %choice.case87 ], [ %var._map_out_2393.1, %a.store ]
+  %var._map_out_2399.0 = phi ptr [ %a.new, %choice.case87 ], [ %var._map_out_2399.1, %a.store ]
   %loop.idx.2172.0 = phi i64 [ 0, %choice.case87 ], [ %loop.next, %a.store ]
   %loop.cond = icmp slt i64 %loop.idx.2172.0, %arr.cycle.len100
   br i1 %loop.cond, label %loop.body.2172, label %a.after142
@@ -47683,7 +47683,7 @@ loop.body.2172:                                   ; preds = %loop.header.2172
   store i1 %fld.load116, ptr %rec.fld125, align 1
   %rec.fld126 = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %rec.alloc121, i32 0, i32 4
   store ptr %fld.load119, ptr %rec.fld126, align 8
-  %a.null = icmp eq ptr %var._map_out_2393.0, null
+  %a.null = icmp eq ptr %var._map_out_2399.0, null
   br i1 %a.null, label %a.create, label %a.check
 
 a.create:                                         ; preds = %loop.body.2172
@@ -47699,26 +47699,26 @@ a.create:                                         ; preds = %loop.body.2172
   br label %a.check
 
 a.check:                                          ; preds = %loop.body.2172, %a.create
-  %var._map_out_2393.1 = phi ptr [ %a.create128, %a.create ], [ %var._map_out_2393.0, %loop.body.2172 ]
-  %a.len134 = load i64, ptr %var._map_out_2393.1, align 8
-  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2393.1, i32 0, i32 2
+  %var._map_out_2399.1 = phi ptr [ %a.create128, %a.create ], [ %var._map_out_2399.0, %loop.body.2172 ]
+  %a.len134 = load i64, ptr %var._map_out_2399.1, align 8
+  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2399.1, i32 0, i32 2
   %a.cap135 = load i64, ptr %a.cap, align 8
   %a.needs.grow = icmp eq i64 %a.len134, %a.cap135
   br i1 %a.needs.grow, label %a.grow, label %a.store
 
 a.grow:                                           ; preds = %a.check
-  call void @dva_array_grow(ptr %var._map_out_2393.1)
+  call void @dva_array_grow(ptr %var._map_out_2399.1)
   br label %a.store
 
 a.store:                                          ; preds = %a.grow, %a.check
-  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2393.1, i32 0, i32 1
+  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2399.1, i32 0, i32 1
   %a.cur.data136 = load ptr, ptr %a.cur.data, align 8
-  %a.cur.len137 = load i64, ptr %var._map_out_2393.1, align 8
+  %a.cur.len137 = load i64, ptr %var._map_out_2399.1, align 8
   %a.elem.gep = getelementptr i64, ptr %a.cur.data136, i64 %a.cur.len137
   %slot.p2i = ptrtoint ptr %rec.alloc121 to i64
   store i64 %slot.p2i, ptr %a.elem.gep, align 8
   %a.next.len = add i64 %a.cur.len137, 1
-  store i64 %a.next.len, ptr %var._map_out_2393.1, align 8
+  store i64 %a.next.len, ptr %var._map_out_2399.1, align 8
   %loop.next = add i64 %loop.idx.2172.0, 1
   br label %loop.header.2172
 
@@ -47739,7 +47739,7 @@ a.after142:                                       ; preds = %loop.header.2172
   %fld.load182 = load i1, ptr %fld.gep181, align 1
   %arena.cur183 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc184 = call ptr @dva_arena_alloc(ptr %arena.cur183, i64 ptrtoint (ptr getelementptr ({ ptr, i1, i1, ptr, i64, i1 }, ptr null, i32 1) to i64))
-  store ptr %var._map_out_2393.0, ptr %rec.alloc184, align 8
+  store ptr %var._map_out_2399.0, ptr %rec.alloc184, align 8
   %rec.fld186 = getelementptr inbounds { ptr, i1, i1, ptr, i64, i1 }, ptr %rec.alloc184, i32 0, i32 1
   store i1 %fld.load170, ptr %rec.fld186, align 1
   %rec.fld187 = getelementptr inbounds { ptr, i1, i1, ptr, i64, i1 }, ptr %rec.alloc184, i32 0, i32 2
@@ -47773,7 +47773,7 @@ choice.case191:                                   ; preds = %entry
   br label %loop.header.2173
 
 loop.header.2173:                                 ; preds = %a.store239, %choice.case191
-  %var._map_out_2407.0 = phi ptr [ %a.new201, %choice.case191 ], [ %var._map_out_2407.1, %a.store239 ]
+  %var._map_out_2413.0 = phi ptr [ %a.new201, %choice.case191 ], [ %var._map_out_2413.1, %a.store239 ]
   %loop.idx.2173.0 = phi i64 [ 0, %choice.case191 ], [ %loop.next254, %a.store239 ]
   %loop.cond215 = icmp slt i64 %loop.idx.2173.0, %arr.cycle.len211
   br i1 %loop.cond215, label %loop.body.2173, label %a.after259
@@ -47783,7 +47783,7 @@ loop.body.2173:                                   ; preds = %loop.header.2173
   %arr.elem.raw218 = load i64, ptr %arr.elem.gep217, align 8
   %slot.i2p219 = inttoptr i64 %arr.elem.raw218 to ptr
   %call.res224 = call ptr @qualify_type_info_map(ptr %slot.i2p219, ptr %1)
-  %a.null226 = icmp eq ptr %var._map_out_2407.0, null
+  %a.null226 = icmp eq ptr %var._map_out_2413.0, null
   br i1 %a.null226, label %a.create227, label %a.check237
 
 a.create227:                                      ; preds = %loop.body.2173
@@ -47799,26 +47799,26 @@ a.create227:                                      ; preds = %loop.body.2173
   br label %a.check237
 
 a.check237:                                       ; preds = %loop.body.2173, %a.create227
-  %var._map_out_2407.1 = phi ptr [ %a.create230, %a.create227 ], [ %var._map_out_2407.0, %loop.body.2173 ]
-  %a.len241 = load i64, ptr %var._map_out_2407.1, align 8
-  %a.cap242 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2407.1, i32 0, i32 2
+  %var._map_out_2413.1 = phi ptr [ %a.create230, %a.create227 ], [ %var._map_out_2413.0, %loop.body.2173 ]
+  %a.len241 = load i64, ptr %var._map_out_2413.1, align 8
+  %a.cap242 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2413.1, i32 0, i32 2
   %a.cap243 = load i64, ptr %a.cap242, align 8
   %a.needs.grow244 = icmp eq i64 %a.len241, %a.cap243
   br i1 %a.needs.grow244, label %a.grow238, label %a.store239
 
 a.grow238:                                        ; preds = %a.check237
-  call void @dva_array_grow(ptr %var._map_out_2407.1)
+  call void @dva_array_grow(ptr %var._map_out_2413.1)
   br label %a.store239
 
 a.store239:                                       ; preds = %a.grow238, %a.check237
-  %a.cur.data245 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2407.1, i32 0, i32 1
+  %a.cur.data245 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2413.1, i32 0, i32 1
   %a.cur.data246 = load ptr, ptr %a.cur.data245, align 8
-  %a.cur.len248 = load i64, ptr %var._map_out_2407.1, align 8
+  %a.cur.len248 = load i64, ptr %var._map_out_2413.1, align 8
   %a.elem.gep249 = getelementptr i64, ptr %a.cur.data246, i64 %a.cur.len248
   %slot.p2i250 = ptrtoint ptr %call.res224 to i64
   store i64 %slot.p2i250, ptr %a.elem.gep249, align 8
   %a.next.len251 = add i64 %a.cur.len248, 1
-  store i64 %a.next.len251, ptr %var._map_out_2407.1, align 8
+  store i64 %a.next.len251, ptr %var._map_out_2413.1, align 8
   %loop.next254 = add i64 %loop.idx.2173.0, 1
   br label %loop.header.2173
 
@@ -47839,7 +47839,7 @@ a.after259:                                       ; preds = %loop.header.2173
   %rec.alloc301 = call ptr @dva_arena_alloc(ptr %arena.cur300, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, ptr, ptr }, ptr null, i32 1) to i64))
   store ptr %fld.load279, ptr %rec.alloc301, align 8
   %rec.fld303 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc301, i32 0, i32 1
-  store ptr %var._map_out_2407.0, ptr %rec.fld303, align 8
+  store ptr %var._map_out_2413.0, ptr %rec.fld303, align 8
   %rec.fld304 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc301, i32 0, i32 2
   store ptr %fld.load295, ptr %rec.fld304, align 8
   %rec.fld305 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc301, i32 0, i32 3
@@ -47922,7 +47922,7 @@ a.after376:                                       ; preds = %a.create375, %choic
   br label %loop.header.2174
 
 loop.header.2174:                                 ; preds = %a.store431, %a.after376
-  %var._map_out_2426.0 = phi ptr [ %a.new366, %a.after376 ], [ %var._map_out_2426.1, %a.store431 ]
+  %var._map_out_2432.0 = phi ptr [ %a.new366, %a.after376 ], [ %var._map_out_2432.1, %a.store431 ]
   %loop.idx.2174.0 = phi i64 [ 0, %a.after376 ], [ %loop.next446, %a.store431 ]
   %loop.cond390 = icmp slt i64 %loop.idx.2174.0, %arr.cycle.len386
   br i1 %loop.cond390, label %loop.body.2174, label %a.after451
@@ -47948,7 +47948,7 @@ loop.body.2174:                                   ; preds = %loop.header.2174
   store ptr %fld.load405, ptr %rec.fld415, align 8
   %rec.fld416 = getelementptr inbounds { ptr, i1, ptr, ptr }, ptr %rec.alloc412, i32 0, i32 3
   store ptr %call.res410, ptr %rec.fld416, align 8
-  %a.null418 = icmp eq ptr %var._map_out_2426.0, null
+  %a.null418 = icmp eq ptr %var._map_out_2432.0, null
   br i1 %a.null418, label %a.create419, label %a.check429
 
 a.create419:                                      ; preds = %loop.body.2174
@@ -47964,26 +47964,26 @@ a.create419:                                      ; preds = %loop.body.2174
   br label %a.check429
 
 a.check429:                                       ; preds = %loop.body.2174, %a.create419
-  %var._map_out_2426.1 = phi ptr [ %a.create422, %a.create419 ], [ %var._map_out_2426.0, %loop.body.2174 ]
-  %a.len433 = load i64, ptr %var._map_out_2426.1, align 8
-  %a.cap434 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2426.1, i32 0, i32 2
+  %var._map_out_2432.1 = phi ptr [ %a.create422, %a.create419 ], [ %var._map_out_2432.0, %loop.body.2174 ]
+  %a.len433 = load i64, ptr %var._map_out_2432.1, align 8
+  %a.cap434 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2432.1, i32 0, i32 2
   %a.cap435 = load i64, ptr %a.cap434, align 8
   %a.needs.grow436 = icmp eq i64 %a.len433, %a.cap435
   br i1 %a.needs.grow436, label %a.grow430, label %a.store431
 
 a.grow430:                                        ; preds = %a.check429
-  call void @dva_array_grow(ptr %var._map_out_2426.1)
+  call void @dva_array_grow(ptr %var._map_out_2432.1)
   br label %a.store431
 
 a.store431:                                       ; preds = %a.grow430, %a.check429
-  %a.cur.data437 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2426.1, i32 0, i32 1
+  %a.cur.data437 = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2432.1, i32 0, i32 1
   %a.cur.data438 = load ptr, ptr %a.cur.data437, align 8
-  %a.cur.len440 = load i64, ptr %var._map_out_2426.1, align 8
+  %a.cur.len440 = load i64, ptr %var._map_out_2432.1, align 8
   %a.elem.gep441 = getelementptr i64, ptr %a.cur.data438, i64 %a.cur.len440
   %slot.p2i442 = ptrtoint ptr %rec.alloc412 to i64
   store i64 %slot.p2i442, ptr %a.elem.gep441, align 8
   %a.next.len443 = add i64 %a.cur.len440, 1
-  store i64 %a.next.len443, ptr %var._map_out_2426.1, align 8
+  store i64 %a.next.len443, ptr %var._map_out_2432.1, align 8
   %loop.next446 = add i64 %loop.idx.2174.0, 1
   br label %loop.header.2174
 
@@ -47992,7 +47992,7 @@ a.after451:                                       ; preds = %loop.header.2174
   %enum.alloc461 = call ptr @dva_arena_alloc(ptr %arena.cur460, i64 16)
   store i64 5, ptr %enum.alloc461, align 8
   %pay.gep463 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc461, i32 0, i32 1
-  store ptr %var._map_out_2426.0, ptr %pay.gep463, align 8
+  store ptr %var._map_out_2432.0, ptr %pay.gep463, align 8
   br label %choice.exit
 
 choice.case477:                                   ; preds = %entry
@@ -48095,7 +48095,7 @@ a.after:                                          ; preds = %a.create, %entry
   br label %loop.header.2175
 
 loop.header.2175:                                 ; preds = %a.store, %a.after
-  %var._map_out_2447.0 = phi ptr [ %a.new, %a.after ], [ %var._map_out_2447.1, %a.store ]
+  %var._map_out_2453.0 = phi ptr [ %a.new, %a.after ], [ %var._map_out_2453.1, %a.store ]
   %loop.idx.2175.0 = phi i64 [ 0, %a.after ], [ %loop.next, %a.store ]
   %loop.cond = icmp slt i64 %loop.idx.2175.0, %arr.cycle.len9
   br i1 %loop.cond, label %loop.body.2175, label %a.after42
@@ -48117,7 +48117,7 @@ loop.body.2175:                                   ; preds = %loop.header.2175
   store ptr %fld.load14, ptr %rec.fld20, align 8
   %rec.fld21 = getelementptr inbounds { ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 2
   store ptr %call.res, ptr %rec.fld21, align 8
-  %a.null23 = icmp eq ptr %var._map_out_2447.0, null
+  %a.null23 = icmp eq ptr %var._map_out_2453.0, null
   br i1 %a.null23, label %a.create24, label %a.check
 
 a.create24:                                       ; preds = %loop.body.2175
@@ -48133,31 +48133,31 @@ a.create24:                                       ; preds = %loop.body.2175
   br label %a.check
 
 a.check:                                          ; preds = %loop.body.2175, %a.create24
-  %var._map_out_2447.1 = phi ptr [ %a.create27, %a.create24 ], [ %var._map_out_2447.0, %loop.body.2175 ]
-  %a.len34 = load i64, ptr %var._map_out_2447.1, align 8
-  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2447.1, i32 0, i32 2
+  %var._map_out_2453.1 = phi ptr [ %a.create27, %a.create24 ], [ %var._map_out_2453.0, %loop.body.2175 ]
+  %a.len34 = load i64, ptr %var._map_out_2453.1, align 8
+  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2453.1, i32 0, i32 2
   %a.cap35 = load i64, ptr %a.cap, align 8
   %a.needs.grow = icmp eq i64 %a.len34, %a.cap35
   br i1 %a.needs.grow, label %a.grow, label %a.store
 
 a.grow:                                           ; preds = %a.check
-  call void @dva_array_grow(ptr %var._map_out_2447.1)
+  call void @dva_array_grow(ptr %var._map_out_2453.1)
   br label %a.store
 
 a.store:                                          ; preds = %a.grow, %a.check
-  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2447.1, i32 0, i32 1
+  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2453.1, i32 0, i32 1
   %a.cur.data36 = load ptr, ptr %a.cur.data, align 8
-  %a.cur.len37 = load i64, ptr %var._map_out_2447.1, align 8
+  %a.cur.len37 = load i64, ptr %var._map_out_2453.1, align 8
   %a.elem.gep = getelementptr i64, ptr %a.cur.data36, i64 %a.cur.len37
   %slot.p2i = ptrtoint ptr %rec.alloc to i64
   store i64 %slot.p2i, ptr %a.elem.gep, align 8
   %a.next.len = add i64 %a.cur.len37, 1
-  store i64 %a.next.len, ptr %var._map_out_2447.1, align 8
+  store i64 %a.next.len, ptr %var._map_out_2453.1, align 8
   %loop.next = add i64 %loop.idx.2175.0, 1
   br label %loop.header.2175
 
 a.after42:                                        ; preds = %loop.header.2175
-  ret ptr %var._map_out_2447.0
+  ret ptr %var._map_out_2453.0
 }
 
 define void @mark_iface_defined_stubs(ptr %0, i64 %1, ptr %2, ptr %3) #0 {
@@ -48714,7 +48714,7 @@ choice.exit58:                                    ; preds = %loop.mheader.2191, 
   br label %loop.header.2185
 
 choice.exit71:                                    ; preds = %loop.header.2187, %choice.next73
-  %choice.res141 = phi ptr [ %a.new135, %choice.next73 ], [ %var._map_out_2675.0, %loop.header.2187 ]
+  %choice.res141 = phi ptr [ %a.new135, %choice.next73 ], [ %var._map_out_2681.0, %loop.header.2187 ]
   %a.null144 = icmp eq ptr %var.exprs.1, null
   br i1 %a.null144, label %a.create145, label %a.after146
 
@@ -48750,7 +48750,7 @@ choice.next73:                                    ; preds = %choice.then57
   br label %choice.exit71
 
 loop.header.2187:                                 ; preds = %a.store, %choice.case72
-  %var._map_out_2675.0 = phi ptr [ %a.new, %choice.case72 ], [ %var._map_out_2675.1, %a.store ]
+  %var._map_out_2681.0 = phi ptr [ %a.new, %choice.case72 ], [ %var._map_out_2681.1, %a.store ]
   %loop.idx.2187.0 = phi i64 [ 0, %choice.case72 ], [ %loop.next, %a.store ]
   %loop.cond95 = icmp slt i64 %loop.idx.2187.0, %arr.cycle.len91
   br i1 %loop.cond95, label %loop.body.2187, label %choice.exit71
@@ -48760,7 +48760,7 @@ loop.body.2187:                                   ; preds = %loop.header.2187
   %arr.elem.raw98 = load i64, ptr %arr.elem.gep97, align 8
   %slot.i2p99 = inttoptr i64 %arr.elem.raw98 to ptr
   %fld.load104 = load ptr, ptr %slot.i2p99, align 8
-  %a.null106 = icmp eq ptr %var._map_out_2675.0, null
+  %a.null106 = icmp eq ptr %var._map_out_2681.0, null
   br i1 %a.null106, label %a.create107, label %a.check
 
 a.create107:                                      ; preds = %loop.body.2187
@@ -48776,26 +48776,26 @@ a.create107:                                      ; preds = %loop.body.2187
   br label %a.check
 
 a.check:                                          ; preds = %loop.body.2187, %a.create107
-  %var._map_out_2675.1 = phi ptr [ %a.create110, %a.create107 ], [ %var._map_out_2675.0, %loop.body.2187 ]
-  %a.len117 = load i64, ptr %var._map_out_2675.1, align 8
-  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2675.1, i32 0, i32 2
+  %var._map_out_2681.1 = phi ptr [ %a.create110, %a.create107 ], [ %var._map_out_2681.0, %loop.body.2187 ]
+  %a.len117 = load i64, ptr %var._map_out_2681.1, align 8
+  %a.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2681.1, i32 0, i32 2
   %a.cap118 = load i64, ptr %a.cap, align 8
   %a.needs.grow = icmp eq i64 %a.len117, %a.cap118
   br i1 %a.needs.grow, label %a.grow, label %a.store
 
 a.grow:                                           ; preds = %a.check
-  call void @dva_array_grow(ptr %var._map_out_2675.1)
+  call void @dva_array_grow(ptr %var._map_out_2681.1)
   br label %a.store
 
 a.store:                                          ; preds = %a.grow, %a.check
-  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2675.1, i32 0, i32 1
+  %a.cur.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var._map_out_2681.1, i32 0, i32 1
   %a.cur.data119 = load ptr, ptr %a.cur.data, align 8
-  %a.cur.len120 = load i64, ptr %var._map_out_2675.1, align 8
+  %a.cur.len120 = load i64, ptr %var._map_out_2681.1, align 8
   %a.elem.gep = getelementptr i64, ptr %a.cur.data119, i64 %a.cur.len120
   %slot.p2i = ptrtoint ptr %fld.load104 to i64
   store i64 %slot.p2i, ptr %a.elem.gep, align 8
   %a.next.len = add i64 %a.cur.len120, 1
-  store i64 %a.next.len, ptr %var._map_out_2675.1, align 8
+  store i64 %a.next.len, ptr %var._map_out_2681.1, align 8
   %loop.next = add i64 %loop.idx.2187.0, 1
   br label %loop.header.2187
 
@@ -51938,7 +51938,7 @@ a.after7:                                         ; preds = %a.create6, %a.after
 
 loop.header.2219:                                 ; preds = %a.after36, %a.after7
   %loop.idx.2219.0 = phi i64 [ 0, %a.after7 ], [ %loop.next, %a.after36 ]
-  %var._fold_acc_3307.0 = phi ptr [ %var.libs.0, %a.after7 ], [ %call.res, %a.after36 ]
+  %var._fold_acc_3313.0 = phi ptr [ %var.libs.0, %a.after7 ], [ %call.res, %a.after36 ]
   %loop.cond = icmp slt i64 %loop.idx.2219.0, %arr.cycle.len16
   br i1 %loop.cond, label %loop.body.2219, label %loop.exit.2219
 
@@ -51946,11 +51946,11 @@ loop.body.2219:                                   ; preds = %loop.header.2219
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data17, i64 %loop.idx.2219.0
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %slot.i2p = inttoptr i64 %arr.elem.raw to ptr
-  %a.null20 = icmp eq ptr %var._fold_acc_3307.0, null
+  %a.null20 = icmp eq ptr %var._fold_acc_3313.0, null
   br i1 %a.null20, label %a.create21, label %a.after36
 
 loop.exit.2219:                                   ; preds = %loop.header.2219
-  %a.null47 = icmp eq ptr %var._fold_acc_3307.0, null
+  %a.null47 = icmp eq ptr %var._fold_acc_3313.0, null
   br i1 %a.null47, label %a.create48, label %a.after49
 
 a.create21:                                       ; preds = %loop.body.2219
@@ -51966,8 +51966,8 @@ a.create21:                                       ; preds = %loop.body.2219
   br label %a.after36
 
 a.after36:                                        ; preds = %loop.body.2219, %a.create21
-  %var._fold_acc_3307.1 = phi ptr [ %a.create24, %a.create21 ], [ %var._fold_acc_3307.0, %loop.body.2219 ]
-  %call.res = call ptr @collect_link_libs_expr(ptr %slot.i2p, ptr %var._fold_acc_3307.1)
+  %var._fold_acc_3313.1 = phi ptr [ %a.create24, %a.create21 ], [ %var._fold_acc_3313.0, %loop.body.2219 ]
+  %call.res = call ptr @collect_link_libs_expr(ptr %slot.i2p, ptr %var._fold_acc_3313.1)
   %loop.next = add i64 %loop.idx.2219.0, 1
   br label %loop.header.2219
 
@@ -51984,8 +51984,8 @@ a.create48:                                       ; preds = %loop.exit.2219
   br label %a.after49
 
 a.after49:                                        ; preds = %a.create48, %loop.exit.2219
-  %var._fold_acc_3307.2 = phi ptr [ %a.create51, %a.create48 ], [ %var._fold_acc_3307.0, %loop.exit.2219 ]
-  ret ptr %var._fold_acc_3307.2
+  %var._fold_acc_3313.2 = phi ptr [ %a.create51, %a.create48 ], [ %var._fold_acc_3313.0, %loop.exit.2219 ]
+  ret ptr %var._fold_acc_3313.2
 }
 
 define ptr @collect_link_libs(ptr %0) #0 {

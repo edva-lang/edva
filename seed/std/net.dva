@@ -15,6 +15,12 @@
 #use str
 #use sys
 
+#private
+   #foreign("c")
+      accept_socket = accept: (sockfd: Int, addr: < Addr | >, addrlen: < Addr | >) => Int
+      receive_packet = recvfrom: (sockfd: Int, buf: Addr, len: Int, flags: Int, addr: < Addr | >, addrlen: < Addr | >) => Int
+      lookup_addr = getaddrinfo: (node: String, service: String, hints: < Addr | >, res: Addr) => Int
+
 #public
    // Addr family constants
    AF_INET  = 2
@@ -270,7 +276,7 @@
    resolve = host, port =>
       port_str = str::from_int(port)
       out = 0
-      gai = libc::getaddrinfo(host, port_str, sys::addr_null, &out)
+      gai = lookup_addr(host, port_str, <-->, &out)
       gai [0]
          Host(<+ Addr(out) ->)
       |
@@ -370,7 +376,7 @@
    // Returns Conn: <+ client fd +> on success, <- error -> on failure.
    tcp_accept: Int => Conn
    tcp_accept = server_fd =>
-      s = c_int(libc::accept(server_fd, sys::addr_null, sys::addr_null))
+      s = c_int(accept_socket(server_fd, <-->, <-->))
       s [< 0] Conn(<- "accept failed" +>) | Conn(<+ s ->)
 
    // Send a string over a socket fd, looping until every byte is written:
@@ -505,7 +511,7 @@
    udp_recv: Int, Int => Chunk
    udp_recv = fd, max =>
       b = {max}
-      n = mem::write_tail(b, max, (dst, avail => libc::recvfrom(fd, dst, avail, 0, sys::addr_null, sys::addr_null)))
+      n = mem::write_tail(b, max, (dst, avail => receive_packet(fd, dst, avail, 0, <-->, <-->)))
       n [< 1] Chunk(<-->) |
          Chunk(<+ +b +>)
 

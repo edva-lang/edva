@@ -14,12 +14,13 @@
    c_getenv      = getenv:      (name: String) => < Addr | >
    c_setenv      = setenv:      (name: String, val: String, overwrite: i32) => i32
    c_unsetenv    = unsetenv:    (name: String) => i32
-   c_getcwd      = getcwd:      (buf: Addr, size: Int) => Addr
+   c_getcwd      = getcwd:      (buf: Addr, size: Int) => < Addr | >
    c_chdir       = chdir:       (path: String) => i32
    c_getpid      = getpid:      () => i32
    c_getppid     = getppid:     () => i32
-   c_popen       = popen:       (command: String, mode: String) => Addr
+   c_popen       = popen:       (command: String, mode: String) => < Addr | >
    c_pclose      = pclose:      (stream: Addr) => i32
+   spawn_posix = posix_spawn: (pid: Addr, path: String, acts: < Addr | >, attr: < Addr | >, argv: Addr, envp: Addr) => Int
    c_fread       = fread:       (ptr: Addr, size: Int, nmemb: Int, stream: Addr) => Int
    c_fork        = fork:        () => i32
    c_execvp      = execvp:      (file: Addr, argv: Addr) => i32
@@ -31,7 +32,7 @@
    c_posix_openpt   = posix_openpt:   (flags: i32) => i32
    c_grantpt        = grantpt:        (fd: i32) => i32
    c_unlockpt       = unlockpt:       (fd: i32) => i32
-   c_ptsname        = ptsname:        (fd: i32) => Addr
+   c_ptsname        = ptsname:        (fd: i32) => < Addr | >
    c_setsid         = setsid:         () => i32
    c_clock_gettime  = clock_gettime:  (clk_id: i32, tp: Addr) => i32
    c_nanosleep      = nanosleep:      (req: Addr, rem: Addr) => i32
@@ -264,7 +265,7 @@ append_bytes = b, src, n =>
    spawn = path, argv =>
       pid_v = 0i32
       status_v = 0i32
-      spawn_res = libc::posix_spawn(&pid_v, path, sys::addr_null, sys::addr_null,
+      spawn_res = spawn_posix(&pid_v, path, <-->, <-->,
          argv, environ)
       failed = spawn_res != 0
       result' = -1
@@ -305,10 +306,7 @@ append_bytes = b, src, n =>
    cwd: () => String
    cwd = !=>
       buf = {4096}
-      res = c_getcwd(&buf, 4096)
-      res == sys::addr_null
-         | ""
-         | sys::c_str(res)
+      c_getcwd(&buf, 4096) | raw => sys::c_str(raw) | ""
 
    // Changes the current working directory to `path`. Returns `<+>` on success.
    chdir: String => <>
@@ -728,11 +726,11 @@ append_bytes = b, src, n =>
             libc::close(mfd)
             --| <-->
       raw_name = c_ptsname(i32(mfd))
-      raw_name == sys::addr_null
+      !<>(raw_name)
          |
             libc::close(mfd)
             --| <-->
-      pts_name = sys::c_str(raw_name)
+      pts_name = raw_name | raw => sys::c_str(raw) | ""
       sfd = libc::open(pts_name, O_RDWR_NOCTTY)
       sfd < 0
          |
@@ -895,8 +893,7 @@ append_bytes = b, src, n =>
       out_strs' = String{}
       err_strs' = String{}
       open_cnt' = 0
-      n @ i =>
-         c = children(i)!!
+      children @ c =>
          c.stdin_fd !< 0 | libc::close(c.stdin_fd)
          c.stdout_fd !< 0
             |
@@ -926,8 +923,8 @@ append_bytes = b, src, n =>
                      -->
                   | poll_wait' = rem_ms
          n @ i =>
-            ofd = out_fds'(i)!!
-            efd = err_fds'(i)!!
+            ofd = out_fds'(i) |_| -1
+            efd = err_fds'(i) |_| -1
             k0 = i * 2
             k1 = i * 2 + 1
             @[&pfds + k0 * 8] = i32(ofd)
@@ -943,7 +940,7 @@ append_bytes = b, src, n =>
                -->
          pr < 0 | -->
          n @ i =>
-            ofd = out_fds'(i)!!
+            ofd = out_fds'(i) |_| -1
             k0 = i * 2
             rev0 = Int(@[&pfds + k0 * 8 + 6 i16]) .&. 0xFFFF
             ofd !< 0 && (rev0 .&. 25) != 0
@@ -956,13 +953,14 @@ append_bytes = b, src, n =>
                            %memcpy(dst, &chunk, avail)
                            avail
                         ))
-                        out_strs'(i) = (out_strs'(i)!!) + (+b)
+                        prev = out_strs'(i) |_| ""
+                        out_strs'(i) = prev + (+b)
                      | r == 0 || (rev0 .&. 24) != 0
                         |
                            libc::close(ofd)
                            out_fds'(i) = -1
                            open_cnt' = open_cnt' - 1
-            efd = err_fds'(i)!!
+            efd = err_fds'(i) |_| -1
             k1 = i * 2 + 1
             rev1 = Int(@[&pfds + k1 * 8 + 6 i16]) .&. 0xFFFF
             efd !< 0 && (rev1 .&. 25) != 0
@@ -975,18 +973,18 @@ append_bytes = b, src, n =>
                            %memcpy(dst, &chunk, avail)
                            avail
                         ))
-                        err_strs'(i) = (err_strs'(i)!!) + (+b2)
+                        prev = err_strs'(i) |_| ""
+                        err_strs'(i) = prev + (+b2)
                      | r2 == 0 || (rev1 .&. 24) != 0
                         |
                            libc::close(efd)
                            err_fds'(i) = -1
                            open_cnt' = open_cnt' - 1
-      n @ i =>
-         ofd = out_fds'(i)!!
-         efd = err_fds'(i)!!
+      children @ c, i =>
+         ofd = out_fds'(i) |_| -1
+         efd = err_fds'(i) |_| -1
          ofd !< 0 | libc::close(ofd)
          efd !< 0 | libc::close(efd)
-         c = children(i)!!
          st' = -1
          timed_out'
             |
@@ -1003,7 +1001,9 @@ append_bytes = b, src, n =>
                   |
                      kill_pid(c.pid, SIGKILL)
                      wait_pid(c.pid)
-         results' += ProcResult(st', out_strs'(i)!!, err_strs'(i)!!)
+         stdout = out_strs'(i) |_| ""
+         stderr = err_strs'(i) |_| ""
+         results' += ProcResult(st', stdout, stderr)
       results'
 
    // --- Shell Command Execution -----------------------------------------------
@@ -1017,10 +1017,8 @@ append_bytes = b, src, n =>
    // `<+ (status = exit_code, output = stdout_str) +>` or `<-->` if popen fails.
    exec: String => < ExecResult | >
    exec = cmd =>
-      fp = c_popen(cmd, "r")
-      fp == sys::addr_null
-         | <-->
-         |
+      c_popen(cmd, "r")
+         | fp =>
             buf = {1024}
             0.. @
                n = mem::write_tail(buf, 512, (dst, avail => c_fread(dst, 1, avail, fp)))

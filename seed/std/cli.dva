@@ -963,11 +963,11 @@ has = p, name =>
             | <+>
             |
                idx = find_opt_idx(p.opts, name)
-               idx !< 0 | p.seen(idx)!! | <->
+               idx !< 0 | (p.seen(idx) |_| <->) | <->
       |
          idx = find_opt_idx(p.opts, name)
          idx !< 0
-            | p.seen(idx)!!
+            | (p.seen(idx) |_| <->)
             | <->
 
 #private
@@ -986,10 +986,12 @@ find_active_opt = p, name =>
             | o => <+ o +>
             |
                idx = find_opt_idx(p.opts, name)
-               idx !< 0 | <+ p.opts(idx)!! +> | <-->
+               idx !< 0
+                  | (p.opts(idx) | item => <+ item +> | <-->)
       |
          idx = find_opt_idx(p.opts, name)
-         idx !< 0 | <+ p.opts(idx)!! +> | <-->
+         idx !< 0
+            | (p.opts(idx) | item => <+ item +> | <-->)
 
 #public
 
@@ -1002,13 +1004,13 @@ flag = p, name =>
             | flag(sub_p, name)
             |
                idx = find_opt_idx(p.opts, name)
-               idx !< 0 && p.seen(idx)!!
-                  | p.flags(idx)!!
-                  | (has_spec(sub_p, name) | flag(sub_p, name) | (idx !< 0 | p.flags(idx)!! | <->))
+               idx !< 0 && (p.seen(idx) |_| <->)
+                  | (p.flags(idx) |_| <->)
+                  | (has_spec(sub_p, name) | flag(sub_p, name) | (idx !< 0 | (p.flags(idx) |_| <->) | <->))
       |
          idx = find_opt_idx(p.opts, name)
          idx !< 0
-            | p.flags(idx)!!
+            | (p.flags(idx) |_| <->)
             | <->
 
 // Returns the `Int` value of option or positional `name`.
@@ -1020,13 +1022,13 @@ int = p, name =>
             | int(sub_p, name)
             |
                idx = find_opt_idx(p.opts, name)
-               idx !< 0 && p.seen(idx)!!
-                  | p.ints(idx)!!
-                  | (has_spec(sub_p, name) | int(sub_p, name) | (idx !< 0 | p.ints(idx)!! | 0))
+               idx !< 0 && (p.seen(idx) |_| <->)
+                  | (p.ints(idx) |_| 0)
+                  | (has_spec(sub_p, name) | int(sub_p, name) | (idx !< 0 | (p.ints(idx) |_| 0) | 0))
       |
          idx = find_opt_idx(p.opts, name)
          idx !< 0
-            | p.ints(idx)!!
+            | (p.ints(idx) |_| 0)
             | 0
 
 // Returns the `Float` value of option or positional `name`.
@@ -1038,13 +1040,13 @@ float = p, name =>
             | float(sub_p, name)
             |
                idx = find_opt_idx(p.opts, name)
-               idx !< 0 && p.seen(idx)!!
-                  | p.floats(idx)!!
-                  | (has_spec(sub_p, name) | float(sub_p, name) | (idx !< 0 | p.floats(idx)!! | 0.0))
+               idx !< 0 && (p.seen(idx) |_| <->)
+                  | (p.floats(idx) |_| 0.0)
+                  | (has_spec(sub_p, name) | float(sub_p, name) | (idx !< 0 | (p.floats(idx) |_| 0.0) | 0.0))
       |
          idx = find_opt_idx(p.opts, name)
          idx !< 0
-            | p.floats(idx)!!
+            | (p.floats(idx) |_| 0.0)
             | 0.0
 
 // Returns the `String` value of option or positional `name`.
@@ -1056,13 +1058,13 @@ str = p, name =>
             | str(sub_p, name)
             |
                idx = find_opt_idx(p.opts, name)
-               idx !< 0 && p.seen(idx)!!
-                  | p.strs(idx)!!
-                  | (has_spec(sub_p, name) | str(sub_p, name) | (idx !< 0 | p.strs(idx)!! | ""))
+               idx !< 0 && (p.seen(idx) |_| <->)
+                  | (p.strs(idx) |_| "")
+                  | (has_spec(sub_p, name) | str(sub_p, name) | (idx !< 0 | (p.strs(idx) |_| "") | ""))
       |
          idx = find_opt_idx(p.opts, name)
          idx !< 0
-            | p.strs(idx)!!
+            | (p.strs(idx) |_| "")
             | ""
 
 // Returns the `Args` (`String{}`) list of values for repeatable option or variadic positional `name`.
@@ -1074,13 +1076,13 @@ strs = p, name =>
             | strs(sub_p, name)
             |
                idx = find_opt_idx(p.opts, name)
-               idx !< 0 && p.seen(idx)!!
-                  | p.str_lists(idx)!!
-                  | (has_spec(sub_p, name) | strs(sub_p, name) | (idx !< 0 | p.str_lists(idx)!! | Args()))
+               idx !< 0 && (p.seen(idx) |_| <->)
+                  | (p.str_lists(idx) |_| Args())
+                  | (has_spec(sub_p, name) | strs(sub_p, name) | (idx !< 0 | (p.str_lists(idx) |_| Args()) | Args()))
       |
          idx = find_opt_idx(p.opts, name)
          idx !< 0
-            | p.str_lists(idx)!!
+            | (p.str_lists(idx) |_| Args())
             | Args()
 
 // Derives an `Opts` specification automatically from a record type `T` (`[(..)]`).
