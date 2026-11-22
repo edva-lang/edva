@@ -37,7 +37,7 @@ Edva (`.dva`) is a statically typed, expression-oriented systems language with s
 | 6 | [Compiler Intrinsics (`%`)](reference/language/intrinsics.qmd) | Zero-overhead LLVM scalar, SIMD vector, horizontal reduction, math, bit manipulation, memory, and `%to_str` intrinsics |
 | 7 | [Type System, Scalars & `Unit`](reference/types/index.qmd) | Complete type taxonomy, `Int` (`i8`..`u64`), `Float` (`f32`, `f64`), `Rune`, and `Unit` (`()`) |
 | 8 | [`String` & `Builder`](reference/types/string.qmd) | Single/multi-line strings, `${expr}` interpolation, generation tags, `Builder` growth, mass-append, and `+b` freeze |
-| 9 | [Flags, Ramifications & `Error`](reference/types/ram.qmd) | `RamNN`/`RamPN`/`RamNP`/`RamPP` layouts, niche optimization, `|`, `!|`, `!!`, `--!`, return sugars, and structured `Error` |
+| 9 | [Flags, Ramifications & `Error`](reference/types/ram.qmd) | `RamNN`/`RamPN`/`RamNP`/`RamPP` layouts, niche optimization, `|`, `!|`, `.expect("reason")`, `--!`, return sugars, and structured `Error` |
 | 10 | [Records, Tuples, Bitfields & Enums](reference/types/record.qmd) | Product types, `#type(packed)`, `#type(align = N)`, bitfields, SIMD tuples, and nominal tagged union enums (`< V1, V2(T) >`) |
 | 11 | [Arrays, Slices & Maps](reference/types/array.qmd) | Growable arrays (`T{}`), non-owning slices (`T[]`), associative hash tables (`K ^ V`), and snapshot iteration |
 | 12 | [Functions & Closures](reference/types/functions.qmd) | Arrow types (`A => B`), `{ fn_ptr, env_ptr }` ABI, lambdas, headless choices, closure capture, and pipelines |

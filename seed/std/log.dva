@@ -9,7 +9,7 @@
 #use utf
 
 #foreign("c")
-   c_getenv = getenv: (name: String) => Addr
+   c_getenv = getenv: (name: String) => < Addr | >
 
 #public
    #type Level < Debug, Info, Warn, Error, Silent >
@@ -65,8 +65,7 @@
 
    env_val: String => String
    env_val = name =>
-      raw = c_getenv(name)
-      raw == sys::addr_null | "" | sys::c_str(raw)
+      c_getenv(name) | raw => sys::c_str(raw) | ""
 
    auto_color_enabled_os: #param OS: Type => <>
    auto_color_enabled_os = #param OS =>

@@ -16,7 +16,7 @@
 #foreign("c")
    dva_cov_map_ptr: () => Addr
    dva_cov_trace: (edge_id: Int) => ()
-   c_getenv = getenv: (name: String) => Addr
+   c_getenv = getenv: (name: String) => < Addr | >
 
 #private
 
@@ -420,8 +420,7 @@ COV_WORDS = 8192
 
 env_str: String, String => String
 env_str = name, fallback =>
-   raw = c_getenv(name)
-   raw == sys::addr_null | fallback | sys::c_str(raw)
+   c_getenv(name) | raw => sys::c_str(raw) | fallback
 
 env_int: String, Int => Int
 env_int = name, fallback =>

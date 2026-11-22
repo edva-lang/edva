@@ -157,7 +157,7 @@ truth; the unified operator table with operand and result types is in §3.3):
 | addition | 140 | 150 | `+` `-` | left |
 | multiplication | 150 | 160 | `*` `/` `%` | left |
 | unary prefix | 160 | 180 | `!` `+` `&` `++` `.!.` `~~` `?` `??` `-x` `#size` | right |
-| postfix / apply | 170 | 180 | `call ()` `.` `::` `: cast` `{N}` `@[...]` `!!` `--!` | left |
+| postfix / apply | 170 | 180 | `call ()` `.` `::` `: cast` `{N}` `@[...]` `.expect("reason")` `--!` | left |
 | primary | 180 | 180 | `primary` | left |
 
 <!-- END operators.yaml -->

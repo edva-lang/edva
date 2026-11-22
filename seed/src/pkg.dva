@@ -21,7 +21,7 @@
 
 #foreign("c")
    getpid: () => Int
-   getenv: (name: String) => Addr
+   getenv: (name: String) => < Addr | >
    dva_hash_string: (ptr: Addr, len: Int) => Int
 
 #public
@@ -204,7 +204,7 @@
 
    getenv_opt: String => < String | >
    getenv_opt = name =>
-      sys::addr_opt(getenv(name))
+      getenv(name)
          | p => <+ sys::c_str(p) +>
          | <-->
 

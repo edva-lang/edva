@@ -5,7 +5,6 @@ target triple = "x86_64-unknown-linux-gnu"
 
 @dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
-@"var.sys::addr_null" = external global ptr
 @"var.log::#min_level" = global i64 1
 @"var.log::#out_fd" = global i64 2
 @"var.log::#owned_fd" = global i64 -1
@@ -442,11 +441,8 @@ nulcopy:                                          ; preds = %entry
 nulmerge:                                         ; preds = %entry, %nulcopy.len6
   %arg.str.ptr7 = phi ptr [ %nulcopy.buf, %nulcopy.len6 ], [ %arg.str.ptr1, %entry ]
   %call.res = call ptr @getenv(ptr %arg.str.ptr7)
-  %var.load9 = load ptr, ptr @"var.sys::addr_null", align 8
-  %ptr.int.l = ptrtoint ptr %call.res to i64
-  %ptr.int.r = ptrtoint ptr %var.load9 to i64
-  %cmptmp = icmp eq i64 %ptr.int.l, %ptr.int.r
-  br i1 %cmptmp, label %choice.exit, label %choice.else
+  %niche.ne.null = icmp ne ptr %call.res, null
+  br i1 %niche.ne.null, label %choice.then, label %choice.exit
 
 nulcopy.len6:                                     ; preds = %nulcopy
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
@@ -460,17 +456,17 @@ str_overflow_abort:                               ; preds = %nulcopy
   call void @dva_abort_str_overflow_msg()
   unreachable
 
-choice.else:                                      ; preds = %nulmerge
-  %call.res11 = call { i64, ptr } @"sys::c_str"(ptr %call.res)
-  %call.res11.fca.0.extract = extractvalue { i64, ptr } %call.res11, 0
-  store i64 %call.res11.fca.0.extract, ptr %ret.ub.salloc, align 8
-  %call.res11.fca.1.extract = extractvalue { i64, ptr } %call.res11, 1
-  %call.res11.fca.1.gep = getelementptr inbounds { i64, ptr }, ptr %ret.ub.salloc, i32 0, i32 1
-  store ptr %call.res11.fca.1.extract, ptr %call.res11.fca.1.gep, align 8
+choice.then:                                      ; preds = %nulmerge
+  %call.res9 = call { i64, ptr } @"sys::c_str"(ptr %call.res)
+  %call.res9.fca.0.extract = extractvalue { i64, ptr } %call.res9, 0
+  store i64 %call.res9.fca.0.extract, ptr %ret.ub.salloc, align 8
+  %call.res9.fca.1.extract = extractvalue { i64, ptr } %call.res9, 1
+  %call.res9.fca.1.gep = getelementptr inbounds { i64, ptr }, ptr %ret.ub.salloc, i32 0, i32 1
+  store ptr %call.res9.fca.1.extract, ptr %call.res9.fca.1.gep, align 8
   br label %choice.exit
 
-choice.exit:                                      ; preds = %nulmerge, %choice.else
-  %choice.res = phi ptr [ %ret.ub.salloc, %choice.else ], [ @str.0.struct, %nulmerge ]
+choice.exit:                                      ; preds = %nulmerge, %choice.then
+  %choice.res = phi ptr [ %ret.ub.salloc, %choice.then ], [ @str.0.struct, %nulmerge ]
   %ret.pack.fca.0.load = load i64, ptr %choice.res, align 8
   %ret.pack.fca.0.insert = insertvalue { i64, ptr } poison, i64 %ret.pack.fca.0.load, 0
   %ret.pack.fca.1.gep = getelementptr inbounds { i64, ptr }, ptr %choice.res, i32 0, i32 1

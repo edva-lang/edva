@@ -15,9 +15,18 @@ Edva unifies booleans, optional values, fallible statuses, and result types into
 | Layout | Type Syntax | Positive (1st Slot) | Negative (2nd Slot) | Runtime ABI & Niche Lowering | Role |
 |---|---|---|---|---|---|
 | **`RamNN`** | `<>` | `<+>` (unit) | `<->` (unit) | Unboxed `i1` (`1` = `<+>`, `0` = `<->`) | Boolean `Flag` (built-in, no `#type` needed) |
-| **`RamPN`** | `< T | >` | `<+ val +>` (`T`) | `<-->` (unit) | Null-pointer niche (`ptr`, `null` = `<-->`) for `String`/`Record`; otherwise `{ i1, T }` | `Option` (value or absence) |
+| **`RamPN`** | `< T | >` | `<+ val +>` (`T`) | `<-->` (unit) | Null-pointer niche (`ptr`, `null` = `<-->`) for `String`, `Record`, and `Addr`; otherwise `{ i1, T }` | `Option` (value or absence) |
 | **`RamNP`** | `< | E >` | `<++>` (unit) | `<- err ->` (`E`) | Null-pointer niche (`ptr`, `null` = `<++>`) for `String`/`Record`/`Error`; otherwise `{ i1, E }` | `Fallible` (void success or error) |
 | **`RamPP`** | `< T | E >` | `<+ val ->` (`T`) | `<- err +>` (`E`) | Unboxed register aggregate `{ i1, i64 }` (`i1` = polarity tag, `0` heap wrapper cost) | `Result` (value or error) |
+
+### Nullable C addresses
+
+`< Addr | >` occupies one pointer-width word. A C `NULL` is `<-->`, and a
+non-null pointer is `<+ addr +>`. Use this type directly in a
+`#foreign("c")` declaration for a pointer parameter or result that can be
+null. `Addr(0)` reports E3180, and a dynamic integer cast to `Addr` traps
+with E4015 if its value is zero. Use an integer address for an intentional
+volatile access to offset zero, such as `@[0 u8]`.
 
 ### Constructor delimiter matrix
 

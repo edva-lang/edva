@@ -58,6 +58,11 @@ xs(1) = 25 !| _
 io::out $ (xs(0).expect("missing xs"), ?xs, sum_slice(xs(0..3)))   // (10, 3, 65)
 ```
 
+An index lookup returns a ramification even inside a loop over `0..?xs`
+or after an explicit range check. Use `xs @ x, i =>` when traversing a
+single collection. If an operation needs a second collection, handle its
+indexed result with a choice or a fallback.
+
 ## Associative hash maps (`K ^ V`)
 
 ### Supported key and value types

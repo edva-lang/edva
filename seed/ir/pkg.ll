@@ -13,7 +13,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.pkg::hex_digits" = global ptr null
 @"var.version::VERSION" = external global ptr
 @"var.version::COMMIT_HASH" = external global ptr
-@str.0 = internal unnamed_addr constant [20 x i8] c"1.6.3+c2b4b2a-dirty\00"
+@str.0 = internal unnamed_addr constant [20 x i8] c"1.6.3+dfad689-dirty\00"
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 19, ptr @str.0 }
 @"var.pkg::lang_version" = global ptr null
 @b_byte_msg = internal unnamed_addr constant [58 x i8] c"E4007: Builder append byte out of range (must be 0..255)\0A\00"
@@ -1465,8 +1465,7 @@ nulcopy:                                          ; preds = %str_ok
 nulmerge:                                         ; preds = %str_ok, %nulcopy.len6
   %arg.str.ptr7 = phi ptr [ %nulcopy.buf, %nulcopy.len6 ], [ %arg.str.ptr1, %str_ok ]
   %call.res = call ptr @getenv(ptr %arg.str.ptr7)
-  %call.res8 = call ptr @"sys::addr_opt"(ptr %call.res)
-  %niche.ne.null = icmp ne ptr %call.res8, null
+  %niche.ne.null = icmp ne ptr %call.res, null
   br i1 %niche.ne.null, label %choice.then, label %choice.exit
 
 nulcopy.len6:                                     ; preds = %nulcopy
@@ -1482,10 +1481,10 @@ str_overflow_abort:                               ; preds = %nulcopy
   unreachable
 
 choice.then:                                      ; preds = %nulmerge
-  %call.res10 = call { i64, ptr } @"sys::c_str"(ptr %call.res8)
-  %arena.cur11 = load ptr, ptr @dva_active_arena_tls, align 8
-  %ret.ub.alloc = call ptr @dva_arena_alloc(ptr %arena.cur11, i64 16)
-  store { i64, ptr } %call.res10, ptr %ret.ub.alloc, align 8
+  %call.res9 = call { i64, ptr } @"sys::c_str"(ptr %call.res)
+  %arena.cur10 = load ptr, ptr @dva_active_arena_tls, align 8
+  %ret.ub.alloc = call ptr @dva_arena_alloc(ptr %arena.cur10, i64 16)
+  store { i64, ptr } %call.res9, ptr %ret.ub.alloc, align 8
   br label %choice.exit
 
 choice.exit:                                      ; preds = %nulmerge, %choice.then
@@ -1524,8 +1523,6 @@ entry:
   call void @exit(i32 1)
   unreachable
 }
-
-declare ptr @"sys::addr_opt"(ptr) #3
 
 declare { i64, ptr } @"sys::c_str"(ptr) #3
 

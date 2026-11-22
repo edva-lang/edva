@@ -132,14 +132,14 @@
 
    // struct ifaddrs for network interface enumeration
    #type IfAddrs (
-      ifa_next:    Addr,
+      ifa_next:    < Addr | >,
       ifa_name:    Addr,
       ifa_flags:   i32,
       ifa_pad:     i32,
-      ifa_addr:    Addr,
-      ifa_netmask: Addr,
-      ifa_ifu:     Addr,
-      ifa_data:    Addr,
+      ifa_addr:    < Addr | >,
+      ifa_netmask: < Addr | >,
+      ifa_ifu:     < Addr | >,
+      ifa_data:    < Addr | >,
    )
 
    // Result rams. The socket/data-returning helpers use these instead of
@@ -516,19 +516,21 @@
          Chunk(<+ +b +>)
 
    // Match network interface from ifaddrs linked list by IP
-   find_iface: Addr, InAddr => String
+   find_iface: < Addr | >, InAddr => String
    find_iface = curr, target =>
-      Int(curr) [0] "" |
-         ifa = IfAddrs(curr)
-         ifa.ifa_addr == sys::addr_null | find_iface(ifa.ifa_next, target) |
-            sa = SockAddrIn(ifa.ifa_addr)
-            fam = Int(sa.sin_family) .>. (#os ["darwin"] 8 | 0)
-            is_match = (fam == AF_INET) &&
-               (sa.sin_addr.b0 == target.b0) && (sa.sin_addr.b1 == target.b1) &&
-               (sa.sin_addr.b2 == target.b2) && (sa.sin_addr.b3 == target.b3)
-            is_match
-               | sys::c_str(ifa.ifa_name)
-               | find_iface(ifa.ifa_next, target)
+      curr
+         | raw =>
+            ifa = IfAddrs(raw)
+            ifa.ifa_addr
+               | addr =>
+                  sa = SockAddrIn(addr)
+                  fam = Int(sa.sin_family) .>. (#os ["darwin"] 8 | 0)
+                  is_match = fam == AF_INET && sa.sin_addr.b0 == target.b0 &&
+                     sa.sin_addr.b1 == target.b1 && sa.sin_addr.b2 == target.b2 &&
+                     sa.sin_addr.b3 == target.b3
+                  is_match | --| sys::c_str(ifa.ifa_name)
+            find_iface(ifa.ifa_next, target)
+         | ""
 
    // Query local routing IP and default outbound interface
    get_route_info: () => (String, String)
@@ -547,9 +549,9 @@
                ip = ip_str(addr)
                head_raw = 0
                rc_if = libc::getifaddrs(&head_raw)
-               iface = rc_if [< 0] "" |
+               iface = rc_if < 0 || head_raw == 0 | "" |
                   head = Addr(head_raw)
-                  name = find_iface(head, addr.sin_addr)
+                  name = find_iface(<+ head +>, addr.sin_addr)
                   libc::freeifaddrs(head)
                   name
                (ip, iface)

@@ -379,7 +379,7 @@ run_showcase = !=>
    nums += 20
    nums += 30
    // Indexing `nums(i)` returns unboxed `RamPP` (`< Int | Error >`):
-   //   - `nums(i)!!` unwraps when index is known in-bounds
+   //   - Direct iteration yields elements and their indices.
    //   - `nums(i) |_| fallback` coalesces out-of-bounds to `fallback`
    //   - `nums(i) = val !| _` writes in-bounds or panics on error
    nums(1) = 25 !| _
