@@ -13,9 +13,12 @@
    mkdir: (path: String, mode: Int) => Int
    rmdir: (path: String) => Int
    statvfs: (path: String, buf: Addr) => Int
-   getcwd: (buf: Addr, size: Int) => Addr
-   getenv: (name: String) => Addr
-   localtime_r: (timep: Addr, result: Addr) => Addr
+   getcwd: (buf: Addr, size: Int) => < Addr | >
+   getenv: (name: String) => < Addr | >
+   localtime_r: (timep: Addr, result: Addr) => < Addr | >
+   realpath: (name: String, resolved: < Addr | >) => < Addr | >
+   opendir: (name: String) => < Addr | >
+   readdir: (dir: Addr) => < Addr | >
    strftime: (s: Addr, max: Int, format: String, tm: Addr) => Int
 
 #public
@@ -208,13 +211,11 @@ ext = name => path::ext(name)
 cwd: () => String
 cwd = !=>
    buf = {1024}
-   res = getcwd(&buf, 1024)
-   res == sys::addr_null | "." | sys::c_str(res)
+   getcwd(&buf, 1024) | raw => sys::c_str(raw) | "."
 
 home: () => String
 home = !=>
-   h = getenv("HOME")
-   h == sys::addr_null | "/" | sys::c_str(h)
+   getenv("HOME") | raw => sys::c_str(raw) | "/"
 
 resolve: String => String
 resolve = p =>
@@ -223,11 +224,12 @@ resolve = p =>
    p == "~" | --| home!
    len !< 2 && p(..2) == "~/" | --| path::join(home!, p(2..))
    full = path::is_abs(p) | p | path::join(cwd!, p)
-   real = libc::realpath(full, sys::addr_null)
-   real == sys::addr_null | full |
-      s = sys::c_str(real)
-      libc::free(real)
-      s
+   realpath(full, <-->)
+      | raw =>
+         resolved = sys::c_str(raw)
+         libc::free(raw)
+         resolved
+      | full
 
 // Compatibility Path Aliases
 join_path: String, String => String
@@ -360,11 +362,9 @@ read_symlink = p =>
 read_dir: String => DirEntry{}
 read_dir = dir_path =>
    res = DirEntry{}
-   dp = libc::opendir(dir_path)
-   dp == sys::addr_null | --| res
+   dp = opendir(dir_path) | raw => raw | --| res
    0.. @
-      ent = libc::readdir(dp)
-      ent == sys::addr_null | -->
+      ent = readdir(dp) | raw => raw | -->
       name = sys::c_str(ent + #size DirentPrefix)
       name == "." || name == ".." | --^
       dp_ent = DirentPrefix(ent)
@@ -573,8 +573,8 @@ format_time = ts =>
    ts == 0 | --| "-"
    t_val = i64(ts)
    tm_buf = {64}
-   res = localtime_r(&t_val, &tm_buf)
-   res == sys::addr_null | --| "-"
+   converted = localtime_r(&t_val, &tm_buf)
+   !<>(converted) | --| "-"
    out_buf = {64}
    len = mem::write_tail(out_buf, 64, (dst, avail => strftime(dst, avail, "%Y-%m-%d %H:%M", &tm_buf)))
    len !> 0 | --| "-"
@@ -691,21 +691,27 @@ list_dir = dir_path, show_hidden, sort_mode, sort_rev =>
    nd = ?dirs
    nd @ i =>
       (nd - 1) @ j =>
-         d1 = dirs(j)!!
-         d2 = dirs(j + 1)!!
-         cmp_entries(d1, d2, sort_mode, sort_rev) > 0 |
-            dirs(j) = d2
-            dirs(j + 1) = d1
+         dirs(j)
+            | left =>
+               dirs(j + 1)
+                  | right =>
+                     cmp_entries(left, right, sort_mode, sort_rev) > 0
+                        |
+                           dirs(j) = right
+                           dirs(j + 1) = left
 
    // Insertion sort file_list
    nf = ?file_list
    nf @ i =>
       (nf - 1) @ j =>
-         f1 = file_list(j)!!
-         f2 = file_list(j + 1)!!
-         cmp_entries(f1, f2, sort_mode, sort_rev) > 0 |
-            file_list(j) = f2
-            file_list(j + 1) = f1
+         file_list(j)
+            | left =>
+               file_list(j + 1)
+                  | right =>
+                     cmp_entries(left, right, sort_mode, sort_rev) > 0
+                        |
+                           file_list(j) = right
+                           file_list(j + 1) = left
 
    // Merge dirs + file_list into res
    dirs @ dir_item => res += dir_item

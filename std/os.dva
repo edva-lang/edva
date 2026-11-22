@@ -11,7 +11,7 @@
    environ: Addr
 
 #foreign("c")
-   c_getenv      = getenv:      (name: String) => Addr
+   c_getenv      = getenv:      (name: String) => < Addr | >
    c_setenv      = setenv:      (name: String, val: String, overwrite: i32) => i32
    c_unsetenv    = unsetenv:    (name: String) => i32
    c_getcwd      = getcwd:      (buf: Addr, size: Int) => Addr
@@ -279,18 +279,15 @@ append_bytes = b, src, n =>
    // Looks up environment variable `name`, returning `<+ value +>` or `<-->`.
    env: String => < String | >
    env = name =>
-      raw = c_getenv(name)
-      raw == sys::addr_null
-         | <-->
-         | <+ sys::c_str(raw) +>
+      c_getenv(name)
+         | raw => <+ sys::c_str(raw) +>
 
    // Looks up environment variable `name`, returning `fallback` if not set.
    env_or: String, String => String
    env_or = name, fallback =>
-      raw = c_getenv(name)
-      raw == sys::addr_null
+      c_getenv(name)
+         | raw => sys::c_str(raw)
          | fallback
-         | sys::c_str(raw)
 
    // Sets environment variable `name` to `val` (overwriting any existing value).
    setenv: String, String => <>
