@@ -96,3 +96,12 @@ format:
       - dva.xml
       - vid.xml
       - ccl.xml
+    include-after-body:
+      - text: |
+          <!-- Edva Webcounter -->
+          <script>
+            fetch('https://counter.shut.gde.to/p/' + location.hostname + '?ref=' + encodeURIComponent(document.referrer || ''), {
+              method: 'POST',
+              keepalive: true
+            }).catch(() => {});
+          </script>
