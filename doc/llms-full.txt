@@ -36,7 +36,7 @@
 - **Clean Choices**: A single-branch choice `cond | action` evaluates as a statement. Never supply
   dummy `| 0` fallbacks in statement positions, and never use `()` as a value expression (`E2104`).
 - **Quote-Free 3-Way `#use` Imports**: Quotes (`"`) are forbidden in `#use` paths (`E1015`). Bare paths resolve in `std/` (`#use io`, `#use str`), `./` or `../` resolves relative to the importing file (`#use ./ui`), and `@alias` resolves via `.edva/imports.ccl` (`#use @vid`, `#use @vid/browser`). Functor modules instantiate via `#use ./app(ui, index)`.
-- **Indentation & Line Length**: Spaces only (no tabs, `E1011`). Line lengths should not exceed 100
+- **Indentation & Line Length**: Consistent spaces or tabs per file (mixing tabs and spaces is forbidden: `E1001`–`E1003`). Line lengths should not exceed 100
   characters.
 
 ---
@@ -377,7 +377,7 @@ field_names = #param T, rec =>
 
 # 9. Key Compiler Diagnostics
 
-- `E1001`–`E1019`: Lexical errors (`E1011` tab indentation, `E1017` multiline string margin, `E1018` unterminated multiline/interpolated string, `E1019` `_` in number).
+- `E1001`–`E1019`: Lexical errors (`E1001`–`E1003` mixed/inconsistent tabs and spaces, `E1017` multiline string margin, `E1018` unterminated multiline/interpolated string, `E1019` `_` in number).
 - `E2001`–`E2109`: Syntax errors (`E2015` missing comma on same line, `E2024` invalid bare `|` position, `E2025` space in range, `E2037` parenthesized fn params, `E2040` explicit `_` param, `E2052` comma in predicate guard, `E2084` single-field record or redundant parens, `E2095` malformed/mismatched pattern guard, `E2096` `|` before `[guard]`, `E2104` `()` used as value, `E2109` `[Variant _]`).
 - `E3004`: Undefined identifier, function, or module symbol.
 - `E3008`: Logical `!` applied to non-`Flag` (use `+b` to freeze `Builder`, `.expect("reason")` for deliberate aborts, `x ![...]` for negated guard).

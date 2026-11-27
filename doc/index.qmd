@@ -14,7 +14,7 @@ Edva (`.dva`) is a statically typed, expression-oriented systems language with s
 
 | Invariant | Formal Specification |
 |---|---|
-| **Source suffix & encoding** | UTF-8 text in `.dva` files; space-only indentation (`E1011` on tabs) |
+| **Source suffix & encoding** | UTF-8 text in `.dva` files; consistent spaces or tabs per file (`E1001`–`E1003` on mixed spaces/tabs) |
 | **Zero bare keywords** | All control flow, branching, iteration, and returns use symbolic operators (`|`, `[...]`, `@`, `-->`, `--^`, `>--`, `--|`); bare words like `if`, `fn`, `for`, `return` are ordinary identifiers while directives live in the `#`-prefixed namespace (`#type`, `#use`, `#public`, `#private`, `#foreign`, `#export`, `#pragma`, `#infix`, `#param`, `#const`, `#os`, `#size`, `#align`, `#name`, `#zero`, `#arity`, `#members`, `#member`, `#has_member`) |
 | **Tested targets** | **Linux**, **Apple Silicon (macOS)**, and **WebAssembly (WASM)** |
 | **Bindings & mutability** | Immutable by default (`x = v`); explicit mutability/rebinding via trailing primes (`x' = v`) or marked module globals (`::g = v`). Inline `x: T = v` is forbidden (`E2009`) |
