@@ -319,7 +319,7 @@ field_names = #param T, rec =>
   - `edva init`, `edva add`, `edva rm`, `edva fetch`, `edva update`, `edva tree`, `edva vendor`,
     `edva cache`.
 - **`edva.ccl` Manifest**: Declares `name`, `version`, `edva`, `dependencies` (`path`, `git`/`rev`,
-  `url`/`hash`, optional `target = native`), `native.libs`, and multi-target `targets` (including
+  `url`/`hash`, optional `target = native`), portable `native.libs` / `native.pkg-config` / per-OS `native.<os>` (host paths rejected; use `EDVA_LIB_PATH` or `.edva.local.ccl` `native.search-paths`), and multi-target `targets` (including
   `target = wasm32-unknown-unknown`, which automatically emits `<out>.dom.js` when `std/dom` is used).
 - **Reproducibility, Caching & Targets**: IR cache keys (`key_version = 2`) hash canonical source paths and SHA-256 digests, target triple, `-O` flag, `--cflag`, `--fuzz-cov`, `#export`, `#use(dynamic)`, and compiler build ID; non-`--ir` module builds isolate IR at `<outpath>.ll` for safe parallel builds; `edva vendor` + `--offline --locked` guarantees air-gapped verification. Primary hosts/targets: `x86_64-unknown-linux-gnu` (Tier 1), `aarch64-unknown-linux-gnu`, `x86_64/aarch64-apple-darwin`, `wasm32-unknown-unknown` (Tier 1 Wasm / `std/dom`), and `wasm32-wasi`.
 

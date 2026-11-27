@@ -3248,6 +3248,10 @@ compile_with_backend = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlibs
                                  comp_args += "-o"
                                  comp_args += tmp_obj
                                  link_args += tmp_obj
+                                 // Portable linker search paths: EDVA_LIB_PATH + optional local-only .edva.local.ccl (DVA-112)
+                                 local_sp = pkg::load_local_search_paths(".")
+                                 local_sp @ ldir =>
+                                    link_args += "-L" + ldir
                                  prog_exprs = prog [Block b] b | ast::Exprs()
                                  link_libs = collect_link_libs(prog_exprs)
                                  link_libs @ lib =>

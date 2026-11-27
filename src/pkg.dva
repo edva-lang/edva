@@ -709,6 +709,9 @@
 
       native_libs: Strings
       native_pkg_config: Strings
+      native_libs = Strings()
+      native_pkg_config = Strings()
+      host_os = #os == "darwin" | "macos" | #os
       !has_err'
          |
             opt_native = ccl::get_section(doc, "native")
@@ -716,7 +719,7 @@
                | ndoc =>
                   ndoc @ ne =>
                      k = ne.key
-                     is_k = k ["libs", "pkg-config", "/"]
+                     is_k = k ["libs", "pkg-config", "linux", "macos", "windows", "/"]
                      !is_k && !has_err'
                         |
                            has_err' = <+>
@@ -726,9 +729,58 @@
                   !has_err'
                      |
                         nl = ccl::get_list(ndoc, "libs")
-                        nl | l => native_libs = l
+                        nl | l =>
+                           l @ lib =>
+                              !is_portable_lib_name(lib) && !has_err'
+                                 |
+                                    has_err' = <+>
+                                    err_val' = ccl::ccl_error(file,
+                                       "edva.ccl: native.libs entry '" + lib +
+                                       "' must be a portable library name (e.g. 'sqlite3'), not a host path or filename; use native.pkg-config, EDVA_LIB_PATH, or .edva.local.ccl",
+                                       0, 0)
+                              !has_err' | native_libs += lib
                         np = ccl::get_list(ndoc, "pkg-config")
-                        np | p => native_pkg_config = p
+                        np | p =>
+                           p @ pname => native_pkg_config += pname
+                        // Validate optional per-OS blocks (`native.linux`, `native.macos`, `native.windows`)
+                        // and merge the block matching the current host OS.
+                        ndoc @ ne =>
+                           k = ne.key
+                           (k ["linux", "macos", "windows"]) && !has_err'
+                              |
+                                 ne.val
+                                    [Block osdoc]
+                                       osdoc @ oe =>
+                                          ok_k = oe.key ["libs", "pkg-config", "/"]
+                                          !ok_k && !has_err'
+                                             |
+                                                has_err' = <+>
+                                                err_val' = ccl::ccl_error(file,
+                                                   "edva.ccl: unknown key 'native." + k + "." + oe.key + "'",
+                                                   oe.line, oe.col)
+                                       !has_err'
+                                          |
+                                             onl = ccl::get_list(osdoc, "libs")
+                                             onl | ol =>
+                                                ol @ lib =>
+                                                   !is_portable_lib_name(lib) && !has_err'
+                                                      |
+                                                         has_err' = <+>
+                                                         err_val' = ccl::ccl_error(file,
+                                                            "edva.ccl: native." + k + ".libs entry '" + lib +
+                                                            "' must be a portable library name, not a host path or filename; use native.pkg-config, EDVA_LIB_PATH, or .edva.local.ccl",
+                                                            ne.line, ne.col)
+                                                   (!has_err' && k == host_os) | native_libs += lib
+                                             onp = ccl::get_list(osdoc, "pkg-config")
+                                             onp | op =>
+                                                k == host_os
+                                                   |
+                                                      op @ pname => native_pkg_config += pname
+                                    [Str]
+                                       has_err' = <+>
+                                       err_val' = ccl::ccl_error(file,
+                                          "edva.ccl: 'native." + k + "' must be a block",
+                                          ne.line, ne.col)
 
       overrides: PackageDeps
       !has_err'
@@ -803,6 +855,42 @@
                generate,
                targets
             ) ->
+
+   // Returns `<+>` when `name` is a portable library identifier (e.g. `sqlite3`, `ssl`)
+   // rather than a host filesystem path, library filename, or raw linker flag (`DVA-112`).
+   is_portable_lib_name: String => <>
+   is_portable_lib_name = name =>
+      n = ?name
+      n == 0 | --| <->
+      first = name(0)
+      (first ['/, '~, '., '-, '\\]) | --| <->
+      str::contains(name, "/") || str::contains(name, "\\") | --| <->
+      str::ends_with(name, ".a") || str::ends_with(name, ".so") ||
+         str::ends_with(name, ".dylib") || str::ends_with(name, ".dll") ||
+         str::ends_with(name, ".lib") || str::ends_with(name, ".o") | --| <->
+      <+>
+
+   // Loads portable host library search paths from `EDVA_LIB_PATH` (`:`-separated)
+   // and optional local-only (gitignored) `.edva.local.ccl` (`native.search-paths`).
+   load_local_search_paths: String => Strings
+   load_local_search_paths = dir =>
+      out = Strings()
+      env_p = getenv_opt("EDVA_LIB_PATH") |_| ""
+      ?env_p > 0
+         |
+            str::split(env_p, ":") @ ldir =>
+               trimmed = str::trim(ldir)
+               ?trimmed > 0 | out += trimmed
+      local_path = path::join(dir, ".edva.local.ccl")
+      !fs::exists(local_path) | --| out
+      fs::read_to_string(local_path) | content =>
+         ccl::parse(content, local_path) | doc =>
+            ccl::get_section(doc, "native") | ndoc =>
+               ccl::get_list(ndoc, "search-paths") | paths =>
+                  paths @ p =>
+                     trimmed = str::trim(p)
+                     ?trimmed > 0 | out += trimmed
+      out
 
    manifest_to_ccl: PackageManifest => String
    manifest_to_ccl = m =>

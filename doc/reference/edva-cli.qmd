@@ -142,8 +142,9 @@ The manifest uses CCL (Categorical Configuration Language) syntax (`key = value`
 | `dependencies.<alias>.git` / `rev` | `git = https://...`<br>`rev = v1.2.0` | Git repository URL and branch, tag, or commit (pinned with tree hash in `edva.lock.ccl`) |
 | `dependencies.<alias>.url` / `hash` | `url = https://.../a.tar.gz`<br>`hash = sha256-<hex>` | Tarball archive verified against `sha256-<hex>` digest |
 | `overrides.<alias>` | `path = ../local_fork` | Root-manifest override replacing direct or transitive dependency `<alias>` across the graph |
-| `native.libs` | `= m`<br>`= pthread` | List of system libraries forwarded as `-l<lib>` to Clang |
+| `native.libs` | `= sqlite3`<br>`= pthread` | Portable library names forwarded as `-l<lib>` to Clang (host paths and `.a`/`.so`/`.dylib` filenames are rejected for portability; supply machine-specific directories via `EDVA_LIB_PATH`, `LIBRARY_PATH`, or gitignored `.edva.local.ccl` `native.search-paths`) |
 | `native.pkg-config` | `= libssl` | List of packages resolved via `pkg-config --libs <name>` (`E5039` if missing on host) |
+| `native.<os>` | `native.linux`, `native.macos`, `native.windows` | Optional per-OS blocks containing `libs` and `pkg-config` merged only when building on that host OS |
 | `targets.<id>.src` | `src = src/client.dva` | Entry `.dva` source file for build target `<id>` (default: `src/main.dva`) |
 | `targets.<id>.out` | `out = dist/client.wasm` | Output binary path for build target `<id>` (default: `<id>`) |
 | `targets.<id>.target` | `target = wasm32-unknown-unknown` | Target triple passed via `-t` / `--target` |
